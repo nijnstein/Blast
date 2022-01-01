@@ -13,17 +13,22 @@ Ternary operator:       `[condition] ? [true] : [false]`
 
 Assignment:             `=`
 
-
 Enclosures:             `( )`
+
 Statement terminator:   `;` 
+
 Value seperator:        `,` 
+
 Decimal seperator:      `.` 
 
 Indexer                 `.` 
+
 IndexOpen               `[`
+
 IndexClose              `]`
 
 Identifier: 	          `[a..z][0..9|a..z]*[.|[][a..z][0..9|a..z]*[]]`
+
 Control Flow:           `if then else` 
                         `while for ` 
                         `switch case default`
