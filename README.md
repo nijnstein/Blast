@@ -1,6 +1,28 @@
 # Blast
 
 
+## Tokens
+
+Arithmetic operators:   `+ - / * =`
+Boolean operators:      `& | ^ !` 
+Boolean evaluators:     `< > <= >= = ! !=`
+Ternary operator:       `[condition] ? [true] : [false]` 
+Assignment:             `=`
+
+Enclosures:             `( )`
+Statement terminator:   `;` 
+Value seperator:        `,` 
+Decimal seperator:      `.` 
+
+Indexer                 `.` 
+IndexOpen               `[`
+IndexClose              `]`
+
+Identifier: 	          `[a..z][0..9|a..z]*[.|[][a..z][0..9|a..z]*[]]`
+Control Flow:           `if then else` 
+                        `while for ` 
+                        `switch case default`
+
 ## Code Structure
 
 The # is used to define constants, input and output(s) and validations. Any sequence not matching `#[define/input/output/validate]` is considered a comment. 
