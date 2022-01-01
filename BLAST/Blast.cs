@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
+using NSS.Blast.Standalone;
 using NSS.Blast.Cache;
 using NSS.Blast.Compiler;
 using NSS.Blast.Register;
@@ -140,8 +141,8 @@ namespace NSS.Blast
             Blast blast;
             if (mt_lock == null) mt_lock = new object();
             blast.allocator = allocator;
-            blast.data = (BlastEngineData*)UnsafeUtility.Malloc(sizeof(BlastEngineData), 8, blast.allocator);
-            blast.data->constants = (float*)UnsafeUtility.Malloc(4 * 256 * 2, 4, blast.allocator);
+            blast.data = (BlastEngineData*)UnsafeUtils.Malloc(sizeof(BlastEngineData), 8, blast.allocator);
+            blast.data->constants = (float*)UnsafeUtils.Malloc(4 * 256 * 2, 4, blast.allocator);
             blast.data->random = Random.CreateFromIndex(1);
 
             for (int b = 0; b < 256; b++)
@@ -150,7 +151,7 @@ namespace NSS.Blast
             }
 
             blast.data->functionpointer_count = FunctionCalls.Count;
-            blast.data->functionpointers = (NonGenericFunctionPointer*)UnsafeUtility.Malloc(sizeof(NonGenericFunctionPointer) * FunctionCalls.Count, 8, blast.allocator);
+            blast.data->functionpointers = (NonGenericFunctionPointer*)UnsafeUtils.Malloc(sizeof(NonGenericFunctionPointer) * FunctionCalls.Count, 8, blast.allocator);
 
             for (int i = 0; i < FunctionCalls.Count; i++)
             {
@@ -173,13 +174,13 @@ namespace NSS.Blast
             {
                 if (data->constants != null)
                 {
-                    UnsafeUtility.Free(data->constants, allocator);
+                    UnsafeUtils.Free(data->constants, allocator);
                 }
                 if (data->functionpointers != null)
                 {
-                    UnsafeUtility.Free(data->functionpointers, allocator);
+                    UnsafeUtils.Free(data->functionpointers, allocator);
                 }
-                UnsafeUtility.Free(data, allocator);
+                UnsafeUtils.Free(data, allocator);
                 data = null;
             }
             is_created = false;
@@ -725,7 +726,11 @@ namespace NSS.Blast
             HPCCompilationData data = BlastCompiler.CompileHPC(blast, script, options);
             if (!data.IsOK)
             {
+#if !NOT_USING_UNITY
                 UnityEngine.Debug.LogError("failed to compile script: " + script);
+#else
+                System.Diagnostics.Debug.WriteLine("ERROR: Failed to compile script: " + script); 
+#endif 
                 return false;
             }
 
@@ -738,9 +743,9 @@ namespace NSS.Blast
         }
 
 
-        #endregion
+#endregion
 
-        #region HPC Jobs 
+#region HPC Jobs 
         static Dictionary<int, IBlastHPCScriptJob> _hpc_jobs = null;
         public Dictionary<int, IBlastHPCScriptJob> HPCJobs
         {
@@ -776,9 +781,9 @@ namespace NSS.Blast
             }
             return null;
         }
-        #endregion
+#endregion
 
-        #region Execute Scripts (UNITY)
+#region Execute Scripts (UNITY)
 #if !NOT_USING_UNITY
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
@@ -863,9 +868,9 @@ namespace NSS.Blast
             return 0; 
         }
 #endif
-        #endregion
+#endregion
 
-        #region Runners 
+#region Runners 
 
         static Dictionary<int, runner> runners;
 
@@ -962,9 +967,9 @@ namespace NSS.Blast
             }
         }
 
-        #endregion
+#endregion
 
-        #region Bytecode Packages 
+#region Bytecode Packages 
         static Dictionary<int, BlastScriptPackage> _bytecode_packages = null;
         public Dictionary<int, BlastScriptPackage> BytecodePackages
         {
@@ -1031,9 +1036,9 @@ namespace NSS.Blast
             return null;
         }
 
-        #endregion
+#endregion
 
-        #region Runtime Registration/Compilation of scripts 
+#region Runtime Registration/Compilation of scripts 
 
         static public int RegisterAndCompile(Blast blast, BlastScript script)
         {
@@ -1083,7 +1088,7 @@ namespace NSS.Blast
         }
 #endif
 
-        #endregion
+#endregion
 
     }
 

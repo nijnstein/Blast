@@ -129,16 +129,20 @@ namespace NSS.Blast
 
                         // what to do? screw up intentionally? yeah :)
                         default:
-#if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"blast.get_constant_vector_value({op}, {vector_size}) -> not a value -> NaN returned to caller");
+#if !NOT_USING_UNITY 
+                            UnityEngine.Debug.LogError($"blast.get_constant_vector_value({op}, {vector_size}) -> not a value -> NaN returned to caller");
+#else
+                            System.Diagnostics.Debug.WriteLine($"blast.get_constant_vector_value({op}, {vector_size}) -> not a value -> NaN returned to caller");
 #endif
                             return float.NaN;
                     }
 
                 default:
                     {
-#if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"blast.get_constant_vector_value({op}, {vector_size}) -> vectorsize not supported");
+#if !NOT_USING_UNITY
+                        UnityEngine.Debug.LogError($"blast.get_constant_vector_value({op}, {vector_size}) -> vectorsize not supported");
+#else
+                        System.Diagnostics.Debug.WriteLine($"blast.get_constant_vector_value({op}, {vector_size}) -> vectorsize not supported");
 #endif
                         return float.NaN;
                     }
@@ -208,8 +212,13 @@ namespace NSS.Blast
 
                 // what to do? screw up intentionally? yeah :)
                 default:
+
 #if CHECK_STACK
-                UnityEngine.Debug.LogError($"blast.get_constant_value({op}) -> not a value -> NaN returned to caller");
+    #if !NOT_USING_UNITY
+                    UnityEngine.Debug.LogError($"blast.get_constant_value({op}) -> not a value -> NaN returned to caller");
+    #else
+                    System.Diagnostics.Debug.WriteLine($"blast.get_constant_value({op}) -> not a value -> NaN returned to caller");
+    #endif
 #endif
                     return float.NaN;
             }

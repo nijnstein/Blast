@@ -531,8 +531,11 @@ namespace NSS.Blast.Compiler.Stage
     }} ";
                 string result = string.Format(job, code_id, code, data.Script.Id);
 
+#if !NOT_USING_UNITY
                 UnityEngine.Debug.Log(result);
-
+#else
+                System.Diagnostics.Debug.WriteLine(result);
+#endif
                 cdata.HPCCode = result; 
 
             }

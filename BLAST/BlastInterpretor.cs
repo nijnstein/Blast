@@ -276,13 +276,20 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void push(float f)
         {
+
+
 #if CHECK_STACK
-        if (data_offset + stack_offset + 1 > data_capacity)
-        {
-            UnityEngine.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
-            return;
-        }
+            if (data_offset + stack_offset + 1 > data_capacity)
+            {
+#if !NOT_USING_UNITY
+                UnityEngine.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
+#else
+                System.Diagnostics.Debug.WriteLine($"ERROR: blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}")
 #endif
+                return;
+            }
+#endif
+
             int offset = package->stack_offset;
             data[offset] = f;
             offset += 1;
@@ -293,11 +300,15 @@ namespace NSS.Blast.Interpretor
         public void push(float4 f)
         {
 #if CHECK_STACK
-        if (data_offset + stack_offset + 4 > data_capacity)
-        {
-            UnityEngine.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
-            return;
-        }
+            if (data_offset + stack_offset + 4 > data_capacity)
+            {
+#if !NOT_USING_UNITY
+                UnityEngine.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
+#else
+                System.Diagnostics.Debug.WriteLine($"ERROR: blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}"); 
+#endif
+                return;
+            }
 #endif
             int offset = package->stack_offset;
             data[offset] = f.x;
@@ -317,7 +328,11 @@ namespace NSS.Blast.Interpretor
 #if CHECK_STACK
         if (stack_offset < 0)
         {
+#if !NOT_USING_UNITY
             UnityEngine.Debug.LogError($"blast.stack: attempting to pop too much data (1 float) from the stack, offset = {stack_offset}");
+#else
+                System.Diagnostics.Debug.WriteLine($"ERROR: blast.stack: attempting to pop too much data (1 float) from the stack, offset = {stack_offset}");
+#endif
             f = float.NaN; 
             return;
         }
@@ -332,7 +347,11 @@ namespace NSS.Blast.Interpretor
 #if CHECK_STACK
         if (stack_offset < 0)
         {
+#if !NOT_USING_UNITY
             UnityEngine.Debug.LogError($"blast.stack: attempting to pop too much data (4 floats) from the stack, offset = {stack_offset}");
+#else
+                System.Diagnostics.Debug.WriteLine($"ERROR: blast.stack: attempting to pop too much data (4 floats) from the stack, offset = {stack_offset}");
+#endif
             f = float.NaN;
             return;
         }
@@ -388,8 +407,12 @@ namespace NSS.Blast.Interpretor
             else
             {
                 // error or.. constant by operation value.... 
-#if LOG_ERRORS
+#if DEBUG
+#if !NOT_USING_UNITY
                 UnityEngine.Debug.LogError("BlastInterpretor: pop_or_value -> select op by constant value is not supported");
+#else
+                System.Diagnostics.Debug.WriteLine($"ERROR: BlastInterpretor: pop_or_value -> select op by constant value is not supported");
+#endif
 #endif
                 return float.NaN;
             }
@@ -512,8 +535,12 @@ namespace NSS.Blast.Interpretor
                 case BlastVectorSizes.float3:
                     break;
                 case BlastVectorSizes.float4:
-#if LOG_ERRORS
+#if DEBUG
+#if !NOT_USING_UNITY
                     UnityEngine.Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
+#else
+                    System.Diagnostics.Debug.WriteLine("ERROR: interpretor error, expanding vector beyond size 4, this is not supported");
+#endif 
 #endif
                     return false;
             }

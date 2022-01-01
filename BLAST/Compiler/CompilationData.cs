@@ -97,14 +97,25 @@ namespace NSS.Blast.Compiler
         public void LogMessage(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
             if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
-            if (CompilerOptions.Verbose) UnityEngine.Debug.Log(msg);
+            if (CompilerOptions.Verbose)
+            {
+#if !NOT_USING_UNITY
+                UnityEngine.Debug.Log(msg);
+#else 
+                System.Diagnostics.Debug.WriteLine(msg);
+#endif
+            }
         }
         public void LogTrace(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
             if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
             if (CompilerOptions.Verbose && CompilerOptions.Trace)
             {
+#if !NOT_USING_UNITY
                 UnityEngine.Debug.Log(FormatWithColor(msg, Color.gray));
+#else 
+                System.Diagnostics.Debug.WriteLine("TRACE: " + msg); 
+#endif
             }
         }
 
@@ -112,27 +123,43 @@ namespace NSS.Blast.Compiler
         {
             LastErrorMessage = msg;
             CompilerMessages.Add(new Message() { Type = Message.MessageType.Error, Content = msg, Code = 0, LineNumber = linenr, CallerMember = member });
-
+#if !NOT_USING_UNITY
             UnityEngine.Debug.LogError(FormatWithColor(msg, Color.red));
+#else
+            System.Diagnostics.Debug.WriteLine("ERROR: " + msg);
+#endif
         }
 
         public void LogWarning(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
             CompilerMessages.Add(new Message() { Type = Message.MessageType.Warning, Content = msg, LineNumber = linenr, CallerMember = member });
+#if !NOT_USING_UNITY
             UnityEngine.Debug.LogWarning(FormatWithColor(msg, Color.yellow));
+#else
+            System.Diagnostics.Debug.WriteLine("WARNING: " + msg);
+#endif
         }
 
+#if !NOT_USING_UNITY
         string FormatWithColor(string msg, Color rgb)
         {
             return string.Format(
                 "<color=#{0:X2}{1:X2}{2:X2}>{3}</color>", 
                 (byte)(rgb.r * 255f), (byte)(rgb.g * 255f), (byte)(rgb.b * 255f), msg);
         }
+#endif 
 
         public void LogToDo(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
             if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Type = Message.MessageType.ToDo, Content = msg, LineNumber = linenr, CallerMember = member });
-            if (CompilerOptions.Verbose || CompilerOptions.Trace) UnityEngine.Debug.LogWarning(msg);
+            if (CompilerOptions.Verbose || CompilerOptions.Trace)
+            {
+#if !NOT_USING_UNITY
+                UnityEngine.Debug.LogWarning(msg);
+#else
+                System.Diagnostics.Debug.WriteLine("TODO: " + msg);
+#endif
+            }
         }
 
         public string LastErrorMessage { get; private set; }
@@ -144,7 +171,7 @@ namespace NSS.Blast.Compiler
         public bool Success { get { return string.IsNullOrEmpty(LastErrorMessage); } }
 
 
-        #endregion
+#endregion
 
         public CompilationData(Blast blast, BlastScript script, BlastCompilerOptions options)
         {
@@ -193,7 +220,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public BlastCompilerOptions CompilerOptions { get; set; }
 
-        #region Code Display 
+#region Code Display 
 
 
         /// <summary>
@@ -468,7 +495,7 @@ namespace NSS.Blast.Compiler
             return sb.ToString();
         }
 
-        #endregion
+#endregion
 
 
         // -- data used internally while compiling ----------------------------------------------------
@@ -618,7 +645,7 @@ namespace NSS.Blast.Compiler
 
 
 
-        #region exposed via interface, non reference counting 
+#region exposed via interface, non reference counting 
         public bool ExistsVariable(string name)
         {
             if (string.IsNullOrWhiteSpace(name) || Variables == null || Variables.Count == 0) return false;
@@ -691,7 +718,7 @@ namespace NSS.Blast.Compiler
             }
             return false;
         }
-        #endregion 
+#endregion
     }
 
 

@@ -678,7 +678,7 @@ namespace NSS.Blast.Compiler
                         BlastPackage* package_ptr = (BlastPackage*)UnsafeUtility.Malloc(32 + (int)package_info.package_size, 4, options.PackageAllocator);
                         Package(result, package_info, (byte*)package_ptr);
 
-#if UNITY_EDITOR
+#if !NOT_USING_UNITY && DEBUG
                         BlastPackage* pkg = package_ptr; 
                         Debug.Log($"<blastcompiler.package> package size: {package_info.package_size}, code size: {pkg->info.code_size}, data size: {pkg->info.data_size}, metadata size: {pkg->info.data_sizes_size}, data start: {pkg->data_start}, data offset: {pkg->data_offset}, stack offset: {pkg->stack_offset}, allocator: {options.PackageAllocator}");
 #endif
@@ -715,16 +715,19 @@ namespace NSS.Blast.Compiler
                 {
                     // error condition 
                     result.LogError($"Compilation Error, stage: {istage}, type {ByteCodeStages[istage].GetType().Name}, exitcode: {exitcode}");
+#if !NOT_USING_UNITY && DEBUG
                     if (options.Verbose || options.Trace)
                     {
                         UnityEngine.Debug.Log(result.root.ToNodeTreeString());
                         UnityEngine.Debug.Log(result.GetHumanReadableCode());
                     }
+#endif
                     return result;
                 }
             }
 
-#if UNITY_ENGINE || LOG_ERRORS
+
+#if !NOT_USING_UNITY && DEBUG
             if (options.Verbose || options.Trace)
             {
                 UnityEngine.Debug.Log(result.root.ToNodeTreeString());
@@ -761,11 +764,13 @@ namespace NSS.Blast.Compiler
                 if (exitcode != (int)BlastError.success)
                 {
                     result.LogError($"Compilation Error, stage: {istage}, type {HPCStages[istage].GetType().Name}, exitcode: {exitcode}");
+#if !NOT_USING_UNITY && DEBUG
                     if (options.Verbose || options.Trace)
                     {
                         UnityEngine.Debug.Log(result.root.ToNodeTreeString());
                         UnityEngine.Debug.Log(result.GetHumanReadableCode());
                     }
+#endif
                     return result;
                 }
             }
@@ -794,11 +799,13 @@ namespace NSS.Blast.Compiler
                 if (exitcode != (int)BlastError.success)
                 {
                     result.LogError($"Compilation Error, stage: {istage}, type {CSStages[istage].GetType().Name}, exitcode: {exitcode}");
+#if !NOT_USING_UNITY
                     if (options.Verbose || options.Trace)
                     {
                         UnityEngine.Debug.Log(result.root.ToNodeTreeString());
                         UnityEngine.Debug.Log(result.GetHumanReadableCode());
                     }
+#endif
                     return result;
                 }
             }
@@ -830,7 +837,11 @@ namespace NSS.Blast.Compiler
             }
             else
             {
+#if !NOT_USING_UNITY
                 UnityEngine.Debug.LogError(result.LastErrorMessage);
+#else
+                System.Diagnostics.Debug.WriteLine("ERROR: " + result.LastErrorMessage);
+#endif
                 return null;
             }
         }

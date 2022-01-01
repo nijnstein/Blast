@@ -516,8 +516,10 @@ namespace NSS.Blast
 
             if (i > bytesize)
             {
-#if UNITY_EDITOR
-                Debug.LogError($"SetupDataSegment: size large then destination: {i} < {bytesize}");
+#if !NOT_USING_UNITY
+                Debug.LogError($"SetupDataSegment: size larger then destination: {i} < {bytesize}");
+#else
+                System.Diagnostics.Debug.WriteLine("ERROR: size larger then destination: {i} < {bytesize}");
 #endif
                 return -1;
             }

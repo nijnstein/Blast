@@ -8,12 +8,43 @@ namespace BlastTestConsole
 {
     public class BlastTests1
     {
-        [Fact]
-        public void CompileTest1()
+        [Theory]  
+        [InlineData("value = 1 + 2;")]
+        [InlineData("value = 1 * 2;")]
+        [InlineData("value = 1 - 2;")]
+        [InlineData("value = 1 / 2;")]
+        public void BlastScript_FromText(string script)
         {
+            BlastScript bs = BlastScript.FromText(script);
+            Assert.True(bs.LanguageVersion == BlastLanguageVersion.BS1); 
+        }
 
+        [Fact]
+        public void Blast_Create()
+        {
+            Blast blast = default; 
+            try
+            {
+                blast = Blast.Create(Allocator.Persistent);
+
+                Assert.True(blast.IsCreated);
+            }
+            finally
+            {
+                if(blast.IsCreated) blast.Destroy();
+            }
+        }
+
+
+        [Theory]
+        [InlineData("value = 1 + 2;")]
+        [InlineData("value = 1 * 2;")]
+        [InlineData("value = 1 - 2;")]
+        [InlineData("value = 1 / 2;")]
+        public void Blast_Compile(string code)
+        {
             Blast blast = Blast.Create(Allocator.Persistent);
-            BlastScript script = BlastScript.FromText("value = 1 + 2;");
+            BlastScript script = BlastScript.FromText(code);
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
@@ -27,7 +58,7 @@ namespace BlastTestConsole
 
             blast.Destroy();
 
-            Xunit.Assert.True(!res.Success);
+            Xunit.Assert.True(res.Success);
         }
     }
 }
