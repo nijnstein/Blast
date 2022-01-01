@@ -1,5 +1,6 @@
 ﻿namespace NSS.Blast
 {
+    
     public enum BlastError : int
     {
         yield = 1,

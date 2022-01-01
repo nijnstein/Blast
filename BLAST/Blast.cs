@@ -1,11 +1,13 @@
-﻿using NSS.Blast.Cache;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+
+using NSS.Blast.Cache;
 using NSS.Blast.Compiler;
 using NSS.Blast.Interpretor;
 using NSS.Blast.Register;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+
+#if UNITY
 using Unity.Assertions;
 using Unity.Burst;
 using Unity.Collections;
@@ -14,49 +16,31 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+#else
+
+using Unity.Assertions;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Mathematics;
+
+#endif 
+
+using Random = Unity.Mathematics.Random;
+
+
+
+
+
+
+
+
 
 namespace NSS.Blast
 {
-
-    public enum BlastLanguageVersion : int
-    {
-        None = 0,
-        BS1 = 1,
-        HPC = 2   
-    }
-
-    public enum BlastVectorSizes : byte
-    {
-        float1 = 1,
-        float2 = 2,
-        float3 = 3,
-        float4 = 4
-    }
-
-    public enum BlastPackageCapacities : int
-    {
-        c32 = 32,
-        c48 = 48,
-        c64 = 64,
-        c96 = 96,
-        c128 = 128,
-        c192 = 192,
-        c256 = 256,
-        c320 = 320,
-        c384 = 384,
-        c448 = 448,
-        c512 = 512,
-        c640 = 640,
-        c768 = 768,
-        c896 = 896,
-        c960 = 960
-    }
-
-
-
      /// <summary>
-     /// blast execution data, used during execution of scripts
-     /// - one for each thread!
+     /// BLAST execution data
+     /// - used during execution of scripts
+     /// - shared by all threads
      /// </summary>
     [BurstCompatible]
     unsafe public struct BlastEngineData
@@ -67,21 +51,9 @@ namespace NSS.Blast
         public NonGenericFunctionPointer* functionpointers;
         public int functionpointer_count; 
 
-        public Unity.Mathematics.Random random;
-        
- 
-        [BurstCompile]
-        public int Execute(IntPtr engine, byte* p_code, byte* p_meta, float* p_stack, IntPtr data, IntPtr caller)
-        {
-            // interpretor.stack = p_stack;
-            // interpretor.code = p_code; 
+        public Random random;
 
-            return 0; // interpretor.Execute(engine, data, caller);
-             //return fp_execute.Generic<Blast.BlastExecute>().Invoke(scriptid, p_stack, data, caller); 
-        }
-       
-
-            #region Helper Functions / Get-Set
+        #region Helper Functions / Get-Set
 
             public void Seed(uint i)
         {
@@ -136,7 +108,7 @@ namespace NSS.Blast
             return false; 
         }
 
-        #endregion
+#endregion
 
     }
 
@@ -171,22 +143,22 @@ namespace NSS.Blast
         }
 
         private BlastEngineData* data;
-        private Unity.Collections.Allocator allocator;
+        private Allocator allocator;
         private bool is_created;
         public bool IsCreated { get { return is_created; } }
         public IntPtr Engine => (IntPtr)data;
 
         static internal object mt_lock = new object();  
 
-        #region Create / Destroy
-        public unsafe static Blast Create(Unity.Collections.Allocator allocator)
+#region Create / Destroy
+        public unsafe static Blast Create(Allocator allocator)
         {
             Blast blast;
             if(mt_lock == null) mt_lock = new object(); 
             blast.allocator = allocator;
             blast.data = (BlastEngineData*)UnsafeUtility.Malloc(sizeof(BlastEngineData), 8, blast.allocator);
             blast.data->constants = (float*)UnsafeUtility.Malloc(4 * 256 * 2, 4, blast.allocator);
-            blast.data->random = Unity.Mathematics.Random.CreateFromIndex(1);
+            blast.data->random = Random.CreateFromIndex(1);
             
             for (int b = 0; b < 256; b++)
             {
@@ -202,15 +174,12 @@ namespace NSS.Blast
                 blast.data->functionpointers[i] = call.FunctionPointer; 
             }
 
+#if UNITY
             blast._burst_hpc_once_job = default;
             blast._burst_once_job = default;
             blast._burst_once_job.interpretor = new BlastInterpretor();       // ??????? TODO why? or always use it? 
+#endif
             blast.is_created = true;
-
-            // compile function pointer to execute 
-            /// ARG..... MUST BE STATIC NEEDS ALL REFS..  NEED OTHER SOLUTION...
-            //blast.data->fp_execute = BurstCompilerUtil<BlastExecute>.CompileFunctionPointer(blast.Execute, 0);
-
             return blast;
         }
 
@@ -231,9 +200,9 @@ namespace NSS.Blast
             }
             is_created = false;
         }
-        #endregion
+#endregion
 
-        #region Constants 
+#region Constants 
 
         /// <summary>
         /// synchronize 'constants' with platform, do this once every frame for each engine/thread 
@@ -382,9 +351,9 @@ namespace NSS.Blast
             return BlastValues.GetConstantValue(op);
         }
 
-        #endregion
+#endregion
 
-        #region Tokens 
+#region Tokens 
 
         /// <summary>
         /// tokens that can be used in script
@@ -427,9 +396,9 @@ namespace NSS.Blast
         {
             return op == script_op.jump || op == script_op.jump_back || op == script_op.jz || op == script_op.jnz;
         }
-        #endregion 
+#endregion
 
-        #region Functions 
+#region Functions 
 
         /// <summary>
         /// defined functions for script
@@ -566,9 +535,9 @@ namespace NSS.Blast
 
             return function.MinParameterCount != function.MaxParameterCount;
         }
-        #endregion
+#endregion
 
-        #region Compiletime Function Pointers 
+#region Compiletime Function Pointers 
 
         static public List<ExternalFunctionCall> FunctionCalls = new List<ExternalFunctionCall>();
 
@@ -712,9 +681,9 @@ namespace NSS.Blast
         }
 
 
-        #endregion  
+#endregion
 
-        #region Designtime CompileRegistry
+#region Designtime CompileRegistry
 
         /// <summary>
         /// Enumerates all scripts known by blast 
@@ -753,9 +722,9 @@ namespace NSS.Blast
             }
         }
 #endif
-        #endregion
+#endregion
 
-        #region Runtime compilation of configuration into compiletime script for use next compilation
+#region Runtime compilation of configuration into compiletime script for use next compilation
 
         static public bool CompileIntoRegistry(Blast blast, BlastScript script, string script_directory)
         {
@@ -785,9 +754,9 @@ namespace NSS.Blast
         }
         
 
-        #endregion
+#endregion
 
-        #region HPC Jobs 
+#region HPC Jobs 
         static Dictionary<int, IBlastHPCScriptJob> _hpc_jobs = null;
         public Dictionary<int, IBlastHPCScriptJob> HPCJobs
         {
@@ -823,10 +792,10 @@ namespace NSS.Blast
             }
             return null;
         }
-        #endregion
+#endregion
 
-        #region Execute Scripts 
-
+#region Execute Scripts (UNITY)
+#if UNITY
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
         {
@@ -840,7 +809,6 @@ namespace NSS.Blast
                 for(int i = 0; i < 1000;i++) interpretor.Execute(blast);
             }
         }
-
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_hpc_once : IJob
@@ -910,10 +878,10 @@ namespace NSS.Blast
             }
             return 0; 
         }
+#endif
+#endregion
 
-        #endregion
-
-        #region Runners 
+#region Runners 
 
         static Dictionary<int, runner> runners;
                      
@@ -942,6 +910,7 @@ namespace NSS.Blast
             }
 
             // to create a runner iterate fastest method first
+#if UNITY
             IBlastHPCScriptJob job = GetHPCJob(script_id);
             if (job != null)
             {
@@ -952,6 +921,7 @@ namespace NSS.Blast
                 };
             }
             else
+#endif
             {
                 BlastScriptPackage pkg = GetPackage(script_id);
                 if (pkg != null)
@@ -992,9 +962,11 @@ namespace NSS.Blast
             // option 1
             public BlastPackage* Package;
 
+#if UNITY
             // option 2
             public FunctionPointer<BSExecuteDelegate> HPCJobBSD;
             public NativeArray<float> HPCVariables;
+#endif
 
             // option 3
             // c# script (windows) 
@@ -1006,9 +978,9 @@ namespace NSS.Blast
             }
         }
 
-        #endregion
+#endregion
 
-        #region Bytecode Packages 
+#region Bytecode Packages 
         static Dictionary<int, BlastScriptPackage> _bytecode_packages = null;
         public Dictionary<int, BlastScriptPackage> BytecodePackages
         {
@@ -1075,9 +1047,9 @@ namespace NSS.Blast
             return null;
         }
 
-        #endregion
+#endregion
 
-        #region Runtime Registration/Compilation of scripts 
+#region Runtime Registration/Compilation of scripts 
 
         static public int RegisterAndCompile(Blast blast, BlastScript script)
         {
@@ -1125,7 +1097,7 @@ namespace NSS.Blast
             return id;
         }
 
-        #endregion
+#endregion
 
     }
 

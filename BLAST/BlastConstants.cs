@@ -2,7 +2,6 @@
 
 namespace NSS.Blast
 {
-
     public struct BlastValues
     {
         public static float4 get_constant_vector_value(script_op op, BlastVectorSizes vector_size)

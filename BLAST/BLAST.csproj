@@ -4,8 +4,15 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
-    <Folder Include="Unity\" />
+    <Reference Include="Unity.Mathematics">
+      <HintPath>..\..\Unity.Mathematics\src\Unity.Mathematics\obj\Release\Unity.Mathematics.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

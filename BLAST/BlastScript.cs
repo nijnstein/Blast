@@ -3,10 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if UNITY
 using System.Runtime.InteropServices.WindowsRuntime;
+#endif
 using System.Threading;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace NSS.Blast
 {
@@ -44,6 +45,7 @@ namespace NSS.Blast
             };
         }
 
+#if UNITY
         /// <summary>
         /// load a script from resources
         /// </summary>
@@ -62,6 +64,7 @@ namespace NSS.Blast
                 return BlastScript.FromText(scriptcode_asset.text, resource_file_without_extension);
             }
         }
+#endif
 
         /// <summary>
         /// get the string representation of a blast script as ID:Name
