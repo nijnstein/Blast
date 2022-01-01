@@ -718,8 +718,8 @@ namespace NSS.Blast.Compiler
 #if !NOT_USING_UNITY && DEBUG
                     if (options.Verbose || options.Trace)
                     {
-                        UnityEngine.Debug.Log(result.root.ToNodeTreeString());
-                        UnityEngine.Debug.Log(result.GetHumanReadableCode());
+                        Standalone.Debug.Log(result.root.ToNodeTreeString());
+                        Standalone.Debug.Log(result.GetHumanReadableCode());
                     }
 #endif
                     return result;
@@ -730,8 +730,8 @@ namespace NSS.Blast.Compiler
 #if !NOT_USING_UNITY && DEBUG
             if (options.Verbose || options.Trace)
             {
-                UnityEngine.Debug.Log(result.root.ToNodeTreeString());
-                UnityEngine.Debug.Log(result.GetHumanReadableCode());
+                Standalone.Debug.Log(result.root.ToNodeTreeString());
+                Standalone.Debug.Log(result.GetHumanReadableCode());
             }
 #endif
 
@@ -767,8 +767,8 @@ namespace NSS.Blast.Compiler
 #if !NOT_USING_UNITY && DEBUG
                     if (options.Verbose || options.Trace)
                     {
-                        UnityEngine.Debug.Log(result.root.ToNodeTreeString());
-                        UnityEngine.Debug.Log(result.GetHumanReadableCode());
+                        Standalone.Debug.Log(result.root.ToNodeTreeString());
+                        Standalone.Debug.Log(result.GetHumanReadableCode());
                     }
 #endif
                     return result;
@@ -802,8 +802,8 @@ namespace NSS.Blast.Compiler
 #if !NOT_USING_UNITY
                     if (options.Verbose || options.Trace)
                     {
-                        UnityEngine.Debug.Log(result.root.ToNodeTreeString());
-                        UnityEngine.Debug.Log(result.GetHumanReadableCode());
+                        Standalone.Debug.Log(result.root.ToNodeTreeString());
+                        Standalone.Debug.Log(result.GetHumanReadableCode());
                     }
 #endif
                     return result;
@@ -838,7 +838,7 @@ namespace NSS.Blast.Compiler
             else
             {
 #if !NOT_USING_UNITY
-                UnityEngine.Debug.LogError(result.LastErrorMessage);
+                Standalone.Debug.LogError(result.LastErrorMessage);
 #else
                 System.Diagnostics.Debug.WriteLine("ERROR: " + result.LastErrorMessage);
 #endif

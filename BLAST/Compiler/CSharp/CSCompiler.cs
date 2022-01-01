@@ -33,7 +33,7 @@ namespace NSS.Blast.Compiler.Stage
               }
             }");
             results.Errors.Cast<CompilerError>().ToList().ForEach(error =>
-                UnityEngine.Debug.LogError(error.ErrorText)
+                Standalone.Debug.LogError(error.ErrorText)
             );
         }
     }

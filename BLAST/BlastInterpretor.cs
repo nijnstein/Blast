@@ -282,7 +282,7 @@ namespace NSS.Blast.Interpretor
             if (data_offset + stack_offset + 1 > data_capacity)
             {
 #if !NOT_USING_UNITY
-                UnityEngine.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
+                Standalone.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
 #else
                 System.Diagnostics.Debug.WriteLine($"ERROR: blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}")
 #endif
@@ -303,7 +303,7 @@ namespace NSS.Blast.Interpretor
             if (data_offset + stack_offset + 4 > data_capacity)
             {
 #if !NOT_USING_UNITY
-                UnityEngine.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
+                Standalone.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
 #else
                 System.Diagnostics.Debug.WriteLine($"ERROR: blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}"); 
 #endif
@@ -329,7 +329,7 @@ namespace NSS.Blast.Interpretor
         if (stack_offset < 0)
         {
 #if !NOT_USING_UNITY
-            UnityEngine.Debug.LogError($"blast.stack: attempting to pop too much data (1 float) from the stack, offset = {stack_offset}");
+            Standalone.Debug.LogError($"blast.stack: attempting to pop too much data (1 float) from the stack, offset = {stack_offset}");
 #else
                 System.Diagnostics.Debug.WriteLine($"ERROR: blast.stack: attempting to pop too much data (1 float) from the stack, offset = {stack_offset}");
 #endif
@@ -348,7 +348,7 @@ namespace NSS.Blast.Interpretor
         if (stack_offset < 0)
         {
 #if !NOT_USING_UNITY
-            UnityEngine.Debug.LogError($"blast.stack: attempting to pop too much data (4 floats) from the stack, offset = {stack_offset}");
+            Standalone.Debug.LogError($"blast.stack: attempting to pop too much data (4 floats) from the stack, offset = {stack_offset}");
 #else
                 System.Diagnostics.Debug.WriteLine($"ERROR: blast.stack: attempting to pop too much data (4 floats) from the stack, offset = {stack_offset}");
 #endif
@@ -409,7 +409,7 @@ namespace NSS.Blast.Interpretor
                 // error or.. constant by operation value.... 
 #if DEBUG
 #if !NOT_USING_UNITY
-                UnityEngine.Debug.LogError("BlastInterpretor: pop_or_value -> select op by constant value is not supported");
+                Standalone.Debug.LogError("BlastInterpretor: pop_or_value -> select op by constant value is not supported");
 #else
                 System.Diagnostics.Debug.WriteLine($"ERROR: BlastInterpretor: pop_or_value -> select op by constant value is not supported");
 #endif
@@ -537,7 +537,7 @@ namespace NSS.Blast.Interpretor
                 case BlastVectorSizes.float4:
 #if DEBUG
 #if !NOT_USING_UNITY
-                    UnityEngine.Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
+                    Standalone.Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
 #else
                     System.Diagnostics.Debug.WriteLine("ERROR: interpretor error, expanding vector beyond size 4, this is not supported");
 #endif 
@@ -583,7 +583,7 @@ namespace NSS.Blast.Interpretor
 
                 case script_op.not:
 #if UNITY_EDITOR || LOG_ERRORS
-                    UnityEngine.Debug.LogError("not");
+                    Standalone.Debug.LogError("not");
 #endif
                     return;
             }
@@ -619,7 +619,7 @@ namespace NSS.Blast.Interpretor
 
                 case script_op.not:
 #if UNITY_EDITOR || LOG_ERRORS
-                    UnityEngine.Debug.LogError("not");
+                    Standalone.Debug.LogError("not");
 #endif
                     return;
             }
@@ -655,7 +655,7 @@ namespace NSS.Blast.Interpretor
 
                 case script_op.not:
 #if UNITY_EDITOR || LOG_ERRORS
-                    UnityEngine.Debug.LogError("not");
+                    Standalone.Debug.LogError("not");
 #endif
                     return;
             }
@@ -691,7 +691,7 @@ namespace NSS.Blast.Interpretor
 
                 case script_op.not:
 #if UNITY_EDITOR || LOG_ERRORS
-                    UnityEngine.Debug.LogError("not");
+                    Standalone.Debug.LogError("not");
 #endif
                     return;
             }
@@ -902,7 +902,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"select: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"select: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -936,7 +936,7 @@ namespace NSS.Blast.Interpretor
                         default:
                             {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"random: range type '{c}' not supported ");
+                    Standalone.Debug.LogError($"random: range type '{c}' not supported ");
 #endif
                                 minus = false;
                                 return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -959,7 +959,7 @@ namespace NSS.Blast.Interpretor
                         default:
                             {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"random: range type '{c}' not supported ");
+                    Standalone.Debug.LogError($"random: range type '{c}' not supported ");
 #endif
                                 minus = false;
                                 f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -980,7 +980,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"random: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"random: vector size '{vector_size}' not supported ");
 #endif
                         minus = false;
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -1019,7 +1019,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"ceil: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"ceil: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1057,7 +1057,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"floor: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"floor: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1095,7 +1095,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"frac: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"frac: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1133,7 +1133,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"sqrt: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"sqrt: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1172,7 +1172,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"rsqrt: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"rsqrt: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1211,7 +1211,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"sin: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"sin: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1250,7 +1250,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"cos: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"cos: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1289,7 +1289,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"tan: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"tan: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1328,7 +1328,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"sinh: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"sinh: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1367,7 +1367,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"atan: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"atan: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1406,7 +1406,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"cosh: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"cosh: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1445,7 +1445,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"degrees: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"degrees: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1484,7 +1484,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"radians: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"radians: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1526,7 +1526,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"lerp: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"lerp: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1559,7 +1559,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"slerp: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"slerp: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1591,7 +1591,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"normalize: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"normalize: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1633,7 +1633,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"clamp: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"clamp: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1672,7 +1672,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"saturate: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"saturate: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1711,7 +1711,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"pow: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"pow: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1750,7 +1750,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"distance: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"distance: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1789,7 +1789,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"distancesq: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"distancesq: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1828,7 +1828,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"length: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"length: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1867,7 +1867,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"lengthsq: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"lengthsq: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1906,7 +1906,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"exp: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"exp: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1945,7 +1945,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"exp10: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"exp10: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -1984,7 +1984,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"log2: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"log2: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -2023,7 +2023,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"log: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"log: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -2062,7 +2062,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"log10: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"log10: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -2093,7 +2093,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"cross: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"cross: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -2132,7 +2132,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError($"dot: vector size '{vector_size}' not supported ");
+                        Standalone.Debug.LogError($"dot: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -2180,7 +2180,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"maxa: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"maxa: vector size '{vector_size}' not supported ");
 #endif
                         minus = false;
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -2226,7 +2226,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"maxa: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"maxa: vector size '{vector_size}' not supported ");
 #endif
                         minus = false;
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -2260,7 +2260,7 @@ namespace NSS.Blast.Interpretor
                     default:
                         {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"mula: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"mula: vector size '{vector_size}' not supported ");
 #endif
                             f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                             minus = false;
@@ -2695,7 +2695,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError($"mula: vector size '{vector_size}' not supported ");
+                    Standalone.Debug.LogError($"mula: vector size '{vector_size}' not supported ");
 #endif
                         r = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         minus = false;
@@ -2745,7 +2745,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if UNITY_EDITOR || LOG_ERRORS
-                        UnityEngine.Debug.LogError($"get_adda_result: vector size '{vector_size}' not allowed");
+                        Standalone.Debug.LogError($"get_adda_result: vector size '{vector_size}' not allowed");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
 
@@ -2792,7 +2792,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if UNITY_EDITOR || LOG_ERRORS
-                        UnityEngine.Debug.LogError($"get_suba_result: vector size '{vector_size}' not allowed");
+                        Standalone.Debug.LogError($"get_suba_result: vector size '{vector_size}' not allowed");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
 
@@ -2839,7 +2839,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if UNITY_EDITOR || LOG_ERRORS
-                        UnityEngine.Debug.LogError($"get_diva_result: vector size '{vector_size}' not allowed");
+                        Standalone.Debug.LogError($"get_diva_result: vector size '{vector_size}' not allowed");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
 
@@ -2867,7 +2867,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if UNITY_EDITOR || LOG_ERRORS
-                                UnityEngine.Debug.LogError($"get_max_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                                Standalone.Debug.LogError($"get_max_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
 
@@ -2941,7 +2941,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if UNITY_EDITOR || LOG_ERRORS
-                                UnityEngine.Debug.LogError($"get_max_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                                Standalone.Debug.LogError($"get_max_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
 
@@ -3009,7 +3009,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if UNITY_EDITOR || LOG_ERRORS
-                        UnityEngine.Debug.LogError($"get_max_result: vector size '{vector_size}' not allowed");
+                        Standalone.Debug.LogError($"get_max_result: vector size '{vector_size}' not allowed");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                     }
@@ -3034,7 +3034,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if LOG_ERRORS
-                UnityEngine.Debug.LogError($"get_min_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                Standalone.Debug.LogError($"get_min_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return 0;
 
@@ -3106,7 +3106,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if LOG_ERRORS
-                UnityEngine.Debug.LogError($"get_min_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                Standalone.Debug.LogError($"get_min_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return 0;
 
@@ -3174,7 +3174,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if UNITY_EDITOR || LOG_ERRORS
-                        UnityEngine.Debug.LogError($"get_min_result: vector size '{vector_size}' not (yet) supported");
+                        Standalone.Debug.LogError($"get_min_result: vector size '{vector_size}' not (yet) supported");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                     }
@@ -3209,7 +3209,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if LOG_ERRORS
-                UnityEngine.Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                Standalone.Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return 0;
 
@@ -3289,7 +3289,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if LOG_ERRORS
-                UnityEngine.Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                Standalone.Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return 0;
 
@@ -3368,7 +3368,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if UNITY_EDITOR || LOG_ERRORS
-                        UnityEngine.Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
+                        Standalone.Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                     }
@@ -3400,7 +3400,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if LOG_ERRORS
-                UnityEngine.Debug.LogError($"get_all_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                Standalone.Debug.LogError($"get_all_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return 0;
 
@@ -3480,7 +3480,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if LOG_ERRORS
-                UnityEngine.Debug.LogError($"get_all_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                Standalone.Debug.LogError($"get_all_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return 0;
 
@@ -3559,7 +3559,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if UNITY_EDITOR || LOG_ERRORS
-                        UnityEngine.Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
+                        Standalone.Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                     }
@@ -3582,7 +3582,7 @@ namespace NSS.Blast.Interpretor
 
             // handle op 
 #if LOG_ERRORS
-            UnityEngine.Debug.LogError($"get_extended_operation_result: operation {op} not handled / supported / implemented ");
+            Standalone.Debug.LogError($"get_extended_operation_result: operation {op} not handled / supported / implemented ");
 #endif
 
             return f4;
@@ -3695,7 +3695,7 @@ namespace NSS.Blast.Interpretor
                                 break;
                             case BlastVectorSizes.float4:
 #if LOG_ERRORS
-                    UnityEngine.Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
+                    Standalone.Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
 #endif
                                 return (int)BlastError.error_update_vector_fail;
                         }
@@ -3747,7 +3747,7 @@ namespace NSS.Blast.Interpretor
 #if LOG_ERRORS
                             if (not)
                             {
-                                UnityEngine.Debug.LogError("double token: ! !, this will be become nothing, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
+                                    Standalone.Debug.LogError("double token: ! !, this will be become nothing, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
                             }
 #endif
                                 not = !not;
@@ -3767,7 +3767,7 @@ namespace NSS.Blast.Interpretor
 #if LOG_ERRORS
                             if (minus)
                             {
-                                UnityEngine.Debug.LogError("double token: - -, this will be become +, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
+                                    Standalone.Debug.LogError("double token: - -, this will be become +, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
                             }
 #endif
                                 minus = !minus;
@@ -3789,7 +3789,7 @@ namespace NSS.Blast.Interpretor
                                     ++code_pointer;
                                     // should not reach here
 #if LOG_ERRORS
-                                UnityEngine.Debug.LogError("should not be nesting compounds... compiler did not do its job wel"); 
+                                    Standalone.Debug.LogError("should not be nesting compounds... compiler did not do its job wel"); 
 #endif
                                     f4_result = get_compound_result(ref code_pointer, ref vector_size);
                                     break;
@@ -4016,7 +4016,7 @@ namespace NSS.Blast.Interpretor
 
                                         // handle op 
 #if LOG_ERRORS
-                                        UnityEngine.Debug.LogError($"get_extended_operation_result: operation {op} not handled / supported / implemented ");
+                                        Standalone.Debug.LogError($"get_extended_operation_result: operation {op} not handled / supported / implemented ");
 #endif
                                     }
                                     // prev_op = (byte)script_op.ex_op;
@@ -4100,7 +4100,7 @@ namespace NSS.Blast.Interpretor
                                                 case BlastVectorSizes.float4: f4_result.xyzw = temp; break;
                                                 default:
 #if LOG_ERRORS
-                                                    UnityEngine.Debug.LogError("error: growing vector beyond size 4 from constant");
+                                                    Standalone.Debug.LogError("error: growing vector beyond size 4 from constant");
 #endif
                                                     break;
                                             }
@@ -4116,7 +4116,7 @@ namespace NSS.Blast.Interpretor
                                                 case BlastVectorSizes.float4: f4_result.w = temp; break;
                                                 default:
 #if LOG_ERRORS
-                                                    UnityEngine.Debug.LogError("error: growing vector beyond size 4 from constant");
+                                                    Standalone.Debug.LogError("error: growing vector beyond size 4 from constant");
 #endif
                                                     break;
                                             }
@@ -4144,7 +4144,7 @@ namespace NSS.Blast.Interpretor
                                                 case BlastVectorSizes.float2:
                                                 case BlastVectorSizes.float3:
 #if LOG_ERRORS
-                                                UnityEngine.Debug.LogError("implement me");
+                                                    Standalone.Debug.LogError("implement me");
 #endif
                                                     break;
                                                 case BlastVectorSizes.float4:
@@ -4163,7 +4163,7 @@ namespace NSS.Blast.Interpretor
                                             // we receive an operation while expecting a value 
                                             // if we predict this at the compiler we could use the opcodes value as value constant
 #if LOG_ERRORS
-                                        UnityEngine.Debug.LogError($"encountered unknown op {(script_op)op}");
+                                            Standalone.Debug.LogError($"encountered unknown op {(script_op)op}");
 #endif
                                             // this should screw stuff up 
                                             return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -4208,8 +4208,8 @@ namespace NSS.Blast.Interpretor
                                             case BlastVectorSizes.float4:
                                             default:
 #if LOG_ERRORS
-                                            // these will be in log because of growing a vector from a compound of unknown sizes  
-                                            UnityEngine.Debug.LogWarning($"no support for vector of size {vector_size} -> {max_vector_size}");
+                                                // these will be in log because of growing a vector from a compound of unknown sizes  
+                                                Standalone.Debug.LogWarning($"no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                 break;
                                         }
@@ -4230,8 +4230,8 @@ namespace NSS.Blast.Interpretor
                                             case BlastVectorSizes.float4:
                                             default:
 #if LOG_ERRORS
-                                            // these will be in log because of growing a vector from a compound of unknown sizes  
-                                            UnityEngine.Debug.LogWarning($"no support for vector of size {vector_size} -> {max_vector_size}");
+                                                // these will be in log because of growing a vector from a compound of unknown sizes  
+                                                Standalone.Debug.LogWarning($"no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                 break;
                                         }
@@ -4259,7 +4259,7 @@ namespace NSS.Blast.Interpretor
                                                 break;
                                             default:
 #if LOG_ERRORS
-                                            UnityEngine.Debug.LogError("implement me");
+                                                Standalone.Debug.LogError("implement me");
 #endif
                                                 break;
                                         }
@@ -4270,7 +4270,7 @@ namespace NSS.Blast.Interpretor
                                 default:
                                     {
 #if LOG_ERRORS
-                                        UnityEngine.Debug.LogError($"encountered unsupported vector size of {vector_size}");
+                                        Standalone.Debug.LogError($"encountered unsupported vector size of {vector_size}");
 #endif
                                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                                     }
@@ -4416,8 +4416,9 @@ namespace NSS.Blast.Interpretor
                                 code_pointer++;
                                 break;
                             default:
+
 #if LOG_ERRORS
-                            UnityEngine.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack pop");
+                            Standalone.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack pop");
 #endif
                                 // could use set_datasize for var size vectors 
                                 break;
@@ -4451,7 +4452,7 @@ namespace NSS.Blast.Interpretor
                                     break;
                                 default:
 #if LOG_ERRORS
-                                UnityEngine.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push of compound");
+                                Standalone.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push of compound");
 #endif
                                     return (int)BlastError.error_variable_vector_compound_not_supported;
                             }
@@ -4497,7 +4498,7 @@ namespace NSS.Blast.Interpretor
                                 break;
                             default:
 #if LOG_ERRORS
-                            UnityEngine.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push");
+                            Standalone.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push");
 #endif
                                 return (int)BlastError.error_variable_vector_op_not_supported;
                         }
@@ -4517,7 +4518,7 @@ namespace NSS.Blast.Interpretor
                             case 4: push(f4_register.x); break;
                             default:
 #if LOG_ERRORS
-                            UnityEngine.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push");
+                            Standalone.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push");
 #endif
                                 return (int)BlastError.error_variable_vector_op_not_supported;
                         }
@@ -4538,7 +4539,7 @@ namespace NSS.Blast.Interpretor
                             break;
 
 #if LOG_ERRORS
-                        UnityEngine.Debug.LogError("burstscript.interpretor error: begin-end sequence not expected in root");
+                        Standalone.Debug.LogError("burstscript.interpretor error: begin-end sequence not expected in root");
 #endif
                             return (int)BlastError.error_begin_end_sequence_in_root;
                         }
@@ -4586,7 +4587,7 @@ namespace NSS.Blast.Interpretor
                                     if (s_assignee != 1)
                                     {
 #if LOG_ERRORS  
-                                          UnityEngine.Debug.LogWarning($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
+                                          Standalone.Debug.LogWarning($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -4597,7 +4598,7 @@ namespace NSS.Blast.Interpretor
                                     if (s_assignee != 2)
                                     {
 #if LOG_ERRORS
-                                    UnityEngine.Debug.Log($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
+                                    Standalone.Debug.Log($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -4609,7 +4610,7 @@ namespace NSS.Blast.Interpretor
                                     if (s_assignee != 3)
                                     {
 #if LOG_ERRORS
-                                    UnityEngine.Debug.Log($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
+                                    Standalone.Debug.Log($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -4622,7 +4623,7 @@ namespace NSS.Blast.Interpretor
                                     if (s_assignee != 4)
                                     {
 #if LOG_ERRORS
-                                    UnityEngine.Debug.Log($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
+                                    Standalone.Debug.Log($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -4634,7 +4635,7 @@ namespace NSS.Blast.Interpretor
 
 #if LOG_ERRORS
                             default:
-                                UnityEngine.Debug.LogError($"burstscript.interpretor: vector size {vector_size} not allowed");
+                                Standalone.Debug.LogError($"burstscript.interpretor: vector size {vector_size} not allowed");
                                 return (int)BlastError.error_unsupported_operation_in_root; 
 #endif
                             }
@@ -4713,7 +4714,7 @@ namespace NSS.Blast.Interpretor
                             else
                             {
 #if LOG_ERRORS
-                                UnityEngine.Debug.LogError($"extended op: only call operation is supported from root, not {exop} ");
+                                Standalone.Debug.LogError($"extended op: only call operation is supported from root, not {exop} ");
 #endif
                                 return (int)BlastError.error_unsupported_operation_in_root;
                             }
@@ -4723,7 +4724,7 @@ namespace NSS.Blast.Interpretor
                     default:
                         {
 #if LOG_ERRORS
-                            UnityEngine.Debug.LogError($"burstscript.interpretor: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
+                            Standalone.Debug.LogError($"burstscript.interpretor: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
 #endif
                             return (int)BlastError.error_unsupported_operation_in_root;
                         }

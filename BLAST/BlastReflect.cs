@@ -47,7 +47,7 @@ namespace NSS.Blast.Reflection
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError("BlastReflect.FindCompileTimeBlastScripts: failed to enumerate blast script to pre-compile: " + ex.ToString());
+                Standalone.Debug.LogError("BlastReflect.FindCompileTimeBlastScripts: failed to enumerate blast script to pre-compile: " + ex.ToString());
                 return null;
             }
         }
@@ -77,7 +77,7 @@ namespace NSS.Blast.Reflection
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogError("BlastReflect.FindHPCJobs: failed to enumerate pre-compiled blast jobs: " + ex.ToString());
+                Standalone.Debug.LogError("BlastReflect.FindHPCJobs: failed to enumerate pre-compiled blast jobs: " + ex.ToString());
                 return new List<IBlastHPCScriptJob>(); 
             }
         }

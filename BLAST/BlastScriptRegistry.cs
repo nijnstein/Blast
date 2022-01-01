@@ -72,7 +72,7 @@ namespace NSS.Blast.Register
 
 #if UNITY_EDITOR
                 string smsg = $"BLAST Registry: {script.Id} {script.Name}";
-                UnityEngine.Debug.Log(smsg);
+                Standalone.Debug.Log(smsg);
                 if(NSS.Console.ConsoleLog.Instance != null)
                 {
                     NSS.Console.ConsoleLog.Instance.LogMessage(smsg); 

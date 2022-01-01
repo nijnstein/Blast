@@ -22,16 +22,32 @@ namespace BlastTestConsole
         [Fact]
         public void Blast_Create()
         {
-            Blast blast = default; 
+            Blast blast = default;
             try
             {
                 blast = Blast.Create(Allocator.Persistent);
+                Assert.True(blast.IsCreated);
+            }
+            finally
+            {
+                if (blast.IsCreated) blast.Destroy();
+            }
+        }
+
+        [Fact]
+        public void Blast_SyncConstants()
+        {
+            Blast blast = default;
+            try
+            {
+                blast = Blast.Create(Allocator.Persistent);
+                blast.SyncConstants(); 
 
                 Assert.True(blast.IsCreated);
             }
             finally
             {
-                if(blast.IsCreated) blast.Destroy();
+                if (blast.IsCreated) blast.Destroy();
             }
         }
 
@@ -55,10 +71,43 @@ namespace BlastTestConsole
             options.EstimateStackSize = false;
 
             var res = BlastCompiler.Compile(blast, script, options);
-
             blast.Destroy();
 
             Xunit.Assert.True(res.Success);
+        }
+
+        [Fact]
+        public void Blast_Validate()
+        {
+            string code = @"
+a = 1;
+b = 1 + a;	   
+
+#validate b 2";
+
+            Blast blast = Blast.Create(Allocator.Persistent);
+            BlastScript script = BlastScript.FromText(code);
+
+            var options = new BlastCompilerOptions();
+            options.AutoValidate = false;
+            options.Optimize = true;
+            options.CompileWithSystemConstants = true;
+            options.ConstantEpsilon = 0.001f;
+            options.DefaultStackSize = 64;
+            options.EstimateStackSize = false;
+            
+            bool validated = false;
+            var res = BlastCompiler.Compile(blast, script, options);
+
+            if(res.CanValidate)
+            {
+                blast.SyncConstants();
+                validated = BlastCompiler.Validate(res, blast.Engine); 
+            }
+
+            blast.Destroy();
+
+            Xunit.Assert.True(validated);
         }
     }
 }

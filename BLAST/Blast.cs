@@ -198,10 +198,18 @@ namespace NSS.Blast
 
             BlastEngineData* p = (BlastEngineData*)data;
 
+#if NOT_USING_UNITY
+            p->SetConstant(BlastEngineSystemConstant.Time, 0);
+            p->SetConstant(BlastEngineSystemConstant.DeltaTime, 1f / 60f);
+            p->SetConstant(BlastEngineSystemConstant.FixedDeltaTime, 1f / 60f);
+            p->SetConstant(BlastEngineSystemConstant.FrameCount, 1);
+#else
             p->SetConstant(BlastEngineSystemConstant.Time, UnityEngine.Time.time);
             p->SetConstant(BlastEngineSystemConstant.DeltaTime, UnityEngine.Time.deltaTime);
             p->SetConstant(BlastEngineSystemConstant.FixedDeltaTime, UnityEngine.Time.fixedDeltaTime);
             p->SetConstant(BlastEngineSystemConstant.FrameCount, UnityEngine.Time.frameCount);
+#endif 
+
 
             return exitcode.ok;
         }
@@ -336,9 +344,9 @@ namespace NSS.Blast
             return BlastValues.GetConstantValue(op);
         }
 
-        #endregion
+#endregion
 
-        #region Tokens 
+#region Tokens 
 
         /// <summary>
         /// tokens that can be used in script
@@ -381,9 +389,9 @@ namespace NSS.Blast
         {
             return op == script_op.jump || op == script_op.jump_back || op == script_op.jz || op == script_op.jnz;
         }
-        #endregion
+#endregion
 
-        #region Functions 
+#region Functions 
 
         /// <summary>
         /// defined functions for script
@@ -520,9 +528,9 @@ namespace NSS.Blast
 
             return function.MinParameterCount != function.MaxParameterCount;
         }
-        #endregion
+#endregion
 
-        #region Compiletime Function Pointers 
+#region Compiletime Function Pointers 
 
         static public List<ExternalFunctionCall> FunctionCalls = new List<ExternalFunctionCall>();
 
@@ -666,9 +674,9 @@ namespace NSS.Blast
         }
 
 
-        #endregion
+#endregion
 
-        #region Designtime CompileRegistry
+#region Designtime CompileRegistry
 
         /// <summary>
         /// Enumerates all scripts known by blast 
@@ -699,7 +707,7 @@ namespace NSS.Blast
                     }
                     else
                     {
-                        UnityEngine.Debug.LogError("failed to compile script: " + script); 
+                        Standalone.Debug.LogError("failed to compile script: " + script); 
                     }
                 }
 
@@ -707,9 +715,9 @@ namespace NSS.Blast
             }
         }
 #endif
-        #endregion
+#endregion
 
-        #region Runtime compilation of configuration into compiletime script for use next compilation
+#region Runtime compilation of configuration into compiletime script for use next compilation
 
         static public bool CompileIntoRegistry(Blast blast, BlastScript script, string script_directory)
         {
@@ -727,10 +735,10 @@ namespace NSS.Blast
             if (!data.IsOK)
             {
 #if !NOT_USING_UNITY
-                UnityEngine.Debug.LogError("failed to compile script: " + script);
+                Standalone.Debug.LogError("failed to compile script: " + script);
 #else
                 System.Diagnostics.Debug.WriteLine("ERROR: Failed to compile script: " + script); 
-#endif 
+#endif
                 return false;
             }
 
@@ -862,7 +870,7 @@ namespace NSS.Blast
                     break;
 
                 default:
-                    UnityEngine.Debug.LogError($"runtype not supported: {run.Type}");
+                    Standalone.Debug.LogError($"runtype not supported: {run.Type}");
                     break;            
             }
             return 0; 

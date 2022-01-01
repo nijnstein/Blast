@@ -1,20 +1,25 @@
-﻿using System;
-using Unity.Collections;
-
+﻿
 #if NOT_USING_UNITY
+using System;
+using Unity.Collections;
 using System.Runtime.InteropServices;
-#endif
 
 namespace NSS.Blast.Standalone
 {
-    unsafe public struct DEBUG
+    public struct Debug
     {
-#if NOT_USING_UNITY
-
- 
-#else
-
-   
-#endif
+        public static void Log(string message)
+        {
+            System.Diagnostics.Debug.WriteLine(message); 
+        }
+        public static void LogWarning(string warning)
+        {
+            System.Diagnostics.Debug.WriteLine("WARNING: " + warning); 
+        }
+        public static void LogError(string error)
+        {
+            System.Diagnostics.Debug.WriteLine("ERROR: " + error); 
+        }
     }
 }
+#endif

@@ -100,7 +100,7 @@ namespace NSS.Blast.Compiler
             if (CompilerOptions.Verbose)
             {
 #if !NOT_USING_UNITY
-                UnityEngine.Debug.Log(msg);
+                Standalone.Debug.Log(msg);
 #else 
                 System.Diagnostics.Debug.WriteLine(msg);
 #endif
@@ -112,7 +112,7 @@ namespace NSS.Blast.Compiler
             if (CompilerOptions.Verbose && CompilerOptions.Trace)
             {
 #if !NOT_USING_UNITY
-                UnityEngine.Debug.Log(FormatWithColor(msg, Color.gray));
+                Standalone.Debug.Log(FormatWithColor(msg, Color.gray));
 #else 
                 System.Diagnostics.Debug.WriteLine("TRACE: " + msg); 
 #endif
@@ -124,7 +124,7 @@ namespace NSS.Blast.Compiler
             LastErrorMessage = msg;
             CompilerMessages.Add(new Message() { Type = Message.MessageType.Error, Content = msg, Code = 0, LineNumber = linenr, CallerMember = member });
 #if !NOT_USING_UNITY
-            UnityEngine.Debug.LogError(FormatWithColor(msg, Color.red));
+            Standalone.Debug.LogError(FormatWithColor(msg, Color.red));
 #else
             System.Diagnostics.Debug.WriteLine("ERROR: " + msg);
 #endif
@@ -134,7 +134,7 @@ namespace NSS.Blast.Compiler
         {
             CompilerMessages.Add(new Message() { Type = Message.MessageType.Warning, Content = msg, LineNumber = linenr, CallerMember = member });
 #if !NOT_USING_UNITY
-            UnityEngine.Debug.LogWarning(FormatWithColor(msg, Color.yellow));
+            Standalone.Debug.LogWarning(FormatWithColor(msg, Color.yellow));
 #else
             System.Diagnostics.Debug.WriteLine("WARNING: " + msg);
 #endif
@@ -155,7 +155,7 @@ namespace NSS.Blast.Compiler
             if (CompilerOptions.Verbose || CompilerOptions.Trace)
             {
 #if !NOT_USING_UNITY
-                UnityEngine.Debug.LogWarning(msg);
+                Standalone.Debug.LogWarning(msg);
 #else
                 System.Diagnostics.Debug.WriteLine("TODO: " + msg);
 #endif
