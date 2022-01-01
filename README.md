@@ -3,7 +3,7 @@
 
 ## Tokens
 
-Arithmetic operators:   `+ - / * =`
+Arithmetic operators:   `+ - / *`
 
 Boolean operators:      `& | ^ !` 
 
