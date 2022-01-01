@@ -58,6 +58,15 @@ namespace NSS.Blast.Compiler.Stage
             return i;
         }
 
+        static int scan_until(string code, char until, int start)
+        {
+            for(int i = start; i < code.Length; i++)
+            {
+                if (code[i] == until) return i;
+            }
+            return -1;
+        }
+
         /// <summary>
         /// classify char as whitespace: space, tabs, cr/lf, , (comma)
         /// </summary>
@@ -166,6 +175,8 @@ namespace NSS.Blast.Compiler.Stage
                             return (int)BlastError.error;
                         }
 
+                        comment = scan_until_stripend(comment);
+
                         // get defined value seperated by spaces or tabs 
                         string[] a = comment.Trim().Split( new char[] { ' ' , '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         if (a.Length == 3)
@@ -207,6 +218,8 @@ namespace NSS.Blast.Compiler.Stage
                     // store any validations for automatic testing
                     if (comment.StartsWith("#validate ", StringComparison.OrdinalIgnoreCase))
                     {
+                        comment = scan_until_stripend(comment);
+
                         // get defined value seperated by spaces
                         string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         if (a.Length == 3)
@@ -224,10 +237,15 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         if (tokens.Count > 0)
                         {
-                            // not allowed   must be first things 
+                            // not allowed   must be among the first things scanned 
                             data.LogError("tokenize: #defines must be the first statements in a script");
                             return (int)BlastError.error;
                         }
+
+                        // scan for the next# in comment (if any)
+                        comment = scan_until_stripend(comment);
+
+                        // split result into strings 
                         string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         if (a.Length == 4)
                         {
@@ -256,6 +274,9 @@ namespace NSS.Blast.Compiler.Stage
                             data.LogError("tokenize: #defines must be the first statements in a script");
                             return (int)BlastError.error;
                         }
+
+                        comment = scan_until_stripend(comment);
+
                         string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         if (a.Length == 4)
                         {
@@ -460,6 +481,18 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             return (int)BlastError.success;
+        }
+
+        private static string scan_until_stripend(string comment, int start = 6)
+        {
+            int i_end = scan_until(comment, '#', start);
+            if (i_end >= 0)
+            {
+                // and remove that part, assume it to be a comment on the output def. 
+                comment = comment.Substring(0, i_end);
+            }
+
+            return comment;
         }
 
         public int Execute(IBlastCompilationData data)

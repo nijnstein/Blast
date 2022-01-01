@@ -27,4 +27,16 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="BLAST Test Scripts\F3.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="BLAST Test Scripts\F2.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="BLAST Test Scripts\F1.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

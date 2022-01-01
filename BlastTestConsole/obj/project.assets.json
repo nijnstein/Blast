@@ -5937,9 +5937,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "F:\\Repo\\Nijnstein\\Blast\\BlastTestConsole\\BlastTestConsole.csproj",
-      "projectName": "BlastTestConsole",
-      "projectPath": "F:\\Repo\\Nijnstein\\Blast\\BlastTestConsole\\BlastTestConsole.csproj",
+      "projectUniqueName": "F:\\Repo\\Nijnstein\\Blast\\BlastTestConsole\\BlastUnitTests.csproj",
+      "projectName": "BlastUnitTests",
+      "projectPath": "F:\\Repo\\Nijnstein\\Blast\\BlastTestConsole\\BlastUnitTests.csproj",
       "packagesPath": "C:\\Users\\roble\\.nuget\\packages\\",
       "outputPath": "F:\\Repo\\Nijnstein\\Blast\\BlastTestConsole\\obj\\",
       "projectStyle": "PackageReference",

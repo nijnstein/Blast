@@ -1,12 +1,13 @@
 using NSS.Blast;
 using NSS.Blast.Compiler;
 using System;
+using System.IO;
 using Unity.Collections;
 using Xunit;
 
 namespace BlastTestConsole
 {
-    public class BlastTests1
+    public class BlastTests
     {
         [Theory]  
         [InlineData("value = 1 + 2;")]
@@ -75,7 +76,8 @@ namespace BlastTestConsole
 
             Xunit.Assert.True(res.Success);
         }
-
+      
+           
         [Fact]
         public void Blast_Validate()
         {
@@ -95,19 +97,20 @@ b = 1 + a;
             options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
-            
+
             bool validated = false;
             var res = BlastCompiler.Compile(blast, script, options);
 
-            if(res.CanValidate)
+            if (res.CanValidate)
             {
                 blast.SyncConstants();
-                validated = BlastCompiler.Validate(res, blast.Engine); 
+                validated = BlastCompiler.Validate(res, blast.Engine);
             }
 
             blast.Destroy();
 
             Xunit.Assert.True(validated);
         }
+
     }
 }

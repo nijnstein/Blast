@@ -40,7 +40,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Editor GUI", "Editor GUI", 
 		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\editor gui\BlastEditor.cs = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\editor gui\BlastEditor.cs
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlastTestConsole", "..\BlastTestConsole\BlastTestConsole.csproj", "{CE39284D-05D2-4AC2-88C0-26E85E4CDAC8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlastUnitTests", "..\BlastTestConsole\BlastUnitTests.csproj", "{CE39284D-05D2-4AC2-88C0-26E85E4CDAC8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

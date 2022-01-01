@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "V0KEM0RK+9e7CtIv7FQNUTjQEtdi0/S9kujSL5MEdvvMx97m+taz85ovUdCQ7JsCisOiQK6/o6kgRocCUgmi5g==",
+  "dgSpecHash": "Rv0NnhaoYUMy9/rnfWpSyGpqZPYLT351hc8ynWB1G6Eggzo/QUZVTU177SLWCrqgsQnWJafUPnGCdxqIs5M8aw==",
   "success": true,
-  "projectFilePath": "F:\\Repo\\Nijnstein\\Blast\\BlastTestConsole\\BlastTestConsole.csproj",
+  "projectFilePath": "F:\\Repo\\Nijnstein\\Blast\\BlastTestConsole\\BlastUnitTests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\roble\\.nuget\\packages\\microsoft.codecoverage\\17.0.0\\microsoft.codecoverage.17.0.0.nupkg.sha512",
     "C:\\Users\\roble\\.nuget\\packages\\microsoft.csharp\\4.0.1\\microsoft.csharp.4.0.1.nupkg.sha512",

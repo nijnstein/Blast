@@ -1,0 +1,45 @@
+﻿#define result_1 11111
+#define result_2 22222
+
+b = b * 1 * 1 * 1 * (1 / 10) * 1;
+
+a = 1 + 1;
+b = 1 * -2 * 3 * 4; 
+c = 1 * (2 * 3 / 4) * 5;      # 1.5 * 5 = 7.5
+
+if(a = 1) then ( d = 122 ) else ( d = 100 );
+
+while(a <= d) 
+(
+    a = a + 1; 
+    b = b * 1 * 1 * 1 * 1 / 10 * 1;     
+)
+
+switch(a > b)
+(
+  case 1:
+  (
+    e = result_1; 
+  )
+  default:
+  (
+    e = result_2;
+  )
+);
+ 
+f = 1.1;
+g = sqrt(2);  
+h = max(f, g);
+
+for(i = 5; i < 15; i = i + 1)
+(
+	h = h + 1; 
+)
+
+#validate e 11111                 
+#validate a 101              
+#validate c 7.5
+#validate h 11.4142
+
+
+

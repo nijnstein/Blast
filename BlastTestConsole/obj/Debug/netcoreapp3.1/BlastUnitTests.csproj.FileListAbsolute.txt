@@ -1,27 +1,18 @@
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastTestConsole.exe
-F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastTestConsole.csprojAssemblyReference.cache
-F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastTestConsole.AssemblyInfoInputs.cache
-F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastTestConsole.AssemblyInfo.cs
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastTestConsole.deps.json
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastTestConsole.runtimeconfig.json
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastTestConsole.runtimeconfig.dev.json
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastTestConsole.dll
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastTestConsole.pdb
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.abstractions.dll
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.assert.dll
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.core.dll
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.execution.dotnet.dll
-F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastTestConsole.csproj.CopyComplete
-F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastTestConsole.dll
-F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastTestConsole.pdb
-F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastTestConsole.genruntimeconfig.cache
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\testhost.exe
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.runner.visualstudio.dotnetcore.testadapter.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.runner.reporters.netcoreapp10.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.runner.utility.netcoreapp10.dll
-F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastTestConsole.csproj.CoreCompileInputs.cache
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\testhost.exe
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\testhost.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\Microsoft.TestPlatform.PlatformAbstractions.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastUnitTests.exe
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\F1.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\F2.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\F3.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastUnitTests.deps.json
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastUnitTests.runtimeconfig.json
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastUnitTests.runtimeconfig.dev.json
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastUnitTests.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastUnitTests.pdb
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\Microsoft.VisualStudio.CodeCoverage.Shim.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\Microsoft.TestPlatform.CoreUtilities.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\Microsoft.VisualStudio.TestPlatform.ObjectModel.dll
@@ -31,6 +22,10 @@ F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\Microsoft.TestP
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\Microsoft.VisualStudio.TestPlatform.Common.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\Newtonsoft.Json.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\NuGet.Frameworks.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.abstractions.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.assert.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.core.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.execution.dotnet.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\cs\Microsoft.TestPlatform.CoreUtilities.resources.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\cs\Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\de\Microsoft.TestPlatform.CoreUtilities.resources.dll
@@ -102,6 +97,11 @@ F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\UnityEngine.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST.pdb
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\Unity.Mathematics.pdb
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\UnityEngine.pdb
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\F1.bs
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\F2.bs
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\F3.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.csprojAssemblyReference.cache
+F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.csproj.CoreCompileInputs.cache
+F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.AssemblyInfoInputs.cache
+F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.AssemblyInfo.cs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.csproj.CopyComplete
+F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.pdb
+F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.genruntimeconfig.cache
