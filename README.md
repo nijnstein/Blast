@@ -7,7 +7,8 @@ Provide a fast scripting language for running statemachines or other decision ma
 - Limited datatype support: Numerics and IDs 
 - Small memory footprint 
 - Code & Data seperated 
-- Integration into DOTS
+- Integrates with DOTS
+- Uses BURST function pointers to connect to basic functionality in its environment. 
 
 ## Data types 
 
