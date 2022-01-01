@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.Remoting;
 using System.Threading.Tasks;
 
 namespace NSS.Blast.Compiler.Stage
@@ -196,7 +193,15 @@ namespace NSS.Blast.Compiler.Stage
                         segment 
                         => 
                         ires[cdata.code.segments.IndexOf(segment)] = ResolveJumps(cdata, segment));
-                    return ires.Any(x => false) ? (int)BlastError.error : (int)BlastError.success;
+
+                    bool any_false = false;
+                    foreach (bool b in ires) if (b == false)
+                        {
+                            any_false = true;
+                            break; 
+                        }
+
+                    return any_false ? (int)BlastError.error : (int)BlastError.success;
                 }
                 else
                 {   

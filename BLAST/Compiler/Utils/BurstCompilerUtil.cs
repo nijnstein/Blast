@@ -49,6 +49,7 @@ namespace NSS.Blast
         }
     }
 
+#if !NOT_USING_UNITY
     static class BurstCompilerUtil<T>
         where T : class
     {
@@ -78,4 +79,6 @@ namespace NSS.Blast
             return new NonGenericFunctionPointer(intPtr, id, parameter_count);
         }
     }
+
+#endif
 }

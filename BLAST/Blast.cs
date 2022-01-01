@@ -4,44 +4,28 @@ using System.IO;
 
 using NSS.Blast.Cache;
 using NSS.Blast.Compiler;
-using NSS.Blast.Interpretor;
 using NSS.Blast.Register;
 
-#if UNITY
 using Unity.Assertions;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
+
+#if !NOT_USING_UNITY
 using Unity.Entities;
 using Unity.Jobs;
-using Unity.Mathematics;
-using UnityEngine;
-#else
-
-using Unity.Assertions;
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Mathematics;
-
 #endif 
 
 using Random = Unity.Mathematics.Random;
 
 
-
-
-
-
-
-
-
 namespace NSS.Blast
 {
-     /// <summary>
-     /// BLAST execution data
-     /// - used during execution of scripts
-     /// - shared by all threads
-     /// </summary>
+    /// <summary>
+    /// BLAST execution data
+    /// - used during execution of scripts
+    /// - shared by all threads
+    /// </summary>
     [BurstCompatible]
     unsafe public struct BlastEngineData
     {
@@ -49,13 +33,13 @@ namespace NSS.Blast
         //unsafe public float4 constant_vectors;
 
         public NonGenericFunctionPointer* functionpointers;
-        public int functionpointer_count; 
+        public int functionpointer_count;
 
         public Random random;
 
         #region Helper Functions / Get-Set
 
-            public void Seed(uint i)
+        public void Seed(uint i)
         {
             if (i == 0)
             {
@@ -86,29 +70,29 @@ namespace NSS.Blast
 
         unsafe public NonGenericFunctionPointer GetFunctionPointer(int id)
         {
-            NonGenericFunctionPointer p; 
-            if(TryGetFunctionPointer(id, out p))
+            NonGenericFunctionPointer p;
+            if (TryGetFunctionPointer(id, out p))
             {
                 return p;
             }
-            return default(NonGenericFunctionPointer); 
+            return default(NonGenericFunctionPointer);
         }
 
         unsafe public bool TryGetFunctionPointer(int id, out NonGenericFunctionPointer p)
         {
-            for(int i = 0; i < functionpointer_count; i++)
+            for (int i = 0; i < functionpointer_count; i++)
             {
                 if (functionpointers[i].id == id)
                 {
                     p = functionpointers[i];
-                    return true; 
+                    return true;
                 }
             }
             p = default(NonGenericFunctionPointer);
-            return false; 
+            return false;
         }
 
-#endregion
+        #endregion
 
     }
 
@@ -148,33 +132,33 @@ namespace NSS.Blast
         public bool IsCreated { get { return is_created; } }
         public IntPtr Engine => (IntPtr)data;
 
-        static internal object mt_lock = new object();  
+        static internal object mt_lock = new object();
 
-#region Create / Destroy
+        #region Create / Destroy
         public unsafe static Blast Create(Allocator allocator)
         {
             Blast blast;
-            if(mt_lock == null) mt_lock = new object(); 
+            if (mt_lock == null) mt_lock = new object();
             blast.allocator = allocator;
             blast.data = (BlastEngineData*)UnsafeUtility.Malloc(sizeof(BlastEngineData), 8, blast.allocator);
             blast.data->constants = (float*)UnsafeUtility.Malloc(4 * 256 * 2, 4, blast.allocator);
             blast.data->random = Random.CreateFromIndex(1);
-            
+
             for (int b = 0; b < 256; b++)
             {
                 blast.data->constants[b] = BlastValues.GetConstantValue((script_op)b);
             }
 
-            blast.data->functionpointer_count = FunctionCalls.Count; 
-            blast.data->functionpointers = (NonGenericFunctionPointer*)UnsafeUtility.Malloc(sizeof(NonGenericFunctionPointer) * FunctionCalls.Count, 8, blast.allocator); 
+            blast.data->functionpointer_count = FunctionCalls.Count;
+            blast.data->functionpointers = (NonGenericFunctionPointer*)UnsafeUtility.Malloc(sizeof(NonGenericFunctionPointer) * FunctionCalls.Count, 8, blast.allocator);
 
-            for(int i = 0; i < FunctionCalls.Count; i++)
-            { 
-                ExternalFunctionCall call = FunctionCalls[i]; 
-                blast.data->functionpointers[i] = call.FunctionPointer; 
+            for (int i = 0; i < FunctionCalls.Count; i++)
+            {
+                ExternalFunctionCall call = FunctionCalls[i];
+                blast.data->functionpointers[i] = call.FunctionPointer;
             }
 
-#if UNITY
+#if !NOT_USING_UNITY
             blast._burst_hpc_once_job = default;
             blast._burst_once_job = default;
             blast._burst_once_job.interpretor = new BlastInterpretor();       // ??????? TODO why? or always use it? 
@@ -191,18 +175,18 @@ namespace NSS.Blast
                 {
                     UnsafeUtility.Free(data->constants, allocator);
                 }
-                if(data->functionpointers != null)
+                if (data->functionpointers != null)
                 {
-                    UnsafeUtility.Free(data->functionpointers, allocator); 
+                    UnsafeUtility.Free(data->functionpointers, allocator);
                 }
                 UnsafeUtility.Free(data, allocator);
                 data = null;
             }
             is_created = false;
         }
-#endregion
+        #endregion
 
-#region Constants 
+        #region Constants 
 
         /// <summary>
         /// synchronize 'constants' with platform, do this once every frame for each engine/thread 
@@ -351,9 +335,9 @@ namespace NSS.Blast
             return BlastValues.GetConstantValue(op);
         }
 
-#endregion
+        #endregion
 
-#region Tokens 
+        #region Tokens 
 
         /// <summary>
         /// tokens that can be used in script
@@ -396,9 +380,9 @@ namespace NSS.Blast
         {
             return op == script_op.jump || op == script_op.jump_back || op == script_op.jz || op == script_op.jnz;
         }
-#endregion
+        #endregion
 
-#region Functions 
+        #region Functions 
 
         /// <summary>
         /// defined functions for script
@@ -502,7 +486,7 @@ namespace NSS.Blast
 
         internal ScriptFunctionDefinition GetFunctionById(ReservedScriptFunctionIds function_id)
         {
-            return GetFunctionById((int)function_id); 
+            return GetFunctionById((int)function_id);
         }
 
         internal ScriptFunctionDefinition GetFunctionById(int function_id)
@@ -535,9 +519,9 @@ namespace NSS.Blast
 
             return function.MinParameterCount != function.MaxParameterCount;
         }
-#endregion
+        #endregion
 
-#region Compiletime Function Pointers 
+        #region Compiletime Function Pointers 
 
         static public List<ExternalFunctionCall> FunctionCalls = new List<ExternalFunctionCall>();
 
@@ -545,18 +529,18 @@ namespace NSS.Blast
         {
             if (FunctionCalls != null && FunctionCalls.Count > 0)
             {
-                FunctionCalls.Clear(); 
+                FunctionCalls.Clear();
             }
         }
 
         static public int GetMaxFunctionId()
         {
-            int max = int.MinValue; 
-            foreach(var f in Functions)
-            { 
-                max = math.max(max, f.FunctionId); 
+            int max = int.MinValue;
+            foreach (var f in Functions)
+            {
+                max = math.max(max, f.FunctionId);
             }
-            return max; 
+            return max;
         }
 
         static public ExternalFunctionCall GetFunctionCallById(int id)
@@ -577,28 +561,28 @@ namespace NSS.Blast
                 if (call.ScriptFunction.FunctionId == id)
                 {
                     fc = call;
-                    return true; 
+                    return true;
                 }
             }
-            fc = null; 
+            fc = null;
             return false;
         }
 
         static public ExternalFunctionCall GetFunctionCallByName(string name)
         {
-            foreach(ExternalFunctionCall call in FunctionCalls)
+            foreach (ExternalFunctionCall call in FunctionCalls)
             {
-                if (string.Compare(call.Match, name, true) == 0) 
+                if (string.Compare(call.Match, name, true) == 0)
                 {
-                    return call; 
+                    return call;
                 }
             }
-            return null; 
+            return null;
         }
 
         static public bool ExistsFunctionCall(string name)
         {
-            return GetFunctionCallByName(name) != null; 
+            return GetFunctionCallByName(name) != null;
         }
 
 
@@ -611,7 +595,7 @@ namespace NSS.Blast
         /// <returns></returns>
         static public int RegisterFunction(string name, SimulationFunctionHandlerReturnType returns, string[] parameters)
         {
-            return RegisterFunction(default(NonGenericFunctionPointer), name, returns, parameters); 
+            return RegisterFunction(default(NonGenericFunctionPointer), name, returns, parameters);
         }
 
         /// <summary>
@@ -622,15 +606,15 @@ namespace NSS.Blast
         static public void UpdateFunctionPointer(int id, NonGenericFunctionPointer fp)
         {
             Assert.IsNotNull(FunctionCalls);
-            
+
             ExternalFunctionCall call = GetFunctionCallById(id);
 
             Assert.IsNotNull(call);
             Assert.IsTrue(fp.id == call.ScriptFunction.FunctionId); // force it to be set on update 
 
-            if (call != null) 
+            if (call != null)
             {
-                call.FunctionPointer = fp; 
+                call.FunctionPointer = fp;
             }
         }
 
@@ -647,11 +631,11 @@ namespace NSS.Blast
         {
             Assert.IsNotNull(FunctionCalls);
 
-            ExternalFunctionCall call = GetFunctionCallByName(name); 
+            ExternalFunctionCall call = GetFunctionCallByName(name);
             if (call != null)
             {
                 // upgrade function pointer 
-                call.FunctionPointer = fp; 
+                call.FunctionPointer = fp;
 
                 // Assert.IsTrue(false, $"external function call with name '{name}' already registrered");
                 return call.ScriptFunction.FunctionId;
@@ -675,15 +659,15 @@ namespace NSS.Blast
 
             // add to registred function list 
             Functions.Add(call.ScriptFunction);
-            FunctionCalls.Add(call); 
-            
-            return call.ScriptFunction.FunctionId; 
+            FunctionCalls.Add(call);
+
+            return call.ScriptFunction.FunctionId;
         }
 
 
-#endregion
+        #endregion
 
-#region Designtime CompileRegistry
+        #region Designtime CompileRegistry
 
         /// <summary>
         /// Enumerates all scripts known by blast 
@@ -722,9 +706,9 @@ namespace NSS.Blast
             }
         }
 #endif
-#endregion
+        #endregion
 
-#region Runtime compilation of configuration into compiletime script for use next compilation
+        #region Runtime compilation of configuration into compiletime script for use next compilation
 
         static public bool CompileIntoRegistry(Blast blast, BlastScript script, string script_directory)
         {
@@ -747,16 +731,16 @@ namespace NSS.Blast
 
             string target = script_directory + "//" + script.Name + ".cs";
             File.WriteAllText(
-                target, 
+                target,
                 HPCNamespace.CombineScriptsIntoNamespace(new string[] { data.HPCCode }));
 
-            return true; 
+            return true;
         }
-        
 
-#endregion
 
-#region HPC Jobs 
+        #endregion
+
+        #region HPC Jobs 
         static Dictionary<int, IBlastHPCScriptJob> _hpc_jobs = null;
         public Dictionary<int, IBlastHPCScriptJob> HPCJobs
         {
@@ -769,33 +753,33 @@ namespace NSS.Blast
                         if (_hpc_jobs == null)
                         {
                             _hpc_jobs = new Dictionary<int, IBlastHPCScriptJob>();
-                            foreach(var j in Reflection.BlastReflect.FindHPCJobs())
+                            foreach (var j in Reflection.BlastReflect.FindHPCJobs())
                             {
-                                _hpc_jobs.Add(j.ScriptId, j); 
+                                _hpc_jobs.Add(j.ScriptId, j);
                             }
                         }
                         return Blast._hpc_jobs;
                     }
                 }
-                return null; 
+                return null;
             }
         }
         public IBlastHPCScriptJob GetHPCJob(int script_id)
         {
             if (is_created && script_id > 0)
             {
-                IBlastHPCScriptJob job; 
-                if(HPCJobs.TryGetValue(script_id, out job))
+                IBlastHPCScriptJob job;
+                if (HPCJobs.TryGetValue(script_id, out job))
                 {
                     return job;
                 }
             }
             return null;
         }
-#endregion
+        #endregion
 
-#region Execute Scripts (UNITY)
-#if UNITY
+        #region Execute Scripts (UNITY)
+#if !NOT_USING_UNITY
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
         {
@@ -879,12 +863,12 @@ namespace NSS.Blast
             return 0; 
         }
 #endif
-#endregion
+        #endregion
 
-#region Runners 
+        #region Runners 
 
         static Dictionary<int, runner> runners;
-                     
+
         internal enum runner_type
         {
             bs, hpc, cs
@@ -895,22 +879,22 @@ namespace NSS.Blast
             if (!is_created) return null;
             if (script_id <= 0) return null;
 
-            runner r = null; 
+            runner r = null;
 
-            lock(mt_lock)
+            lock (mt_lock)
             {
-                if(runners == null)
+                if (runners == null)
                 {
                     runners = new Dictionary<int, runner>();
                 }
-                if(runners != null)
+                if (runners != null)
                 {
-                    if (runners.TryGetValue(script_id, out r)) return r;  
+                    if (runners.TryGetValue(script_id, out r)) return r;
                 }
             }
 
             // to create a runner iterate fastest method first
-#if UNITY
+#if !NOT_USING_UNITY
             IBlastHPCScriptJob job = GetHPCJob(script_id);
             if (job != null)
             {
@@ -946,7 +930,7 @@ namespace NSS.Blast
             }
             else
             {
-                return null; 
+                return null;
             }
         }
 
@@ -957,12 +941,12 @@ namespace NSS.Blast
         internal class runner
         {
             public int ScriptId;
-            public runner_type Type; 
+            public runner_type Type;
 
             // option 1
             public BlastPackage* Package;
 
-#if UNITY
+#if !NOT_USING_UNITY
             // option 2
             public FunctionPointer<BSExecuteDelegate> HPCJobBSD;
             public NativeArray<float> HPCVariables;
@@ -974,13 +958,13 @@ namespace NSS.Blast
             public runner(int script_id, runner_type type)
             {
                 ScriptId = script_id;
-                Type = type; 
+                Type = type;
             }
         }
 
-#endregion
+        #endregion
 
-#region Bytecode Packages 
+        #region Bytecode Packages 
         static Dictionary<int, BlastScriptPackage> _bytecode_packages = null;
         public Dictionary<int, BlastScriptPackage> BytecodePackages
         {
@@ -1047,9 +1031,9 @@ namespace NSS.Blast
             return null;
         }
 
-#endregion
+        #endregion
 
-#region Runtime Registration/Compilation of scripts 
+        #region Runtime Registration/Compilation of scripts 
 
         static public int RegisterAndCompile(Blast blast, BlastScript script)
         {
@@ -1082,6 +1066,7 @@ namespace NSS.Blast
             return id;
         }
 
+#if !NOT_USING_UNITY
         static public int RegisterAndCompile(Blast blast, string resource_filename_without_extension, int id = 0)
         {
             id = BlastScriptRegistry.RegisterScriptResource(resource_filename_without_extension, resource_filename_without_extension, id);
@@ -1096,8 +1081,9 @@ namespace NSS.Blast
             blast.AddPackage(id, pkg);
             return id;
         }
+#endif
 
-#endregion
+        #endregion
 
     }
 

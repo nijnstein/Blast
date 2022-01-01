@@ -87,6 +87,7 @@ namespace NSS.Blast.Register
             return Register(BlastScript.FromText(code, name, id));
         }
 
+#if !NOT_USING_UNITY
         static public int RegisterScriptResource(string resource_filename_without_extension, string name = null, int id = 0)
         {
             BlastScript script = BlastScript.FromResource(resource_filename_without_extension);
@@ -101,6 +102,7 @@ namespace NSS.Blast.Register
                 return -1;                  
             }
         }
+#endif
 
 
         #endregion
@@ -186,7 +188,7 @@ namespace NSS.Blast.Register
             return false;
         }
 
-        #endregion
+#endregion
     }
 
 }

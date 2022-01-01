@@ -1,17 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NOT_USING_UNITY</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="Unity.Mathematics">
       <HintPath>..\..\Unity.Mathematics\src\Unity.Mathematics\obj\Release\Unity.Mathematics.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\UnityCsReference\Projects\CSharp\obj\Debug\netstandard2.1\UnityEngine.dll</HintPath>
     </Reference>
   </ItemGroup>
 

@@ -667,10 +667,6 @@ namespace NSS.Blast.Compiler
 
             BlastPackageInfo package_info = EstimatePackageInfo(result, options.PackageMode);
 
-
-            // hierna moet het ergens met geheugen fout gaan...... 
-
-
             // force allocation as we dont have a ref 
             package_info.allocator = (byte)options.PackageAllocator;
 

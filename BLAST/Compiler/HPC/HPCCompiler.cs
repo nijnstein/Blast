@@ -3,13 +3,7 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
-using System.Threading.Tasks;
-using Unity.Collections.LowLevel.Unsafe;
-using Unity.Entities.UniversalDelegates;
-using Unity.Transforms;
-using UnityEngine;
 
 namespace NSS.Blast.Compiler.Stage
 {

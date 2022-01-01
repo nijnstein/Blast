@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using Unity.Assertions;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
