@@ -4,10 +4,15 @@
 ## Tokens
 
 Arithmetic operators:   `+ - / * =`
+
 Boolean operators:      `& | ^ !` 
+
 Boolean evaluators:     `< > <= >= = ! !=`
+
 Ternary operator:       `[condition] ? [true] : [false]` 
+
 Assignment:             `=`
+
 
 Enclosures:             `( )`
 Statement terminator:   `;` 
