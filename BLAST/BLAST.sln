@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30002.166
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLAST", "BLAST.csproj", "{889A30B8-2D57-4E9C-8165-39B8FAC37EFC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test Scripts", "Test Scripts", "{0529781D-2A23-45C7-938F-2BC0F41046B1}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\blast_precompiled_scripts.cs = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\blast_precompiled_scripts.cs
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\blast_pushf.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\blast_pushf.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\blast_unittest.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\blast_unittest.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\BlastPackageTest.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\BlastPackageTest.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\hpctest.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\hpctest.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\ScriptRegister.cs = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\ScriptRegister.cs
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test1.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test1.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test2.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test2.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test3.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test3.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test4.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test4.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test5.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test5.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test6.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test6.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test7.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test7.txt
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test8.txt = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\Resources\AI\Scripts\test8.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unity", "Unity", "{A1265C62-A300-4683-A817-9C9A0B1D5797}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\test\BlastUnitTests.cs = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\test\BlastUnitTests.cs
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\test\TestScriptCommand.cs = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\test\TestScriptCommand.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Runtime GUI", "Runtime GUI", "{15D8FDEC-8BF3-4D42-9ED8-930D704070E1}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\runtime gui\RuntimeEditorRegistrations.cs = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\runtime gui\RuntimeEditorRegistrations.cs
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\runtime gui\RuntimeScriptEditor.cs = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\runtime gui\RuntimeScriptEditor.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Editor GUI", "Editor GUI", "{882A645D-5D77-41B5-80E7-0E9833D6EFF2}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\editor gui\BlastEditor.cs = ..\..\..\..\Unity Projects\DOTS 0.17 UT2020.1.9f Hexmap\Hexmap\Assets\NSS.Blast\editor gui\BlastEditor.cs
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{889A30B8-2D57-4E9C-8165-39B8FAC37EFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{889A30B8-2D57-4E9C-8165-39B8FAC37EFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{889A30B8-2D57-4E9C-8165-39B8FAC37EFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{889A30B8-2D57-4E9C-8165-39B8FAC37EFC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{15D8FDEC-8BF3-4D42-9ED8-930D704070E1} = {A1265C62-A300-4683-A817-9C9A0B1D5797}
+		{882A645D-5D77-41B5-80E7-0E9833D6EFF2} = {A1265C62-A300-4683-A817-9C9A0B1D5797}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7FB14E4E-99D8-4D31-9705-ACCE7856B252}
+	EndGlobalSection
+EndGlobal
