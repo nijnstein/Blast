@@ -1,5 +1,24 @@
 # Blast
 
+### Goal 
+
+Provide a fast scripting language for running statemachines or other decision making processes from bursted code in unity.
+
+- Limited datatype support: Numerics and IDs 
+- Small memory footprint 
+- Code & Data seperated 
+- Integration into DOTS
+
+## Data types 
+
+There is limited datatype support: 
+
+```Unknown: determined at runtime 
+
+Numeric: 1.0 etc
+
+ID: Integers``` 
+
 
 ## Tokens
 
