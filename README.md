@@ -19,6 +19,10 @@ There is limited datatype support:
 Numeric: 1.0 etc
 
 ID: Integers
+
+Vectors:  ID(n) and NUMERIC(n) up until n = 16, 
+          id(3)       => (1 2 3)
+          NUMERIC(3)  =>  (1.2 2.3 2.45)
 ```
 
 
