@@ -428,48 +428,24 @@ namespace NSS.Blast.Interpretor
 
         #region Metadata 
 
-        static internal void SetMetaData(in byte* metadata, in byte size, in byte offset)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal void SetMetaData(in byte* metadata, in BlastVariableDataType type, in byte size, in byte offset)
         {
-
-            // FLAWED -> DATA IS OVERWRITTEN AND VECTORS NOT SUPPORTED.
-
-            const byte unset_even = 15;
-            const byte unset_odd = 15 << 4;
-
-            return; /*
-
-            byte s = (byte)(size - 1);
-
-            byte o = (byte)(offset >> 1);
-
-            bool is_odd = (offset & (byte)1) == (byte)1;
-
-            byte set = is_odd ? s : (byte)(s << 4);
-
-            byte data = (byte)(metadata[o] & (is_odd ? unset_odd : unset_even));
-
-            metadata[offset >> 1] = (byte)(data | set);*/ 
+            byte meta = (byte)((byte)(size & 0b0000_1111) | (byte)((byte)type << 4));
+            metadata[offset] = meta; 
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal byte GetMetaData(in byte* metadata, in byte offset)
+        static internal byte GetMetaDataSize(in byte* metadata, in byte offset)
         {
-            const byte get_odd = 0b0000_1111;
-            const byte get_even = 0b1111_0000;
-
-            return 1; 
-
-/*            bool is_odd = (offset & (byte)1) == (byte)1;
-            byte data = metadata[offset >> 1];
-
-            data = (byte)(data & (byte)(is_odd ? get_odd : get_even)); 
-
-
-
-            byte data = (byte)(metadata[offset >> 1] & (is_odd ? get_odd : get_even));
-            return (byte)((is_odd ? data : (byte)(data >> 4)) + 1);*/ 
+            return (byte)(metadata[offset] & 0b0000_1111);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal BlastVariableDataType GetMetaDataType(in byte* metadata, in byte offset)
+        {
+            return (BlastVariableDataType)((byte)(metadata[offset] & 0b1111_0000) >> 4);
+        }
 
         #endregion
 
@@ -4110,7 +4086,7 @@ namespace NSS.Blast.Interpretor
                                         {
                                             // lookup identifier value
                                             byte id = (byte)(op - opt_id);
-                                            byte this_vector_size = BlastInterpretor.GetMetaData(metadata, id);
+                                            byte this_vector_size = BlastInterpretor.GetMetaDataSize(metadata, id);
 
                                             switch ((BlastVectorSizes)this_vector_size)
                                             {
@@ -4544,7 +4520,7 @@ namespace NSS.Blast.Interpretor
                             // i_assignee is an offset into the data stack[] luckily the compiler prepared a table for us
                             // with vectors of max size 16 floats, we can use a offset table of 1/8th the byte size
                             // we could turn it over but then the interpretor has to offset each data access
-                            byte s_assignee = BlastInterpretor.GetMetaData(in metadata, in assignee);
+                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
                             // 3 options: 
                             // - a mixed sequence - no nested compound

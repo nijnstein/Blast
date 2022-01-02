@@ -117,12 +117,12 @@ namespace NSS.Blast
         public int data_start;
 
         /// <summary>
-        /// offset into datasize array between vars and stack start
+        /// here stackdata starts on codedatastack packages 
         /// </summary>
-        public int data_sizes_start;
+        public int stack_start; 
 
         /// <summary>
-        /// offset into data after the last variable, from here the stack starts 
+        /// offset into data after the last variable
         /// </summary>
         public int data_offset;
 
@@ -132,6 +132,13 @@ namespace NSS.Blast
         public int stack_offset;
 
         //@ 32 byte offset 
+
+
+        /// <summary>
+        /// offset into metadata between vars and stack start
+        /// </summary>
+        public int data_sizes_start => data_start + data_offset * 4;
+
     }
 
 
@@ -261,12 +268,24 @@ namespace NSS.Blast
 
         public int offset;
         public int bytesize;
+        
+        public override string ToString()
+        {
+            if(variable == null)
+            {
+                return $"variable mapping: var = null, bytesize: {bytesize}, offset: {offset}";
+            }
+            else
+            {
+                return $"variable mapping: var: {id} {variable.Name} {variable.DataType}, vectorsize: {variable.VectorSize} , bytesize: {bytesize}, offset: {offset}";
+            }
+        }
     }
 
     /// <summary>
     /// supported variable data types 
     /// </summary>
-    public enum BlastVariableDataType
+    public enum BlastVariableDataType : byte
     {
         Numeric = 0,
         ID = 1

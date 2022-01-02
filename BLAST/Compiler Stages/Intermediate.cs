@@ -15,8 +15,9 @@ namespace NSS.Blast.Compiler
         const byte opt_value = (byte)script_op.pi;
 
         // large max size 
-        public const int data_capacity = 256 * 4;
-        public const int code_capacity = 1024;
+        public const int data_capacity = 256; // in elements
+        public const int code_capacity = 1024; // in bytes 
+        public const int data_element_bytesize = 4; 
 
         /// <summary>
         /// unique script id
@@ -37,7 +38,8 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// offset into data after the last variable, from here the stack starts 
         /// </summary>
-        internal byte data_offset;
+        internal byte data_count;
+
 
         /// <summary>
         /// maximum reached stack size in floats  
@@ -56,18 +58,22 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// input, output and scratch data fields
         /// </summary>
-        public fixed float data[data_capacity];         // 64 * 4 = 256 bytes
+        public fixed float data[data_capacity];        
 
-        // we support max 16n vectors (float4x4), need 4 bits / stack element of 32 bits == 1/8 of size
         //
-        // whenever we push we could set datasize
-        // and on pop check datasize 
-        // 
-        //  this would introduce at least 1 branch in al hot loops, let compiler fix it with popn and pushv
-        // 
-        // -- we could make it a compile switch for debugging --
-        //
-        public fixed byte data_sizes[data_capacity / 4];
+        // - max 16n vectors up until (float4x4)   datasize = lower 4 bits + 1
+        // - otherwise its a pointer (FUTURE)      
+        // - datatype                              datatype = high 4 bits >> 4
+
+        public fixed byte metadata[data_capacity];
+
+
+        /// <summary>
+        /// nr of data elements (presumably 32bits so 4bytes/element) - same as data_offset, added for clarity
+        /// </summary>
+        public byte DataCount => data_count;
+        public int DataByteSize => data_count * data_element_bytesize;
+
 
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -76,11 +82,11 @@ namespace NSS.Blast.Compiler
             return data[variable_index];
         }
 
-        internal void SetMetaData(in byte size, in byte offset)
+        internal void SetMetaData(in BlastVariableDataType datatype, in byte size, in byte offset)
         {
-            fixed (byte* metadata = data_sizes)
+            fixed (byte* metadata = this.metadata)
             {
-                BlastInterpretor.SetMetaData(metadata, size, offset);
+                BlastInterpretor.SetMetaData(metadata, datatype, size, offset);
             }
         }
 
@@ -100,18 +106,17 @@ namespace NSS.Blast.Compiler
             BlastPackage pkg = new BlastPackage()
             {
                 code_pointer = 0,
-                data_offset = data_offset,
-                data_sizes_start = 0,
+                data_offset = data_count,
                 data_start = 0,
                 stack_offset = 0,
                 info = new BlastPackageInfo()
                 {
                     allocator = (byte)Allocator.Invalid,
                     code_size = (ushort)code_size,
-                    data_size = (ushort)data_offset,              // offset in #float
+                    data_size = (ushort)data_count,              // offset in #float
                     package_mode = BlastPackageMode.Compiler,
                     package_size = (ushort)(code_capacity + data_capacity),
-                    stack_size = (ushort)((data_capacity / 4) - data_offset),   // todo verify this?? todo
+                    stack_size = (ushort)((data_capacity / 4) - data_count),   // todo verify this?? todo
                     unused_padding_1 = 0,
                     unused_padding_2 = 0
                 },
@@ -122,7 +127,7 @@ namespace NSS.Blast.Compiler
 
             fixed (byte* pcode = code)
             fixed (float* pdata = data)
-            fixed (byte* pmetadata = data_sizes)
+            fixed (byte* pmetadata = metadata)
             {
                 // estimate stack size while at it: set stack memory too all INF's, 
                 // this assumes the intermediate has more then enough stack

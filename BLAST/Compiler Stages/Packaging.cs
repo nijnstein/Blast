@@ -53,13 +53,13 @@ namespace NSS.Blast.Compiler.Stage
                     switch (v.VectorSize)
                     {
                         case 2: // float2
-                            cdata.Executable.SetMetaData(2, offset);
+                            cdata.Executable.SetMetaData(v.DataType, 2, offset);
                             break;
                         case 3: // float3
-                            cdata.Executable.SetMetaData(3, offset);
+                            cdata.Executable.SetMetaData(v.DataType, 3, offset);
                             break;
                         case 4: // float4 
-                            cdata.Executable.SetMetaData(4, offset);
+                            cdata.Executable.SetMetaData(v.DataType, 4, offset);
                             break;
                         default: // float[]
                             cdata.LogError($"compile: only float vectors of size 2 3 and 4 are supported, the script attempted to create a float[{v.VectorSize}]");
@@ -75,7 +75,7 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     cdata.Offsets.Add(offset);
                     replace[i] = offset;
-                    cdata.Executable.SetMetaData(1, offset);
+                    cdata.Executable.SetMetaData(v.DataType, 1, offset);
 
                     // float of size 1
                     if (v.IsConstant)
@@ -99,7 +99,7 @@ namespace NSS.Blast.Compiler.Stage
                     }
                 }
             }
-            cdata.Executable.data_offset = offset;
+            cdata.Executable.data_count = offset;
 
             // setup code segment 
             cdata.Executable.code_pointer = 0;
@@ -174,7 +174,16 @@ namespace NSS.Blast.Compiler.Stage
 
             // package & return 
             CompilationData cdata = (CompilationData)data; 
-            return PackageIntermediate(cdata, cdata.code);
+            BlastError res = (BlastError)PackageIntermediate(cdata, cdata.code);
+
+            if(res == BlastError.success)
+            {
+                // if packaged into intermediate 
+
+            }
+
+
+            return (int)res; 
         }
     }
 }

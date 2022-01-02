@@ -384,7 +384,8 @@ namespace NSS.Blast.Compiler
             // get sizes of seperate segments 
             int stack_size = EstimateStackSize(result);
             int code_size = result.Executable.code_size;
-            int data_size = result.Executable.data_offset * 4;
+            int data_size = result.Executable.data_count * 4;
+            int metadata_size = result.Executable.data_count * 1; 
 
             // total package size without size of datasizes[] 
             int package_size = 0;
@@ -392,7 +393,7 @@ namespace NSS.Blast.Compiler
             switch (package_mode)
             {
                 case BlastPackageMode.CodeDataStack:
-                    package_size = stack_size + code_size + data_size + 12; // max 3x 4 byte align  // + 20 for yield support 
+                    package_size = stack_size + code_size + data_size + metadata_size + 12; // max 3x 4 byte align  // + 20 for yield support 
                     break;
 
                 case BlastPackageMode.Code:
@@ -400,8 +401,8 @@ namespace NSS.Blast.Compiler
                     break;
 
                 default:
-                    result.LogError($"BIG TODO PACKAG MODE {package_mode}"); 
-                    break;
+                    result.LogError($"Packagemode {package_mode} not supported"); 
+                    return default;
             }
 
             // size of datasizes[] depends on data capacity which is the left over space in the given package size
@@ -497,6 +498,7 @@ namespace NSS.Blast.Compiler
 
             /// the script buffer:
             /// [....code...|...variables&constants...|.datasizes.|...stack.....................]
+            /// 
 
             int i = 0;
             while (i < exe.code_size)
@@ -521,51 +523,33 @@ namespace NSS.Blast.Compiler
             // copy data segment 
             int j = 0;
             byte* p_data = (byte*)((void*)exe.data);
-            while (j < exe.data_offset * 4)
+            while (j < exe.data_count * 4)
             {
                 p_segment[i] = p_data[j]; 
                 i++;
                 j++;
             }
 
-            // todo
+            // copy metadata 
+            // p->data_sizes_start = i;      No need to set anymore, as its position is always after data at fixed distance
+            j = 0; 
+            while(j < exe.data_count)
+            {
+                p_segment[i] = p_data[j];
+                i++;
+                j++; 
+            }
 
+            // stack starts after aligning to 4 bytes in package
+            while (i % 4 != 0) { p_segment[i] = 0; i++; }
+            p->stack_start = i;
+
+            // fill the rest of the package / stack with zeros 
             while (i < p->info.package_size)
             {
                 p_segment[i] = 0; 
                 i++;
             }
-
-            p->data_sizes_start = i;
-            return ptr; 
-
-            // fixed capacity niet handig als we van pointers op maat afgaan....
-
-
-            // copy data-sizes
-
-            int k = 0;
-            while (k < BlastIntermediate.data_capacity / 4)
-            {
-                p_segment[i] = exe.data_sizes[k];    // memset ?? todo 
-                i++;
-                k++;
-            }
-
-            // align stack segment on 4 byte boundary
-            while (i % 4 != 0) { p_segment[i] = 0; i++; }
-          
-            p->data_offset = i;
-            p->stack_offset = p->data_offset;
-
-            // zero the rest of the segment 
-            while (i < p->info.package_size)
-            {
-                p_segment[i] = 0;  /// todo  memset
-                i++;
-            }
-
-            // that should be it... 
             return ptr;
         }
 
