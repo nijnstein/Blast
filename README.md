@@ -1,5 +1,58 @@
 # Blast
 
+### Goal 
+
+Provide a fast scripting language for running statemachines or other decision making processes from bursted code in unity.
+
+- Limited datatype support: Numerics and IDs 
+- Small memory footprint 
+- Code & Data seperated 
+- Integrates with DOTS
+- Uses BURST function pointers to connect to basic functionality in its environment. 
+
+## Data types 
+
+There is limited datatype support: 
+
+```Unknown: determined at runtime 
+
+Numeric: 1.0 etc
+
+ID: Integers
+```
+
+
+## Tokens
+
+Arithmetic operators:   `+ - / *`
+
+Boolean operators:      `& | ^ !` 
+
+Boolean evaluators:     `< > <= >= = ! !=`
+
+Ternary operator:       `[condition] ? [true] : [false]` 
+
+Assignment:             `=`
+
+Enclosures:             `( )`
+
+Statement terminator:   `;` 
+
+Value seperator:        `,` 
+
+Decimal seperator:      `.` 
+
+Indexer                 `.` 
+
+IndexOpen               `[`
+
+IndexClose              `]`
+
+Identifier: 	          `[a..z][0..9|a..z]*[.|[][a..z][0..9|a..z]*[]]`
+
+Control Flow:           `if then else` 
+                        `while for ` 
+                        `switch case default`
 
 ## Code Structure
 
