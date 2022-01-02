@@ -40,6 +40,8 @@ Vectors may be defined based on all supported datatypes and functions, constant 
 2> Defines b, a vector of 2 constants of size 3 and a pop3:
 ` b = ((1 2 3) (pop pop pop) (1 2 3)); ` 
 
+#### Vector mapping assumptions
+Vectors map automatically to matrices of the same element size: n(9) => m(3x3), n(12) => m(3x4) | m(4x3) etc. 
 
 ## Tokens
 
