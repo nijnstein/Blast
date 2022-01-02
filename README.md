@@ -33,8 +33,12 @@ The ID datatype is used to represent an ID, because numerics will not round corr
 ### Vectors
 Vectors may be defined based on all supported datatypes and functions, constant and functions may be mixed but the number of dataelements must be equal for each element defined in the vector. 
 
-1> Defines a, a vector of 2 constants and 1 pop operation popping 1 numeric or id: ` a = (1 pop 2); `
-2> Defines b, a vector of 2 constants of size 3 and a pop3: ` b = ((1 2 3) (pop pop pop) (1 2 3)); ` 
+1> Defines a, a vector of 2 constants and 1 pop operation popping 1 numeric or id:
+` a = (1 pop 2); `
+
+
+2> Defines b, a vector of 2 constants of size 3 and a pop3:
+` b = ((1 2 3) (pop pop pop) (1 2 3)); ` 
 
 
 ## Tokens
