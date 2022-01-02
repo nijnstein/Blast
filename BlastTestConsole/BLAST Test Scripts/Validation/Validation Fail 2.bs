@@ -1,0 +1,10 @@
+﻿#define a 1234
+
+b = 1 + a; 
+
+# this should fail
+#validate b 1234
+
+
+
+

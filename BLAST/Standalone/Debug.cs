@@ -18,7 +18,8 @@ namespace NSS.Blast.Standalone
         }
         public static void LogError(string error)
         {
-            System.Diagnostics.Debug.WriteLine("ERROR: " + error); 
+            System.Diagnostics.Debug.WriteLine("ERROR: " + error);
+            throw new Exception(error); 
         }
     }
 }

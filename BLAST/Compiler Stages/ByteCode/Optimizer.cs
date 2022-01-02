@@ -870,7 +870,7 @@ namespace NSS.Blast.Compiler.Stage
             return (int)BlastError.success; 
         }
 
-        unsafe int CalculateVariableOffsets(CompilationData cdata)
+        public unsafe static int CalculateVariableOffsets(CompilationData cdata)
         {
             // clear out any existing offsets (might have ran multiple times..) 
             cdata.Offsets.Clear();

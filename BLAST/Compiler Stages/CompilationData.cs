@@ -111,11 +111,7 @@ namespace NSS.Blast.Compiler
             if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
             if (CompilerOptions.Verbose && CompilerOptions.Trace)
             {
-#if !NOT_USING_UNITY
-                Standalone.Debug.Log(FormatWithColor(msg, Color.gray));
-#else 
-                System.Diagnostics.Debug.WriteLine("TRACE: " + msg); 
-#endif
+                Standalone.Debug.Log(msg);
             }
         }
 
@@ -123,21 +119,13 @@ namespace NSS.Blast.Compiler
         {
             LastErrorMessage = msg;
             CompilerMessages.Add(new Message() { Type = Message.MessageType.Error, Content = msg, Code = 0, LineNumber = linenr, CallerMember = member });
-#if !NOT_USING_UNITY
-            Standalone.Debug.LogError(FormatWithColor(msg, Color.red));
-#else
-            System.Diagnostics.Debug.WriteLine("ERROR: " + msg);
-#endif
+            Standalone.Debug.LogError(msg);
         }
 
         public void LogWarning(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
             CompilerMessages.Add(new Message() { Type = Message.MessageType.Warning, Content = msg, LineNumber = linenr, CallerMember = member });
-#if !NOT_USING_UNITY
-            Standalone.Debug.LogWarning(FormatWithColor(msg, Color.yellow));
-#else
-            System.Diagnostics.Debug.WriteLine("WARNING: " + msg);
-#endif
+            Standalone.Debug.LogWarning(msg);
         }
 
 #if !NOT_USING_UNITY
@@ -147,18 +135,14 @@ namespace NSS.Blast.Compiler
                 "<color=#{0:X2}{1:X2}{2:X2}>{3}</color>", 
                 (byte)(rgb.r * 255f), (byte)(rgb.g * 255f), (byte)(rgb.b * 255f), msg);
         }
-#endif 
+#endif
 
         public void LogToDo(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
             if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Type = Message.MessageType.ToDo, Content = msg, LineNumber = linenr, CallerMember = member });
             if (CompilerOptions.Verbose || CompilerOptions.Trace)
             {
-#if !NOT_USING_UNITY
-                Standalone.Debug.LogWarning(msg);
-#else
-                System.Diagnostics.Debug.WriteLine("TODO: " + msg);
-#endif
+                Standalone.Debug.LogWarning("TODO: " + msg);
             }
         }
 
@@ -556,6 +540,8 @@ namespace NSS.Blast.Compiler
                     // - outputs do refcount 
                     ReferenceCount = is_input ? 0 : 1,
 
+                    DataType = BlastVariableDataType.Numeric,
+
                     // assume constant value if the first char is a digit or minus sign 
                     IsConstant = char.IsDigit(name[0]) || name[0] == '-',
                     IsInput = is_input,
@@ -571,6 +557,34 @@ namespace NSS.Blast.Compiler
             }
         }
 
+
+        /// <summary>
+        /// try to lookup a reference 
+        /// - doens not reference count 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="variable"></param>
+        /// <returns></returns>
+        internal bool TryGetVariable(string name, out BlastVariable variable)
+        {
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                lock (Variables)
+                {
+                    foreach (BlastVariable v in Variables)
+                    {
+                        if (string.Compare(name, v.Name, true) == 0)
+                        {
+                            variable = v; 
+                            return true; 
+                        }
+                    }
+                }
+
+            }
+            variable = null; 
+            return false;
+        }
 
         /// <summary>
         /// get or create a holder for variable data during compilation 
@@ -602,7 +616,10 @@ namespace NSS.Blast.Compiler
                 {
                     Id = Variables.Count,
                     Name = name,
+                    
                     ReferenceCount = 1,
+
+                    DataType = BlastVariableDataType.Numeric,
 
                     // assume constant value if the first char is a digit or minus sign 
                     IsConstant = char.IsDigit(name[0]) || name[0] == '-',
@@ -643,9 +660,37 @@ namespace NSS.Blast.Compiler
             return false;
         }
 
+        public bool TryGetInput(BlastVariable v, out BlastVariableMapping mapping)
+        {
+            foreach (var i in Inputs)
+            {
+                if (i.id == v.Id)
+                {
+                    mapping = i; 
+                    return true;
+                }
+            }
+            mapping = null;
+            return false; 
+        }
+
+        public bool TryGetOutput(BlastVariable v, out BlastVariableMapping mapping)
+        {
+            foreach (var i in Outputs)
+            {
+                if (i.id == v.Id)
+                {
+                    mapping = i;
+                    return true;
+                }
+            }
+            mapping = null;
+            return false;
+        }
 
 
-#region exposed via interface, non reference counting 
+
+        #region exposed via interface, non reference counting 
         public bool ExistsVariable(string name)
         {
             if (string.IsNullOrWhiteSpace(name) || Variables == null || Variables.Count == 0) return false;

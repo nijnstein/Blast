@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Threading;
 using Unity.Assertions;
 using Unity.Burst;
 using Unity.Collections;
@@ -254,9 +255,21 @@ namespace NSS.Blast
     public class BlastVariableMapping
     {
         public BlastVariable variable;
+
         public int id => variable.Id;
+        public BlastVariableDataType DataType => variable.DataType; 
+
         public int offset;
         public int bytesize;
+    }
+
+    /// <summary>
+    /// supported variable data types 
+    /// </summary>
+    public enum BlastVariableDataType
+    {
+        Numeric = 0,
+        ID = 1
     }
 
 
@@ -269,6 +282,8 @@ namespace NSS.Blast
         public string Name;
         public int ReferenceCount;
 
+        public BlastVariableDataType DataType = BlastVariableDataType.Numeric; 
+
         public bool IsConstant = false;
         public bool IsVector = false;
 
@@ -279,7 +294,12 @@ namespace NSS.Blast
 
         public override string ToString()
         {
-            return $"{(IsConstant ? "Constant:" : "Variable:")} {Id}, '{Name}', ref {ReferenceCount}, size {VectorSize} {(IsInput ? "[INPUT]" : "")} {(IsOutput ? "[OUTPUT]" : "")}";
+            return $"{(IsConstant ? "Constant:" : "Variable:")} {Id}, '{Name}', ref {ReferenceCount}, size {VectorSize}, type {DataType} {(IsInput ? "[INPUT]" : "")} {(IsOutput ? "[OUTPUT]" : "")}";
+        }
+
+        internal void AddReference()
+        {
+            Interlocked.Increment(ref ReferenceCount); 
         }
     }
 

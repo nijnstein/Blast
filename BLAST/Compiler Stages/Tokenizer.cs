@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.Assertions;
 using Unity.Mathematics;
 
 namespace NSS.Blast.Compiler.Stage
@@ -15,9 +16,10 @@ namespace NSS.Blast.Compiler.Stage
     public class BlastTokenizer : IBlastCompilerStage
     {
         public Version Version => new Version(0, 2, 1);
-
         public BlastCompilerStageType StageType => BlastCompilerStageType.Tokenizer;
 
+
+        #region static parsing helpers 
         /// <summary>
         /// classify char as token, default to identifier 
         /// </summary>
@@ -67,6 +69,19 @@ namespace NSS.Blast.Compiler.Stage
             return -1;
         }
 
+        static string scan_until_stripend(string comment, int start = 6)
+        {
+            int i_end = scan_until(comment, '#', start);
+            if (i_end >= 0)
+            {
+                // and remove that part, assume it to be a comment on the output def. 
+                comment = comment.Substring(0, i_end);
+            }
+
+            return comment;
+        }
+
+
         /// <summary>
         /// classify char as whitespace: space, tabs, cr/lf, , (comma)
         /// </summary>
@@ -92,6 +107,8 @@ namespace NSS.Blast.Compiler.Stage
             return false;
         }
 
+        #endregion 
+
         /// <summary>
         /// read #input and #output defines 
         /// </summary>
@@ -109,24 +126,91 @@ namespace NSS.Blast.Compiler.Stage
             string id = a[1];
             int offset, bytesize;
 
+            // OFFSET 
             if (!int.TryParse(a[2], out offset))
             {
                 data.LogError($"tokenizer.read_input_output_mapping: failed to parse offset field as an integer, value = {a[2]}");
                 return null;
             }
 
-            if (!int.TryParse(a[3], out bytesize))
+
+            // DATATYPE || DATASIZE 
+            BlastVariableDataType datatype = BlastVariableDataType.Numeric; 
+
+            if (string.Compare(a[3], "NUMERIC", true) == 0)
             {
-                data.LogError($"tokenizer.read_input_output_mapping: failed to parse bytesize field as an integer, value = {a[2]}");
-                return null;
+                datatype = BlastVariableDataType.Numeric;
+                bytesize = 4;
+            }
+            else
+            {
+                if (string.Compare(a[3], "ID", true) == 0)
+                {
+                    datatype = BlastVariableDataType.ID;
+                    bytesize = 4; 
+                }
+                else
+                {
+                    if (!int.TryParse(a[3], out bytesize))
+                    {
+                        data.LogError($"tokenizer.read_input_output_mapping: failed to parse bytesize field as an integer, value = {a[2]}");
+                        return null;
+                    }
+                    datatype = BlastVariableDataType.Numeric;
+                }
             }
 
-            // create variable, validate: it should not exist at this stage
-            BlastVariable v = ((CompilationData)data).CreateVariable(a[1], is_input, !is_input);
-            if (v == null)
+            BlastVariable v;
+            CompilationData cdata = (CompilationData)data; 
+
+            if (is_input)
             {
-                data.LogError($"tokenizer.read_input_output_mapping: failed to create variable with name {a[1]}");
-                return null;
+                // create variable, validate: it should not exist at this stage
+                v = cdata.CreateVariable(a[1], true, false);
+                if (v == null)
+                {
+                    data.LogError($"tokenizer.read_input_output_mapping: failed to create input variable with name {a[1]}");
+                    return null;
+                }
+                v.DataType = datatype;
+            }
+            else
+            {
+                // output variable, it may exist: in that case validate its datatype and size 
+                if (cdata.TryGetVariable(a[1], out v))
+                {
+                    // it exists : validate it and set as output 
+                    v.IsOutput = true;
+                    v.AddReference();
+
+                    // validate datatype 
+                    if (v.DataType != datatype)
+                    {
+                        data.LogError($"tokenizer.read_input_output_mapping: failed to validate input&output variable with name {a[1]}, datatype mismatch, input specifies '{v.DataType}', output says: '{datatype}'");
+                        return null;
+                    }
+
+                    // validate bytesize from mappings 
+                    if(cdata.TryGetInput(v, out BlastVariableMapping vmap))
+                    {
+                        if(vmap.bytesize != bytesize)
+                        {
+                            data.LogError($"tokenizer.read_input_output_mapping: failed to validate input&output variable with name {a[1]}, datasize mismatch, input specifies '{vmap.bytesize}', output says: '{bytesize}'");
+                            return null;
+                        }                           
+                    }
+                }
+                else
+                {
+                    // create a new output variable 
+                    v = cdata.CreateVariable(a[1], false, true); // refcount is increased in create
+                    if (v == null)
+                    {
+                        data.LogError($"tokenizer.read_input_output_mapping: failed to create output variable with name {a[1]}");
+                        return null;
+                    }
+                    v.DataType = datatype;
+                }
             }
 
             // setup mapping
@@ -482,19 +566,7 @@ namespace NSS.Blast.Compiler.Stage
 
             return (int)BlastError.success;
         }
-
-        private static string scan_until_stripend(string comment, int start = 6)
-        {
-            int i_end = scan_until(comment, '#', start);
-            if (i_end >= 0)
-            {
-                // and remove that part, assume it to be a comment on the output def. 
-                comment = comment.Substring(0, i_end);
-            }
-
-            return comment;
-        }
-
+       
         public int Execute(IBlastCompilationData data)
         {
             // run tokenizer 

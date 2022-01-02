@@ -56,19 +56,20 @@ namespace NSS.Blast.Compiler.Stage
             for (int i = 0; i < data.Outputs.Count; i++)
             {
                 int out_id = data.Outputs[i].id;
-                bool in_input = false;
 
-                // need to determine if its in input to determine minimal reference count
-                for (int j = 0; !in_input && j < data.Inputs.Count; j++)
+                // if not set as an input; 
+                if (!data.HasInput(out_id))
                 {
-                    in_input = data.Inputs[j].id == out_id;
+                    int min_ref_count = 2; // needs at least the definition in output and some assignment 
+                    if (data.Variables[out_id].ReferenceCount < min_ref_count)
+                    {
+                        data.LogError($"analyze.scan_parameters: output variable '{data.Variables[out_id]}' not used except in output and/or input, its reference is therefore either undefined or unneeded");
+                        return false;
+                    }
                 }
-                int min_ref_count = in_input ? 2 : 1;
-
-                if (data.Variables[out_id].ReferenceCount <= min_ref_count)
+                else
                 {
-                    data.LogError($"analyze.scan_parameters: output variable '{data.Variables[out_id]}' not used except in output and/or input, its reference is therefore either undefined or unneeded");
-                    return false;
+                    // defined as input, should always be assigned 
                 }
             }
 

@@ -119,6 +119,7 @@ namespace NSS.Blast.Compiler.Stage
                     code[i - 2].op == script_op.ex_op
                     &&
                     code[i - 1].code == (byte)extended_script_op.call;
+
                 if(is_call)
                 {
                     next_is_hardcoded_value += 4;

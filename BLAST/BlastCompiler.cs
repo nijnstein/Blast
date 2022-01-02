@@ -58,110 +58,6 @@ namespace NSS.Blast.Compiler
     /// </summary>
 
 
-    /// <summary>
-    /// Options for compiling and packaging scripts 
-    /// </summary>
-    public class BlastCompilerOptions
-    {
-        /// <summary>
-        /// run validation if set in script 
-        /// </summary>
-        public bool AutoValidate = false;
-
-        /// <summary>
-        /// run code optimizer 
-        /// </summary>
-        public bool Optimize = true;
-
-        /// <summary>
-        /// compile script using constant data fields 
-        /// </summary>
-        public bool CompileWithSystemConstants = true;
-
-        /// <summary>
-        /// compare epsilon for constants, on fast float mode it wont match on float.epsilon
-        /// </summary>
-        public float ConstantEpsilon = 0.001f;     // in fast floating point mode it wont match constants on float.epsilon
-        public string ConstantPrecision = "0.000"; // precision used when using constant values as identifier names, everything is rounded to this 
-
-        /// <summary>
-        /// default stack size in number of bytes
-        /// - overridden if the script defines a stack size 
-        /// </summary>
-        public int DefaultStackSize = 16;
-
-        /// <summary>
-        /// estimate stack size using input, output and validation parameters 
-        /// - overridden if the script defines a stack size
-        /// </summary>
-        public bool EstimateStackSize = true;
-
-        /// <summary>
-        /// verbose report logging, log is also blitted to unity
-        /// </summary>
-        public bool Verbose = true;
-
-        /// <summary>
-        /// enable trace level logging -> will generate a massive report 
-        /// </summary>
-        public bool Trace = true;
-
-        /// <summary>
-        /// build a report during compilation 
-        /// </summary>
-        public bool Report = true;
-
-        /// <summary>
-        /// if yield is not emitted we can save 20 bytes on the stack, with very small stuff that might be handy
-        /// not implemented .. todo
-        /// </summary>
-        public bool SupportYield = true;
-
-        /// <summary>
-        /// package mode
-        /// </summary>
-        public BlastPackageMode PackageMode = BlastPackageMode.CodeDataStack;
-
-        public Allocator PackageAllocator = Allocator.Temp;
-
-        /// <summary>
-        /// enable for partially parallel compilation 
-        /// - fails somewhere in optimizer or jumpresolver 
-        /// </summary>
-        public bool ParallelCompilation = false;
-
-        /// <summary>
-        /// additional compiler defines 
-        /// </summary>
-        public Dictionary<string, string> Defines = new Dictionary<string, string>();
-
-        /// <summary>
-        /// default compiler options 
-        /// </summary>
-        public static BlastCompilerOptions Default => new BlastCompilerOptions();
-
-        /// <summary>
-        /// add a compiler define 
-        /// </summary>
-        /// <param name="key">the key value</param>
-        /// <param name="value">single, or parameter name when brave</param>
-        public void AddDefine(string key, string value)
-        {
-            key = key.ToLower().Trim();
-            if (!Defines.ContainsKey(key))
-            {
-                // set new
-                Defines.Add(key, value);
-            }
-            else
-            {
-                // update existing
-                Defines[key] = value;
-            }
-        }
-    }
-
-
 
     /// <summary>
     /// Blast Compiler 
@@ -315,6 +211,18 @@ namespace NSS.Blast.Compiler
                 {
                     result.LogError($"validate: the script defines no validations, dont call validate if this was intentional");
                     return false;
+                }
+            }
+
+            // make sure offsets are set 
+            if (result.HasVariables && !result.HasOffsets || result.VariableCount != result.OffsetCount)
+            {
+                // generate variable offsets 
+                BlastBytecodeOptimizer.CalculateVariableOffsets(result);
+                if (result.VariableCount != result.OffsetCount)
+                {
+                    result.LogError("validate: failure calculating variable offsets");
+                    return false; 
                 }
             }
 
@@ -610,12 +518,12 @@ namespace NSS.Blast.Compiler
             while (i % 4 != 0) { p_segment[i] = 0; i++; }
             p->data_start = i;
 
-            // copy data 
+            // copy data segment 
             int j = 0;
             byte* p_data = (byte*)((void*)exe.data);
             while (j < exe.data_offset * 4)
             {
-                p_segment[i] = p_data[j];        //   todo   memset.. 
+                p_segment[i] = p_data[j]; 
                 i++;
                 j++;
             }
@@ -624,7 +532,7 @@ namespace NSS.Blast.Compiler
 
             while (i < p->info.package_size)
             {
-                p_segment[i] = 0;  /// todo  memset
+                p_segment[i] = 0; 
                 i++;
             }
 
@@ -678,18 +586,13 @@ namespace NSS.Blast.Compiler
                         BlastPackage* package_ptr = (BlastPackage*)UnsafeUtility.Malloc(32 + (int)package_info.package_size, 4, options.PackageAllocator);
                         Package(result, package_info, (byte*)package_ptr);
 
-#if !NOT_USING_UNITY && DEBUG
+#if DEBUG
                         BlastPackage* pkg = package_ptr; 
-                        Debug.Log($"<blastcompiler.package> package size: {package_info.package_size}, code size: {pkg->info.code_size}, data size: {pkg->info.data_size}, metadata size: {pkg->info.data_sizes_size}, data start: {pkg->data_start}, data offset: {pkg->data_offset}, stack offset: {pkg->stack_offset}, allocator: {options.PackageAllocator}");
+                        Standalone.Debug.Log($"<blastcompiler.package> package size: {package_info.package_size}, code size: {pkg->info.code_size}, data size: {pkg->info.data_size}, metadata size: {pkg->info.data_sizes_size}, data start: {pkg->data_start}, data offset: {pkg->data_offset}, stack offset: {pkg->stack_offset}, allocator: {options.PackageAllocator}");
 #endif
 
                         return package_ptr; 
                     }
-
-                default:
-                    result.LogError($"BIG TODO PACKAG MODE");
-                    break;
-
             }
 
             result.LogError("package: only code data stack package mode is supported ");
@@ -715,25 +618,20 @@ namespace NSS.Blast.Compiler
                 {
                     // error condition 
                     result.LogError($"Compilation Error, stage: {istage}, type {ByteCodeStages[istage].GetType().Name}, exitcode: {exitcode}");
-#if !NOT_USING_UNITY && DEBUG
                     if (options.Verbose || options.Trace)
                     {
                         Standalone.Debug.Log(result.root.ToNodeTreeString());
                         Standalone.Debug.Log(result.GetHumanReadableCode());
                     }
-#endif
                     return result;
                 }
             }
 
-
-#if !NOT_USING_UNITY && DEBUG
             if (options.Verbose || options.Trace)
             {
                 Standalone.Debug.Log(result.root.ToNodeTreeString());
                 Standalone.Debug.Log(result.GetHumanReadableCode());
             }
-#endif
 
             // run validations if any are defined
             if (result.CompilerOptions.EstimateStackSize || result.CompilerOptions.AutoValidate && result.CanValidate)
@@ -764,13 +662,11 @@ namespace NSS.Blast.Compiler
                 if (exitcode != (int)BlastError.success)
                 {
                     result.LogError($"Compilation Error, stage: {istage}, type {HPCStages[istage].GetType().Name}, exitcode: {exitcode}");
-#if !NOT_USING_UNITY && DEBUG
                     if (options.Verbose || options.Trace)
                     {
                         Standalone.Debug.Log(result.root.ToNodeTreeString());
                         Standalone.Debug.Log(result.GetHumanReadableCode());
                     }
-#endif
                     return result;
                 }
             }
@@ -799,13 +695,11 @@ namespace NSS.Blast.Compiler
                 if (exitcode != (int)BlastError.success)
                 {
                     result.LogError($"Compilation Error, stage: {istage}, type {CSStages[istage].GetType().Name}, exitcode: {exitcode}");
-#if !NOT_USING_UNITY
                     if (options.Verbose || options.Trace)
                     {
                         Standalone.Debug.Log(result.root.ToNodeTreeString());
                         Standalone.Debug.Log(result.GetHumanReadableCode());
                     }
-#endif
                     return result;
                 }
             }
@@ -837,11 +731,7 @@ namespace NSS.Blast.Compiler
             }
             else
             {
-#if !NOT_USING_UNITY
                 Standalone.Debug.LogError(result.LastErrorMessage);
-#else
-                System.Diagnostics.Debug.WriteLine("ERROR: " + result.LastErrorMessage);
-#endif
                 return null;
             }
         }

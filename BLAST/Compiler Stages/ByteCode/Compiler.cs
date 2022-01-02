@@ -71,7 +71,6 @@ namespace NSS.Blast.Compiler.Stage
                 return true;
             }
 
-
             if (allow_pop
                 &&
                 ast_param.type == nodetype.function
@@ -93,7 +92,7 @@ namespace NSS.Blast.Compiler.Stage
                 BlastVariable p_id = ast_param.variable;
                 if (p_id != null)
                 {
-                    // numeric value
+                    // numeric/id value, add its variableId to output code
                     code.Add((byte)(p_id.Id + BlastCompiler.opt_ident));
                 }
                 else

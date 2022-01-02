@@ -5,9 +5,6 @@ F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\xunit.runner.ut
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\testhost.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\Microsoft.TestPlatform.PlatformAbstractions.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastUnitTests.exe
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\F1.bs
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\F2.bs
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\F3.bs
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastUnitTests.deps.json
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastUnitTests.runtimeconfig.json
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BlastUnitTests.runtimeconfig.dev.json
@@ -105,3 +102,12 @@ F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.
 F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.pdb
 F:\Repo\Nijnstein\Blast\BlastTestConsole\obj\Debug\netcoreapp3.1\BlastUnitTests.genruntimeconfig.cache
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\F4 - Datatypes.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Validation\Validation Fail 1.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Validation\Validation Fail 2.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\F1.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\F2.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\F3.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Validation\Validate Input Output Failure.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Validation\Validate Input Output.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Validation\Validation Fail 3.bs

@@ -1,12 +1,6 @@
 ﻿#define result_1 11111
 #define result_2 22222
 
-#
-#  benchmark: compilation (hot):  4.3 ms
-#  non-burst: 11ys 
-#  burst: 9.5ys      + 14% avg
-#
-
 b = b * 1 * 1 * 1 * (1 / 10) * 1;
 
 a = 1 + 1;
@@ -19,9 +13,6 @@ while(a <= d)
 (
     a = a + 1; 
     b = b * 1 * 1 * 1 * 1 / 10 * 1;     
-
-    #   1/10 also fails on something.. but only when in compound (1/10) and in the while
-    #   looks like end check on find next or compound check.. 
 )
 
 switch(a > b)

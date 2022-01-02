@@ -28,13 +28,31 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="BLAST Test Scripts\F3.bs">
+    <None Update="BLAST Test Scripts\Validation\Validation Fail 3.bs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="BLAST Test Scripts\F2.bs">
+    <None Update="BLAST Test Scripts\Validation\Validate Input Output Failure.bs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="BLAST Test Scripts\F1.bs">
+    <None Update="BLAST Test Scripts\Validation\Validate Input Output.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="BLAST Test Scripts\Validation\Validation Fail 2.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="BLAST Test Scripts\Validation\Validation Fail 1.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="BLAST Test Scripts\F4 - Datatypes.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="BLAST Test Scripts\Features\F3.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="BLAST Test Scripts\Features\F2.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="BLAST Test Scripts\Features\F1.bs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
