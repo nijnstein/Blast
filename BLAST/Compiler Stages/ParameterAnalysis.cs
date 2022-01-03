@@ -76,7 +76,14 @@ namespace NSS.Blast.Compiler.Stage
             return true;
         }
 
-        int wouldbe_compound_vector_size(node node)
+        int wouldbe_vector_size_of_calculation(node node)
+        {
+            if (node.ChildCount < 3) return 0;
+
+            return 0;
+        }
+
+        int wouldbe_vector_size_of_same_sized_elements(node node)
         {
             if (node.type != nodetype.compound) return 0; 
            
@@ -244,6 +251,11 @@ namespace NSS.Blast.Compiler.Stage
                                             }
                                         case nodetype.compound:
                                             {
+                                                if (!c.is_vector)
+                                                {
+                                                    int cest = wouldbe_vector_size_of_same_sized_elements(c);
+                                                    if (cest > 0) c.SetIsVector(cest, false); 
+                                                }
                                                 size = math.max(size, c.vector_size);
                                                 continue;
                                             }
@@ -306,11 +318,17 @@ namespace NSS.Blast.Compiler.Stage
 
                                         // each node must define the same number of elements  -> gets a mess otherwise 
 
-                                        int i_vectorsize_estimate = wouldbe_compound_vector_size(current.children[0]);
+                                        // attempt to get vector size from same sized elemetns in compound 
+                                        int i_vectorsize_estimate = wouldbe_vector_size_of_same_sized_elements(current.children[0]);
+                                        if(i_vectorsize_estimate <= 0)
+                                        {
+                                            //attempt to get from a calculus operation sequence: a = (1 2 3) * 4;  vectorsize = 3
+                                            i_vectorsize_estimate = wouldbe_vector_size_of_calculation(current.children[0]);
+                                        }
                                         if (i_vectorsize_estimate > 0)
                                         {
                                             current.children[0].SetIsVector(i_vectorsize_estimate, true);
-                                        }
+                                        }     
                                     }
                                 }
                             }

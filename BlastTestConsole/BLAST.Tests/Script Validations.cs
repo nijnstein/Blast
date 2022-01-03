@@ -1,5 +1,6 @@
 using NSS.Blast;
 using NSS.Blast.Compiler;
+using NSS.Blast.Standalone;
 using System;
 using System.IO;
 using Unity.Collections;
@@ -93,5 +94,52 @@ namespace BlastTestConsole
             Xunit.Assert.True(Validate("F4 - DataTypes.bs"));
         }
 
+        [Theory]
+        [InlineData("Features/Vector 3.bs", 24, 25, 24)]
+        public void BlastScript_Vectors_1(string scriptfile, float v1, float v2, float v3)
+        {
+            Blast blast = Blast.Create(Allocator.Persistent);
+            string code = File.ReadAllText($"Blast Test Scripts/{scriptfile}");
+                                                                 
+            BlastScript script = BlastScript.FromText(code);
+
+            var options = new BlastCompilerOptions();
+            options.AutoValidate = false;
+            options.Optimize = true;
+            options.CompileWithSystemConstants = true;
+            options.ConstantEpsilon = 0.001f;
+            options.DefaultStackSize = 64;
+            options.EstimateStackSize = false;
+
+            var res = BlastCompiler.Compile(blast, script, options);
+
+            Xunit.Assert.True(res.IsOK, "failed to compile");
+
+            unsafe
+            {
+                Xunit.Assert.True(res.Executable.Execute((IntPtr)blast.Engine) == 0, "failed to execute");
+
+                //check stack, shoud be 24 24 24
+                Xunit.Assert.True(ValidateStack(res, v1, v2, v3)); 
+            }
+
+
+            blast.Destroy();
+        }
+
+        unsafe bool ValidateStack(CompilationData data, float v1, float v2, float v3)
+        {
+            if( data.Executable.data[0] == v1
+                &&
+                data.Executable.data[1] == v2
+                &&
+                data.Executable.data[2] == v3)
+            {
+                return true; 
+            }
+
+            Debug.LogError($"failed to validate data, should be {v1} {v2} {v3} but found {data.Executable.data[0]} {data.Executable.data[1]} {data.Executable.data[2]}");
+            return false; 
+        }
     }
 }

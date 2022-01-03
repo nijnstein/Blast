@@ -3,16 +3,33 @@
 # VECTOR TEST 3
 #
 
-
-a = (3 2 1);
-b = (1 2 3);
-c = a * b;
-
-debug(c); 
-
+ 
 d = (6 6 6) * 4;
 
 debug(d); 
+
+			 
+# compiler node tree
+# 
+#    root of 2 
+#        vector assignment of d 
+#          constant parameter 6 
+#          constant parameter 6 
+#          constant parameter 6 
+#          operation Multiply 
+#          constant parameter 4 
+#       /
+#        vector compound statement of 1 
+#           vector function debug 
+#              vector parameter d 
+#          /
+#       /
+#    /
+# 
+# 
+# 000  001 128 131 131 131 005 088 000 018 255 
+# 010  244 128 019 000 
+# Blast.Debug - codepointer: 11, id: 128, NUMERIC: [24,00, 24,00, 24,00], vectorsize: 3
 
 
 

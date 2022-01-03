@@ -75,7 +75,11 @@ namespace BlastTestConsole
             unsafe
             {
                 Xunit.Assert.True(res.Executable.Execute((IntPtr)blast.Engine) == 0, "failed to execute");
+
+
+                NSS.Blast.Standalone.Debug.Log(res.Executable.data[res.Executable.DataByteSize / 4].ToString()); 
             }
+
 
             blast.Destroy();
         }
