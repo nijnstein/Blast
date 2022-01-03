@@ -20,6 +20,67 @@ namespace BlastTestConsole
             Assert.True(bs.LanguageVersion == BlastLanguageVersion.BS1); 
         }
 
+        [Theory]
+        [InlineData("features/debug.bs")]
+        public void BlastScript_Debug(string scriptfile)
+        {
+            Blast blast = Blast.Create(Allocator.Persistent);
+            string code = File.ReadAllText($"Blast Test Scripts/{scriptfile}");
+
+            BlastScript script = BlastScript.FromText(code);
+
+            var options = new BlastCompilerOptions();
+            options.AutoValidate = false;
+            options.Optimize = true;
+            options.CompileWithSystemConstants = true;
+            options.ConstantEpsilon = 0.001f;
+            options.DefaultStackSize = 64;
+            options.EstimateStackSize = false;
+
+            var res = BlastCompiler.Compile(blast, script, options);
+
+            Xunit.Assert.True(res.IsOK, "failed to compile");
+
+            unsafe
+            {
+                Xunit.Assert.True(res.Executable.Execute((IntPtr)blast.Engine) == 0, "failed to execute"); 
+            }            
+
+            blast.Destroy();
+        }
+
+        [Theory]
+        [InlineData("Features/Vector 1.bs")]
+        [InlineData("Features/Vector 2.bs")]
+        [InlineData("Features/Vector 3.bs")]
+        public void BlastScript_Vectors(string scriptfile)
+        {
+            Blast blast = Blast.Create(Allocator.Persistent);
+            string code = File.ReadAllText($"Blast Test Scripts/{scriptfile}");
+
+            BlastScript script = BlastScript.FromText(code);
+
+            var options = new BlastCompilerOptions();
+            options.AutoValidate = false;
+            options.Optimize = true;
+            options.CompileWithSystemConstants = true;
+            options.ConstantEpsilon = 0.001f;
+            options.DefaultStackSize = 64;
+            options.EstimateStackSize = false;
+
+            var res = BlastCompiler.Compile(blast, script, options);
+
+            Xunit.Assert.True(res.IsOK, "failed to compile");
+
+            unsafe
+            {
+                Xunit.Assert.True(res.Executable.Execute((IntPtr)blast.Engine) == 0, "failed to execute");
+            }
+
+            blast.Destroy();
+        }
+
+
         [Fact]
         public void Blast_Create()
         {

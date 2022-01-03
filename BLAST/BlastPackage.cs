@@ -109,36 +109,34 @@ namespace NSS.Blast
         /// <summary>
         /// index into bytecode, next point of execution, if == code_size then end of script is reached
         /// </summary>
-        public int code_pointer;
+        public ushort code_pointer;
+
+        /// <summary>
+        /// offset into metadata
+        /// </summary>
+        public ushort data_sizes_start;
 
         /// <summary>
         /// offset into segment, here variable data starts (4 byte aligned)
         /// </summary>
-        public int data_start;
+        public ushort data_start;
 
         /// <summary>
         /// here stackdata starts on codedatastack packages 
         /// </summary>
-        public int stack_start; 
+        public ushort stack_start; 
 
         /// <summary>
         /// offset into data after the last variable
         /// </summary>
-        public int data_offset;
+        public ushort data_offset;
 
         /// <summary>
-        /// stack offset 
+        /// stack offset in #dataelements 
         /// </summary>
-        public int stack_offset;
+        public ushort stack_offset;
 
-        //@ 32 byte offset 
-
-
-        /// <summary>
-        /// offset into metadata between vars and stack start
-        /// </summary>
-        public int data_sizes_start => data_start + data_offset * 4;
-
+        //@ 24 byte offset 
     }
 
 

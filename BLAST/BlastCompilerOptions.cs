@@ -65,6 +65,11 @@ namespace NSS.Blast
         public bool SupportYield = true;
 
         /// <summary>
+        /// compile the debug function only if enabled 
+        /// </summary>
+        public bool CompileDebug = true; 
+
+        /// <summary>
         /// package mode
         /// </summary>
         public BlastPackageMode PackageMode = BlastPackageMode.CodeDataStack;

@@ -217,8 +217,7 @@ namespace NSS.Blast.Compiler
             // make sure offsets are set 
             if (result.HasVariables && !result.HasOffsets || result.VariableCount != result.OffsetCount)
             {
-                // generate variable offsets 
-                BlastBytecodeOptimizer.CalculateVariableOffsets(result);
+                result.CalculateVariableOffsets();
                 if (result.VariableCount != result.OffsetCount)
                 {
                     result.LogError("validate: failure calculating variable offsets");
@@ -497,8 +496,13 @@ namespace NSS.Blast.Compiler
             BlastIntermediate exe = result.Executable;
 
             /// the script buffer:
+            /// 
+            /// was: 
             /// [....code...|...variables&constants...|.datasizes.|...stack.....................]
             /// 
+            /// became:
+            /// [...code...|...metadata...|...variables&constants...|...stack...................]
+
 
             int i = 0;
             while (i < exe.code_size)
@@ -513,15 +517,39 @@ namespace NSS.Blast.Compiler
                 return ptr; 
             }
 
-            // align data segment on 4 byte boundary from code segment start
-            //  
+            // copy metadata segment
+            // it has 1 byte for each element in capacity, does not need to be aligned
+            p->data_sizes_start = (ushort)i;
+            int j = 0;
+            while (j < exe.data_count)
+            {
+                p_segment[i] = exe.metadata[j];
+                i++;
+                j++;
+            }
+
+            // after the metadata for variables follows the stack metadata
+            // which is null now, but we need to reserve 1 byte per capacity
+            // - this memory block is located before the datasegment for interpretor 
+            //   it can more directly get offset into needed data 
+            j = 0; 
+            while(j < exe.max_stack_size)
+            {
+                p_segment[i] = 0;
+                i++;
+                j++; 
+            }
+
+            // Copy Data Segment 
+            // - align data segment on 4 byte boundary from code segment start
             // - have to account for this while estimating buffer sizes... always + 12?? 
+            //
 
             while (i % 4 != 0) { p_segment[i] = 0; i++; }
-            p->data_start = i;
+            p->data_start = (ushort)i;
 
             // copy data segment 
-            int j = 0;
+            j = 0;
             byte* p_data = (byte*)((void*)exe.data);
             while (j < exe.data_count * 4)
             {
@@ -529,20 +557,9 @@ namespace NSS.Blast.Compiler
                 i++;
                 j++;
             }
-
-            // copy metadata 
-            // p->data_sizes_start = i;      No need to set anymore, as its position is always after data at fixed distance
-            j = 0; 
-            while(j < exe.data_count)
-            {
-                p_segment[i] = p_data[j];
-                i++;
-                j++; 
-            }
-
-            // stack starts after aligning to 4 bytes in package
-            while (i % 4 != 0) { p_segment[i] = 0; i++; }
-            p->stack_start = i;
+           
+            // stack starts after data
+            p->stack_start = (ushort)i;
 
             // fill the rest of the package / stack with zeros 
             while (i < p->info.package_size)
@@ -606,6 +623,7 @@ namespace NSS.Blast.Compiler
                     {
                         Standalone.Debug.Log(result.root.ToNodeTreeString());
                         Standalone.Debug.Log(result.GetHumanReadableCode());
+                        Standalone.Debug.Log(result.GetHumanReadableBytes());
                     }
                     return result;
                 }
@@ -615,6 +633,7 @@ namespace NSS.Blast.Compiler
             {
                 Standalone.Debug.Log(result.root.ToNodeTreeString());
                 Standalone.Debug.Log(result.GetHumanReadableCode());
+                Standalone.Debug.Log(result.GetHumanReadableBytes());
             }
 
             // run validations if any are defined

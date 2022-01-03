@@ -190,6 +190,7 @@
         logn,
         cross,
 
+        debug = 244,
         call = 245, // call external
         ex = 255 // extend further if ever needed. 
     }
@@ -251,7 +252,6 @@
         Switch,
         Case,
         Default
-
     }
 
     public class BlastScriptTokenDefinition

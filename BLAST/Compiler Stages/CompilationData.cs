@@ -213,18 +213,54 @@ namespace NSS.Blast.Compiler
         /// <returns></returns>
         public unsafe string GetHumanReadableCode()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = StringBuilderCache.Acquire();
+
+            if (Executable.code_size > 0)
+            {
+                List<byte> bytes = new List<byte>(Executable.code_size);
+                for (int i = 0; i < bytes.Count; i++) bytes.Add(Executable.code[i]);
+                WriteHumanReadableCode(sb, bytes);
+
+                // ending a jump after program end?
+                foreach (var jump in Jumps.Where(x => x.Item1 + x.Item2 >= bytes.Count))
+                {
+                    if (jump != null)
+                    {
+                        sb.Append($"@label_{Jumps.IndexOf(jump)} <<< ERROR CONDITION - OUT OF BOUNDS - {jump.Item1} {jump.Item2} >>> ");
+                    }
+                }
+            }
+            else
+            {
+                if (code != null && code.list != null && code.list.Count > 0)
+                {
+                    List<byte> bytes = new List<byte>(code.list.Count);
+                    for (int i = 0; i < code.list.Count; i++) bytes.Add(code.list[i].code); 
+                    WriteHumanReadableCode(sb, bytes);
+                }
+                else
+                {
+                    sb.Append("-no code available to convert to string-");
+                }
+            }
+
+            return StringBuilderCache.GetStringAndRelease(ref sb);
+
+
+        }
+        public unsafe void WriteHumanReadableCode(StringBuilder sb, List<byte> code)
+        {
             int i = 0;
             script_op prev = script_op.nop;
 
-            for (; i < Executable.code_size; i++)
+            for (; i < code.Count; i++)
             {
-                byte op = Executable.code[i];
+                byte op = code[i];
 
-                if(i % 10 == 0)
+                if (i % 10 == 0)
                 {
                     if (i != 0) sb.Append("\n");
-                    sb.Append("#" + i.ToString().PadLeft(3, '0') + " "); 
+                    sb.Append("#" + i.ToString().PadLeft(3, '0') + " ");
                 }
 
 
@@ -386,21 +422,22 @@ namespace NSS.Blast.Compiler
                         case script_op.inv_value_1024: sb.Append((1f / 1024f).ToString("0.000") + " "); break;
 
                         case script_op.ex_op:
-                            i++; 
-                            extended_script_op exop = (extended_script_op)Executable.code[i];
+                            i++;
+                            extended_script_op exop = (extended_script_op)code[i];
                             switch (exop)
                             {
                                 case extended_script_op.exp10: sb.Append("exp10 "); break;
                                 case extended_script_op.log10: sb.Append("log10 "); break;
                                 case extended_script_op.logn: sb.Append("logn "); break;
                                 case extended_script_op.cross: sb.Append("cross "); break;
+                                case extended_script_op.debug: sb.Append("debug "); break;
                                 case extended_script_op.call:
                                     sb.Append("call ");
                                     // next 4 bytes are the function id 
-                                    int id = code[i + 1].code << 24;
-                                    id += code[i + 2].code << 16;
-                                    id += code[i + 3].code << 8;
-                                    id += code[i + 4].code;
+                                    int id = this.code[i + 1].code << 24;
+                                    id += this.code[i + 2].code << 16;
+                                    id += this.code[i + 3].code << 8;
+                                    id += this.code[i + 4].code;
                                     i += 4;
                                     var def = Blast.GetFunctionById(id);
                                     if (def != null)
@@ -409,10 +446,10 @@ namespace NSS.Blast.Compiler
                                     }
                                     else
                                     {
-                                        sb.Append("<unknown_function_id>"); 
+                                        sb.Append("<unknown_function_id>");
                                     }
 
-                                    break; 
+                                    break;
                                 default:
                                     sb.Append($"\n\noperation {(script_op)op} {exop} not yet translated in source debug\n\n");
                                     break;
@@ -423,6 +460,12 @@ namespace NSS.Blast.Compiler
                             if (op >= BlastCompiler.opt_ident)
                             {
                                 int idx = Offsets.IndexOf((byte)(op - BlastCompiler.opt_ident));
+
+                                //
+                                //   THIS FAILS WHEN USING VECTORS    
+                                //
+                                //
+
                                 if (idx >= 0)
                                 {
                                     BlastVariable v = Variables[idx];
@@ -467,16 +510,52 @@ namespace NSS.Blast.Compiler
                 }
 
             }
+        }
 
-            // ending a jump?
-            foreach (var jump in Jumps.Where(x => x.Item1 + x.Item2 >= i))
+        public unsafe string GetHumanReadableBytes()
+        {
+            StringBuilder sb = StringBuilderCache.Acquire();
+
+            if (Executable.code_size > 0)
             {
-                if (jump != null)
+                for (int i = 0; i < Executable.code_size; i++)
                 {
-                    sb.Append($"@label_{Jumps.IndexOf(jump)} <<< ERROR CONDITION - OUT OF BOUNDS - {jump.Item1} {jump.Item2} >>> ");
+                    if (i % 10 == 0)
+                    {
+                        sb.Append($"{i.ToString().PadLeft(3, '0')}  ");
+                    }
+                    sb.Append($"{Executable.code[i].ToString().PadLeft(3, '0')} ");
+                    if (i % 10 == 9)
+                    {
+                        sb.AppendLine();
+                    }
                 }
             }
-            return sb.ToString();
+            else
+            {
+                if (code != null && code.list != null && code.list.Count > 0)
+                {
+                    sb.AppendLine("INTERMEDIATE CODE BYTES: ");
+                    for (int i = 0; i < code.list.Count; i++)
+                    {
+                        if (i % 10 == 0)
+                        {
+                            sb.Append($"{i.ToString().PadLeft(3, '0')}  ");
+                        }
+                        sb.Append($"{code.list[i].ToString().PadLeft(3, '0')} ");
+                        if (i % 10 == 9)
+                        {
+                            sb.AppendLine();
+                        }
+                    }
+                }
+                else
+                {
+                    sb.Append("-no code bytes available to convert to string-"); 
+                }
+            }
+
+            return StringBuilderCache.GetStringAndRelease(ref sb); 
         }
 
 #endregion
@@ -731,6 +810,8 @@ namespace NSS.Blast.Compiler
                 return Variables[index];
             }
         }
+
+
         public bool CanValidate => Validations != null && Validations.Count > 0;
         public bool HasDefines => Defines != null && Defines.Count > 0;
         public bool HasVariables => Variables != null && Variables.Count > 0;
@@ -763,7 +844,33 @@ namespace NSS.Blast.Compiler
             }
             return false;
         }
-#endregion
+
+        public unsafe int CalculateVariableOffsets()
+        {
+            // clear out any existing offsets (might have ran multiple times..) 
+            Offsets.Clear();
+
+            byte offset = 0;
+            for (int i = 0; i < Variables.Count; i++)
+            {
+                BlastVariable v = Variables[i];
+                                  
+                if (v.IsVector)
+                {
+                    // variable sized float 
+                    Offsets.Add(offset);
+                    offset = (byte)(offset + v.VectorSize);
+                }
+                else
+                {
+                    Offsets.Add(offset);
+                    offset++;
+                }
+            }
+
+            return offset;
+        }
+        #endregion
     }
 
 

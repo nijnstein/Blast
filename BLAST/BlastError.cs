@@ -27,7 +27,8 @@
         error_unsupported_operation = -20,
         error_node_not_flat = -21,
         error_failed_to_compile_function_parameters = -22,
-        error_too_many_parameters = 2,
+        error_too_many_parameters = -23,
+        error_failed_to_translate_offset_into_index = -24,
     }
 
 

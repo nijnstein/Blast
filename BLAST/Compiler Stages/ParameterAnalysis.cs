@@ -76,6 +76,47 @@ namespace NSS.Blast.Compiler.Stage
             return true;
         }
 
+        int wouldbe_compound_vector_size(node node)
+        {
+            if (node.type != nodetype.compound) return 0; 
+           
+            //a = (1 2 3) 
+            //a = (1 pop 2)
+            //b = ((1 2 3) (pop pop pop) (1 2 3));
+            if (node.ChildCount > 0)
+            {
+                // - each element is either a function, a variable/constant or a pop
+                // - all vector sizes of elements must be equal 
+
+                int element_vector_size = 1;
+                int element_count = 1; 
+
+                if (node.children[0].type != nodetype.parameter
+                    &&
+                   node.children[0].type != nodetype.function)
+                {
+                    return 0;  
+                }
+                element_vector_size = math.max(1, node.children[0].vector_size); 
+
+                for(int i = 1; i < node.ChildCount; i++)
+                {
+                    if (math.max(1, node.children[i].vector_size) != element_vector_size
+                        ||
+                       (node.children[i].type != nodetype.parameter
+                        &&
+                        node.children[i].type != nodetype.function))
+                    {
+                        // vector sizes mismatch or incorrect nodetypes to build a vector 
+                        return 0; 
+                    }
+                    element_count++; 
+                }
+
+                return element_count * element_vector_size; 
+            }
+            return 0; 
+        }
 
         /// <summary>
         /// perform a check to see if a node results in a vector
@@ -145,6 +186,7 @@ namespace NSS.Blast.Compiler.Stage
                 }
                 else
                 {
+                    // current is NOT a vector
                     switch (current.type)
                     {
                         case nodetype.parameter:
@@ -165,6 +207,9 @@ namespace NSS.Blast.Compiler.Stage
                                 // need way to get pop size by determining last push in parser
                                 // setdatasize would work but it would add branches.. 
 
+                                // does compound only contain values or pops?
+                                // we could say its a vector then but we should decide at assignment (i think)
+
                                 // update vector size from children 
                                 fsize = 1;
                                 foreach (node fc in current.children)
@@ -182,6 +227,7 @@ namespace NSS.Blast.Compiler.Stage
                                 // all children either operation or vector then also vector
                                 int size = 1;
                                 bool all_numeric = current.children.Count > 0 ? true : false;
+
                                 foreach (node c in current.children)
                                 {
                                     switch (c.type)
@@ -248,6 +294,25 @@ namespace NSS.Blast.Compiler.Stage
                                 }
                                 current.is_vector = size > 1 && all_numeric;
                                 current.vector_size = size;
+
+                                // if not a vector by now, lets see if we build one from components  
+                                if(!current.is_vector && all_numeric)
+                                {
+                                    if (current.ChildCount == 1 && current.children[0].type == nodetype.compound)
+                                    {
+                                        // a = (1 2 3)                             float3       
+                                        // b = (1 pop 2)                           float3
+                                        // c = ((1 2 3) (pop pop pop) (1 2 3))     float3x3 or float9
+
+                                        // each node must define the same number of elements  -> gets a mess otherwise 
+
+                                        int i_vectorsize_estimate = wouldbe_compound_vector_size(current.children[0]);
+                                        if (i_vectorsize_estimate > 0)
+                                        {
+                                            current.children[0].SetIsVector(i_vectorsize_estimate, true);
+                                        }
+                                    }
+                                }
                             }
                             break;
                     }

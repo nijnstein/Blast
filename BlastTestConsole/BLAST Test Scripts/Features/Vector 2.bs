@@ -1,0 +1,64 @@
+﻿
+#
+# VECTOR TEST 2 
+#
+
+
+a = (1 2 3);    
+debug(a); 
+
+b = (2 3 5); 
+debug(b); 
+
+c = a + b;
+debug(c); 
+
+# compiler node tree
+# 
+#    root of 6 
+#        vector assignment of a 
+#          constant parameter 1 
+#          constant parameter 2 
+#          constant parameter 3 
+#       /
+#        vector compound statement of 1 
+#           vector function debug 
+#              vector parameter a 
+#          /
+#       /
+#        vector assignment of b 
+#          constant parameter 2 
+#          constant parameter 3 
+#          constant parameter 5 
+#       /
+#        vector compound statement of 1 
+#           vector function debug 
+#              vector parameter b 
+#          /
+#       /
+#        vector assignment of c 
+#           vector parameter a 
+#          operation Add 
+#           vector parameter b 
+#       /
+#        vector compound statement of 1 
+#           vector function debug 
+#              vector parameter c 
+#          /
+#       /
+#    /
+# 
+# 
+# 000  001 128 085 086 087 000 018 255 244 128 
+# 010  019 001 131 086 087 137 000 018 255 244 
+# 020  131 019 001 134 128 002 131 000 018 255 
+# 030  244 134 019 000 
+
+# b = (3, 2, 1);			 # vectors are defined like function parameter lists 
+# c = a * b;
+# d = (1, 2, 3) * 4;
+# e = normalize(a);
+# f = min(a);				 # should return smallest element
+# g = min(a, b, c, d); 	 # should return smallest vector n or m
+# h = min_arg(a, b);       # should return smallest element of each vector as a [,,]
+# i = a * b * 2            # mixing scalars and vectors in operation sequence

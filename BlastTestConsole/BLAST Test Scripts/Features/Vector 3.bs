@@ -1,0 +1,71 @@
+﻿
+#
+# VECTOR TEST 3
+#
+
+
+a = (3 2 1);
+b = (1 2 3);
+c = a * b;
+
+debug(c); 
+
+d = (6 6 6) * 4;
+
+debug(d); 
+
+
+# compiler node tree
+# 
+#    root of 6 
+#        vector assignment of a 
+#          constant parameter 3 
+#          constant parameter 2 
+#          constant parameter 1 
+#       /
+#        vector assignment of b 
+#          constant parameter 1 
+#          constant parameter 2 
+#          constant parameter 3 
+#       /
+#        vector assignment of c 
+#           vector parameter a 
+#          operation Multiply 
+#           vector parameter b 
+#       /
+#        vector compound statement of 1 
+#           vector function debug 
+#              vector parameter c 
+#          /
+#       /
+#       assignment of d 
+#          constant parameter 6 
+#          constant parameter 6 
+#          constant parameter 6 
+#          operation Multiply 
+#          constant parameter 4 
+#       /
+#       compound statement of 1 
+#          function debug 
+#             parameter d 
+#          /
+#       /
+#    /
+# 
+# 
+# 000  001 128 087 086 085 000 001 131 085 086 
+# 010  087 000 001 134 128 005 131 000 018 255 
+# 020  244 134 019 001 137 138 138 138 005 088 
+# 030  000 018 255 244 137 019 000 
+# WARNING: no support for vector of size 3 -> 1
+# WARNING: no support for vector of size 3 -> 3
+# Blast.Debug - codepointer: 21, id: 134, NUMERIC: [3,00, 4,00, 3,00], vectorsize: 3
+# ERROR: blast: assigned vector size mismatch at #31, should be size '1', evaluated '3'
+
+
+
+# e = normalize(a);
+# f = min(a);				 # should return smallest element
+# g = min(a, b, c, d); 	 # should return smallest vector n or m
+# h = min_arg(a, b);       # should return smallest element of each vector as a [,,]
+# i = a * b * 2            # mixing scalars and vectors in operation sequence

@@ -17,8 +17,8 @@
 number = sqrt(2); 
 integer = 1000000001 + 1; 
 
-
-
+debug(number); 
+debug(integer); 
 
 #validate number 1.41
 #validate integer 1000000002

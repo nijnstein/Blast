@@ -1020,7 +1020,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="idx">indext to start scan from, on success wil be at position after last token of identifier</param>
         /// <param name="idx_max">the max index to scan into</param>
         /// <returns>null on failure, a node with the value on success</returns>
-        node scan_and_parse_numeric(IBlastCompilationData data, ref int idx, in int idx_max)
+        unsafe node scan_and_parse_numeric(IBlastCompilationData data, ref int idx, in int idx_max)
         {
             if (idx == idx_max && idx < data.Tokens.Count && data.Tokens[idx].Item1 == BlastScriptToken.Identifier)
             {
@@ -1036,10 +1036,14 @@ namespace NSS.Blast.Compiler.Stage
             // we wont ever have minus = true in current situation because of tokenizer and how we read assignments
             // but leave it here just in case 
             bool minus = data.Tokens[idx].Item1 == BlastScriptToken.Substract;
+            
 
             bool has_data = !minus; // if first token is minus sign then we dont have data yet
             bool has_fraction = false;
             bool has_indexer = false;
+            
+            int vector_size = 1;
+            bool is_vector = false; 
 
             string value = data.Tokens[idx].Item2;
             idx++;
@@ -1078,10 +1082,24 @@ namespace NSS.Blast.Compiler.Stage
                             }
 
                             //
+                            // not a valid numeric  OR  a vector 
+                            //
+                            // - could grow vector here
+                            //
+                            if(has_data)
+                            {
+                                // todo, not sure - COULD GROW VECTOR HERE AND RETURN THAT IN NODE
+                                return new node(null)
+                                {
+                                    is_constant = true,
+                                    identifier = value,
+                                    type = nodetype.parameter
+                                };
+                            }
 
-                            // not a valid numeric 
                             //idx++;
-                            data.LogError($"scan_and_parse_numeric: sequence of operations not valid for a numeric value: {data.Tokens[idx].Item2} in section {idx} - {idx_max}");
+
+                            data.LogError($"scan_and_parse_numeric: sequence of operations not valid for a numeric value: {data.Tokens[idx].Item2} in section {idx} - {idx_max} => {Blast.VisualizeTokens(data.Tokens, idx, idx_max)}");
                             return null;
 
                             // break;
@@ -1423,7 +1441,6 @@ namespace NSS.Blast.Compiler.Stage
                             data.LogError($"parser.parse_sequence: seperator token '{token}' not allowed inside a sequence");
                             return null;
                         }
-                        break;
 
                     // compounds embedded in parameters -> statements resulting in values : 'sequences'
                     case BlastScriptToken.OpenParenthesis:

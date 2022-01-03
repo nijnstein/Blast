@@ -82,7 +82,7 @@ namespace NSS.Blast.Compiler
             return data[variable_index];
         }
 
-        internal void SetMetaData(in BlastVariableDataType datatype, in byte size, in byte offset)
+        public void SetMetaData(in BlastVariableDataType datatype, in byte size, in byte offset)
         {
             fixed (byte* metadata = this.metadata)
             {
@@ -90,7 +90,7 @@ namespace NSS.Blast.Compiler
             }
         }
 
-        internal int Validate(in IntPtr blast)
+        public int Validate(in IntPtr blast)
         {
             return Execute(in blast, true); 
         }
@@ -100,7 +100,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         /// <param name="blast"></param>
         /// <returns></returns>
-        internal int Execute(in IntPtr blast, bool validation_run = false)
+        public int Execute(in IntPtr blast, bool validation_run = false)
         {
             // setup a package to run 
             BlastPackage pkg = new BlastPackage()

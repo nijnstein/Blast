@@ -152,7 +152,29 @@ namespace NSS.Blast.Compiler.Stage
 
                     if (op != script_op.ex_op && (byte)op >= BlastCompiler.opt_ident)
                     {
-                        cdata.Executable.code[i] = (byte)(replace[(byte)(code[i].code - BlastCompiler.opt_ident)] + BlastCompiler.opt_ident);
+                        // validate parameter offset & index 
+                        // - get parameter index from offset location 
+                        byte id = (byte)(code[i].code - BlastCompiler.opt_ident); 
+
+                        // - its offset should be known 
+                        byte offsetindex = (byte)cdata.Offsets.IndexOf(id);
+                        if (offsetindex < 0)
+                        {
+                            cdata.LogError($"data segment error, failed to get variable index from offset {id} at codepointer {i}");
+                            return (int)BlastError.error_failed_to_translate_offset_into_index;
+                        }
+                        else
+                        {
+                            // it should equal the value in replace 
+                            if(id != replace[offsetindex])
+                            {
+                                cdata.LogError($"data segment error, failed to get variable index from offset {id} at codepointer {i} and match it to the calculated offset of {replace[offsetindex]}");
+                                return (int)BlastError.error_failed_to_translate_offset_into_index;
+                            }
+
+                            // cdata.Executable.code[i] = (byte)(replace[ index  ] + BlastCompiler.opt_ident);
+                            cdata.Executable.code[i] = code[i].code;
+                        }
                     }
                     else
                     {

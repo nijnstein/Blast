@@ -67,6 +67,7 @@ namespace BlastTestConsole
         [InlineData("Validation/Validation Fail 1.bs")]
         [InlineData("Validation/Validation Fail 2.bs")]
         [InlineData("Validation/Validation Fail 3.bs")]
+        [InlineData("Validation/Validation Fail 4.bs")]
         public void Blast_ValidationFailures(string scriptfile)
         {
             Xunit.Assert.False(Validate(scriptfile));
@@ -85,7 +86,6 @@ namespace BlastTestConsole
         {
             Xunit.Assert.False(Validate(scriptfile));
         }
-
 
         [Fact]
         public void Blast_Validate_VariableTypes()

@@ -1,0 +1,23 @@
+﻿
+#
+# VECTOR TEST 3
+#
+
+
+a = (3 2 1);
+b = (1 2 3);
+c = a * b;
+
+debug(c); 
+
+d = (6 6 6) * 4;
+
+debug(d); 
+
+
+
+# e = normalize(a);
+# f = min(a);				 # should return smallest element
+# g = min(a, b, c, d); 	 # should return smallest vector n or m
+# h = min_arg(a, b);       # should return smallest element of each vector as a [,,]
+# i = a * b * 2            # mixing scalars and vectors in operation sequence

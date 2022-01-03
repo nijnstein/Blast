@@ -111,3 +111,8 @@ F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scri
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Validation\Validate Input Output Failure.bs
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Validation\Validate Input Output.bs
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Validation\Validation Fail 3.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\debug.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\vector 1.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Validation\Validation Fail 4.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\Vector 2.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\Vector 3.bs

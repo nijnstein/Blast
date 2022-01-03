@@ -20,6 +20,12 @@
         public string CSName { get; set; }
         
         public bool IsExternalCall => ExternalFunction != null && ExtendedScriptOp == extended_script_op.call;
+        public int ParameterCount {  get { return Parameters != null ? Parameters.Length : 0; } }
+
+        public override string ToString()
+        {
+            return $"Function Definition: {FunctionId} {Match}, parameter count: {ParameterCount}"; 
+        }
 
         public ScriptFunctionDefinition(int id, string match, int min_parameter_count, int max_parameter_count, extended_script_op extended_op = extended_script_op.nop, ExternalFunctionCall external_call = null, params string[] parameters)
         {
@@ -126,5 +132,6 @@
         Peek = 1009,
         Seed = 1010,
         PushFunction = 1011,
+        Debug = 1012
     }
 }

@@ -540,12 +540,20 @@ namespace NSS.Blast.Compiler
         /// </summary>
         /// <param name="type">the nodetype to count</param>
         /// <returns></returns>
-        internal int CountChildType(nodetype type)
+        public int CountChildType(nodetype type)
         {
             return children == null ? 0 : children.Count(x => x.type == type);
         }
 
-        internal bool HasChildNodes => children.Count > 0;
+        public bool HasChildNodes => children != null && children.Count > 0;
+
+                /// <summary>
+        /// number of child nodes below this node
+        /// </summary>
+        public int ChildCount
+        {
+            get { return children == null ? 0 : children.Count; }
+        }
 
         internal void SetIsVector(int _vector_size, bool propagate_to_parents = true)
         {
@@ -555,7 +563,7 @@ namespace NSS.Blast.Compiler
             vector_size = _vector_size;
 
             // propagate vector state to parent -> dont do this if not a vector // todo verify 
-            if (parent != null && propagate_to_parents && !is_vector)
+            if (parent != null && propagate_to_parents && is_vector)
             {
                 switch (type)
                 {

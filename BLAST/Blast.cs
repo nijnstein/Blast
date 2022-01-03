@@ -11,11 +11,12 @@ using Unity.Assertions;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+using System.Text;
 
 #if !NOT_USING_UNITY
 using Unity.Entities;
 using Unity.Jobs;
-#endif 
+#endif
 
 using Random = Unity.Mathematics.Random;
 
@@ -346,7 +347,7 @@ namespace NSS.Blast
 
 #endregion
 
-#region Tokens 
+        #region Tokens 
 
         /// <summary>
         /// tokens that can be used in script
@@ -389,9 +390,31 @@ namespace NSS.Blast
         {
             return op == script_op.jump || op == script_op.jump_back || op == script_op.jz || op == script_op.jnz;
         }
-#endregion
 
-#region Functions 
+
+        public static string VisualizeTokens(List<Tuple<BlastScriptToken, string>> tokens, int idx, int idx_max)
+        {
+            StringBuilder sb = StringBuilderCache.Acquire();
+
+            // obviously should be more verbose ... todo
+            for (int i = idx; i <= idx_max; i++)
+            {
+                if (i < tokens.Count)
+                {
+                    Tuple<BlastScriptToken, string> token = tokens[i];
+                    sb.Append(token.Item1);
+                    sb.Append(" ");
+                    sb.Append(token.Item2);
+                    sb.Append(" ");
+                }
+            }
+            return StringBuilderCache.GetStringAndRelease(ref sb); 
+        }
+
+
+        #endregion
+
+        #region Functions 
 
         /// <summary>
         /// defined functions for script
@@ -470,7 +493,9 @@ namespace NSS.Blast
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Peek, "peek", 0, 1, script_op.peek, "n"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Yield, "yield", 0, 1, script_op.yield, "n"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Input, "input", 3, 3, script_op.nop, "id", "offset", "length"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Output, "output", 3, 3, script_op.nop, "id", "offset", "length")
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Output, "output", 3, 3, script_op.nop, "id", "offset", "length"),
+            
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debug", 1, 1, extended_script_op.debug, null, "id")
         };
 
         public ScriptFunctionDefinition GetFunctionByScriptOp(script_op op)
@@ -493,12 +518,12 @@ namespace NSS.Blast
             return null;
         }
 
-        internal ScriptFunctionDefinition GetFunctionById(ReservedScriptFunctionIds function_id)
+        public ScriptFunctionDefinition GetFunctionById(ReservedScriptFunctionIds function_id)
         {
             return GetFunctionById((int)function_id);
         }
 
-        internal ScriptFunctionDefinition GetFunctionById(int function_id)
+        public ScriptFunctionDefinition GetFunctionById(int function_id)
         {
             foreach (var f in Blast.Functions)
                 if (f.FunctionId == function_id)
@@ -1096,7 +1121,7 @@ namespace NSS.Blast
         }
 #endif
 
-#endregion
+        #endregion
 
     }
 

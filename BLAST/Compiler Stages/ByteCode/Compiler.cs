@@ -90,10 +90,21 @@ namespace NSS.Blast.Compiler.Stage
             else
             {
                 BlastVariable p_id = ast_param.variable;
+
                 if (p_id != null)
                 {
                     // numeric/id value, add its variableId to output code
-                    code.Add((byte)(p_id.Id + BlastCompiler.opt_ident));
+                    // it should add p_id.Id as its offset into data 
+                    if(p_id.Id < 0 || p_id.Id >= data.OffsetCount)
+                    {
+                        data.LogError($"CompileParameter: node: <{ast_param}>, identifier/variable not correctly offset: '{ast_param.identifier}'");
+                        return false; 
+                    }
+
+                    int offset = data.Offsets[p_id.Id];
+                    
+                    code.Add((byte)(offset + BlastCompiler.opt_ident));
+                    // code.Add((byte)(p_id.Id + BlastCompiler.opt_ident));
                 }
                 else
                 {
@@ -177,6 +188,16 @@ namespace NSS.Blast.Compiler.Stage
             {
                 data.LogError($"CompileFunction: node <{ast_function}> has no function set");
                 return false;
+            }
+
+            // skip compilation of debug if not enabled 
+            if (!data.CompilerOptions.CompileDebug)
+            {
+                if (ast_function.function.FunctionId == (int)ReservedScriptFunctionIds.Debug)
+                {
+                    // debug function: skip
+                    return true;
+                }
             }
 
             // special cases: yield and push
@@ -419,6 +440,7 @@ namespace NSS.Blast.Compiler.Stage
                                 case ReservedScriptFunctionIds.Pop3:
                                 case ReservedScriptFunctionIds.Pop4:
                                 case ReservedScriptFunctionIds.Seed:
+                                case ReservedScriptFunctionIds.Debug:
                                     {
                                         if (!CompileFunction(data, ast_node, code))
                                         {
@@ -473,7 +495,18 @@ namespace NSS.Blast.Compiler.Stage
                     // encode first part of assignment 
                     // [op:assign][var:id+128]
                     code.Add(script_op.assign);
-                    code.Add((byte)(assignee.Id + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
+
+                    // Assingnee -> parameter must be offset in output 
+
+                    // numeric/id value, add its variableId to output code
+                    // it should add p_id.Id as its offset into data 
+                    if (assignee.Id < 0 || assignee.Id >= data.OffsetCount)
+                    {
+                        data.LogError($"CompileParameter: node: <{ast_node}>, assignment destination variable not correctly offset: '{assignee}'");
+                        break; 
+                    }
+
+                    code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
 
                     // compile child nodes 
                     foreach (node ast_child in ast_node.children)
@@ -780,6 +813,10 @@ namespace NSS.Blast.Compiler.Stage
         public int Execute(IBlastCompilationData data)
         {
             CompilationData cdata = (CompilationData)data;
+
+            // make sure data offsets are calculated and set in im data. 
+            // the packager creates this data but it might not have executed yet depending on configuration 
+            cdata.CalculateVariableOffsets(); 
 
             // compile into bytecode 
             cdata.code = CompileAST(cdata);

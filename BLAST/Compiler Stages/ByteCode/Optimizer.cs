@@ -277,13 +277,33 @@ namespace NSS.Blast.Compiler.Stage
                         if (b_data >= BlastCompiler.opt_ident)
                         {
                             // if not a constant then update the variable that must exist 
-                            BlastVariable v = result.GetVariableFromOffset((byte)(b_data - BlastCompiler.opt_ident));
+                            BlastVariable v = null; 
+                            v = result.GetVariableFromOffset((byte)(b_data - BlastCompiler.opt_ident));
 
                             if(v == null)
                             {
+#if DEBUG
+                                Standalone.Debug.Log(result.GetHumanReadableCode());
+                                Standalone.Debug.Log(result.GetHumanReadableBytes());
+#endif
                                 result.LogError($"Optimizer: pattern: {matched_pattern.name}, could not find variable based on offset: {b_data - BlastCompiler.opt_ident}, this could be due to a packaging failure");
-                                return false; 
                             }
+
+                       //     if(v == null)
+                       //     {
+                       //         // var by index ... could be BOEM 
+                       //         int var_index = b_data - BlastCompiler.opt_ident;
+                       //         if (var_index >= 0 && var_index < result.VariableCount)
+                       //         {
+                       //             v = result.Variables[var_index];
+                       //         }
+                       //         else
+                       //         {
+                       //             result.LogError($"Optimizer: pattern: {matched_pattern.name}, could not find variable based on offset/index: {b_data - BlastCompiler.opt_ident}, this could be due to a packaging failure");
+                       //             return false;
+                       //         }
+                       //     }
+
 
                             if (vector_size == 0)
                             {
@@ -325,7 +345,7 @@ namespace NSS.Blast.Compiler.Stage
         }
 
     
-        #region patterns 
+#region patterns 
 
         // pattern matching works very stupid but with the right patterns is very powerfull. 
         const byte opt_repeat = 255; // repeat pattern into replacer until no match, then continue replace after repeat
@@ -672,7 +692,7 @@ namespace NSS.Blast.Compiler.Stage
             replace = new byte[] { (byte)script_op.end }
         };
 
-        #endregion
+#endregion
 
         // validate ternaries       => ensure sel(a,b,c) => math.select
 
@@ -703,7 +723,7 @@ namespace NSS.Blast.Compiler.Stage
             (byte)script_op.diva, 0
         };
 
-        #endregion
+#endregion
 
         /// <summary>
         /// scan and replace patterns 
@@ -811,7 +831,7 @@ namespace NSS.Blast.Compiler.Stage
 
             return true;
         }
-        #endregion
+#endregion
 
 
         /// <summary>
@@ -870,31 +890,7 @@ namespace NSS.Blast.Compiler.Stage
             return (int)BlastError.success; 
         }
 
-        public unsafe static int CalculateVariableOffsets(CompilationData cdata)
-        {
-            // clear out any existing offsets (might have ran multiple times..) 
-            cdata.Offsets.Clear();
-
-            byte offset = 0;
-            for (int i = 0; i < cdata.Variables.Count; i++)
-            {
-                BlastVariable v = cdata.Variables[i];
-
-                if (v.IsVector)
-                {
-                    // variable sized float 
-                    cdata.Offsets.Add(offset);
-                    offset = (byte)(offset + v.VectorSize);
-                }
-                else
-                {
-                    cdata.Offsets.Add(offset);
-                    offset++;
-                }
-            }
-
-            return offset; 
-        }
+      
 
         /// <summary>
         /// execute the bytecode optimizer 
@@ -914,7 +910,7 @@ namespace NSS.Blast.Compiler.Stage
                     if (cdata.HasVariables && !cdata.HasOffsets || cdata.VariableCount != cdata.OffsetCount)
                     {
                         // generate variable offsets 
-                        CalculateVariableOffsets(cdata); 
+                        cdata.CalculateVariableOffsets(); 
                     }
 
                     Optimize(cdata); 
