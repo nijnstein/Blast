@@ -425,8 +425,8 @@ namespace NSS.Blast
             new ScriptFunctionDefinition(1, "min", 2, 63, script_op.min),
             new ScriptFunctionDefinition(2, "max", 2, 63, script_op.max),
 
-            new ScriptFunctionDefinition(3, "mina", 2, 63, script_op.mina),
-            new ScriptFunctionDefinition(4, "maxa", 2, 63, script_op.maxa),
+            new ScriptFunctionDefinition(3, "mina", 1, 63, script_op.mina),
+            new ScriptFunctionDefinition(4, "maxa", 1, 63, script_op.maxa),
 
             new ScriptFunctionDefinition(5, "select", 3, 3, script_op.select, "a", "b", "c"),
 

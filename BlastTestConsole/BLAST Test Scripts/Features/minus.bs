@@ -1,0 +1,9 @@
+﻿a = -1; 
+b = 1 - - 2;
+c = -1 + -2; 
+d = -1 * -1;
+
+#validate a -1 
+#validate b 3
+#validate c -3
+#validate d 2

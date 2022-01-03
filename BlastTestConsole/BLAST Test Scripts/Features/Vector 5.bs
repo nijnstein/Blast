@@ -1,0 +1,13 @@
+﻿
+#
+# VECTOR TEST 5
+#
+
+a = (1 2 3);
+b = (100 110 120);	
+c = dot(a, b); 
+d = normalize(a);
+e = a * c * 2;             # possibly fails with mula optimizer... 
+
+f = min(a b c d e);
+g = mina(a b c d e); 

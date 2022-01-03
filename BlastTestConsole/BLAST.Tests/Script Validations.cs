@@ -56,6 +56,7 @@ namespace BlastTestConsole
         [InlineData("Features/F1.bs")]
         [InlineData("Features/F2.bs")]
         [InlineData("Features/F3.bs")]
+        [InlineData("Features/Minus.bs")]
         public void Blast_Validate_Basic(string scriptfile)
         {
             Xunit.Assert.True(Validate(scriptfile));
@@ -95,7 +96,9 @@ namespace BlastTestConsole
         }
 
         [Theory]
-        [InlineData("Features/Vector 3.bs", 24, 25, 24)]
+        [InlineData("Features/Vector 3.bs", 24, 24, 24)]
+        [InlineData("Features/Vector 4.bs", 10, 6, 4)]
+        [InlineData("Features/Vector 5.bs", -1, -1, -1)]
         public void BlastScript_Vectors_1(string scriptfile, float v1, float v2, float v3)
         {
             Blast blast = Blast.Create(Allocator.Persistent);
@@ -129,17 +132,29 @@ namespace BlastTestConsole
 
         unsafe bool ValidateStack(CompilationData data, float v1, float v2, float v3)
         {
-            if( data.Executable.data[0] == v1
+            if (data.Executable.data[0] == v1
                 &&
                 data.Executable.data[1] == v2
                 &&
                 data.Executable.data[2] == v3)
             {
-                return true; 
+                return true;
             }
 
             Debug.LogError($"failed to validate data, should be {v1} {v2} {v3} but found {data.Executable.data[0]} {data.Executable.data[1]} {data.Executable.data[2]}");
-            return false; 
+            return false;
+        }
+        unsafe bool ValidateStack(CompilationData data, float v1, float v2)
+        {
+            if (data.Executable.data[0] == v1
+                &&
+                data.Executable.data[1] == v2)
+            {
+                return true;
+            }
+
+            Debug.LogError($"failed to validate data, should be {v1} {v2} but found {data.Executable.data[0]} {data.Executable.data[1]}");
+            return false;
         }
     }
 }

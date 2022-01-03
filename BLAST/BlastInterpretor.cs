@@ -2495,6 +2495,15 @@ namespace NSS.Blast.Interpretor
 
                 case BlastVectorSizes.float3:
                     {
+                        BlastVariableDataType datatype = default;
+                        byte popped_vectorsize = 0;
+                        void* data = pop_with_info(in code_pointer, out datatype, out popped_vectorsize); 
+
+ //                       tomorrow.......      after maxa there is n parameters for all stuff to put through cmax   (should we also rename maxa to cmax?)
+
+ //                           most functions will need updates to support floats 
+
+
                         vector_size = 1;
                         f4.x = math.cmax(f4.xyz);
                         break;
