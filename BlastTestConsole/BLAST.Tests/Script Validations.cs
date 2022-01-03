@@ -38,8 +38,9 @@ namespace BlastTestConsole
 
                 return validated;
             }
-            catch
+            catch(Exception ex)
             {
+                NSS.Blast.Standalone.Debug.LogError(ex.ToString());
                 return false; 
             }
             finally
@@ -56,7 +57,9 @@ namespace BlastTestConsole
         [InlineData("Features/F1.bs")]
         [InlineData("Features/F2.bs")]
         [InlineData("Features/F3.bs")]
-        [InlineData("Features/Minus.bs")]
+        [InlineData("Features/Minus 1.bs")]
+        [InlineData("Features/Minus 2.bs")]
+        [InlineData("Features/Minus 3.bs")]
         public void Blast_Validate_Basic(string scriptfile)
         {
             Xunit.Assert.True(Validate(scriptfile));

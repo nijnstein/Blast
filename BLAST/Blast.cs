@@ -441,8 +441,8 @@ namespace NSS.Blast
 
             new ScriptFunctionDefinition(11, "any", 2, 63, script_op.any),
             new ScriptFunctionDefinition(12, "all", 2, 63, script_op.all),
-            new ScriptFunctionDefinition(13, "adda", 2, 63, script_op.suba),
-            new ScriptFunctionDefinition(14, "suba", 2, 63, script_op.adda),
+            new ScriptFunctionDefinition(13, "adda", 2, 63, script_op.adda),
+            new ScriptFunctionDefinition(14, "suba", 2, 63, script_op.suba),
             new ScriptFunctionDefinition(15, "diva", 2, 63, script_op.diva),
             new ScriptFunctionDefinition(16, "mula", 2, 63, script_op.mula),
 

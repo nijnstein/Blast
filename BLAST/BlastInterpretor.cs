@@ -2498,10 +2498,10 @@ namespace NSS.Blast.Interpretor
                         BlastVariableDataType datatype = default;
                         byte popped_vectorsize = 0;
                         void* data = pop_with_info(in code_pointer, out datatype, out popped_vectorsize); 
-
- //                       tomorrow.......      after maxa there is n parameters for all stuff to put through cmax   (should we also rename maxa to cmax?)
-
- //                           most functions will need updates to support floats 
+       
+  //                      tomorrow.......      after maxa there is n parameters for all stuff to put through cmax   (should we also rename maxa to cmax?)
+//
+    //                        most functions will need updates to support floats 
 
 
                         vector_size = 1;
@@ -2521,13 +2521,23 @@ namespace NSS.Blast.Interpretor
             return f4;
         }
 
+        /// <summary>
+        /// return the smallest of the arguments
+        /// </summary>
+        /// <param name="code_pointer"></param>
+        /// <param name="minus"></param>
+        /// <param name="vector_size"></param>
+        /// <param name="f4"></param>
+        /// <returns></returns>
         float4 get_mina_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
         {
             code_pointer++;
             byte c = code[code_pointer];
 
             vector_size = (byte)(c & 0b11);
+
             c = (byte)((c & 0b1111_1100) >> 2);
+            
             switch ((BlastVectorSizes)vector_size)
             {
                 case BlastVectorSizes.float1:
@@ -2545,7 +2555,7 @@ namespace NSS.Blast.Interpretor
                     {
                         vector_size = 1;
                         f4.x = math.cmin(f4.xy);
-                        break;
+                        break;                                                                                                                                
                     }
 
                 case BlastVectorSizes.float3:
@@ -4068,6 +4078,14 @@ namespace NSS.Blast.Interpretor
                     case script_op.equals:
                         {
                             current_operation = (script_op)op;
+                            if (prev_op == 0) // nop op -> any - is at start of ops
+                            {
+                                if((script_op)op == script_op.substract)
+                                {
+                                    minus = true; 
+                                }
+                            }
+
                             last_is_op_or_first = true;
                         }
                         break;

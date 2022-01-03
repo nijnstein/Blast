@@ -81,6 +81,33 @@ namespace NSS.Blast.Compiler.Stage
             return comment;
         }
 
+        static bool is_operation_that_allows_to_combine_minus(BlastScriptToken token)
+        {
+            switch(token)
+            {
+                // the obvious =-*/
+                case BlastScriptToken.Add:
+                case BlastScriptToken.Substract:
+                case BlastScriptToken.Multiply:
+                case BlastScriptToken.Divide:
+                // the booleans &|^
+                case BlastScriptToken.And:
+                case BlastScriptToken.Or:
+                case BlastScriptToken.Xor:
+                case BlastScriptToken.Not:
+                case BlastScriptToken.GreaterThenEquals:
+                case BlastScriptToken.GreaterThen:
+                case BlastScriptToken.SmallerThen:
+                case BlastScriptToken.SmallerThenEquals:
+                // assignments count
+                case BlastScriptToken.Equals:
+                // as wel as opening a closure (
+                case BlastScriptToken.OpenParenthesis:
+                    return true; 
+            }
+            return false;
+        }
+
 
         /// <summary>
         /// classify char as whitespace: space, tabs, cr/lf, , (comma)
@@ -243,7 +270,7 @@ namespace NSS.Blast.Compiler.Stage
             {
                 if (is_whitespace(code[i1])) { i1++; continue; }
 
-                // check if a #comment, #define or #validation 
+                // check if a #comment, #define or #validation #disable
                 if (is_comment_start(code[i1]))
                 {
                     int i_comment_end = scan_to_comment_end(code, i1 + 1);
@@ -262,7 +289,7 @@ namespace NSS.Blast.Compiler.Stage
                         comment = scan_until_stripend(comment);
 
                         // get defined value seperated by spaces or tabs 
-                        string[] a = comment.Trim().Split( new char[] { ' ' , '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                        string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         if (a.Length == 3)
                         {
                             string def_key = a[1].Trim().ToLowerInvariant();
@@ -282,7 +309,7 @@ namespace NSS.Blast.Compiler.Stage
                                 else
                                 {
                                     // it has to be unique
-                                    if(!data.Defines.ContainsKey(def_key))
+                                    if (!data.Defines.ContainsKey(def_key))
                                     {
                                         data.Defines.Add(def_key, a[2].Trim());
                                     }
@@ -382,7 +409,7 @@ namespace NSS.Blast.Compiler.Stage
                     else
                     {
                         // it has to be a comment, log trace 
-                        // data.LogTrace($"script comment: {comment}");
+                        // data.LogTrace($"trace: {comment}");
                     }
 
                     i1 = math.max(i1 + 1, i_comment_end);
@@ -489,8 +516,27 @@ namespace NSS.Blast.Compiler.Stage
 
                         if (have_numeric)
                         {
-                            // add the numeric as an identifier 
-                            tokens.Add(new Tuple<BlastScriptToken, string>(BlastScriptToken.Identifier, identifier));
+                            // check the last 2 tokens, if the last is - and before that is either nothing or another operation then 
+                            // the minus can be combined with the numeric in identifier 
+                            bool combine_minus =
+                                // == second token, first is minus, 
+                                (tokens.Count == 1  && tokens[0].Item1 == BlastScriptToken.Substract)
+                                ||
+                                (tokens.Count > 2   && tokens[tokens.Count - 1].Item1 == BlastScriptToken.Substract
+                                                    && is_operation_that_allows_to_combine_minus(tokens[tokens.Count - 2].Item1));
+
+                            // we combine the minus with the id, but 
+                            // WE DONT replace - - with +, this could change operations if multiplication rules are applied
+                            if (combine_minus)
+                            {
+                                // combine - with identifier
+                                tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.Identifier, "-" + identifier);
+                            }
+                            else
+                            {
+                                // add the numeric as an identifier 
+                                tokens.Add(new Tuple<BlastScriptToken, string>(BlastScriptToken.Identifier, identifier));
+                            }
                         }
                         else
                         {

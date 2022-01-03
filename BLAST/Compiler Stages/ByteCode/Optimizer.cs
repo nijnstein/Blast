@@ -246,18 +246,25 @@ namespace NSS.Blast.Compiler.Stage
                 int j = 0;
                 int c = 0;
                 int n = math.min(matched_pattern.pattern.Length, ops.Count - i - 1);
+                int c_matched = 0; 
                 int vector_size = 0;
 
                 for (; j < n;)
                 {
                     byte b = matched_pattern.pattern[j];
 
-                    if (b >= BlastCompiler.opt_value)
+                    if (b >= BlastCompiler.opt_value)        
                     {
                         // matched a value or an id in data 
                         byte b_data = (byte)ops[j + i].code;
-                        
-                        if(b_data == (byte)script_op.ex_op)
+
+                        // BUGFIX: MATCHES VALUE ON ASSIGNEE in test 'Minus 2.bs'
+                        if (j + i > 1 && ops[j+i-1].code == (byte)script_op.assign)
+                        {
+                            return false;
+                        }
+
+                        if (b_data == (byte)script_op.ex_op)
                         {
                             // just dont 
                             return false; 
@@ -321,6 +328,7 @@ namespace NSS.Blast.Compiler.Stage
                             }
                         }
 
+                        c_matched++; 
                     }
                     else
                     {
@@ -339,8 +347,8 @@ namespace NSS.Blast.Compiler.Stage
                     j++;
                 }
 
-
-                return j == matched_pattern.pattern.Length;
+                return c_matched == matched_pattern.pattern.Length;
+               // return j == matched_pattern.pattern.Length;
             }
         }
 

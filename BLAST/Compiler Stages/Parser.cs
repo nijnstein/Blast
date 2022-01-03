@@ -1771,6 +1771,9 @@ namespace NSS.Blast.Compiler.Stage
             {
                 CompilationData cdata = data as CompilationData;
 
+                // although the tokenizer recombines the minus sign with variables we split them here 
+                // to lookup a possible match in constants, if matched to any the negation is put back
+                // seperate as an operand before the positive constant, essentially undoing the work from tokenizer in the case of known constants 
                 bool is_negated = ast_node.identifier[0] == '-';
                 bool is_constant = is_negated || char.IsDigit(ast_node.identifier[0]);
                 bool is_define = false;
@@ -1846,12 +1849,20 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
 
-            // map children 
-            foreach (node child in ast_node.children)
+            // map children (collection may change) 
+            int i = 0; 
+            while(i < ast_node.ChildCount)
             {
-                map_identifiers(data, child);
+                int c = ast_node.ChildCount;
+                map_identifiers(data, ast_node.children[i]);
+                if(c != ast_node.ChildCount)
+                {
+                    // childlist changed 
+                    i += ast_node.ChildCount - c;
+                }
+                i++;
             }
-
+                
             return data.IsOK;
         }
 

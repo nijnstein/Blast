@@ -429,6 +429,49 @@ namespace NSS.Blast.Compiler.Stage
             return changes;
         }
 
+        static int replace_double_minus(IBlastCompilationData data, node n)
+        {
+            int i = 0;
+            bool last = false;
+            int c = 0;
+            while (i < n.ChildCount)
+            {
+                node child = n.children[i];
+
+                bool isminus = child.token == BlastScriptToken.Substract;
+
+
+                if (last && isminus)
+                {
+                    // replace by remove the current and updating the last 
+                    n.children.RemoveAt(i);
+                    n.children[i - 1].token = BlastScriptToken.Add; 
+                    c += 1;
+                    i--;
+                }
+                else
+                if (last)
+                {
+                    if (child.type == nodetype.parameter && child.variable != null)
+                    {
+                        if (child.identifier.Length > 1 && child.identifier[0] == '-')
+                        {
+                            // replace by removing - from identifier and updating the last to +
+                            child.identifier = child.identifier.Substring(1);
+                            if (child.variable.Name[0] == '-') { child.variable.Name = child.variable.Name.Substring(1); }
+                            n.children[i - 1].token = BlastScriptToken.Add; 
+                            c += 1;
+                        }
+                    }
+                }               
+
+                last = isminus; 
+                i++; 
+            }
+
+            return c; 
+        }
+
 
         /// <summary>
         /// analyze a node and its children, can be run in parallel
@@ -446,6 +489,7 @@ namespace NSS.Blast.Compiler.Stage
                             apply_multiplication_rules(data, n);
                             refactor_divisions(data, n);
                             simplify_compound_arithmetic(data, n);
+                            replace_double_minus(data, n); 
                         }
                         return;
 

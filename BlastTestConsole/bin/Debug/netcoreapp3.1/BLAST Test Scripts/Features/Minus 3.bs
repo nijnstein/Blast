@@ -1,0 +1,6 @@
+﻿
+# double minus should be compiled int0 a single plus
+
+d = -1 - -17;   
+
+#validate d 16
