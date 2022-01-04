@@ -431,6 +431,7 @@ namespace NSS.Blast.Compiler
                                 case extended_script_op.logn: sb.Append("logn "); break;
                                 case extended_script_op.cross: sb.Append("cross "); break;
                                 case extended_script_op.debug: sb.Append("debug "); break;
+                                case extended_script_op.debugstack: sb.Append("debugstack "); break;
                                 case extended_script_op.call:
                                     sb.Append("call ");
                                     // next 4 bytes are the function id 

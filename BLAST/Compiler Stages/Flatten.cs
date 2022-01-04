@@ -140,6 +140,7 @@ namespace NSS.Blast.Compiler.Stage
                         // could have nested functions .. 
                         for (int k = 0; k < c2.children.Count; k++)
                         {
+                            node inserted = null; 
                             node c3 = c2.children[k];
                             switch (c3.type)
                             {
@@ -147,21 +148,38 @@ namespace NSS.Blast.Compiler.Stage
                                 //@ assignment.compound.function.function 
                                 //
                                 case nodetype.function:
-                                    // move function back, into is not an option with functions 
+                                   
+                                    // allow only popX to remain 
+                                    if (!c3.function.IsPopVariant())
+                                    {
 
-                                    //
-                                    // if there is another pop then probably it will fuck the order up
-                                    //
-                                    // TODO 
+                                        inserted = flatten_replace_node(data, ref c_replaced, ref i_insert, n_insert, c3, false);
+                                        if (inserted != null)
+                                        {
+                                            n_node_to_flatten.depends_on.Add(inserted);
+                                        }
 
-                                    // results in endless loop
 
-                                    ///     node inserted = flatten_replace_node(ref c_replaced, ref i_insert, n_insert, c3, false);
-                                    ///     if (inserted != null) n_node_to_flatten.depends_on.Add(inserted);
+                                        // move function back, into is not an option with functions 
 
-                                    return;
+                                        //
+                                        // if there is another pop then probably it will fuck the order up
+                                        //
+                                        // TODO 
+
+                                        // results in endless loop
+
+                                        ///     node inserted = flatten_replace_node(ref c_replaced, ref i_insert, n_insert, c3, false);
+                                        ///     if (inserted != null) n_node_to_flatten.depends_on.Add(inserted);
+                                    }    
+                                    break;
 
                                 case nodetype.compound:
+                                    inserted = flatten_replace_node(data, ref c_replaced, ref i_insert, n_insert, c3, false);
+                                    if (inserted != null)
+                                    {
+                                        n_node_to_flatten.depends_on.Add(inserted);
+                                    }
                                     break;
                             }
                         }
@@ -221,9 +239,16 @@ namespace NSS.Blast.Compiler.Stage
             return insert;
         }
 
+
+
+
+
+
+
         public int Execute(IBlastCompilationData data)
         {
             flatten(data, data.AST);
+        
             return (int)(data.IsOK ? BlastError.success : BlastError.error);
         }
     }

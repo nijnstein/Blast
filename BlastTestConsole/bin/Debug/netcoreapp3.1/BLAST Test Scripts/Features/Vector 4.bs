@@ -3,25 +3,14 @@
 # VECTOR TEST 4
 #
 
-a = min(1 2 3) * 10;
-b = 1;				 	  # reserve a float for b, want to validate stack later
-c = 1;                    # reserve a float for c
-d = (4 5 6);
-e = (8 9 10);
+a = (4 5 6);
+b = (8 9 10);
 
-b = maxa(d);			  # 6 
-e = max(d, e); 			  # 8 9 10
-c = maxa(e);			  # 10 
-c = max(b, c);			  # 10
+a = max(a, b);
 
 debug(a); 
 debug(b);
-debug(c);
-debug(d);
 
-#validate a 10
-#validate b 6
-#validate c 10
 
 # e = normalize(a);
 # g = min(a, b, c, d); 	 # should return smallest vector n or m

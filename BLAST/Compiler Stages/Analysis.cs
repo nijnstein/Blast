@@ -18,6 +18,8 @@ namespace NSS.Blast.Compiler.Stage
         /// </summary>
         static int simplify_compound_arithmetic(IBlastCompilationData data, node n)
         {
+            if (n.type == nodetype.function) return 0;  
+
             // 1 or more compounds
             // fully arithmetic 
             int n_compounds;
@@ -52,6 +54,7 @@ namespace NSS.Blast.Compiler.Stage
                             break;
                         case nodetype.compound:
                             {
+                                // move up compounds 
                                 n_compounds++;
                                 foreach (var cc in c.children)
                                 {
@@ -85,26 +88,40 @@ namespace NSS.Blast.Compiler.Stage
                 if (n_compounds > 0)
                 {
                     // move up compounds
-                    for (int i = 0; i < n.children.Count; i++)
-                    {
-                        if (n.children[i].type == nodetype.compound)
+                        for (int i = 0; i < n.children.Count; i++)
                         {
-                            var cmp = n.children[i];
-                            cmp.parent = null;
-                            foreach (var cc in cmp.children)
+                            if (n.children[i].type == nodetype.compound)
                             {
-                                cc.parent = n;
-                                if (cc.type == nodetype.compound) b_again = true; // todo check recursively ?? would allow deeper analasis then this simple thing 
+                                // this should actually be done in flatten ..... 
+
+
+
+                                //
+                                //   detect if parent is a function, then we should push it to stack and pop as param 
+                                //
+
+                                var cmp = n.children[i];
+                                cmp.parent = null;
+                                foreach (var cc in cmp.children)
+                                {
+                                    cc.parent = n;
+                                    if (cc.type == nodetype.compound) b_again = true; // this should not happen if leaf 
+                                }
+
+                                // 
+                                //  here   mina(1 (-2) 3) became mina( 1 - 2  3)
+                                // 
+
+
+                                n.children.RemoveAt(i);
+                                n.children.InsertRange(i, cmp.children);
+                                i += cmp.children.Count;
+
+                                cmp.children.Clear();
+                                b_again = true;
                             }
-
-                            n.children.RemoveAt(i);
-                            n.children.InsertRange(i, cmp.children);
-                            i += cmp.children.Count;
-
-                            cmp.children.Clear();
-                            b_again = true;
                         }
-                    }
+
 
                     n_moves += n_compounds;
                 }
@@ -523,8 +540,11 @@ namespace NSS.Blast.Compiler.Stage
             {
                 analyze_node(data, child);
 
+
+
                 int n = 0;
-                while (simplify_node(data, child) > 0 && n < 42) n++;
+                while (simplify_node(data, child) > 0 && n++ < 5);
+
             }
 #if MULTITHREADED
             );

@@ -138,7 +138,7 @@ namespace NSS.Blast.Compiler
                 }
 
                 // set package 
-                blaster.SetPackage(&pkg, pcode, pdata, pmetadata, pdata + pkg.data_offset);
+                blaster.SetPackage(&pkg, pcode, pdata, pmetadata, pdata); // NOTE BUG: stack offset by stack offset. data and stack share buffer   + pkg.data_offset);
                 blaster.ValidationMode = validation_run; 
 
                 // run it 

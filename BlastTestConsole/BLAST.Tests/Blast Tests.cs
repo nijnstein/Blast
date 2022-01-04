@@ -22,6 +22,7 @@ namespace BlastTestConsole
 
         [Theory]
         [InlineData("features/debug.bs")]
+        [InlineData("features/debugstack.bs")]
         public void BlastScript_Debug(string scriptfile)
         {
             Blast blast = Blast.Create(Allocator.Persistent);

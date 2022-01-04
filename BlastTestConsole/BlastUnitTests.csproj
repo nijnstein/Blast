@@ -36,6 +36,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="BLAST Test Scripts\Features\DebugStack.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="BLAST Test Scripts\Features\Mina 1.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="BLAST Test Scripts\Features\Minus 3.bs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -121,3 +121,5 @@ F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scri
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\Minus 1.bs
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\Minus 2.bs
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\Minus 3.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\Mina 1.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\DebugStack.bs

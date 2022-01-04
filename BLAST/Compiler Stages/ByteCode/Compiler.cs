@@ -201,17 +201,17 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // special cases: yield and push
-            switch (ast_function.function.ScriptOp)            
+            switch (ast_function.function.ScriptOp)
             {
                 case script_op.yield:
                     {
                         code.Add((byte)script_op.yield);
-                        if(!CompileParameters(data, ast_function, code, ast_function.children, 0, 1))
+                        if (!CompileParameters(data, ast_function, code, ast_function.children, 0, 1))
                         {
-                            return false; 
+                            return false;
                         }
                     }
-                    return true; 
+                    return true;
 
                 case script_op.push:
                 case script_op.pushv:
@@ -262,11 +262,25 @@ namespace NSS.Blast.Compiler.Stage
                             }
                         }
                     }
-                    return true; 
+                    return true;
             }
 
+            bool is_flat_parameter_list = node.IsFlatParameterList(ast_function.children); 
+            
+            // if not a flat parameter list => attempt to make it flat 
+            if(!is_flat_parameter_list)
+            {
+
+                ///      , -8,    // ->  push(-8);    , pop, 
+
+
+
+            }
+
+
+
             // check if the list of children is flat                
-            if (node.IsFlatParameterList(ast_function.children))
+            if (is_flat_parameter_list)
             {
                 bool has_variable_paramcount = ast_function.function.MinParameterCount != ast_function.function.MaxParameterCount;
 

@@ -136,7 +136,8 @@ namespace NSS.Blast.Interpretor
                 case BlastPackageMode.Compiler:
                     {
                         package->code_pointer = 0;
-                        // stack is shared on data segment 
+                        // BUG:  stack is shared on data segment but its pointer is already offset 
+                      //  package->stack_offset = 0; 
                         package->stack_offset = package->data_offset;
                     }
                     break;
@@ -595,7 +596,7 @@ namespace NSS.Blast.Interpretor
 #endif 
                 // variable acccess
                 // TODO   SHOULD TEST NOT SWITCHING VECTOR ELEMENT ORDER ON STACK OPERATIONS 
-                return ((float2*)data)[c - opt_id];
+                return  new float2( ((float*)data)[c - opt_id], ((float*)data)[c - opt_id + 1]) ;
             }
             else
             if (c == (byte)script_op.pop)
@@ -646,7 +647,9 @@ namespace NSS.Blast.Interpretor
 #endif 
                 // variable acccess
                 // TODO   SHOULD TEST NOT SWITCHING VECTOR ELEMENT ORDER ON STACK OPERATIONS 
-                return ((float3*)data)[c - opt_id];
+                float* fdata = (float*)data;
+                int index = c - opt_id;
+                return new float3(fdata[index], fdata[index + 1], fdata[index + 2]);
             }
             else
             if (c == (byte)script_op.pop)
@@ -1273,6 +1276,24 @@ namespace NSS.Blast.Interpretor
                     default: 
                         Debug.LogError($"Blast.Debug(data) - Datatype '{datatype}' not supported in variable/operation with id {op_id} and vectorsize {vector_size}");
                         break; 
+                }
+            }
+        }
+                     
+        /// <summary>
+        /// printout an overview of the datasegment/stack (if shared)
+        /// </summary>
+        void Handle_DebugStack()
+        {
+            for(int i = 0; i < package->stack_offset; i++ )
+            {
+                if (i < package->data_offset)
+                {
+                    Debug.Log($"DATA  {i} = {((float*)stack)[i]}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
+                }
+                else
+                {
+                    Debug.Log($"STACK {i} = {((float*)stack)[i]}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
                 }
             }
         }
@@ -2910,6 +2931,10 @@ namespace NSS.Blast.Interpretor
 #endif
                                 f4 = float.NaN;
                                 break;
+
+                                // data overlaps in vector 4.bs ????
+
+                        //    something very wrong with getting / setting vector data ... 
 
                             case 2: f4.xyz = math.max(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)); break;
                             case 3: f4.xyz = math.max(math.max(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), pop_f3(code_pointer + 3)); break;
@@ -5262,8 +5287,21 @@ namespace NSS.Blast.Interpretor
                                     }
                                     break;
 
+                                case extended_script_op.debugstack:
+                                    {
+                                        // write contents of stack to the debug stream as a detailed report; 
+                                        // write contents of a data element to the debug stream 
+                                        code_pointer++;
+
+#if HANDLE_DEBUG_OP
+                                        Handle_DebugStack();
+#endif 
+                                    }
+                                    break;
+
                                 case extended_script_op.debug:
                                     {
+                                        // write contents of a data element to the debug stream 
                                         code_pointer++;
 
                                         int op_id = code[code_pointer];

@@ -3,11 +3,44 @@
 # VECTOR TEST 5
 #
 
-a = (1 2 3);
-b = (100 110 120);	
-c = dot(a, b); 
-d = normalize(a);
-e = a * c * 2;             # possibly fails with mula optimizer... 
 
-f = min(a b c d e);
-g = mina(a b c d e); 
+
+###### IMPORTANT ###############################################################################################
+# this is interesting, as it triggers simple parameter analysis to think that maxa is						   #
+# size 3 and therefore a is size 3 but during runtime the interpretor correctly tries to assign vectorsize 1   #
+#																											   #
+# - the compiler should know that maxa takes a size 3 vector and returns a size 1 							   #
+################################################################################################################
+
+a = maxa((1 2 3));
+
+#   root of 2 
+#      function push 
+#          vector compound statement of 3 
+#            constant parameter 1 
+#            constant parameter 2 
+#            constant parameter 3 
+#         /
+#      /
+#       vector assignment of a [depends on: function push ]           /// 
+#          vector function maxa 									  ///  these should both not be a vector, pop knows it pops a vector because of metadata
+#            function pop                                             ///  - these are tagged as vector because at parameter-analysis maxa is called with a vector and assumed to return a same sized vector  
+#         /
+#      /
+#   /
+#
+#
+#   024 018 085 086 087 019 001 128 049 005 025 000 
+
+
+
+
+
+# a = (1 2 3);
+# b = (100 110 120);	
+# c = dot(a, b); 
+# d = normalize(a);
+# e = a * c * 2;             # possibly fails with mula optimizer... 
+# 
+# f = min(a b c d e);
+# g = mina(a b c d e); 

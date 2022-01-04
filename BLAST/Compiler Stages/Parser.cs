@@ -1287,7 +1287,9 @@ namespace NSS.Blast.Compiler.Stage
                 idx++;
                 if (find_next(data, BlastScriptToken.CloseParenthesis, idx, idx_max, out idx_end, true, false))
                 {
-                    int end_function_parenthesis = idx_end; 
+                    int end_function_parenthesis = idx_end;
+                    List<node> current_nodes = new List<node>(); 
+
                     while (idx < end_function_parenthesis)
                     {
                         BlastScriptToken token = data.Tokens[idx].Item1;
@@ -1295,13 +1297,28 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             // identifier, possibly a nested function 
                             case BlastScriptToken.Identifier:
-                                n_function.SetChild(scan_and_parse_identifier(data, ref idx, idx));
+                                current_nodes.Add(n_function.SetChild(scan_and_parse_identifier(data, ref idx, idx)));
                                 break;
 
                             // seperator 
                             case BlastScriptToken.Comma:
                             case BlastScriptToken.Nop:
-                                n_function.CreateChild(nodetype.none, BlastScriptToken.Comma, ",").skip_compilation = true;
+
+                                if (current_nodes.Count > 0)
+                                {
+                                    if (current_nodes.Count > 1)
+                                    {
+                                        // create a child node with the current nodes as children 
+                                        // foreach (node cnc in current_nodes) n_function.children.Remove(cnc); // this is not needed
+                                        n_function.CreateChild(nodetype.compound, BlastScriptToken.Nop, "").SetChildren(current_nodes);
+                                    }
+                                    else
+                                    {
+                                       // it is already a child in this case and nothing needs to happen
+                                    }
+
+                                    current_nodes.Clear(); 
+                                }
                                 idx++;
                                 break;
 
@@ -1309,11 +1326,11 @@ namespace NSS.Blast.Compiler.Stage
                             case BlastScriptToken.OpenParenthesis:
                                 if (find_next(data, BlastScriptToken.CloseParenthesis, idx + 1, idx_max, out idx_end, true, false))
                                 {
-                                    n_function.SetChild(parse_sequence(data, ref idx, idx_end));
+                                    current_nodes.Add(n_function.SetChild(parse_sequence(data, ref idx, idx_end)));
                                 }
                                 else
                                 {
-                                    data.LogError("parser.parse_function: malformed compounded statement in function parameter list");
+                                    data.LogError($"parser.parse_function: malformed compounded statement in function parameter list, found openparenthesis at tokenindex {idx+1} but no matching close before {idx_max}");
                                     return null;
                                 }
                                 break;
@@ -1334,10 +1351,24 @@ namespace NSS.Blast.Compiler.Stage
                             case BlastScriptToken.Or:
                             case BlastScriptToken.Xor:
                             case BlastScriptToken.Not:
-                                n_function.CreateChild(nodetype.operation, token, data.Tokens[idx].Item2);
+                                // we are scanning inside a parameter list and are dropping the comma;s   (somewhere)
+                                // the minus should be added to the next identifier before the next comma
+                                current_nodes.Add(n_function.CreateChild(nodetype.operation, token, data.Tokens[idx].Item2));
+                                idx++;
                                 break;
 
                             case BlastScriptToken.CloseParenthesis:
+                                // this is ok if we have a single compound in current_nodes representing a parameter 
+                                if (current_nodes.Count == 1 && current_nodes[0].type == nodetype.compound)
+                                {
+                                    idx++;
+                                }
+                                else
+                                {
+                                    data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.Match}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)} ");
+                                    return null;
+                                }
+                                break; 
                             case BlastScriptToken.Indexer:
                             case BlastScriptToken.IndexOpen:
                             case BlastScriptToken.IndexClose:
@@ -1348,10 +1379,20 @@ namespace NSS.Blast.Compiler.Stage
                             case BlastScriptToken.Switch:
                             case BlastScriptToken.Case:
                             case BlastScriptToken.Default:
-                                data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.Match}' while parsing function parameters");
+                                data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.Match}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)} ");
                                 return null;
                         }
                     }
+
+                    //if we have nodes in this list, then we need to child them so we create a compounded param asif encountering a comma
+                    if (current_nodes.Count > 1)
+                    {
+                        // create a child node with the current nodes as children 
+                        foreach (node cnc in current_nodes) n_function.children.Remove(cnc);
+                        n_function.CreateChild(nodetype.compound, BlastScriptToken.Nop, "").SetChildren(current_nodes);
+                    }
+
+
                     idx = end_function_parenthesis + 1; 
                 }
                 else

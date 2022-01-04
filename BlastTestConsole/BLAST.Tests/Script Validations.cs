@@ -60,6 +60,7 @@ namespace BlastTestConsole
         [InlineData("Features/Minus 1.bs")]
         [InlineData("Features/Minus 2.bs")]
         [InlineData("Features/Minus 3.bs")]
+        [InlineData("Features/Mina 1.bs")]
         public void Blast_Validate_Basic(string scriptfile)
         {
             Xunit.Assert.True(Validate(scriptfile));
@@ -100,7 +101,7 @@ namespace BlastTestConsole
 
         [Theory]
         [InlineData("Features/Vector 3.bs", 24, 24, 24)]
-        [InlineData("Features/Vector 4.bs", 10, 6, 4)]
+        [InlineData("Features/Vector 4.bs", 8, 9, 10)]
         [InlineData("Features/Vector 5.bs", -1, -1, -1)]
         public void BlastScript_Vectors_1(string scriptfile, float v1, float v2, float v3)
         {

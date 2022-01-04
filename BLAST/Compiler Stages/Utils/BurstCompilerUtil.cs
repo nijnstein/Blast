@@ -5,6 +5,8 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace NSS.Blast
 {
+
+
     public struct NonGenericFunctionPointer
     {
         public readonly int id;

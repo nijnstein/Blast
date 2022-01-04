@@ -1,0 +1,28 @@
+﻿a = mina(1, 2, 3, -4, 5, 6);
+
+#validate a -4 
+
+##  compiler node tree
+##  
+##     root of 2 
+##        function push 
+##           compound statement of 2 
+##              operation Substract 
+##              constant parameter 4 
+##           /
+##        /
+##        assignment of a [depends on: function push ]
+##           function mina 
+##              constant parameter 1 
+##              constant parameter 2 
+##              constant parameter 3 
+##              function pop 					
+##              constant parameter 5 
+##              constant parameter 6 
+##           /
+##        /
+##     /
+##  
+##  
+##  000  024 018 003 088 019 001 128 050 025 085 
+##  010  086 087 025 129 130 000 

@@ -83,6 +83,20 @@ namespace NSS.Blast.Compiler.Stage
             return 0;
         }
 
+        void set_function_vector_size(int fsize, node c)
+        {
+            if (c.function.ReturnsVectorSize == 0)
+            {
+                c.vector_size = fsize;
+            }
+            else
+            {
+                c.vector_size = c.function.ReturnsVectorSize;
+            }
+            c.is_vector = fsize > 1;
+        }
+
+
         int wouldbe_vector_size_of_same_sized_elements(node node)
         {
             if (node.type != nodetype.compound) return 0; 
@@ -281,18 +295,32 @@ namespace NSS.Blast.Compiler.Stage
                                                                 break;
                                                         }
                                                     }
+                                                    else
+                                                    {
+                                                        c.vector_size = math.max(1, c.function.ReturnsVectorSize);
+                                                        c.is_vector = false; 
+                                                    }
+
                                                 }
                                                 else
                                                 {
                                                     // update vector size from children 
                                                     fsize = 1;
-                                                    foreach (node fc in current.children)
+                                                    foreach (node fc in c.children)
                                                     {
                                                         fsize = math.max(fsize, fc.vector_size);
                                                     }
 
-                                                    c.vector_size = fsize;
-                                                    c.is_vector = fsize > 1;
+                                                    if (c.function.AcceptsVectorSize == 0 || fsize == c.function.AcceptsVectorSize)
+                                                    {
+                                                        set_function_vector_size(fsize, c);
+                                                    }
+                                                    else
+                                                    {
+                                                        // errorrr 
+                                                        data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {c.function.Match} at {c}, function allows vectorsize {c.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {fsize} ");
+                                                        return; 
+                                                    }
                                                 }
                                                 size = math.max(size, c.vector_size);
                                                 all_numeric = true;
@@ -304,31 +332,48 @@ namespace NSS.Blast.Compiler.Stage
                                             }
                                     }
                                 }
-                                current.is_vector = size > 1 && all_numeric;
-                                current.vector_size = size;
 
-                                // if not a vector by now, lets see if we build one from components  
-                                if(!current.is_vector && all_numeric)
+                                if (current.type == nodetype.function)
                                 {
-                                    if (current.ChildCount == 1 && current.children[0].type == nodetype.compound)
+                                    if (current.function.AcceptsVectorSize == 0 || size == current.function.AcceptsVectorSize)
                                     {
-                                        // a = (1 2 3)                             float3       
-                                        // b = (1 pop 2)                           float3
-                                        // c = ((1 2 3) (pop pop pop) (1 2 3))     float3x3 or float9
+                                        set_function_vector_size(size, current); 
+                                    }
+                                    else
+                                    {
+                                        // errorrr 
+                                        data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {current.function.Match} at {current}, function allows vectorsize {current.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {size} ");
+                                        return;
+                                    }
+                                }
+                                else
+                                {
+                                    current.is_vector = size > 1 && all_numeric;
+                                    current.vector_size = size;
 
-                                        // each node must define the same number of elements  -> gets a mess otherwise 
-
-                                        // attempt to get vector size from same sized elemetns in compound 
-                                        int i_vectorsize_estimate = wouldbe_vector_size_of_same_sized_elements(current.children[0]);
-                                        if(i_vectorsize_estimate <= 0)
+                                    // if not a vector by now, lets see if we build one from components  
+                                    if (!current.is_vector && all_numeric)
+                                    {
+                                        if (current.ChildCount == 1 && current.children[0].type == nodetype.compound)
                                         {
-                                            //attempt to get from a calculus operation sequence: a = (1 2 3) * 4;  vectorsize = 3
-                                            i_vectorsize_estimate = wouldbe_vector_size_of_calculation(current.children[0]);
+                                            // a = (1 2 3)                             float3       
+                                            // b = (1 pop 2)                           float3
+                                            // c = ((1 2 3) (pop pop pop) (1 2 3))     float3x3 or float9
+
+                                            // each node must define the same number of elements  -> gets a mess otherwise 
+
+                                            // attempt to get vector size from same sized elemetns in compound 
+                                            int i_vectorsize_estimate = wouldbe_vector_size_of_same_sized_elements(current.children[0]);
+                                            if (i_vectorsize_estimate <= 0)
+                                            {
+                                                //attempt to get from a calculus operation sequence: a = (1 2 3) * 4;  vectorsize = 3
+                                                i_vectorsize_estimate = wouldbe_vector_size_of_calculation(current.children[0]);
+                                            }
+                                            if (i_vectorsize_estimate > 0)
+                                            {
+                                                current.children[0].SetIsVector(i_vectorsize_estimate, true);
+                                            }
                                         }
-                                        if (i_vectorsize_estimate > 0)
-                                        {
-                                            current.children[0].SetIsVector(i_vectorsize_estimate, true);
-                                        }     
                                     }
                                 }
                             }

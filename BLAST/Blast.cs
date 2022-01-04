@@ -421,81 +421,82 @@ namespace NSS.Blast
         /// </summary>
         static public List<ScriptFunctionDefinition> Functions = new List<ScriptFunctionDefinition>()
         {
-            new ScriptFunctionDefinition(0, "abs", 1, 1, script_op.abs, "a"),
-            new ScriptFunctionDefinition(1, "min", 2, 63, script_op.min),
-            new ScriptFunctionDefinition(2, "max", 2, 63, script_op.max),
+            new ScriptFunctionDefinition(0, "abs", 1, 1, 0, 0, script_op.abs),
+            new ScriptFunctionDefinition(1, "min", 2, 63, 0, 0, script_op.min),
+            new ScriptFunctionDefinition(2, "max", 2, 63, 0, 0, script_op.max),
 
-            new ScriptFunctionDefinition(3, "mina", 1, 63, script_op.mina),
-            new ScriptFunctionDefinition(4, "maxa", 1, 63, script_op.maxa),
+            new ScriptFunctionDefinition(3, "mina", 1, 63, 1, 0, script_op.mina),
+            new ScriptFunctionDefinition(4, "maxa", 1, 63, 1, 0, script_op.maxa),
 
-            new ScriptFunctionDefinition(5, "select", 3, 3, script_op.select, "a", "b", "c"),
+            new ScriptFunctionDefinition(5, "select", 3, 3, 0, 0, script_op.select, "a", "b", "c"),
 
-            new ScriptFunctionDefinition(6, "random", 0, 2, script_op.random),  // random value from 0 to 1 (inclusive), 0 to max, or min to max depending on parameter count 1
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Seed, "seed", 1, 1, script_op.seed),
+            new ScriptFunctionDefinition(6, "random", 0, 2, 0, 0, script_op.random),  // random value from 0 to 1 (inclusive), 0 to max, or min to max depending on parameter count 1
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Seed, "seed", 1, 1, 0, 0, script_op.seed),
 
-            new ScriptFunctionDefinition(7, "sqrt", 1, 1, script_op.sqrt),
-            new ScriptFunctionDefinition(8, "rsqrt", 1, 1, script_op.rsqrt),
+            new ScriptFunctionDefinition(7, "sqrt", 1, 1, 0, 0, script_op.sqrt),
+            new ScriptFunctionDefinition(8, "rsqrt", 1, 1, 0, 0, script_op.rsqrt),
 
-            new ScriptFunctionDefinition(9, "lerp", 3, 3, script_op.lerp, "a", "b", "t"),
-            new ScriptFunctionDefinition(10, "slerp", 3, 3, script_op.slerp, "a", "b", "t"),
+            new ScriptFunctionDefinition(9, "lerp", 3, 3, 0, 0, script_op.lerp, "a", "b", "t"),
+            new ScriptFunctionDefinition(10, "slerp", 3, 3, 0, 0,script_op.slerp, "a", "b", "t"),
 
-            new ScriptFunctionDefinition(11, "any", 2, 63, script_op.any),
-            new ScriptFunctionDefinition(12, "all", 2, 63, script_op.all),
-            new ScriptFunctionDefinition(13, "adda", 2, 63, script_op.adda),
-            new ScriptFunctionDefinition(14, "suba", 2, 63, script_op.suba),
-            new ScriptFunctionDefinition(15, "diva", 2, 63, script_op.diva),
-            new ScriptFunctionDefinition(16, "mula", 2, 63, script_op.mula),
+            new ScriptFunctionDefinition(11, "any", 2, 63, 0, 0, script_op.any),
+            new ScriptFunctionDefinition(12, "all", 2, 63, 0, 0, script_op.all),
+            new ScriptFunctionDefinition(13, "adda", 2, 63, 0, 0, script_op.adda),
+            new ScriptFunctionDefinition(14, "suba", 2, 63, 0, 0, script_op.suba),
+            new ScriptFunctionDefinition(15, "diva", 2, 63, 0, 0, script_op.diva),
+            new ScriptFunctionDefinition(16, "mula", 2, 63, 0, 0, script_op.mula),
 
-            new ScriptFunctionDefinition(17, "ceil", 1, 1, script_op.ceil),
-            new ScriptFunctionDefinition(18, "floor", 1, 1, script_op.floor),
-            new ScriptFunctionDefinition(19, "frac", 1, 1, script_op.frac),
+            new ScriptFunctionDefinition(17, "ceil", 1, 1, 0, 0, script_op.ceil),
+            new ScriptFunctionDefinition(18, "floor", 1, 1, 0, 0, script_op.floor),
+            new ScriptFunctionDefinition(19, "frac", 1, 1, 0, 0, script_op.frac),
 
-            new ScriptFunctionDefinition(21, "sin", 1, 1, script_op.sin),
-            new ScriptFunctionDefinition(22, "cos", 1, 1, script_op.cos),
-            new ScriptFunctionDefinition(23, "tan", 1, 1, script_op.tan),
-            new ScriptFunctionDefinition(24, "atan", 1, 1, script_op.atan),
-            new ScriptFunctionDefinition(25, "cosh", 1, 1, script_op.cosh),
-            new ScriptFunctionDefinition(26, "sinh", 1, 1, script_op.sinh),
+            new ScriptFunctionDefinition(21, "sin", 1, 1, 0, 0, script_op.sin),
+            new ScriptFunctionDefinition(22, "cos", 1, 1, 0, 0, script_op.cos),
+            new ScriptFunctionDefinition(23, "tan", 1, 1, 0, 0, script_op.tan),
+            new ScriptFunctionDefinition(24, "atan", 1, 1, 0, 0, script_op.atan),
+            new ScriptFunctionDefinition(25, "cosh", 1, 1, 0, 0, script_op.cosh),
+            new ScriptFunctionDefinition(26, "sinh", 1, 1, 0, 0, script_op.sinh),
 
-            new ScriptFunctionDefinition(28, "degrees", 1, 1, script_op.degrees),
-            new ScriptFunctionDefinition(29, "rad", 1, 1, script_op.radians),
+            new ScriptFunctionDefinition(28, "degrees", 1, 1, 0, 0, script_op.degrees),
+            new ScriptFunctionDefinition(29, "rad", 1, 1, 0, 0, script_op.radians),
 
-            new ScriptFunctionDefinition(30, "saturate", 1, 1, script_op.saturate, "a"),
-            new ScriptFunctionDefinition(31, "clamp", 3, 3, script_op.clamp, "a", "min", "max"),
+            new ScriptFunctionDefinition(30, "saturate", 1, 1, 0, 0, script_op.saturate, "a"),
+            new ScriptFunctionDefinition(31, "clamp", 3, 3, 0, 0, script_op.clamp, "a", "min", "max"),
 
-            new ScriptFunctionDefinition(32, "normalize", 1, 1, script_op.normalize, "a"),
+            new ScriptFunctionDefinition(32, "normalize", 1, 1,  0, 0, script_op.normalize, "a"),
 
-            new ScriptFunctionDefinition(33, "pow", 2, 2, script_op.pow, "a", "power"),
+            new ScriptFunctionDefinition(33, "pow", 2, 2,  0, 0,script_op.pow, "a", "power"),
 
-            new ScriptFunctionDefinition(34, "distance", 2, 2, script_op.distance, "a", "b"),
-            new ScriptFunctionDefinition(35, "distancesq", 2, 2, script_op.distancesq, "a", "b"),
-            new ScriptFunctionDefinition(36, "length", 2, 2, script_op.length, "a", "b"),
-            new ScriptFunctionDefinition(37, "lengthsq", 2, 2, script_op.lengthsq, "a", "b"),
+            new ScriptFunctionDefinition(34, "distance", 2, 2,  0, 0,script_op.distance, "a", "b"),
+            new ScriptFunctionDefinition(35, "distancesq", 2, 2,  0, 0,script_op.distancesq, "a", "b"),
+            new ScriptFunctionDefinition(36, "length", 2, 2,  0, 0,script_op.length, "a", "b"),
+            new ScriptFunctionDefinition(37, "lengthsq", 2, 2,  0, 0,script_op.lengthsq, "a", "b"),
 
-            new ScriptFunctionDefinition(38, "cross", 2, 2, extended_script_op.cross, null, "a", "b"),
-            new ScriptFunctionDefinition(39, "dot", 2, 2, script_op.dot, "a", "b"),
+            new ScriptFunctionDefinition(38, "cross", 2, 2, 0, 0, extended_script_op.cross, null, "a", "b"),
+            new ScriptFunctionDefinition(39, "dot", 2, 2,  0, 0,script_op.dot, "a", "b"),
 
-            new ScriptFunctionDefinition(40, "exp", 2, 2, script_op.exp, "a", "b"),
-            new ScriptFunctionDefinition(41, "log2", 1, 1, script_op.log2, "a", "b"),
+            new ScriptFunctionDefinition(40, "exp", 2, 2,  0, 0,script_op.exp, "a", "b"),
+            new ScriptFunctionDefinition(41, "log2", 1, 1,  0, 0,script_op.log2, "a", "b"),
 
-            new ScriptFunctionDefinition(42, "log10", 1, 1, extended_script_op.log10, null, "a"),
-            new ScriptFunctionDefinition(43, "log", 1, 1, extended_script_op.logn, null, "a"),
-            new ScriptFunctionDefinition(44, "exp10", 2, 2, extended_script_op.exp10, null, "a", "b"),
+            new ScriptFunctionDefinition(42, "log10", 1, 1, 0, 0, extended_script_op.log10, null, "a"),
+            new ScriptFunctionDefinition(43, "log", 1, 1, 0, 0, extended_script_op.logn, null, "a"),
+            new ScriptFunctionDefinition(44, "exp10", 2, 2, 0, 0, extended_script_op.exp10, null, "a", "b"),
 
-            new ScriptFunctionDefinition(45, "return", 0, 0, script_op.ret),
+            new ScriptFunctionDefinition(45, "return", 0, 0,  0, 0,script_op.ret),
 
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Push, "push", 1, 4, script_op.push, "n", "a"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushFunction, "pushf", 1, 1, script_op.pushf, "n", "a"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop, "pop", 0, 0, script_op.pop, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop2, "pop2", 0, 0, script_op.pop2, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop3, "pop3", 0, 0, script_op.pop3, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop4, "pop4", 0, 0, script_op.pop4, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Peek, "peek", 0, 1, script_op.peek, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Yield, "yield", 0, 1, script_op.yield, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Input, "input", 3, 3, script_op.nop, "id", "offset", "length"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Output, "output", 3, 3, script_op.nop, "id", "offset", "length"),
-            
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debug", 1, 1, extended_script_op.debug, null, "id")
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Push, "push", 1, 4, 0, 0,script_op.push, "n", "a"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushFunction, "pushf", 1, 1, 0, 0,script_op.pushf, "n", "a"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop, "pop", 0, 0, 0, 0,script_op.pop, "n"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop2, "pop2", 0, 0, 0, 0,script_op.pop2, "n"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop3, "pop3", 0, 0, 0, 0,script_op.pop3, "n"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop4, "pop4", 0, 0, 0, 0,script_op.pop4, "n"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Peek, "peek", 0, 1, 0, 0, script_op.peek, "n"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Yield, "yield", 0, 1, 0, 0,script_op.yield, "n"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Input, "input", 3, 3, 0, 0,script_op.nop, "id", "offset", "length"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Output, "output", 3, 3, 0, 0,script_op.nop, "id", "offset", "length"),
+
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debug", 1, 1, 0, 0, extended_script_op.debug, null, "id"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debugstack",0, 0, 0, 0, extended_script_op.debugstack)
         };
 
         public ScriptFunctionDefinition GetFunctionByScriptOp(script_op op)
@@ -686,6 +687,7 @@ namespace NSS.Blast
             (
                 id, name,
                 parameter_count, parameter_count,
+                0, 0,
                 extended_script_op.call,
                 call,
                 parameters

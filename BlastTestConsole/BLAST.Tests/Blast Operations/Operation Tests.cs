@@ -125,7 +125,7 @@ namespace BlastTestConsole
         [InlineData("a = min(3234, 234, 121, 888888, 0, 222);", 0)]
 
         [InlineData("a = maxa(1, 2, 3);", 3)]
-        [InlineData("a = maxa((1, 2, 3));", 3)]
+        [InlineData("a = maxa((1 2 3));", 3)]
         [InlineData("a = maxa(2, (1, -2, 3));", 3)]
         [InlineData("a = maxa(1, 2, 3, 4, 5, 6);", 6)]
         [InlineData("a = maxa((3, -4, 5), (12, -3), (33, 3, 3, 5));", 33)]
@@ -163,6 +163,39 @@ namespace BlastTestConsole
 
             blast.Destroy();
         }
+
+
+        [Theory]
+        [InlineData("push(321); a = pop;", 321)]
+        [InlineData("push(321); push(555); push(444); a = pop; a = pop;", 555)]
+        public void BlastScript_Stack_1(string code, float v1)
+        {
+            Blast blast = Blast.Create(Allocator.Persistent);
+
+            BlastScript script = BlastScript.FromText(code);
+
+            var options = new BlastCompilerOptions();
+            options.AutoValidate = false;
+            options.Optimize = true;
+            options.CompileWithSystemConstants = true;
+            options.ConstantEpsilon = 0.001f;
+            options.DefaultStackSize = 64;
+            options.EstimateStackSize = false;
+
+            var res = BlastCompiler.Compile(blast, script, options);
+
+            Xunit.Assert.True(res.IsOK, "failed to compile");
+
+            unsafe
+            {
+                Xunit.Assert.True(res.Executable.Execute((IntPtr)blast.Engine) == 0, "failed to execute");
+                Xunit.Assert.True(res.Executable.data[0] == v1, $"failed to validate data, should be {v1} but found {res.Executable.data[0]}");
+            }
+
+            blast.Destroy();
+        }
+
+
 
     }
 }

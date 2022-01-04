@@ -190,6 +190,7 @@
         logn,
         cross,
 
+        debugstack = 243,
         debug = 244,
         call = 245, // call external
         ex = 255 // extend further if ever needed. 

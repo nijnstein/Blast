@@ -15,6 +15,17 @@
         public readonly int MinParameterCount;
         public readonly int MaxParameterCount;
 
+        /// <summary>
+        /// if == 0 returns same as input 
+        /// </summary>
+        public readonly int ReturnsVectorSize;
+
+        /// <summary>
+        /// if == 0 accepts any 
+        /// </summary>
+        public readonly int AcceptsVectorSize; 
+
+
         public bool CanHaveParameters => MaxParameterCount > 0;
 
         public string CSName { get; set; }
@@ -27,7 +38,7 @@
             return $"Function Definition: {FunctionId} {Match}, parameter count: {ParameterCount}"; 
         }
 
-        public ScriptFunctionDefinition(int id, string match, int min_parameter_count, int max_parameter_count, extended_script_op extended_op = extended_script_op.nop, ExternalFunctionCall external_call = null, params string[] parameters)
+        public ScriptFunctionDefinition(int id, string match, int min_parameter_count, int max_parameter_count, int return_vector_size = 0, int input_vector_size = 0, extended_script_op extended_op = extended_script_op.nop, ExternalFunctionCall external_call = null, params string[] parameters)
         {
             FunctionId = id;
             Match = match;
@@ -43,6 +54,9 @@
 
             MinParameterCount = min_parameter_count;
             MaxParameterCount = max_parameter_count;
+
+            ReturnsVectorSize = return_vector_size;
+            AcceptsVectorSize = input_vector_size; // not having this on each input kinda limits definitions  
 
             switch (id)
             {
@@ -61,7 +75,7 @@
             }
         }
 
-        public ScriptFunctionDefinition(int id, string match, int min_parameter_count, int max_parameter_count, script_op op = script_op.nop, params string[] parameters)
+        public ScriptFunctionDefinition(int id, string match, int min_parameter_count, int max_parameter_count, int return_vector_size = 0, int input_vector_size = 0, script_op op = script_op.nop, params string[] parameters)
         {
             FunctionId = id;
             Match = match;
@@ -71,6 +85,9 @@
 
             MinParameterCount = min_parameter_count;
             MaxParameterCount = max_parameter_count;
+            
+            ReturnsVectorSize = return_vector_size;
+            AcceptsVectorSize = input_vector_size; // not having this on each input kinda limits definitions  
 
             switch (id)
             {

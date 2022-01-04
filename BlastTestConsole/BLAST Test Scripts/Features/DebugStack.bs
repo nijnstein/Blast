@@ -1,0 +1,10 @@
+﻿push(123);
+push(567); 
+
+a = 2; 
+
+debugstack(); 
+
+debug(a);
+
+

@@ -1,4 +1,8 @@
-﻿using System;
+﻿#if NOT_USING_UNITY
+using NSS.Blast.Standalone;
+#endif 
+
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -491,8 +495,8 @@ namespace NSS.Blast.Compiler
         /// set a node to be a child of this node (appends to end of child list),
         /// updates the parent of the node and removes it from its possible previous parent
         /// </summary>
-        /// <param name="ast_node">the node to set as child</param>
-        internal void SetChild(node ast_node)
+        /// <param name="ast_node">the node to set as child is returned</param>
+        internal node SetChild(node ast_node)
         {
             Assert.IsNotNull(ast_node); 
 
@@ -505,15 +509,32 @@ namespace NSS.Blast.Compiler
             // set node to this parent 
             ast_node.parent = this;
             children.Add(ast_node);
+
+            return ast_node;
         }
 
         /// <summary>
-        /// create a new node as a child of this node
+        /// set a list of nodes a children to this node
+        /// </summary>
+        /// <param name="nodes">the nodes to set as child</param>
+        /// <returns>this node</returns>
+        internal node SetChildren(IEnumerable<node> nodes)
+        {
+            foreach(node n in nodes)
+            {
+                SetChild(n); 
+            }
+            return this; 
+        }
+
+
+        /// <summary>
+        /// create a new node as a child of this node and returns the newly created node 
         /// </summary>
         /// <param name="type">nodetype to create</param>
         /// <param name="token">token to set</param>
         /// <param name="identifier">identifier used</param>
-        /// <returns></returns>
+        /// <returns>the newly created node </returns>
         internal node CreateChild(nodetype type, BlastScriptToken token, string identifier)
         {
             node child_node = new node(null) { type = type, token = token, identifier = identifier };
@@ -555,27 +576,48 @@ namespace NSS.Blast.Compiler
             get { return children == null ? 0 : children.Count; }
         }
 
-        internal void SetIsVector(int _vector_size, bool propagate_to_parents = true)
+        internal bool SetIsVector(int _vector_size, bool propagate_to_parents = true)
         {
-            if (parent == null) return; // the root cannot be set as vector
+            // the root cannot be set as vector
+            if (parent == null) return true; 
 
             is_vector = _vector_size > 1;
             vector_size = _vector_size;
 
-            // propagate vector state to parent -> dont do this if not a vector // todo verify 
+            // propagate vector state to parent -> dont do this if not a vector
             if (parent != null && propagate_to_parents && is_vector)
             {
                 switch (type)
                 {
                     case nodetype.function:
                         // depends on function if it returns a vector
+                        if (parent.function != null && (parent.function.AcceptsVectorSize == 0 || parent.function.AcceptsVectorSize == _vector_size))
+                        {
+                            // function set, parameter vectorsize ok 
+                            if (parent.function.ReturnsVectorSize == 0)
+                            {
+                                if (!parent.SetIsVector(_vector_size, true)) return false;
+                            }
+                            else
+                            {
+                                if (!parent.SetIsVector(parent.function.ReturnsVectorSize)) return false; 
+                            }
+                        }
+                        else
+                        {
+                            // half the callers of this method cannot know its relation so this is sometimes necessary 
+                           // Debug.LogError($"setisvector: parameter vectorsize mismatch in node {parent}, function: {parent.function.Match} , expecting: {parent.function.AcceptsVectorSize}, given {_vector_size}"); 
+                            return false; 
+                        }   
                         break;
 
                     default:
-                        parent.SetIsVector(_vector_size, true);
+                        if (!parent.SetIsVector(_vector_size, true)) return false; 
                         break;
                 }
             }
+
+            return true; 
         }
 
         internal bool ValidateType(IBlastCompilationData data, IEnumerable<nodetype> valid_node_types)
