@@ -20,6 +20,18 @@ namespace NSS.Blast
         float4 = 4
     }
 
+    public enum BlastVectorTypes : byte
+    {
+        v1 = 0, 
+        v2 = 1, 
+        v3 = 2, 
+        v4 = 3,
+        v3x2 = 4,
+        v3x3 = 5,
+        v3x4 = 6,
+        v4x4 = 7
+    }
+
     public enum BlastPackageCapacities : int
     {
         c32 = 32,

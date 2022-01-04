@@ -40,7 +40,7 @@ namespace BlastTestConsole
             }
             catch(Exception ex)
             {
-                NSS.Blast.Standalone.Debug.LogError(ex.ToString());
+                NSS.Blast.Standalone.Debug.LogWarning("EXCEPTION: " + ex.ToString());
                 return false; 
             }
             finally

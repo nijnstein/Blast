@@ -504,20 +504,268 @@ namespace NSS.Blast.Interpretor
             return package->stack_offset >= n;
         }
 
-        #region pop_or_value
-
         /// <summary>
-        /// pops a variable/constant from data or stack, it only returns a reference to the FIRST variable
-        /// if the data is part of a vector pop_next should be used for each component of it 
-        /// 
-        /// - this shoould not worklike this......................
-        /// 
-        /// 
+        /// decode info byte of data, 62 uses the upper 6 bits from the parametercount and the lower 2 for vectorsize, resulting in 64 parameters and size 4 vectors..
+        /// - update to decode44? 16 params max and 16 vec size?
         /// </summary>
-        /// <param name="code_pointer"></param>
-        /// <param name="type"></param>
+        /// <param name="c"></param>
         /// <param name="vector_size"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        byte decode62(in byte c, ref byte vector_size)
+        {
+            vector_size = (byte)(c & 0b11);
+            return (byte)((c & 0b1111_1100) >> 2);
+        }
+
+        #region pop_or_value
+
+        #region pop_fXXX
+        /// <summary>
+        /// pop float of vectorsize 1, forced float type, verify type on debug   (equals pop_or_value)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float pop_f1(in int code_pointer)
+        {
+            // we get either a pop instruction or an instruction to get a value 
+            byte c = code[code_pointer];
+
+            if (c >= opt_id)
+            {
+#if CHECK_STACK
+                // verify type of data / eventhough it is not stack 
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
+                int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
+                if (size != 1 || type != BlastVariableDataType.Numeric)
+                {
+                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - opt_id}");
+                    return float.NaN;
+                }
+#endif 
+                // variable acccess
+                return ((float*)data)[c - opt_id];
+            }
+            else
+            if (c == (byte)script_op.pop)
+            {
+#if CHECK_STACK
+                // verify type of data / eventhough it is not stack 
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 1));
+                int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 1));
+                if (size != 1 || type != BlastVariableDataType.Numeric)
+                {
+                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {package->stack_offset - 1}");
+                    return float.NaN;
+                }
+#endif         
+                // stack pop 
+                package->stack_offset = (ushort)(package->stack_offset - 1);
+                return stack[package->stack_offset];
+            }
+            else
+            if (c >= opt_value)
+            {
+                return engine_ptr->constants[c];
+            }
+            else
+            {
+                // error or.. constant by operation value.... 
+#if DEBUG
+                Debug.LogError("pop_f1 -> select op by constant value is not supported");
+#endif
+                return float.NaN;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float2 pop_f2(in int code_pointer)
+        {
+            byte c = code[code_pointer];
+            if (c >= opt_id)
+            {
+#if CHECK_STACK
+                // verify type of data / eventhough it is not stack 
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
+                int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
+                if (size != 2 || type != BlastVariableDataType.Numeric)
+                {
+                    Standalone.Debug.LogError($"blast.stack, pop_f2 -> data mismatch, expecting numeric of size 2, found {type} of size {size} at data offset {c - opt_id}");
+                    return float.NaN;
+                }
+#endif 
+                // variable acccess
+                // TODO   SHOULD TEST NOT SWITCHING VECTOR ELEMENT ORDER ON STACK OPERATIONS 
+                return ((float2*)data)[c - opt_id];
+            }
+            else
+            if (c == (byte)script_op.pop)
+            {
+#if CHECK_STACK
+                // verify type of data / eventhough it is not stack 
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 2));
+                int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 2));
+                if (size != 2 || type != BlastVariableDataType.Numeric)
+                {
+                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 2, found {type} of size {size} at stack offset {package->stack_offset - 2}");
+                    return float.NaN;
+                }
+#endif         
+                // stack pop 
+                package->stack_offset = (ushort)(package->stack_offset - 2);
+                return new float2(stack[package->stack_offset], stack[package->stack_offset + 1]);
+            }
+            else
+            if (c >= opt_value)
+            {
+                return engine_ptr->constants[c];
+            }
+            else
+            {
+#if DEBUG
+                Debug.LogError("pop_f2 -> select op by constant value is not supported");
+#endif
+                return float.NaN;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float3 pop_f3(in int code_pointer)
+        {
+            byte c = code[code_pointer];
+            if (c >= opt_id)
+            {
+#if CHECK_STACK
+                // verify type of data / eventhough it is not stack 
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
+                int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
+                if (size != 3 || type != BlastVariableDataType.Numeric)
+                {
+                    Standalone.Debug.LogError($"blast.stack, pop_f3 -> data mismatch, expecting numeric of size 3, found {type} of size {size} at data offset {c - opt_id}");
+                    return float.NaN;
+                }
+#endif 
+                // variable acccess
+                // TODO   SHOULD TEST NOT SWITCHING VECTOR ELEMENT ORDER ON STACK OPERATIONS 
+                return ((float3*)data)[c - opt_id];
+            }
+            else
+            if (c == (byte)script_op.pop)
+            {
+#if CHECK_STACK
+                // verify type of data / eventhough it is not stack 
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 3));
+                int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 3));
+                if (size != 3 || type != BlastVariableDataType.Numeric)
+                {
+                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 3, found {type} of size {size} at stack offset {package->stack_offset - 3}");
+                    return float.NaN;
+                }
+#endif         
+                // stack pop 
+                package->stack_offset = (ushort)(package->stack_offset - 3);
+                return new float3(stack[package->stack_offset], stack[package->stack_offset + 1], stack[package->stack_offset + 2]);
+            }
+            else
+            if (c >= opt_value)
+            {
+                return engine_ptr->constants[c];
+            }
+            else
+            {
+#if DEBUG
+                Debug.LogError("pop_f3 -> select op by constant value is not supported");
+#endif
+                return float.NaN;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float4 pop_f4(in int code_pointer)
+        {
+            byte c = code[code_pointer];
+            if (c >= opt_id)
+            {
+#if CHECK_STACK
+                // verify type of data / eventhough it is not stack 
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
+                int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
+                if (size != 4 || type != BlastVariableDataType.Numeric)
+                {
+                    Standalone.Debug.LogError($"blast.stack, pop_f4 -> data mismatch, expecting numeric of size 4, found {type} of size {size} at data offset {c - opt_id}");
+                    return float.NaN;
+                }
+#endif 
+                // variable acccess
+                // TODO   SHOULD TEST NOT SWITCHING VECTOR ELEMENT ORDER ON STACK OPERATIONS 
+                return ((float4*)data)[c - opt_id];
+            }
+            else
+            if (c == (byte)script_op.pop)
+            {
+#if CHECK_STACK
+                // verify type of data / eventhough it is not stack 
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 4));
+                int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 4));
+                if (size != 4 || type != BlastVariableDataType.Numeric)
+                {
+                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 4, found {type} of size {size} at stack offset {package->stack_offset - 4}");
+                    return float.NaN;
+                }
+#endif         
+                // stack pop 
+                package->stack_offset = (ushort)(package->stack_offset - 4);
+                return new float4(stack[package->stack_offset], stack[package->stack_offset + 1], stack[package->stack_offset + 2], stack[package->stack_offset + 3]);
+            }
+            else
+            if (c >= opt_value)
+            {
+                return engine_ptr->constants[c];
+            }
+            else
+            {
+#if DEBUG
+                Debug.LogError("pop_f4 -> select op by constant value is not supported");
+#endif
+                return float.NaN;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float3x2 pop_f3x2(in int code_pointer)
+        {
+            Debug.LogError("pop_fxxx not implemented");
+            return float.NaN;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float3x3 pop_f3x3(in int code_pointer)
+        {
+            Debug.LogError("pop_fxxx not implemented");
+            return float.NaN;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float3x4 pop_f3x4(in int code_pointer)
+        {
+            Debug.LogError("pop_fxxx not implemented");
+            return float.NaN;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float4x4 pop_f4x4(in int code_pointer)
+        {
+            Debug.LogError("pop_fxxx not implemented");
+            return float.NaN;
+        }
+
+        #endregion 
+                      
+        /// <summary>
+        /// get the next value from the datasegment, stack or constant dictionary 
+        /// </summary>
+        /// <param name="type">datatype of element popped</param>
+        /// <param name="vector_size">vectorsize of element popped</param>
+        /// <returns>pointer to data castable to valuetype*</returns>
         internal void* pop_with_info(in int code_pointer, out BlastVariableDataType type, out byte vector_size)
         {
             // we get either a pop instruction or an instruction to get a value 
@@ -550,7 +798,7 @@ namespace NSS.Blast.Interpretor
             {
                 // error or.. constant by operation value.... 
 #if DEBUG
-                Standalone.Debug.LogError("BlastInterpretor: pop_or_value -> select op by constant value is not supported");
+                Standalone.Debug.LogError($"BlastInterpretor: pop_or_value -> select op by constant value is not supported, at codepointer: {code_pointer} => {code[code_pointer].ToString().PadLeft(3, '0')}  ");
 #endif
                 type = BlastVariableDataType.Numeric;
                 vector_size = 1;
@@ -955,6 +1203,14 @@ namespace NSS.Blast.Interpretor
 
         #endregion
 
+        /// <summary>
+        /// handle command to show the given field in debug 
+        /// </summary>
+        /// <param name="code_pointer"></param>
+        /// <param name="vector_size"></param>
+        /// <param name="op_id"></param>
+        /// <param name="datatype"></param>
+        /// <param name="pdata"></param>
         static void Handle_DebugData(int code_pointer, byte vector_size, int op_id, BlastVariableDataType datatype, void* pdata)
         {
             if (pdata != null)
@@ -1021,7 +1277,14 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-
+        /// <summary>
+        /// call an external function pointer 
+        /// </summary>
+        /// <param name="code_pointer"></param>
+        /// <param name="minus"></param>
+        /// <param name="vector_size"></param>
+        /// <param name="f4"></param>
+        /// <returns></returns>
         float4 CallExternal(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
         {
             // get int id from next 4 ops/bytes 
@@ -2466,116 +2729,356 @@ namespace NSS.Blast.Interpretor
             return f4;
         }
 
-        float4 get_maxa_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
+
+        /// <summary>
+        /// get the maximum value of all arguments of any vectorsize 
+        /// - ALWAYS RESULTS IN VECTORSIZE 1
+        /// </summary>
+        void get_maxa_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             code_pointer++;
-            byte c = code[code_pointer];
+            byte c = decode62(in code[code_pointer], ref vector_size); 
 
-            vector_size = (byte)(c & 0b11);
-            c = (byte)((c & 0b1111_1100) >> 2);
-            switch ((BlastVectorSizes)vector_size)
+            BlastVariableDataType datatype = default;
+            byte popped_vector_size = 0;
+
+            f4 = new float4(int.MinValue);
+            vector_size = 1;
+
+            // c == nr of parameters ...  
+            while (c > 0)
             {
-                case BlastVectorSizes.float1:
-                    break;
+                code_pointer++;
+                c--;
+                
+                // we need to pop only once due to how the elements of the vector are organized in the data/stack
+                // - pop_or_value needs one call/float
+                float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out popped_vector_size);
 
-                case 0:
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 1;
-                        f4.x = math.cmax(f4);
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                    {
-                        vector_size = 1;
-                        f4.x = math.cmax(f4.xy);
-                        break;
-                    }
-
-                case BlastVectorSizes.float3:
-                    {
-                        BlastVariableDataType datatype = default;
-                        byte popped_vectorsize = 0;
-                        void* data = pop_with_info(in code_pointer, out datatype, out popped_vectorsize); 
-       
-  //                      tomorrow.......      after maxa there is n parameters for all stuff to put through cmax   (should we also rename maxa to cmax?)
-//
-    //                        most functions will need updates to support floats 
-
-
-                        vector_size = 1;
-                        f4.x = math.cmax(f4.xyz);
-                        break;
-                    }
-
-                default:
-                    {
-#if LOG_ERRORS
-                    Standalone.Debug.LogError($"maxa: vector size '{vector_size}' not supported ");
+#if DEBUG                
+                if (datatype == BlastVariableDataType.ID)
+                {
+                    Debug.LogError($"ID datatype in maxa not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                    f4.x = float.NaN; 
+                    return;
+                }
 #endif
-                        minus = false;
-                        return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                    }
+
+                switch ((BlastVectorSizes)popped_vector_size)
+                {
+                    case BlastVectorSizes.float1: f4.x = math.max(fdata[0], f4.x); break;
+                    case BlastVectorSizes.float2: f4.x = math.max(fdata[0], math.max(fdata[1], f4.x)); break;
+                    case BlastVectorSizes.float3: f4.x = math.max(fdata[0], math.max(fdata[1], math.max(fdata[2], f4.x))); break;
+                    case 0:
+                    case BlastVectorSizes.float4: f4.x = math.max(fdata[0], math.max(fdata[1], math.max(fdata[2], math.max(fdata[3], f4.x)))); break;
+                    default:
+                        {
+#if DEBUG
+                            Debug.LogError($"maxa: vector size '{vector_size}' not supported at codepointer {code_pointer} => {code[code_pointer]} ");
+#endif
+                            f4.x = float.NaN;
+                            return;
+                        }
+                }
             }
-            return f4;
         }
 
         /// <summary>
-        /// return the smallest of the arguments
+        /// return the smallest of the arguments of any vectorsize
+        /// - ALWAYS RESULTS IN VECTORSIZE 1
         /// </summary>
-        /// <param name="code_pointer"></param>
-        /// <param name="minus"></param>
-        /// <param name="vector_size"></param>
-        /// <param name="f4"></param>
-        /// <returns></returns>
-        float4 get_mina_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
+        void get_mina_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             code_pointer++;
-            byte c = code[code_pointer];
+            byte c = decode62(in code[code_pointer], ref vector_size);
 
-            vector_size = (byte)(c & 0b11);
+            BlastVariableDataType datatype = default;
+            byte popped_vector_size = 0;
 
-            c = (byte)((c & 0b1111_1100) >> 2);
-            
+            f4 = new float4(float.MaxValue);
+            vector_size = 1;
+
+            // c == nr of parameters ...  
+            while (c > 0)
+            {
+                code_pointer++;
+                c--; 
+
+                // we need to pop only once due to how the elements of the vector are organized in the data/stack
+                // - pop_or_value needs one call/float
+                float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out popped_vector_size);
+
+#if DEBUG                
+                if (datatype == BlastVariableDataType.ID)
+                {
+                    Debug.LogError("ID datatype in mina not yet implemented");
+                    f4.x = float.NaN;
+                    return; 
+                }
+#endif
+
+                switch ((BlastVectorSizes)popped_vector_size)
+                {
+                    case BlastVectorSizes.float1: f4.x = math.min(fdata[0], f4.x); break;
+                    case BlastVectorSizes.float2: f4.x = math.min(fdata[0], math.min(fdata[1], f4.x)); break;
+                    case BlastVectorSizes.float3: f4.x = math.min(fdata[0], math.min(fdata[1], math.min(fdata[2], f4.x))); break;
+                    case 0:
+                    case BlastVectorSizes.float4: f4.x = math.min(fdata[0], math.min(fdata[1], math.min(fdata[2], math.min(fdata[3], f4.x)))); break;
+                    default:
+                        {
+#if LOG_ERRORS
+                            Debug.LogError($"mina: vector size '{vector_size}' not supported at codepointer {code_pointer} => {code[code_pointer]} ");
+#endif
+                            f4.x = float.NaN;
+                            return;
+                        }
+                }
+            }
+        }
+
+        /// <summary>
+        /// get max value    [float] 
+        /// 
+        ///  -> all parameters should have the same vectorsize as the output
+        /// 
+        /// </summary>
+        void get_max_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            // get compressed value of count and vector_size
+            code_pointer++;
+
+            byte c = decode62(in code[code_pointer], ref vector_size);
+
+            f4 = float.MinValue;
+
+            // this will compile into a jump table (CHECK THIS !!) todo
             switch ((BlastVectorSizes)vector_size)
             {
                 case BlastVectorSizes.float1:
-                    break;
-
-                case 0:
-                case BlastVectorSizes.float4:
                     {
-                        vector_size = 1;
-                        f4.x = math.cmin(f4);
+                        // c == function parameter count 
+                        switch (c)
+                        {
+                            default:
+#if DEBUG
+                                Debug.LogError($"MAX: NUMERIC({vector_size}) parameter count '{c}' not supported");
+#endif
+                                return;
+
+                            case 2: f4.x = math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer +2 )); break;
+                            case 3: f4.x = math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), pop_f1(code_pointer + 3)); break;
+                            case 4: f4.x = math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))); break;
+                            case 5: f4.x = math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), pop_f1(code_pointer + 5)); break;
+                            case 6: f4.x = math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), math.max(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))); break; 
+                            case 7: f4.x = math.max(math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)),math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), math.max(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))),pop_f1(code_pointer + 7)); break;
+                            case 8: f4.x = math.max(math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))),  math.max(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))), math.max(pop_f1(code_pointer + 7), pop_f1(code_pointer + 8))); break;
+                        }
+                        code_pointer += c;
                         break;
                     }
 
                 case BlastVectorSizes.float2:
                     {
-                        vector_size = 1;
-                        f4.x = math.cmin(f4.xy);
-                        break;                                                                                                                                
+                        switch (c)
+                        {
+                            default:
+#if DEBUG
+                                Debug.LogError($"MAX: NUMERIC({vector_size}) parameter count '{c}' not supported");
+#endif
+                                f4 = float.NaN;
+                                break;
+
+                            case 2: f4.xy = math.max(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)); break;
+                            case 3: f4.xy = math.max(math.max(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), pop_f2(code_pointer + 3)); break;
+                            case 4: f4.xy = math.max(math.max(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), math.max(pop_f2(code_pointer + 3), pop_f2(code_pointer + 4))); break;
+                            case 5: f4.xy = math.max(math.max(math.max(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), math.max(pop_f2(code_pointer + 3), pop_f2(code_pointer + 4))), pop_f2(code_pointer + 5)); break;
+                            case 6: f4.xy = math.max(math.max(math.max(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), math.max(pop_f2(code_pointer + 3), pop_f2(code_pointer + 4))), math.max(pop_f2(code_pointer + 5), pop_f2(code_pointer + 6))); break;
+                            case 7: f4.xy = math.max(math.max(math.max(math.max(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), math.max(pop_f2(code_pointer + 3), pop_f2(code_pointer + 4))), math.max(pop_f2(code_pointer + 5), pop_f2(code_pointer + 6))), pop_f2(code_pointer + 7)); break;
+                            case 8: f4.xy = math.max(math.max(math.max(math.max(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), math.max(pop_f2(code_pointer + 3), pop_f2(code_pointer + 4))), math.max(pop_f2(code_pointer + 5), pop_f2(code_pointer + 6))), math.max(pop_f2(code_pointer + 7), pop_f2(code_pointer + 8))); break;
+                        }
+                        code_pointer += c;
+                        break;
                     }
 
                 case BlastVectorSizes.float3:
                     {
-                        vector_size = 1;
-                        f4.x = math.cmin(f4.xyz);
+                        switch (c)
+                        {
+                            default:
+#if DEBUG
+                                Debug.LogError($"MAX: NUMERIC({vector_size}) parameter count '{c}' not supported");
+#endif
+                                f4 = float.NaN;
+                                break;
+
+                            case 2: f4.xyz = math.max(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)); break;
+                            case 3: f4.xyz = math.max(math.max(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), pop_f3(code_pointer + 3)); break;
+                            case 4: f4.xyz = math.max(math.max(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), math.max(pop_f3(code_pointer + 3), pop_f3(code_pointer + 4))); break;
+                            case 5: f4.xyz = math.max(math.max(math.max(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), math.max(pop_f3(code_pointer + 3), pop_f3(code_pointer + 4))), pop_f3(code_pointer + 5)); break;
+                            case 6: f4.xyz = math.max(math.max(math.max(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), math.max(pop_f3(code_pointer + 3), pop_f3(code_pointer + 4))), math.max(pop_f3(code_pointer + 5), pop_f3(code_pointer + 6))); break;
+                            case 7: f4.xyz = math.max(math.max(math.max(math.max(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), math.max(pop_f3(code_pointer + 3), pop_f3(code_pointer + 4))), math.max(pop_f3(code_pointer + 5), pop_f3(code_pointer + 6))), pop_f3(code_pointer + 7)); break;
+                            case 8: f4.xyz = math.max(math.max(math.max(math.max(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), math.max(pop_f3(code_pointer + 3), pop_f3(code_pointer + 4))), math.max(pop_f3(code_pointer + 5), pop_f3(code_pointer + 6))), math.max(pop_f3(code_pointer + 7), pop_f3(code_pointer + 8))); break;
+                        }
+                        code_pointer += c;
+                        break;
+                    }
+
+
+                // vector_size 0 actually means 4 because of using only 2 bits 
+                case 0:
+                case BlastVectorSizes.float4:
+                    {
+                        // only in this case do we need to update vector_size to correct value 
+                        vector_size = 4;
+                        switch (c)
+                        {
+                            default:
+#if DEBUG
+                                Debug.LogError($"MAX: NUMERIC(4) parameter count '{c}' not supported -> parser/compiler/optimizer error");
+#endif
+                                f4 = float.NaN;
+                                break;
+
+                            case 2: f4 = math.max(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)); break;
+                            case 3: f4 = math.max(math.max(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), pop_f4(code_pointer + 3)); break;
+                            case 4: f4 = math.max(math.max(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), math.max(pop_f4(code_pointer + 3), pop_f4(code_pointer + 4))); break;
+                            case 5: f4 = math.max(math.max(math.max(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), math.max(pop_f4(code_pointer + 3), pop_f4(code_pointer + 4))), pop_f4(code_pointer + 5)); break;
+                            case 6: f4 = math.max(math.max(math.max(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), math.max(pop_f4(code_pointer + 3), pop_f4(code_pointer + 4))), math.max(pop_f4(code_pointer + 5), pop_f4(code_pointer + 6))); break;
+                            case 7: f4 = math.max(math.max(math.max(math.max(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), math.max(pop_f4(code_pointer + 3), pop_f4(code_pointer + 4))), math.max(pop_f4(code_pointer + 5), pop_f4(code_pointer + 6))), pop_f4(code_pointer + 7)); break;
+                            case 8: f4 = math.max(math.max(math.max(math.max(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), math.max(pop_f4(code_pointer + 3), pop_f4(code_pointer + 4))), math.max(pop_f4(code_pointer + 5), pop_f4(code_pointer + 6))), math.max(pop_f4(code_pointer + 7), pop_f4(code_pointer + 8))); break;
+                        }
+                        code_pointer += c;
                         break;
                     }
 
                 default:
                     {
-#if LOG_ERRORS
-                    Standalone.Debug.LogError($"maxa: vector size '{vector_size}' not supported ");
+#if DEBUG
+                        Debug.LogError($"MAX: NUMERIC vector size '{vector_size}' not allowed");
 #endif
-                        minus = false;
-                        return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
+                        f4 = float.NaN;
+                        break;
                     }
             }
-            return f4;
         }
+
+        void get_min_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer++;
+            byte c = decode62(in code[code_pointer], ref vector_size);
+
+            f4 = float.MaxValue;
+
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case BlastVectorSizes.float1:
+                    {
+                        switch (c)
+                        {
+                            default:
+#if DEBUG
+                                Debug.LogError($"MIN: NUMERIC({vector_size}) parameter count '{c}' not supported");
+#endif
+                                return;
+
+                            case 2: f4.x = math.min(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)); break;
+                            case 3: f4.x = math.min(math.min(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), pop_f1(code_pointer + 3)); break;
+                            case 4: f4.x = math.min(math.min(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.min(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))); break;
+                            case 5: f4.x = math.min(math.min(math.min(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.min(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), pop_f1(code_pointer + 5)); break;
+                            case 6: f4.x = math.min(math.min(math.min(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.min(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), math.min(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))); break;
+                            case 7: f4.x = math.min(math.min(math.min(math.min(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.min(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), math.min(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))), pop_f1(code_pointer + 7)); break;
+                            case 8: f4.x = math.min(math.min(math.min(math.min(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.min(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), math.min(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))), math.min(pop_f1(code_pointer + 7), pop_f1(code_pointer + 8))); break;
+                        }
+                        code_pointer += c;
+                        break;
+                    }
+
+                case BlastVectorSizes.float2:
+                    {
+                        switch (c)
+                        {
+                            default:
+#if DEBUG
+                                Debug.LogError($"MIN: NUMERIC({vector_size}) parameter count '{c}' not supported");
+#endif
+                                f4 = float.NaN;
+                                break;
+
+                            case 2: f4.xy = math.min(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)); break;
+                            case 3: f4.xy = math.min(math.min(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), pop_f2(code_pointer + 3)); break;
+                            case 4: f4.xy = math.min(math.min(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), math.min(pop_f2(code_pointer + 3), pop_f2(code_pointer + 4))); break;
+                            case 5: f4.xy = math.min(math.min(math.min(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), math.min(pop_f2(code_pointer + 3), pop_f2(code_pointer + 4))), pop_f2(code_pointer + 5)); break;
+                            case 6: f4.xy = math.min(math.min(math.min(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), math.min(pop_f2(code_pointer + 3), pop_f2(code_pointer + 4))), math.min(pop_f2(code_pointer + 5), pop_f2(code_pointer + 6))); break;
+                            case 7: f4.xy = math.min(math.min(math.min(math.min(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), math.min(pop_f2(code_pointer + 3), pop_f2(code_pointer + 4))), math.min(pop_f2(code_pointer + 5), pop_f2(code_pointer + 6))), pop_f2(code_pointer + 7)); break;
+                            case 8: f4.xy = math.min(math.min(math.min(math.min(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), math.min(pop_f2(code_pointer + 3), pop_f2(code_pointer + 4))), math.min(pop_f2(code_pointer + 5), pop_f2(code_pointer + 6))), math.min(pop_f2(code_pointer + 7), pop_f2(code_pointer + 8))); break;
+                        }
+                        code_pointer += c;
+                        break;
+                    }
+
+                case BlastVectorSizes.float3:
+                    {
+                        switch (c)
+                        {
+                            default:
+#if DEBUG
+                                Debug.LogError($"MIN: NUMERIC({vector_size}) parameter count '{c}' not supported");
+#endif
+                                f4 = float.NaN;
+                                break;
+
+                            case 2: f4.xyz = math.min(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)); break;
+                            case 3: f4.xyz = math.min(math.min(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), pop_f3(code_pointer + 3)); break;
+                            case 4: f4.xyz = math.min(math.min(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), math.min(pop_f3(code_pointer + 3), pop_f3(code_pointer + 4))); break;
+                            case 5: f4.xyz = math.min(math.min(math.min(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), math.min(pop_f3(code_pointer + 3), pop_f3(code_pointer + 4))), pop_f3(code_pointer + 5)); break;
+                            case 6: f4.xyz = math.min(math.min(math.min(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), math.min(pop_f3(code_pointer + 3), pop_f3(code_pointer + 4))), math.min(pop_f3(code_pointer + 5), pop_f3(code_pointer + 6))); break;
+                            case 7: f4.xyz = math.min(math.min(math.min(math.min(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), math.min(pop_f3(code_pointer + 3), pop_f3(code_pointer + 4))), math.min(pop_f3(code_pointer + 5), pop_f3(code_pointer + 6))), pop_f3(code_pointer + 7)); break;
+                            case 8: f4.xyz = math.min(math.min(math.min(math.min(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), math.min(pop_f3(code_pointer + 3), pop_f3(code_pointer + 4))), math.min(pop_f3(code_pointer + 5), pop_f3(code_pointer + 6))), math.min(pop_f3(code_pointer + 7), pop_f3(code_pointer + 8))); break;
+                        }
+                        code_pointer += c;
+                        break;
+                    }
+
+
+                // vector_size 0 actually means 4 because of using only 2 bits 
+                case 0:
+                case BlastVectorSizes.float4:
+                    {
+                        vector_size = 4;
+                        switch (c)
+                        {
+                            default:
+#if DEBUG
+                                Debug.LogError($"MIN: NUMERIC(4) parameter count '{c}' not supported -> parser/compiler/optimizer error");
+#endif
+                                f4 = float.NaN;
+                                break;
+
+                            case 2: f4 = math.min(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)); break;
+                            case 3: f4 = math.min(math.min(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), pop_f4(code_pointer + 3)); break;
+                            case 4: f4 = math.min(math.min(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), math.min(pop_f4(code_pointer + 3), pop_f4(code_pointer + 4))); break;
+                            case 5: f4 = math.min(math.min(math.min(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), math.min(pop_f4(code_pointer + 3), pop_f4(code_pointer + 4))), pop_f4(code_pointer + 5)); break;
+                            case 6: f4 = math.min(math.min(math.min(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), math.min(pop_f4(code_pointer + 3), pop_f4(code_pointer + 4))), math.min(pop_f4(code_pointer + 5), pop_f4(code_pointer + 6))); break;
+                            case 7: f4 = math.min(math.min(math.min(math.min(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), math.min(pop_f4(code_pointer + 3), pop_f4(code_pointer + 4))), math.min(pop_f4(code_pointer + 5), pop_f4(code_pointer + 6))), pop_f4(code_pointer + 7)); break;
+                            case 8: f4 = math.min(math.min(math.min(math.min(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)), math.min(pop_f4(code_pointer + 3), pop_f4(code_pointer + 4))), math.min(pop_f4(code_pointer + 5), pop_f4(code_pointer + 6))), math.min(pop_f4(code_pointer + 7), pop_f4(code_pointer + 8))); break;
+                        }
+                        code_pointer += c;
+                        break;
+                    }
+
+                default:
+                    {
+#if DEBUG
+                        Debug.LogError($"MIN: NUMERIC vector size '{vector_size}' not allowed");
+#endif
+                        f4 = float.NaN;
+                        break;
+                    }
+            }
+        }
+
+
+
 
         float4 get_abs_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
         {
@@ -3189,339 +3692,6 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        float4 get_max_result(ref int code_pointer, ref bool minus, ref bool not, ref byte vector_size)
-        {
-            // get compressed value of count and vector_size
-            code_pointer++;
-            byte c = code[code_pointer];
-
-            vector_size = (byte)(c & 0b11);
-            c = (byte)((c & 0b1111_1100) >> 2);
-
-            float4 f4 = float4.zero;
-
-            // this will compile into a jump table (CHECK THIS !!) todo
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float1:
-                    {
-                        switch (c)
-                        {
-                            default:
-#if UNITY_EDITOR || LOG_ERRORS
-                                Standalone.Debug.LogError($"get_max_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
-#endif
-                                return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-
-                            case 2:
-                                f4.x = math.max(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2));
-                                code_pointer += 2;
-                                return f4;
-
-                            case 3:
-                                f4.x = math.max(
-                                        math.max(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                            pop_or_value(code_pointer + 3));
-                                code_pointer += 3;
-                                return f4;
-
-                            case 4:
-                                f4.x = math.max(
-                                        math.max(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                        math.max(pop_or_value(code_pointer + 3), pop_or_value(code_pointer + 4)));
-                                code_pointer += 4;
-                                return f4;
-
-                            case 5:
-                                f4.x = math.max(
-                                    math.max(
-                                        math.max(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                        math.max(pop_or_value(code_pointer + 3), pop_or_value(code_pointer + 4))),
-                                        pop_or_value(code_pointer + 5));
-                                code_pointer += 5;
-                                return f4;
-
-                            case 6:
-                                f4.x = math.max(
-                                    math.max(
-                                        math.max(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                        math.max(pop_or_value(code_pointer + 3), pop_or_value(code_pointer + 4))),
-                                        math.max(pop_or_value(code_pointer + 5), pop_or_value(code_pointer + 6)));
-                                code_pointer += 6;
-                                return f4;
-
-                            case 7:
-                                f4.x = math.max(
-                                        math.max(
-                                        math.max(
-                                        math.max(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                        math.max(pop_or_value(code_pointer + 3), pop_or_value(code_pointer + 4))),
-                                        math.max(pop_or_value(code_pointer + 5), pop_or_value(code_pointer + 6))),
-                                        pop_or_value(code_pointer + 7));
-                                code_pointer += 7;
-                                return f4;
-
-                            case 8:
-                                f4.x = math.max(
-                                        math.max(
-                                        math.max(
-                                        math.max(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                        math.max(pop_or_value(code_pointer + 3), pop_or_value(code_pointer + 4))),
-                                        math.max(pop_or_value(code_pointer + 5), pop_or_value(code_pointer + 6))),
-                                        math.max(pop_or_value(code_pointer + 7), pop_or_value(code_pointer + 8)));
-                                code_pointer += 8;
-                                return f4;
-                        }
-                    }
-
-                // vector_size 0 actually means 4 because of using only 2 bits 
-                case 0:
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        switch (c)
-                        {
-                            default:
-#if UNITY_EDITOR || LOG_ERRORS
-                                Standalone.Debug.LogError($"get_max_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
-#endif
-                                return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-
-                            case 2:
-                                f4 = math.max(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2));
-                                code_pointer += 2;
-                                return f4;
-
-                            case 3:
-                                f4 = math.max(
-                                    math.max(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                    pop_or_value_4(code_pointer + 3));
-                                code_pointer += 3;
-                                return f4;
-
-                            case 4:
-                                f4 = math.max(
-                                    math.max(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                    math.max(pop_or_value_4(code_pointer + 3), pop_or_value_4(code_pointer + 4)));
-                                code_pointer += 4;
-                                return f4;
-
-                            case 5:
-                                f4 = math.max(
-                                    math.max(
-                                        math.max(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                        math.max(pop_or_value_4(code_pointer + 3), pop_or_value_4(code_pointer + 4))),
-                                        pop_or_value_4(code_pointer + 5));
-                                code_pointer += 5;
-                                return f4;
-
-                            case 6:
-                                f4 = math.max(
-                                    math.max(
-                                        math.max(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                        math.max(pop_or_value_4(code_pointer + 3), pop_or_value_4(code_pointer + 4))),
-                                        math.max(pop_or_value_4(code_pointer + 5), pop_or_value_4(code_pointer + 6)));
-                                code_pointer += 6;
-                                return f4;
-
-                            case 7:
-                                f4 = math.max(
-                                        math.max(
-                                        math.max(
-                                        math.max(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                        math.max(pop_or_value_4(code_pointer + 3), pop_or_value_4(code_pointer + 4))),
-                                        math.max(pop_or_value_4(code_pointer + 5), pop_or_value_4(code_pointer + 6))),
-                                        pop_or_value_4(code_pointer + 7));
-                                code_pointer += 7;
-                                return f4;
-
-                            case 8:
-                                f4 = math.max(
-                                        math.max(
-                                        math.max(
-                                        math.max(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                        math.max(pop_or_value_4(code_pointer + 3), pop_or_value_4(code_pointer + 4))),
-                                        math.max(pop_or_value_4(code_pointer + 5), pop_or_value_4(code_pointer + 6))),
-                                        math.max(pop_or_value_4(code_pointer + 7), pop_or_value_4(code_pointer + 8)));
-                                code_pointer += 8;
-                                return f4;
-                        }
-                    }
-
-                default:
-                    {
-#if UNITY_EDITOR || LOG_ERRORS
-                        Standalone.Debug.LogError($"get_max_result: vector size '{vector_size}' not allowed");
-#endif
-                        return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                    }
-            }
-        }
-
-        float4 get_min_result(ref int code_pointer, ref bool minus, ref bool not, ref byte vector_size)
-        {
-            code_pointer++;
-            byte c = code[code_pointer];
-
-            vector_size = (byte)(c & 0b11);
-            c = (byte)((c & 0b1111_1100) >> 2);
-
-            float4 f;
-            // this will compile into a jump table (CHECK THIS !!) todo
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float1:
-                    {
-                        switch (c)
-                        {
-                            default:
-#if LOG_ERRORS
-                Standalone.Debug.LogError($"get_min_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
-#endif
-                                return 0;
-
-
-                            case 2:
-                                f.x = math.min(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2));
-                                code_pointer += 2;
-                                return f.x;
-
-                            case 3:
-                                f.x = math.min(
-                                        math.min(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                            pop_or_value(code_pointer + 3));
-                                code_pointer += 3;
-                                return f.x;
-
-                            case 4:
-                                f.x = math.min(
-                                        math.min(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                        math.min(pop_or_value(code_pointer + 3), pop_or_value(code_pointer + 4)));
-                                code_pointer += 4;
-                                return f.x;
-
-                            case 5:
-                                f.x = math.min(
-                                    math.min(
-                                        math.min(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                        math.min(pop_or_value(code_pointer + 3), pop_or_value(code_pointer + 4))),
-                                        pop_or_value(code_pointer + 5));
-                                code_pointer += 5;
-                                return f.x;
-
-                            case 6:
-                                f.x = math.min(
-                                    math.min(
-                                        math.min(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                        math.min(pop_or_value(code_pointer + 3), pop_or_value(code_pointer + 4))),
-                                        math.min(pop_or_value(code_pointer + 4), pop_or_value(code_pointer + 5)));
-                                code_pointer += 6;
-                                return f.x;
-
-                            case 7:
-                                f.x = math.min(
-                                        math.min(
-                                        math.min(
-                                            math.min(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                            math.min(pop_or_value(code_pointer + 3), pop_or_value(code_pointer + 4))),
-                                            math.min(pop_or_value(code_pointer + 4), pop_or_value(code_pointer + 5))),
-                                        pop_or_value(code_pointer + 6));
-                                code_pointer += 7;
-                                return f.x;
-
-                            case 8:
-                                f.x = math.min(
-                                        math.min(
-                                        math.min(
-                                            math.min(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)),
-                                            math.min(pop_or_value(code_pointer + 3), pop_or_value(code_pointer + 4))),
-                                            math.min(pop_or_value(code_pointer + 4), pop_or_value(code_pointer + 5))),
-                                        math.min(pop_or_value(code_pointer + 6), pop_or_value(code_pointer + 7)));
-                                code_pointer += 8;
-                                return f.x;
-                        }
-                    }
-
-                case BlastVectorSizes.float4:
-                    {
-                        switch (c)
-                        {
-                            default:
-#if LOG_ERRORS
-                Standalone.Debug.LogError($"get_min_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
-#endif
-                                return 0;
-
-                            case 2:
-                                f = math.min(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2));
-                                code_pointer += 2;
-                                return f;
-
-                            case 3:
-                                f = math.min(
-                                        math.min(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                            pop_or_value_4(code_pointer + 3));
-                                code_pointer += 3;
-                                return f;
-
-                            case 4:
-                                f = math.min(
-                                        math.min(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                        math.min(pop_or_value_4(code_pointer + 3), pop_or_value_4(code_pointer + 4)));
-                                code_pointer += 4;
-                                return f;
-
-                            case 5:
-                                f = math.min(
-                                    math.min(
-                                        math.min(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                        math.min(pop_or_value_4(code_pointer + 3), pop_or_value_4(code_pointer + 4))),
-                                        pop_or_value_4(code_pointer + 5));
-                                code_pointer += 5;
-                                return f;
-
-                            case 6:
-                                f = math.min(
-                                    math.min(
-                                        math.min(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                        math.min(pop_or_value_4(code_pointer + 3), pop_or_value_4(code_pointer + 4))),
-                                        math.min(pop_or_value_4(code_pointer + 4), pop_or_value_4(code_pointer + 5)));
-                                code_pointer += 6;
-                                return f;
-
-                            case 7:
-                                f = math.min(
-                                        math.min(
-                                        math.min(
-                                            math.min(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                            math.min(pop_or_value_4(code_pointer + 3), pop_or_value_4(code_pointer + 4))),
-                                            math.min(pop_or_value_4(code_pointer + 4), pop_or_value_4(code_pointer + 5))),
-                                        pop_or_value_4(code_pointer + 6));
-                                code_pointer += 7;
-                                return f.x;
-
-                            case 8:
-                                f = math.min(
-                                        math.min(
-                                        math.min(
-                                            math.min(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2)),
-                                            math.min(pop_or_value_4(code_pointer + 3), pop_or_value_4(code_pointer + 4))),
-                                            math.min(pop_or_value_4(code_pointer + 4), pop_or_value_4(code_pointer + 5))),
-                                        math.min(pop_or_value_4(code_pointer + 6), pop_or_value_4(code_pointer + 7)));
-                                code_pointer += 8;
-                                return f;
-                        }
-                    }
-
-                default:
-                    {
-#if UNITY_EDITOR || LOG_ERRORS
-                        Standalone.Debug.LogError($"get_min_result: vector size '{vector_size}' not (yet) supported");
-#endif
-                        return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                    }
-            }
-        }
 
         /// <summary>
         /// a = any(a b c d)
@@ -4158,12 +4328,12 @@ namespace NSS.Blast.Interpretor
 
                                 case script_op.maxa:
                                     // vector function: max of arguments 
-                                    get_maxa_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
+                                    get_maxa_result(ref code_pointer, ref vector_size, out f4_result);
                                     break;
 
                                 case script_op.mina:
                                     // vector function: min of arguments 
-                                    get_mina_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
+                                    get_mina_result(ref code_pointer, ref vector_size, out f4_result);
                                     break;
 
                                 case script_op.fma:
@@ -4203,11 +4373,11 @@ namespace NSS.Blast.Interpretor
                                     break;
 
                                 case script_op.max:
-                                    f4_result = get_max_result(ref code_pointer, ref minus, ref not, ref vector_size);
+                                    get_max_result(ref code_pointer, ref vector_size, out f4_result);
                                     break;
 
                                 case script_op.min:
-                                    f4_result = get_min_result(ref code_pointer, ref minus, ref not, ref vector_size);
+                                    get_min_result(ref code_pointer, ref vector_size, out f4_result);
                                     break;
 
                                 case script_op.lerp:
@@ -4365,8 +4535,8 @@ namespace NSS.Blast.Interpretor
                                         }
 
                                         // handle op 
-#if LOG_ERRORS
-                                        Standalone.Debug.LogError($"get_extended_operation_result: operation {op} not handled / supported / implemented ");
+#if DEBUG
+                                        Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, get_extended_operation_result: operation {op} not handled / supported / implemented ");
 #endif
                                     }
                                     // prev_op = (byte)script_op.ex_op;
@@ -4449,8 +4619,8 @@ namespace NSS.Blast.Interpretor
                                                 case BlastVectorSizes.float3: f4_result.xyz = temp; break;
                                                 case BlastVectorSizes.float4: f4_result.xyzw = temp; break;
                                                 default:
-#if LOG_ERRORS
-                                                    Standalone.Debug.LogError("error: growing vector beyond size 4 from constant");
+#if DEBUG
+                                                    Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector beyond size 4 from constant");
 #endif
                                                     break;
                                             }
@@ -4465,8 +4635,8 @@ namespace NSS.Blast.Interpretor
                                                 case BlastVectorSizes.float3: f4_result.z = temp; break;
                                                 case BlastVectorSizes.float4: f4_result.w = temp; break;
                                                 default:
-#if LOG_ERRORS
-                                                    Standalone.Debug.LogError("error: growing vector beyond size 4 from constant");
+#if DEBUG
+                                                    Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector beyond size 4 from constant");
 #endif
                                                     break;
                                             }
@@ -4532,7 +4702,7 @@ namespace NSS.Blast.Interpretor
                                                     case BlastVectorSizes.float3: 
                                                     case BlastVectorSizes.float4: 
                                                     default:
-                                                        Debug.LogError("error: growing vector from other vectors not fully supported");
+                                                        Debug.LogError("codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector from other vectors not fully supported");
                                                         break;
                                                 }
                                             }
@@ -4545,7 +4715,7 @@ namespace NSS.Blast.Interpretor
                                             //
                                             // if we predict this at the compiler we could use the opcodes value as value constant
                                             //
-                                            Standalone.Debug.LogError($"encountered unknown op {(script_op)op}");
+                                            Standalone.Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(script_op)op}");
 
                                             // this should screw stuff up 
                                             return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -4589,9 +4759,9 @@ namespace NSS.Blast.Interpretor
                                             case BlastVectorSizes.float3:
                                             case BlastVectorSizes.float4:
                                             default:
-#if LOG_ERRORS
+#if DEBUG
                                                 // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                Standalone.Debug.LogWarning($"no support for vector of size {vector_size} -> {max_vector_size}");
+                                                Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                 break;
                                         }
@@ -4611,9 +4781,9 @@ namespace NSS.Blast.Interpretor
                                             case BlastVectorSizes.float3:
                                             case BlastVectorSizes.float4:
                                             default:
-#if LOG_ERRORS
+#if DEBUG
                                                 // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                Standalone.Debug.LogWarning($"no support for vector of size {vector_size} -> {max_vector_size}");
+                                                Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                 break;
                                         }
@@ -4640,19 +4810,19 @@ namespace NSS.Blast.Interpretor
                                                 // have a float 4 and one from earlier.
                                                 break;
                                             default:
-#if LOG_ERRORS
-                                                Standalone.Debug.LogError("implement me");
+#if DEBUG
+                                                Debug.LogError("implement me");
 #endif
                                                 break;
                                         }
-                                        BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, f4_result, ref last_is_op_or_first, ref vector_size);
+                                        handle_op(current_operation, op, prev_op, ref f4, f4_result, ref last_is_op_or_first, ref vector_size);
                                     }
                                     break;
 
                                 default:
                                     {
-#if LOG_ERRORS
-                                        Standalone.Debug.LogError($"encountered unsupported vector size of {vector_size}");
+#if DEBUG
+                                        Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unsupported vector size of {vector_size}");
 #endif
                                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                                     }
