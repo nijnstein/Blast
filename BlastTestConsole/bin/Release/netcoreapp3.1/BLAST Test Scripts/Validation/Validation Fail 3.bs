@@ -1,0 +1,9 @@
+﻿
+a = 1000;
+
+
+# NOTE the ; after the 1000, it is not allowed to terminate a # statement with a ;
+# it should fail on tokenizing (tokenizer parses #statements) and NOT validations
+
+#validate a 1000;  
+

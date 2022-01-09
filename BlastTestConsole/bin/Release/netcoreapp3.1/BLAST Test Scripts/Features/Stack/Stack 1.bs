@@ -1,0 +1,23 @@
+﻿
+a = 1; 
+b = 2; 
+c = 3; 
+
+push(a); 
+push(b); 
+push(c); 
+
+d = 4; 
+
+a = d * pop(); 
+b = d * pop(); 
+c = d * pop(); 
+
+
+debug(a);                    
+debug(b); 
+debug(c); 
+
+#validate a 12
+#validate b 8 
+#validate c 4

@@ -4779,7 +4779,7 @@ namespace NSS.Blast.Interpretor
                                             //
                                             // if we predict this at the compiler we could use the opcodes value as value constant
                                             //
-                                            Standalone.Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(script_op)op}");
+                                            Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(script_op)op}");
 
                                             // this should screw stuff up 
                                             return new float4(float.NaN, float.NaN, float.NaN, float.NaN);

@@ -1,0 +1,18 @@
+﻿
+a = (1.4 2 3.3); 
+b = (4 5 6 7.3); 	  
+c = 4.4; 
+
+push(a); 
+push(b); 
+push(c); 
+
+c = pop;
+b = pop; 
+a = pop;
+
+d = maxa(a, c);
+e = mina(b, c);
+ 
+#validate d 4.4
+#validate e 4

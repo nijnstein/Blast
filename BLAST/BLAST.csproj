@@ -9,6 +9,11 @@
     <DefineConstants>TRACE;DEBUG;NOT_USING_UNITY</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>NOT_USING_UNITY</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="Unity.Mathematics">
       <HintPath>..\..\Unity.Mathematics\src\Unity.Mathematics\obj\Release\Unity.Mathematics.dll</HintPath>

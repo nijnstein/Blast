@@ -1,0 +1,18 @@
+﻿
+#
+# VECTOR TEST 4
+#
+
+a = (4 5 6);
+b = (8 9 10);
+
+a = max(a, b);
+
+debug(a); 
+debug(b);
+
+
+# e = normalize(a);
+# g = min(a, b, c, d); 	 # should return smallest vector n or m
+# h = min_arg(a, b);       # should return smallest element of each vector as a [,,]
+# i = a * b * 2            # mixing scalars and vectors in operation sequence
