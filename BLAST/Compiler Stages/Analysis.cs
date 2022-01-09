@@ -507,7 +507,8 @@ namespace NSS.Blast.Compiler.Stage
                             apply_multiplication_rules(data, n);
                             refactor_divisions(data, n);
                             simplify_compound_arithmetic(data, n);
-                            replace_double_minus(data, n); 
+                            replace_double_minus(data, n);
+                         ///   encode_minus_into_identifier_of_vector_part(data, n); 
                         }
                         return;
 

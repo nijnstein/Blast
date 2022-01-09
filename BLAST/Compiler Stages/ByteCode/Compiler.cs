@@ -325,6 +325,7 @@ namespace NSS.Blast.Compiler.Stage
             if (is_flat_parameter_list)
             {
                 bool has_variable_paramcount = ast_function.function.MinParameterCount != ast_function.function.MaxParameterCount;
+                bool supports_vectors = false;  // ast_function.function.AcceptsVectorSize == 0 || ast_function.function.AcceptsVectorSize > 1;
 
                 if (ast_function.function.ScriptOp != script_op.nop)
                 {
@@ -350,7 +351,8 @@ namespace NSS.Blast.Compiler.Stage
                     else
                     {
                         // no variable parameter counts on external function counts 
-                        if (has_variable_paramcount)
+                        // also do this for functions supporting vectorsizes > 1
+                        if (has_variable_paramcount || supports_vectors)
                         {
                             if (ast_function.children.Count > 63)
                             {

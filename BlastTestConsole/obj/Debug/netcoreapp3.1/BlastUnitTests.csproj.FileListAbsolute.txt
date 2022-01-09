@@ -126,3 +126,4 @@ F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scri
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\Vector 6.bs
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\Stack\Stack 1.bs
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\Stack\Stack 2.bs
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Debug\netcoreapp3.1\BLAST Test Scripts\Features\Stack\Stack 3.bs

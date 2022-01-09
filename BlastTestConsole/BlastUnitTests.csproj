@@ -54,6 +54,9 @@
     <None Update="BLAST Test Scripts\Features\Debug.bs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="BLAST Test Scripts\Features\Stack\Stack 3.bs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="BLAST Test Scripts\Features\Stack\Stack 2.bs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

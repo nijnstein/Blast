@@ -18,16 +18,9 @@ debug(a);
 debug(b); 
 debug(c); 
 
-# flatten_function: reduced compound encompassing parameter: < vector function maxa>.<parameter c> 
-# flatten_function: reduced compound encompassing parameter: < vector function mina>.<parameter c> 
-# CompileNode: skipping compound of node < vector compound statement of 1>.< vector function push>
-# CompileNode: skipping compound of node < vector compound statement of 1>.< vector function push>
-# CompileNode: skipping compound of node <compound statement of 1>.<function push>
-# CompileNode: skipping compound of node < vector compound statement of 1>.< vector function debug>
-# CompileNode: skipping compound of node < vector compound statement of 1>.< vector function debug>
-# CompileNode: skipping compound of node <compound statement of 1>.<function debug>
-# WARNING: TODO: compile: set constant float vector not implemented 
-# WARNING: TODO: compile: set constant float vector not implemented 
+#validate d 8
+#validate e 4
+
 # compiler node tree
 # 
 #    root of 14 

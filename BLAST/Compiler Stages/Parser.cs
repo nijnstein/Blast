@@ -1166,13 +1166,20 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>null on errors, a valid node on success
         /// - can return nodes: function() and identifier[34].x
         /// </returns>
-        node scan_and_parse_identifier(IBlastCompilationData data, ref int idx, in int idx_max)
+        node scan_and_parse_identifier(IBlastCompilationData data, ref int idx, in int idx_max, bool add_minus = false)
         {
             // step 1> we read a number if
 
             // - first char is number 
             // - first token is negative sign second token first char is digit 
             bool minus = data.Tokens[idx].Item1 == BlastScriptToken.Substract;
+
+            if(add_minus) 
+            {
+                // toggle minus sign if requested 
+                minus = !minus;
+            }
+
             bool is_number =
                 // first minus and second char is digit 
                 (minus && (idx + 1 <= idx_max) && data.Tokens[idx + 1].Item2 != null && data.Tokens[idx + 1].Item2.Length > 0 && char.IsDigit(data.Tokens[idx + 1].Item2[0]))
@@ -1462,6 +1469,10 @@ namespace NSS.Blast.Compiler.Stage
             bool has_parenthesis = data.Tokens[idx].Item1 == BlastScriptToken.OpenParenthesis;
             if (has_parenthesis) idx++;
 
+            BlastScriptToken prev_token = BlastScriptToken.Nop;
+            bool minus = false;
+            bool if_sure_its_vector_define = false; 
+
             // read all tokens 
             while (idx <= idx_max)
             {
@@ -1474,11 +1485,25 @@ namespace NSS.Blast.Compiler.Stage
                         break;
                     }
                 }
+
+                if(prev_token == BlastScriptToken.Comma)
+                {
+                    if(token != BlastScriptToken.Substract)
+                    {
+                        // should we raise error ?  or just allow it TODO 
+                    }
+                }
+
                 switch (token)
                 {
                     // identifier, possibly a nested function 
                     case BlastScriptToken.Identifier:
-                        n_sequence.SetChild(scan_and_parse_identifier(data, ref idx, idx_max));
+                        
+                        // this cannot be anything else when 2 identifiers follow 
+                        if (prev_token == BlastScriptToken.Identifier) if_sure_its_vector_define = true; 
+
+                        node ident = n_sequence.SetChild(scan_and_parse_identifier(data, ref idx, idx_max, minus));
+                        minus = false; 
                         break;
 
                     case BlastScriptToken.Nop:
@@ -1487,8 +1512,11 @@ namespace NSS.Blast.Compiler.Stage
 
                     // seperator not allowed in sequence 
                     case BlastScriptToken.Comma:
-                        data.LogError($"parser.parse_sequence: seperator token '{token}' not allowed inside a sequence");
-                        return null;
+                        
+                        // only allow in sequence if sure its a vector define ??  
+                        // data.LogError($"parser.parse_sequence: seperator token '{token}' not allowed inside a sequence");
+                        idx++;
+                        break; 
 
                     case BlastScriptToken.DotComma:
                         if (idx == idx_max)
@@ -1527,7 +1555,6 @@ namespace NSS.Blast.Compiler.Stage
 
                     // operations
                     case BlastScriptToken.Add:
-                    case BlastScriptToken.Substract:
                     case BlastScriptToken.Divide:
                     case BlastScriptToken.Multiply:
                     case BlastScriptToken.Equals:
@@ -1546,6 +1573,27 @@ namespace NSS.Blast.Compiler.Stage
                         idx++;
                         break;
 
+                    case BlastScriptToken.Substract:
+                        // if its the first, then its NOT an operation
+                        if (prev_token == BlastScriptToken.Nop
+                            ||
+                            // if the previous was a seperator 
+                            prev_token == BlastScriptToken.Comma
+                            || 
+                            if_sure_its_vector_define)
+                        {
+                            // no an operation, but minus sign 
+                            minus = true;
+                            idx++;
+                        }
+                        else
+                        {
+                            // handle as a mathamatical operation 
+                            n_sequence.CreateChild(nodetype.operation, token, data.Tokens[idx].Item2);
+                            idx++;
+                        }
+                        break; 
+
                     case BlastScriptToken.CloseParenthesis:
                     case BlastScriptToken.Indexer:
                     case BlastScriptToken.IndexOpen:
@@ -1561,6 +1609,8 @@ namespace NSS.Blast.Compiler.Stage
                         data.LogError($"parse.parse_sequence: found unexpected token '{token}' while parsing sequence");
                         return null;
                 }
+
+                prev_token = token;
             }
 
             return n_sequence;
