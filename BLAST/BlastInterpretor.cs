@@ -548,7 +548,7 @@ namespace NSS.Blast.Interpretor
 
             if (c >= opt_id)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
@@ -564,7 +564,7 @@ namespace NSS.Blast.Interpretor
             else
             if (c == (byte)script_op.pop)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 1));
                 int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 1));
@@ -599,7 +599,7 @@ namespace NSS.Blast.Interpretor
             byte c = code[code_pointer];
             if (c >= opt_id)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
@@ -616,7 +616,7 @@ namespace NSS.Blast.Interpretor
             else
             if (c == (byte)script_op.pop)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 2));
                 int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 2));
@@ -650,7 +650,7 @@ namespace NSS.Blast.Interpretor
             byte c = code[code_pointer];
             if (c >= opt_id)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
@@ -669,7 +669,7 @@ namespace NSS.Blast.Interpretor
             else
             if (c == (byte)script_op.pop)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 3));
                 int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 3));
@@ -703,7 +703,7 @@ namespace NSS.Blast.Interpretor
             byte c = code[code_pointer];
             if (c >= opt_id)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
@@ -720,7 +720,7 @@ namespace NSS.Blast.Interpretor
             else
             if (c == (byte)script_op.pop)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 4));
                 int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 4));
@@ -777,7 +777,7 @@ namespace NSS.Blast.Interpretor
         }
 
         #endregion 
-                      
+
         /// <summary>
         /// get the next value from the datasegment, stack or constant dictionary 
         /// </summary>
@@ -826,7 +826,7 @@ namespace NSS.Blast.Interpretor
             {
                 // error or.. constant by operation value.... 
 #if DEBUG
-                Standalone.Debug.LogError($"BlastInterpretor: pop_or_value -> select op by constant value is not supported, at codepointer: {code_pointer} => {code[code_pointer].ToString().PadLeft(3, '0')}  ");
+                Debug.LogError($"BlastInterpretor: pop_or_value -> select op by constant value is not supported, at codepointer: {code_pointer} => {code[code_pointer].ToString().PadLeft(3, '0')}  ");
 #endif
                 type = BlastVariableDataType.Numeric;
                 vector_size = 1;
@@ -850,13 +850,13 @@ namespace NSS.Blast.Interpretor
 
             if (c >= opt_id)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id)); 
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
                 if(size != 1 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - opt_id}");
+                    Debug.LogError($"blast.stack, pop_or_value -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
                 }
 #endif 
@@ -866,13 +866,13 @@ namespace NSS.Blast.Interpretor
             else
             if (c == (byte)script_op.pop)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 1));
                 int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 1));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {package->stack_offset - 1}");
+                    Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {package->stack_offset - 1}");
                     return float.NaN;
                 }
 #endif         
@@ -883,7 +883,7 @@ namespace NSS.Blast.Interpretor
             else
             if (c >= opt_value)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 //BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_value));
                 //int size = GetMetaDataSize(metadata, (byte)(c - opt_value));
@@ -901,7 +901,7 @@ namespace NSS.Blast.Interpretor
             {
                 // error or.. constant by operation value.... 
 #if DEBUG
-                Standalone.Debug.LogError("BlastInterpretor: pop_or_value -> select op by constant value is not supported");
+                Debug.LogError("BlastInterpretor: pop_or_value -> select op by constant value is not supported");
 #endif
                 return float.NaN;
             }
@@ -1466,57 +1466,6 @@ namespace NSS.Blast.Interpretor
 
         #region Function Handlers 
 
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        float get_fma_result(ref int code_pointer, ref bool minus)
-        {
-            float m1 = pop_or_value(code_pointer + 1);
-            float m2 = pop_or_value(code_pointer + 2);
-            float a1 = pop_or_value(code_pointer + 3);
-
-            float r = math.mad(m1, m2, a1);
-            r = math.select(r, -r, minus);
-
-            minus = false;
-            code_pointer += 3;
-
-            return r;
-        }
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        float get_fms_result(ref int code_pointer, ref bool minus)
-        {
-            float m1 = pop_or_value(code_pointer + 1);
-            float m2 = pop_or_value(code_pointer + 2);
-            float a1 = pop_or_value(code_pointer + 3);
-
-            float r = math.mad(m1, m2, -a1);
-            r = math.select(r, -r, minus);
-
-            minus = false;
-            code_pointer += 3;
-
-            return r;
-        }
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        float get_fsm_result(ref int code_pointer, ref bool minus)
-        {
-            float m1 = pop_or_value(code_pointer + 1);
-            float m2 = pop_or_value(code_pointer + 2);
-            float a1 = pop_or_value(code_pointer + 3);
-
-            // 10 - (2 * 3)  == 4
-            // (-2 * 3) + 10 == 4
-
-            //float r = a1 - (m1 * m2);
-            float r = math.mad(-m1, m2, a1);
-            r = math.select(r, -r, minus);
-
-            minus = false;
-            code_pointer += 3;
-
-            return r;
-        }
 
         float4 get_select_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
         {
@@ -2124,7 +2073,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if LOG_ERRORS
-                        Standalone.Debug.LogError($"log2: vector size '{vector_size}' not supported ");
+                        Debug.LogError($"log2: vector size '{vector_size}' not supported ");
 #endif
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                         break;
@@ -2288,6 +2237,8 @@ namespace NSS.Blast.Interpretor
 
 
         #region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
+
+        #region get_[min/max/mina/maxa]_result
         /// <summary>
         /// get the maximum value of all arguments of any vectorsize 
         /// </summary>
@@ -2638,6 +2589,10 @@ namespace NSS.Blast.Interpretor
             }
         }
 
+        #endregion
+
+        #region single input same output math functions 
+
         /// <summary>
         /// get absolute value of input
         /// - single input function 
@@ -2840,7 +2795,7 @@ namespace NSS.Blast.Interpretor
         }
 
         /// <summary>
-        /// get reciprocal roots(s) of value (math.sqrt)
+        /// get reciprocal roots(s) of value (math.rsqrt)
         /// - 1 parameter fixed
         /// - outputvectorsize == inputvectorsize 
         /// </summary>
@@ -2879,7 +2834,7 @@ namespace NSS.Blast.Interpretor
         }
 
         /// <summary>
-        /// get sinus of value (math.sqrt)
+        /// get sinus of value 
         /// - 1 parameter fixed
         /// - outputvectorsize == inputvectorsize 
         /// </summary>
@@ -2916,284 +2871,356 @@ namespace NSS.Blast.Interpretor
 #endif
             }
         }
+
+        /// <summary>
+        /// get cosine
+        /// - 1 parameter fixed
+        /// - outputvectorsize == inputvectorsize 
+        /// </summary>
+        void get_cos_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in cos not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.cos(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.cos(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.cos(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.cos(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Debug.LogError($"cos: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// calculate tangent (radians)
+        /// - 1 parameter fixed
+        /// - outputvectorsize == inputvectorsize 
+        /// </summary>
+        void get_tan_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in tan not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.tan(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.tan(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.tan(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.tan(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Debug.LogError($"tan: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// calculate sin-1 (radians)
+        /// - 1 parameter fixed
+        /// - outputvectorsize == inputvectorsize 
+        /// </summary>
+        void get_sinh_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in sinh not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.sinh(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.sinh(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.sinh(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.sinh(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Debug.LogError($"sinh: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// calculate arc tangent (radians)
+        /// - 1 parameter fixed
+        /// - outputvectorsize == inputvectorsize 
+        /// </summary>
+        void get_atan_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in atan not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.atan(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.atan(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.atan(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.atan(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Debug.LogError($"atan: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// calculate cos-1 (radians)
+        /// - 1 parameter fixed
+        /// - outputvectorsize == inputvectorsize 
+        /// </summary>
+        void get_cosh_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in cosh not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.cosh(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.cosh(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.cosh(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.cosh(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Debug.LogError($"cosh: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// degrees from radians
+        /// - 1 parameter fixed
+        /// - outputvectorsize == inputvectorsize 
+        /// </summary>
+        void get_degrees_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in degrees not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.degrees(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.degrees(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.degrees(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.degrees(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Debug.LogError($"degrees: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// radians from degrees 
+        /// - 1 parameter fixed
+        /// - outputvectorsize == inputvectorsize 
+        /// </summary>
+        void get_rad_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in radians not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.radians(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.radians(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.radians(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.radians(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Debug.LogError($"radians: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
         #endregion
 
+        #region fused substract multiply actions
 
-
-
-
- 
-        float4 get_cos_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        f4 = math.cos(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        vector_size = 4;
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.cos(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"cos: vector size '{vector_size}' not supported ");
+        /// <summary>
+        /// fused multiply add 
+        /// - 3 float params: m1 * m2 + a1
+        /// </summary>
+        /// <returns></returns>
+#if !DEBUG
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
+        void get_fma_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            BlastVariableDataType datatype = default;
+            f4 = float.NaN;
+
+            // always 3 params, input vector size == output vectorsize
+
+#if DEBUG
+            BlastVariableDataType popped_datatype; 
+            byte popped_vector_size;
+
+            void* pm1 = pop_with_info(code_pointer + 1, out datatype, out vector_size);
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.Log($"fma: ID datatype not yet supported, codepointer {code_pointer}, vectorsize: {vector_size}");
+                return;
             }
 
-            minus = false;
-            return f4;
-        }
-
-        float4 get_tan_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
+            void* pm2 = pop_with_info(code_pointer + 2, out popped_datatype, out popped_vector_size);
+            if (datatype != popped_datatype || vector_size != popped_vector_size) 
             {
-                case BlastVectorSizes.float4:
-                    {
-                        f4 = math.tan(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        vector_size = 4;
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.tan(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"tan: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
+                Debug.Log($"fma: [datatype|vectorsize] mismatch, codepointer {code_pointer}, all parameters must share the same datatype, m1 = {(datatype == 0 ? "NUMERIC" : "ID")}.{vector_size} while m2 = {(popped_datatype == 0 ? "NUMERIC" : "ID")}.{popped_vector_size}");
+                return; 
             }
 
-            minus = false;
-            return f4;
-        }
-
-        float4 get_sinh_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
+            void* pa1 = pop_with_info(code_pointer + 3, out datatype, out vector_size);
+            if (datatype != popped_datatype || vector_size != popped_vector_size)
             {
-                case BlastVectorSizes.float4:
-                    {
-                        f4 = math.sinh(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        vector_size = 4;
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.sinh(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"sinh: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
+                Debug.Log($"fma: [datatype|vectorsize] mismatch, codepointer {code_pointer}, all parameters must share the same datatype, m1 = {(datatype == 0 ? "NUMERIC" : "ID")}.{vector_size} while a1 = {(popped_datatype == 0 ? "NUMERIC" : "ID")}.{popped_vector_size}");
+                return;
             }
 
-            minus = false;
-            return f4;
-        }
-
-        float4 get_atan_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
+            // in debug pop all with info and verify datatypes 
             switch ((BlastVectorSizes)vector_size)
             {
+                case BlastVectorSizes.float1: f4.x = math.mad(((float*)pm1)[0], ((float*)pm2)[0], ((float*)pa1)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.mad(((float2*)pm1)[0], ((float2*)pm2)[0], ((float2*)pa1)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.mad(((float3*)pm1)[0], ((float3*)pm2)[0], ((float3*)pa1)[0]); break;
+                case 0:
                 case BlastVectorSizes.float4:
-                    {
-                        f4 = math.atan(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        vector_size = 4;
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.atan(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"atan: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
+                    f4 = math.mad(((float4*)pm1)[0], ((float4*)pm2)[0], ((float4*)pa1)[0]); 
+                    vector_size = 4; 
+                    break; 
             }
 
-            minus = false;
-            return f4;
-        }
+#else
+            // in release => pop once with info, others direct 
+            void* pm1 = pop_with_info(code_pointer + 1, out datatype, out vector_size);
 
-        float4 get_cosh_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
             switch ((BlastVectorSizes)vector_size)
             {
+                case BlastVectorSizes.float1: f4.x = math.mad(((float*)pm1)[0], pop_f1(code_pointer + 2), pop_f1(code_pointer + 3)); break;
+                case BlastVectorSizes.float2: f4.xy = math.mad(((float2*)pm1)[0], pop_f2(code_pointer + 2), pop_f2(code_pointer + 3)); break;
+                case BlastVectorSizes.float3: f4.xyz = math.mad(((float3*)pm1)[0], pop_f3(code_pointer + 2), pop_f3(code_pointer + 3)); break;
+                case 0:
                 case BlastVectorSizes.float4:
-                    {
-                        f4 = math.cosh(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        vector_size = 4;
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.cosh(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"cosh: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
+                    f4 = math.mad(((float4*)pm1)[0], pop_f4(code_pointer + 2), pop_f4(code_pointer + 3));
+                    vector_size = 4;
+                    break;
             }
 
-            minus = false;
-            return f4;
-        }
-
-        float4 get_degrees_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        f4 = math.degrees(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        vector_size = 4;
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.degrees(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"degrees: vector size '{vector_size}' not supported ");
 #endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
-
-        float4 get_rad_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        f4 = math.radians(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        vector_size = 4;
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.radians(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"radians: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
+     
+            code_pointer += 3;
         }
 
 
@@ -3201,17 +3228,9 @@ namespace NSS.Blast.Interpretor
 
 
 
+#endregion
 
-
-
-
-
-
-
-
-
-
-
+#endregion
 
 
         float4 get_mula_result(ref int code_pointer, ref bool minus, ref byte vector_size)
@@ -4168,6 +4187,12 @@ namespace NSS.Blast.Interpretor
 
         }
 
+
+        /// <summary>
+        /// execute the next extended operation (ops use 255/exop to use these) 
+        /// - not all are handled here, only those resulting in an operation 
+        ///   call and debug for example are left out 
+        /// </summary>
         float4 get_extended_operation_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
         {
             code_pointer++;
@@ -4182,32 +4207,41 @@ namespace NSS.Blast.Interpretor
             }
 
             // handle op 
-#if LOG_ERRORS
-            Standalone.Debug.LogError($"get_extended_operation_result: operation {op} not handled / supported / implemented ");
+#if DEBUG
+            Debug.LogError($"get_extended_operation_result: code_pointer: {code_pointer}, operation {op} not handled / supported / implemented ");
 #endif
 
             return f4;
         }
 
 
-        #endregion
+#endregion
 
-        #region ByteCode Execution
+#region ByteCode Execution
 
-
-        // recursively handle a compounded statement and return its value
-        // - the compiler should flatten execution, this will save a lot on stack allocations
+        /// <summary>
+        /// recursively handle a compounded statement and return its value
+        /// - the compiler should flatten execution, this will save a lot on stack allocations but it wont flatten everything 
+        /// - the compiler should avoid writing bytecode that recursively uses compounds whenever possible 
+        /// </summary>
+        /// <param name="code_pointer"></param>
+        /// <param name="vector_size"></param>
+        /// <returns></returns>
         float4 get_compound_result(ref int code_pointer, ref byte vector_size)
         {
-            byte op = 0, prev_op = 0;
-            bool op_is_value = false, prev_op_is_value = false;
+            byte op = 0;
+            byte prev_op = 0;
+
+            bool op_is_value = false;
+            bool prev_op_is_value = false;
 
             bool last_is_op_or_first = true;
 
             bool minus = false;   // shouldnt we treat these as 1?
             bool not = false;
 
-            float f1 = 0, temp = 0;
+            float f1 = 0;
+            float temp = 0;
             float4 f4 = float4.zero;
 
             // vector_size = 1; now set by callee
@@ -4403,6 +4437,8 @@ namespace NSS.Blast.Interpretor
                                     f4_result = get_compound_result(ref code_pointer, ref vector_size);
                                     break;
 
+
+                                // math functions 
                                 case script_op.abs: get_abs_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.mina: get_mina_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -4410,12 +4446,37 @@ namespace NSS.Blast.Interpretor
                                 case script_op.min: get_min_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
-                               
                                 case script_op.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
-
                                 case script_op.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+                                // fma and friends 
+                                case script_op.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+
+
+                                case script_op.pow:
+                                    get_pow_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
+                                    break;
+
+                                case script_op.exp:
+                                    get_exp_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
+                                    break;
+
+                                case script_op.log2:
+                                    get_log2_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
+                                    break;
+
+
+
 
 
                                 ///
@@ -4430,17 +4491,7 @@ namespace NSS.Blast.Interpretor
                                     get_random_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
                                     break;
 
-                                case script_op.fma:
-                                    f4_result = get_fma_result(ref code_pointer, ref minus);
-                                    break;
 
-                                case script_op.fms:
-                                    f4_result = get_fms_result(ref code_pointer, ref minus);
-                                    break;
-
-                                case script_op.fsm:
-                                    f4_result = get_fsm_result(ref code_pointer, ref minus);
-                                    break;
 
                                 case script_op.mula:
                                     f4_result = get_mula_result(ref code_pointer, ref minus, ref vector_size);
@@ -4488,45 +4539,7 @@ namespace NSS.Blast.Interpretor
                                     break;
 
 
-                                case script_op.cos:
-                                    get_cos_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
 
-                                case script_op.tan:
-                                    get_tan_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.sinh:
-                                    get_sinh_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.cosh:
-                                    get_cosh_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.atan:
-                                    get_atan_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.degrees:
-                                    get_degrees_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.radians:
-                                    get_rad_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.pow:
-                                    get_pow_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.exp:
-                                    get_exp_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.log2:
-                                    get_log2_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
 
                                 case script_op.distance:
                                     get_distance_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
@@ -5081,42 +5094,88 @@ namespace NSS.Blast.Interpretor
 
                         break;
 
+                    //
+                    // pushv knows more about what it is pushing up the stack, it can do it without running the compound 
+                    //
                     case script_op.pushv:
-                        byte b;
-                        switch (code[code_pointer++])
+                        byte param_count = code[code_pointer++];
+                        vector_size = (byte)(param_count & 0b00001111); // vectorsize == lower 4 
+                        param_count = (byte)((param_count & 0b11110000) >> 4);  // param_count == upper 4 
+
+                        // either: vector_size or paramcount but NOT both 
+                          
+                        if (param_count == 1)
                         {
-                            case 1:
-                                b = (byte)(code[code_pointer] - opt_id);
-                                push(fdata[b]);
-                                code_pointer++;
-                                break;
-                            case 2:
-                                b = (byte)(code[code_pointer] - opt_id);
-                                push(new float2(fdata[b], fdata[b + 1])); 
-                                code_pointer++;
-                                break;
-                            case 3:
-                                b = (byte)(code[code_pointer] - opt_id);
-                                push(new float3(fdata[b], fdata[b + 1], fdata[b + 2]));
-                                code_pointer++;
-                                break;
-                            case 4:
-                                b = (byte)(code[code_pointer] - opt_id);
-                                push(new float4(fdata[b], fdata[b + 1], fdata[b + 2], fdata[b + 3]));
-                                code_pointer++;
-                                break;
-                            default:
-#if LOG_ERRORS
-                            Standalone.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push");
+                            switch (vector_size)
+                            {
+                                case 1:
+                                    push(pop_f1(code_pointer));
+                                    code_pointer++;
+                                    break;
+                                case 2:
+                                    push(pop_f2(code_pointer));
+                                    code_pointer++;
+                                    break;
+                                case 3:
+                                    push(pop_f3(code_pointer));
+                                    code_pointer++;
+                                    break;
+                                case 4:
+                                    push(pop_f4(code_pointer));
+                                    code_pointer++;
+                                    break;
+                                default:
+#if DEBUG
+                                    Debug.LogError($"burstscript.interpretor error: vectorsize {vector_size} not yet supported on stack push");
 #endif
-                                return (int)BlastError.error_variable_vector_op_not_supported;
+                                    return (int)BlastError.error_vector_size_not_supported;
+                            }
+                        }
+                        else
+                        {
+#if DEBUG
+                            if (param_count != vector_size)
+                            {
+                                Debug.LogError($"burstscript.interpretor error: pushv => param_count > 1 && vector_size != param_count, this is not allowed. Vectorsize: {vector_size}, Paramcount: {param_count}");
+                                return (int)BlastError.error_unsupported_operation; 
+                            }
+#endif
+                            // param_count == vector_size and vector_size > 1, compiler enforces it so we should not check it in release 
+                            // this means that vector is build from multiple data points
+                            switch(vector_size)
+                            {
+                                case 1:
+                                    push(pop_f1(code_pointer));
+                                    code_pointer += 1;
+                                    break;
+                                case 2:
+                                    push(new float2(pop_f1(code_pointer), pop_f1(code_pointer + 1)));
+                                    code_pointer += 2;
+                                    break;
+                                case 3:
+                                    push(new float3(pop_f1(code_pointer), pop_f1(code_pointer + 1), pop_f1(code_pointer + 2))); 
+                                    code_pointer += 3;
+                                    break;
+                                case 4:
+                                    push(new float4(pop_f1(code_pointer), pop_f1(code_pointer + 1), pop_f1(code_pointer + 2), pop_f1(code_pointer + 3)));
+                                    code_pointer += 4;
+                                    break; 
+                            }
+
+                            // we could handle the case of different sized vectors, pushing them into 1 of vectorsize...
+                            // - currently the compiler wont do this and we catch this as an error in debug builds some lines back
                         }
                         break;
 
+                    //
+                    // push the result from a function directly onto the stack, saving a call to getcompound 
+                    //
                     case script_op.pushf:
                         // push the result of a function directly onto the stack instead of assigning it first or something
 
-                        // get result of compound 
+                        //
+                        // get result of compound (although it should directly call the function) 
+                        // 
                         f4_register = get_compound_result(ref code_pointer, ref vector_size);
 
                         switch(vector_size)
@@ -5145,12 +5204,13 @@ namespace NSS.Blast.Interpretor
 
                     case script_op.begin:
                         {
+#if DEBUG
+                            Debug.LogWarning($"burstscript.interpretor warning: scriptop.begin not expected in root at codepointer: {code_pointer}, f4: {f4_register}");
+                            //return (int)BlastError.error_begin_end_sequence_in_root;
                             break;
-
-#if LOG_ERRORS
-                        Standalone.Debug.LogError("burstscript.interpretor error: begin-end sequence not expected in root");
+#else
+                            break; 
 #endif
-                            return (int)BlastError.error_begin_end_sequence_in_root;
                         }
 
                     case script_op.end:
@@ -5189,7 +5249,7 @@ namespace NSS.Blast.Interpretor
                                     //if(Unity.Burst.CompilerServices.Hint.Unlikely(s_assignee != 1))
                                     if (s_assignee != 1)
                                     {
-#if LOG_ERRORS  
+#if LOG_ERRORS
                                           Standalone.Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
@@ -5323,9 +5383,9 @@ namespace NSS.Blast.Interpretor
                                         // write contents of a data element to the debug stream 
                                         code_pointer++;
 
-#if HANDLE_DEBUG_OP
+#if DEBUG && HANDLE_DEBUG_OP
                                         Handle_DebugStack();
-#endif 
+#endif
                                     }
                                     break;
 
@@ -5340,17 +5400,17 @@ namespace NSS.Blast.Interpretor
                                         // even if not in debug, if the command is encoded any stack op needs to be popped 
                                         void* pdata = pop_with_info(code_pointer, out datatype, out vector_size);
 
-#if HANDLE_DEBUG_OP
+#if DEBUG && HANDLE_DEBUG_OP
                                         Handle_DebugData(code_pointer, vector_size, op_id, datatype, pdata);
-#endif 
+#endif
                                         code_pointer++;
                                     }
                                   break; 
 
                                 default:
                                     {
-#if LOG_ERRORS
-                                        Debug.LogError($"extended op: only call operation is supported from root, not {exop} ");
+#if DEBUG
+                                        Debug.LogError($"extended op: only call and debug operation is supported from root, not {exop} ");
 #endif
                                         return (int)BlastError.error_unsupported_operation_in_root;
 
@@ -5361,7 +5421,7 @@ namespace NSS.Blast.Interpretor
 
                     default:
                         {
-#if LOG_ERRORS
+#if DEBUG
                             Debug.LogError($"burstscript.interpretor: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
 #endif
                             return (int)BlastError.error_unsupported_operation_in_root;

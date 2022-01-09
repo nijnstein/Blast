@@ -373,20 +373,6 @@ namespace NSS.Blast.Compiler.Stage
             pattern = new byte[] { (byte)script_op.begin, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.end, (byte)script_op.add, BlastCompiler.opt_value },
             replace = new byte[] { (byte)script_op.fma, BlastCompiler.opt_value + 1, BlastCompiler.opt_value + 3, BlastCompiler.opt_value + 6 }
         };
-        static optimizer_pattern fms1 = new optimizer_pattern()
-        {
-            name = "fms1",
-            // var - { var * var }
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.substract, (byte)script_op.begin, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.end },
-            replace = new byte[] { (byte)script_op.fsm, BlastCompiler.opt_value + 3, BlastCompiler.opt_value + 5, BlastCompiler.opt_value + 0 }
-        };
-        static optimizer_pattern fms2 = new optimizer_pattern()
-        {
-            name = "fms2",
-            // { var * var } - var
-            pattern = new byte[] { (byte)script_op.begin, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.end, (byte)script_op.substract, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.fms, BlastCompiler.opt_value + 1, BlastCompiler.opt_value + 3, BlastCompiler.opt_value + 6 }
-        };
         static optimizer_pattern nested_mula_4 = new optimizer_pattern()
         {
             name = "nested_mula4",
@@ -709,7 +695,7 @@ namespace NSS.Blast.Compiler.Stage
 
         static List<optimizer_pattern> optimizer_patterns = new List<optimizer_pattern>()
         {
-            fma1, fma2, fms1, fms2,
+            fma1, fma2,
             mula_16, diva_6, adda_6, suba_6,
             nested_mula_4, // analyser removes it everything works correctly
             all_8, any_8,
@@ -724,7 +710,6 @@ namespace NSS.Blast.Compiler.Stage
         static byte[] optimizer_skip_table = new byte[]
         {
             (byte)script_op.fma, 4,
-            (byte)script_op.fms, 4,
             (byte)script_op.mula, 0,
             (byte)script_op.adda, 0,
             (byte)script_op.suba, 0,

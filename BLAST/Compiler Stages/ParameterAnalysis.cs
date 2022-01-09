@@ -197,9 +197,18 @@ namespace NSS.Blast.Compiler.Stage
 
                         case nodetype.compound:
                             fsize = 1;
-                            foreach (node fc in current.children)
+
+                            if (node.IsNonNestedVectorDefinition(current))
                             {
-                                fsize = math.max(fsize, fc.vector_size);
+                                // count children 
+                                fsize = current.CountChildType(nodetype.parameter); 
+                            }
+                            else
+                            {
+                                foreach (node fc in current.children)
+                                {
+                                    fsize = math.max(fsize, fc.vector_size);
+                                }
                             }
                             current.vector_size = fsize;
                             break;

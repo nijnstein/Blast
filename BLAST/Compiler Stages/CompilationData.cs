@@ -310,8 +310,8 @@ namespace NSS.Blast.Compiler
                         case script_op.equals: sb.Append("= "); break;
                         case script_op.not_equals: sb.Append("!= "); break;
                         case script_op.fma: sb.Append("fma "); break;
-                        case script_op.fsm: sb.Append("fsm "); break;
-                        case script_op.fms: sb.Append("fms "); break;
+                        case script_op.undefined1: sb.Append("UNDEFINED1 "); break;
+                        case script_op.undefined2: sb.Append("UNDEFINED2 "); break;
                         case script_op.adda: sb.Append("adda "); break;
                         case script_op.mula: sb.Append("mula "); break;
                         case script_op.diva: sb.Append("diva "); break;

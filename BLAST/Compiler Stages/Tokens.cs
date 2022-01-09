@@ -51,8 +51,8 @@
         //------------------------
 
         fma,          // fused multiply add
-        fsm,          // fused substract multiply
-        fms,          // fused multiply substract 
+        undefined1,          // fused substract multiply
+        undefined2,          // fused multiply substract 
 
         adda,         // add all operands together until [nop]
         mula,         // add all operands together until [nop]

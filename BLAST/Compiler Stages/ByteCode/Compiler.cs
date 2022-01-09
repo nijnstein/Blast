@@ -233,9 +233,18 @@ namespace NSS.Blast.Compiler.Stage
                                             // insert using pushv, besides using 1 less opcode
                                             // it is also more efficient executing 
                                             code.Add(script_op.pushv);
-                                            code.Add((byte)ast_param.vector_size); 
 
-                                            foreach(node ast_child in ast_param.children)
+                                            byte vp = (byte)((ast_param.vector_size & 0b00001111) | ((ast_param.ChildCount & 0b00001111) << 4));
+
+                                            code.Add(vp);  // (byte)ast_param.vector_size);
+
+                                            if(ast_param.vector_size != 1 && ast_param.vector_size != ast_param.ChildCount)
+                                            {
+                                                data.LogError($"CompileFunction: failed to compile {ast_param.type} child node: <{ast_param.parent}>.<{ast_param}>, cannot generate pushv: vectorsize = {ast_param.vector_size}, paramcount = {ast_param.ChildCount}");
+                                                return false;
+                                            }
+
+                                            foreach (node ast_child in ast_param.children)
                                             {
                                                 // compile each child as a simple param (variable or constant or pop)
                                                 if (!CompileParameter(data, ast_child, code, true))

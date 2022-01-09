@@ -74,8 +74,8 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     case script_op.ret: return "return"; 
                     case script_op.fma: return "blast.fma";
-                    case script_op.fsm: return "blast.fsm";
-                    case script_op.fms: return "blast.fms"; // todo replace with fsm? 
+                    case script_op.undefined1: return "blast.UNDEFINED1";
+                    case script_op.undefined2: return "blast.UNDEFINED2";  
                     case script_op.adda: return "blast.adda"; 
                     case script_op.mula: return "blast.mula"; 
                     case script_op.diva: return "blast.diva"; 

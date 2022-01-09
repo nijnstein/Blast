@@ -85,9 +85,9 @@ namespace NSS.Blast
 
                     case script_op.fma:
                         break;
-                    case script_op.fsm:
+                    case script_op.undefined1:
                         break;
-                    case script_op.fms:
+                    case script_op.undefined2:
                         break;
                     case script_op.adda:
                         break;

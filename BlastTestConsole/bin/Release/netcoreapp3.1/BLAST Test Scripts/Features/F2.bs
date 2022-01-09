@@ -31,7 +31,7 @@ ab = 2 * (2 * 2 * 2) * 2;       # == 32 this should result in a mula5, would cou
 ac = 2 - 2 - 2 - 2 - 2 - 2; 	# == -8
 ad = 1 & -2 | 1;        		# == 1.0f
 ae = 1 & 2 & 3 & 4 & 5;			# should result in math.all via opcode all
-ag = 1 * 10 * 3 * (3 + 4 * 2);	 # 330
+ag = 1 * 10 * 3 * (3 + 4 * 2);	# 330
 
 
 #validate a -2

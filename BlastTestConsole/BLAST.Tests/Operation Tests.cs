@@ -172,6 +172,33 @@ namespace BlastTestConsole
         [InlineData("a = sin(-1);", -0.84147096)]
 
 
+        [InlineData("a = cos(1);", 0.5403023)]
+        [InlineData("a = cos(-1);", 0.5403023)]
+
+        [InlineData("a = tan(1);", 1.5574077)]
+        [InlineData("a = tan(-1);", -1.5574077)]
+
+        [InlineData("a = atan(1);", 0.7853982)]
+        [InlineData("a = atan(-1);", -0.7853982)]
+
+        [InlineData("a = sinh(0.84147096);", 0.9443504)]
+        [InlineData("a = sinh(-0.84147096);", -0.9443504)]
+
+        [InlineData("a = cosh(1);", 1.5430807)]
+        [InlineData("a = cosh(-1);", 1.5430807)]
+
+        [InlineData("a = 3 * 4 + 1.2;", 13.2f)]                             /// should compile to FMA through optimizer..  TODO we should be able to test the opcodes used to compile something
+        [InlineData("a = fma(3, 4, 1.2);", 13.2f)]                          /// force use of fma by directly calling the op 
+        [InlineData("a = fma((3 3), (4 4), (1.2 1.2));", 13.2f)]            /// force use of fma by directly calling the op 
+        [InlineData("a = fma((3 3 3), (4 4 4), (1.2 1.2 1.2));", 13.2f)]    /// force use of fma by directly calling the op 
+        [InlineData("a = (3 3 3) * (4 4 4) * (1.2 1.2 1.2);", 13.2f)]       /// verification of normal ops
+
+        [InlineData("a = (1 2 3) * (4 5 6) * (7 8 9) * (9.9 9.1 9.2);", 1)] // should optimize to mula
+        [InlineData("a = mula((3 3 3), (4 4 4), (1.2 1.2 1.2), (9.9 9.1 9.2), (5 5 3), (92 22 4455));", 1)]
+
+        [InlineData("a = 1 * 2 * 3 * 4 * 5 * 6 * 7;", 5040)]
+        [InlineData("a = mula(1, 2, 3, 4, 5, 6, 7);", 5040)]
+
         public void BlastScript_Functions_1(string code, float v1)
         {
             Blast blast = Blast.Create(Allocator.Persistent);
@@ -200,6 +227,37 @@ namespace BlastTestConsole
         }
 
         [Theory]
+        [InlineData("a = 34 * 55 * 555 * 2 + 10.2;", 2075710.2)]
+        [InlineData("a = (23 34 33) * (55 555 2) + 10.2;", 1275.2)]
+        public void BlastScript_Benchmarks_1(string code, float v1)
+        {
+            Blast blast = Blast.Create(Allocator.Persistent);
+
+            BlastScript script = BlastScript.FromText(code);
+
+            var options = new BlastCompilerOptions();
+            options.AutoValidate = false;
+            options.Optimize = true;
+            options.CompileWithSystemConstants = true;
+            options.ConstantEpsilon = 0.001f;
+            options.DefaultStackSize = 64;
+            options.EstimateStackSize = false;
+
+            var res = BlastCompiler.Compile(blast, script, options);
+
+            Xunit.Assert.True(res.IsOK, "failed to compile");
+
+            unsafe
+            {
+                Xunit.Assert.True(res.Executable.Execute((IntPtr)blast.Engine) == 0, "failed to execute");
+                Xunit.Assert.True(res.Executable.data[0] == v1, $"failed to validate data, should be {v1} but found {res.Executable.data[0]}");
+            }
+
+            blast.Destroy();
+        }
+
+
+        [Theory]
         [InlineData("a = (3 4 5) * -1;", -3, -4, -5)]
         [InlineData("a = abs((3 4 ) * -1);", 3, 4, -1)]
         [InlineData("a = abs((3 4 5) * -1);", 3, 4, 5)]
@@ -209,6 +267,23 @@ namespace BlastTestConsole
         [InlineData("a = abs((3 4 5, -6));", 3, 4, 5)]
         
         [InlineData("a = sin((1 1, -1));", 0.84147096, 0.84147096, -0.84147096)]
+
+
+        [InlineData("a = cos((1 1 1));", 0.5403023, 0.5403023, 0.5403023)]
+        [InlineData("a = cos((-1 1 1));", 0.5403023, 0.5403023, 0.5403023)]
+
+        [InlineData("a = tan((1 1 1));", 1.5574077, 1.5574077, 1.5574077)]
+        [InlineData("a = tan((-1, -1, -1));", -1.5574077, -1.5574077, -1.5574077)]
+
+        [InlineData("a = atan((1 1 1));", 0.7853982, 0.7853982, 0.7853982)]
+        [InlineData("a = atan((-1 1 1));", -0.7853982, 0.7853982, 0.7853982)]
+
+        [InlineData("a = sinh((0.84147096 0.84147096 0.84147096));", 0.9443504, 0.9443504, 0.9443504)]
+        [InlineData("a = sinh((-0.84147096, -0.84147096, -0.84147096));", -0.9443504, -0.9443504, -0.9443504)]
+
+        [InlineData("a = cosh((1 1 1));", 1.5430807, 1.5430807, 1.5430807)]
+        [InlineData("a = cosh((-1, -1, -1));", -1.5430807, -1.5430807, -1.5430807)]
+
         public void BlastScript_Functions_2(string code, float v1, float v2, float v3)
         {
             Blast blast = Blast.Create(Allocator.Persistent);

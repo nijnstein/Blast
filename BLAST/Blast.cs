@@ -490,6 +490,12 @@ namespace NSS.Blast
 
             new ScriptFunctionDefinition(45, "return", 0, 0,  0, 0,script_op.ret),
 
+
+
+            new ScriptFunctionDefinition(46, "fma", 3, 3, 0, 0, script_op.fma, "m1", "m2", "a1"), 
+
+
+
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Push, "push", 1, 4, 0, 0,script_op.push, "n", "a"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushFunction, "pushf", 1, 1, 0, 0,script_op.pushf, "n", "a"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop, "pop", 0, 0, 0, 0,script_op.pop, "n"),
