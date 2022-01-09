@@ -209,6 +209,7 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 // dont create variables for constant ops 
                                 right.is_constant = true;
+                                right.vector_size = 1; // constants => vectorsize 1 
                                 right.constant_op = op;
                                 right.identifier = value;
                             }

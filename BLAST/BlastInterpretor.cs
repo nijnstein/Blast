@@ -287,13 +287,6 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void push(float f)
         {
-#if CHECK_STACK
-       //     if (data_offset + stack_offset + 1 > data_capacity)
-       //     {
-       //         Standalone.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
-       //          return;
-       //     }
-#endif
             ushort offset = package->stack_offset;
 
             ((float*)data)[offset] = f;
@@ -302,6 +295,49 @@ namespace NSS.Blast.Interpretor
             offset += 1;
             package->stack_offset = offset;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void push(float2 f2)
+        {
+            ushort offset = package->stack_offset;
+
+            // really... wonder how this compiles (should be simple 8byte move) TODO 
+            ((float2*)(void*)&((float*)data)[offset])[0] = f2;
+
+            SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)offset);
+
+            offset += 2;  // size 2
+            package->stack_offset = offset;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void push(float3 f3)
+        {
+            ushort offset = package->stack_offset;
+
+            // really... wonder how this compiles (should be simple 8byte move) TODO 
+            ((float3*)(void*)&((float*)data)[offset])[0] = f3;
+
+            SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)offset);
+
+            offset += 3;  // size 3
+            package->stack_offset = offset;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void push(float4 f4)
+        {
+            ushort offset = package->stack_offset;
+
+            // really... wonder how this compiles (should be simple 8byte move) TODO 
+            ((float4*)(void*)&((float*)data)[offset])[0] = f4;
+
+            SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)offset);
+
+            offset += 4;  // size 4
+            package->stack_offset = offset;
+        }
+
 
         public void push(int i)
         {
@@ -321,27 +357,6 @@ namespace NSS.Blast.Interpretor
             package->stack_offset = offset;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void push(float4 f)
-        {
-#if CHECK_STACK
-        //    if (data_offset + stack_offset + 4 > data_capacity)
-        //    {
-        //        Standalone.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
-        //        return;
-        //    }
-#endif
-            ushort offset = package->stack_offset;
-            
-            float* fdata = (float*)data; 
-            fdata[offset] = f.x;
-            fdata[offset + 1] = f.y;
-            fdata[offset + 2] = f.z;
-            fdata[offset + 3] = f.w;
-
-            offset += 4;
-            package->stack_offset = offset;
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void push(int4 i)
@@ -785,9 +800,19 @@ namespace NSS.Blast.Interpretor
             if (c == (byte)script_op.pop)
             {
                 // stacked 
-                package->stack_offset--;
-                type = GetMetaDataType(metadata, (byte)(package->stack_offset - 1));
+                //package->stack_offset--;
+
                 vector_size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 1));
+                type = GetMetaDataType(metadata, (byte)(package->stack_offset - 1));
+
+                // need to advance past vectorsize instead of only 1 
+                // 
+                //  translate vectorsize: TODO
+                // 
+                // vectorsize 0 == vectorsize 4 !!!
+
+                package->stack_offset -= (ushort)math.select(vector_size, 4, vector_size == 0); 
+
                 return &stack[package->stack_offset];
             }
             else
@@ -980,7 +1005,19 @@ namespace NSS.Blast.Interpretor
         static internal void SetMetaData(in byte* metadata, in BlastVariableDataType type, in byte size, in byte offset)
         {
             byte meta = (byte)((byte)(size & 0b0000_1111) | (byte)((byte)type << 4));
-            metadata[offset] = meta; 
+
+            // set on first byte
+            metadata[offset] = meta;
+
+            // - not sure if making this conditional is an optimization but its a write that can flush soo.. 
+            if (size == 1)
+            {
+            }
+            else
+            {
+                // pop also needs on last byte 
+                metadata[offset + size - 1] = meta;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4510,34 +4547,34 @@ namespace NSS.Blast.Interpretor
                                     break;
 
                                 case script_op.pop:
-                                    pop(out f4_result.x);
-                                    f4_result.x = math.select(f4_result.x, -f4_result.x, minus);
+                                    BlastVariableDataType popped_type;
+                                    byte popped_vector_size; 
+                                   
+                                    void* pdata = pop_with_info(code_pointer, out popped_type, out popped_vector_size);
+                                    switch(popped_vector_size)
+                                    {
+                                        case 0:
+                                        case 4: f4_result = ((float4*)pdata)[0]; vector_size = 4; f4_result = math.select(f4_result, -f4_result, minus); break;
+                                        case 1: f4_result.x = ((float*)pdata)[0]; vector_size = 1; f4_result.x = math.select(f4_result.x, -f4_result.x, minus); break;
+                                        case 2: f4_result.xy = ((float2*)pdata)[0]; vector_size = 2; f4_result.xy = math.select(f4_result.xy, -f4_result.xy, minus); break;
+                                        case 3: f4_result.xyz = ((float3*)pdata)[0]; vector_size = 3; f4_result.xyz = math.select(f4_result.xyz, -f4_result.xyz, minus); break;
+                                        default:
+#if DEBUG
+                                            Debug.LogError($"codepointer: {code_pointer} => pop vector too large, vectortype {vector_size} not supported");
+#endif
+                                            return -1;
+                                    }
+                                   
                                     minus = false;
-                                    vector_size = 1;
                                     break;
 
                                 case script_op.pop2:
-                                    pop(out f4_result.y);
-                                    pop(out f4_result.x);
-                                    f4_result.xy = math.select(f4_result.xy, -f4_result.xy, minus);
-                                    minus = false;
-                                    vector_size = 2;
-                                    break;
-
                                 case script_op.pop3:
-                                    pop(out f4_result.z);
-                                    pop(out f4_result.y);
-                                    pop(out f4_result.x);
-                                    f4_result.xyz = math.select(f4_result.xyz, -f4_result.xyz, minus);
-                                    vector_size = 3;
-                                    break;
-
                                 case script_op.pop4:
-                                    pop(out f4_result);
-                                    f4_result = math.select(f4_result, -f4_result, minus);
-                                    minus = false;
-                                    vector_size = 4;
-                                    break;
+#if DEBUG
+                                    Debug.LogError($"codepointer: {code_pointer} => reference popN instruction which should not be used ");
+#endif
+                                    return float.NaN; 
 
                                 case script_op.ex_op:
 
@@ -5018,13 +5055,10 @@ namespace NSS.Blast.Interpretor
                                     push(f4_register.x);
                                     break;
                                 case 2:
-                                    push(f4_register.x);
-                                    push(f4_register.y);
+                                    push(f4_register.xy);
                                     break;
                                 case 3:
-                                    push(f4_register.x);
-                                    push(f4_register.y);
-                                    push(f4_register.z);
+                                    push(f4_register.xyz);
                                     break;
                                 case 4:
                                     push(f4_register);
@@ -5056,23 +5090,17 @@ namespace NSS.Blast.Interpretor
                                 break;
                             case 2:
                                 b = (byte)(code[code_pointer] - opt_id);
-                                push(fdata[b]);
-                                push(fdata[b + 1]);
+                                push(new float2(fdata[b], fdata[b + 1])); 
                                 code_pointer++;
                                 break;
                             case 3:
                                 b = (byte)(code[code_pointer] - opt_id);
-                                push(fdata[b]);
-                                push(fdata[b + 1]);
-                                push(fdata[b + 2]);
+                                push(new float3(fdata[b], fdata[b + 1], fdata[b + 2]));
                                 code_pointer++;
                                 break;
                             case 4:
                                 b = (byte)(code[code_pointer] - opt_id);
-                                push(fdata[b]);
-                                push(fdata[b + 1]);
-                                push(fdata[b + 2]);
-                                push(fdata[b + 3]);
+                                push(new float4(fdata[b], fdata[b + 1], fdata[b + 2], fdata[b + 3]));
                                 code_pointer++;
                                 break;
                             default:
@@ -5092,9 +5120,9 @@ namespace NSS.Blast.Interpretor
                         switch(vector_size)
                         {
                             case 1: push(f4_register.x); break;
-                            case 2: push(f4_register.x); break;
-                            case 3: push(f4_register.x); break;
-                            case 4: push(f4_register.x); break;
+                            case 2: push(f4_register.xy); break;
+                            case 3: push(f4_register.xyz); break;
+                            case 4: push(f4_register.xyzw); break;
                             default:
 #if LOG_ERRORS
                             Standalone.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push");

@@ -223,20 +223,45 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 case nodetype.compound:
                                     {
-                                        // push result of compound on stack
-                                        code.Add(script_op.push);
-                                        code.Add(script_op.begin);
+                                        // this grows into a vector via get_compound_result in the interpretor 
+                                        // - for vectors it would be much more performant to use pushv
 
-                                        foreach (node ast_child in ast_param.children)
+                                        if (node.IsNonNestedVectorDefinition(ast_param)
+                                           &&
+                                            ast_param.vector_size > 1)
                                         {
-                                            if (CompileNode(data, ast_child, code) == null)
+                                            // insert using pushv, besides using 1 less opcode
+                                            // it is also more efficient executing 
+                                            code.Add(script_op.pushv);
+                                            code.Add((byte)ast_param.vector_size); 
+
+                                            foreach(node ast_child in ast_param.children)
                                             {
-                                                data.LogError($"CompileFunction: failed to compile {ast_child.type} child node: <{ast_child.parent}>.<{ast_child}>");
-                                                return false;
+                                                // compile each child as a simple param (variable or constant or pop)
+                                                if (!CompileParameter(data, ast_child, code, true))
+                                                {      
+                                                    data.LogError($"CompileFunction: failed to compile {ast_child.type} child node: <{ast_child.parent}>.<{ast_child}> as a [simple] parameter (may only be constant, scriptvar or pop)");
+                                                    return false;
+                                                }
                                             }
                                         }
+                                        else
+                                        {
+                                            // push result of compound on stack
+                                            code.Add(script_op.push);
+                                            code.Add(script_op.begin);
 
-                                        code.Add(script_op.end);
+                                            foreach (node ast_child in ast_param.children)
+                                            {
+                                                if (CompileNode(data, ast_child, code) == null)
+                                                {
+                                                    data.LogError($"CompileFunction: failed to compile {ast_child.type} child node: <{ast_child.parent}>.<{ast_child}>");
+                                                    return false;
+                                                }
+                                            }
+
+                                            code.Add(script_op.end);
+                                        }
                                     }
                                     break;
 
@@ -265,17 +290,34 @@ namespace NSS.Blast.Compiler.Stage
                     return true;
             }
 
-            bool is_flat_parameter_list = node.IsFlatParameterList(ast_function.children); 
-            
+            // if its a compound with a flat list also.. 
+
+            bool is_flat_parameter_list = node.IsFlatParameterList(ast_function.children);
+
             // if not a flat parameter list => attempt to make it flat 
-            if(!is_flat_parameter_list)
+            if (!is_flat_parameter_list)
             {
-
-                ///      , -8,    // ->  push(-8);    , pop, 
-
+                // if mostly this is just a compound holding all parameters
 
 
+                // todo will fail on a vector
+                if (ast_function.ChildCount == 1 
+                    && ast_function.children[0].type == nodetype.compound 
+                    && ast_function.children[0].ChildCount > 0)
+                {
+                    node[] children = ast_function.children[0].children.ToArray();
+                    foreach (node c in children) c.parent = null; 
+                    
+                    ast_function.children.Clear(); 
+                    ast_function.SetChildren(children);
+                    is_flat_parameter_list = node.IsFlatParameterList(ast_function.children);
+                }
+                //
+                // TODO 
+                // 
+                // 
             }
+            
 
 
 
@@ -360,6 +402,36 @@ namespace NSS.Blast.Compiler.Stage
             if(code == null)
             {
                 code = new IMByteCodeList();
+            }
+
+            // detect if current node is compound with 1 child only
+            if(ast_node.IsCompound && ast_node.HasOneChild)
+            {
+                // if so just skip it 
+                if (ast_node.HasDependencies)
+                {
+                    // but keep dependencies 
+                    ast_node.children[0].depends_on.InsertRange(0, ast_node.depends_on);
+                }
+                ast_node = ast_node.children[0];
+#if TRACE
+                data.LogTrace($"CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>");
+#endif 
+            }
+
+
+            // compile dependencies 
+            if (ast_node.depends_on != null && ast_node.depends_on.Count > 0)
+            {
+                for (int i = ast_node.depends_on.Count - 1; i >= 0; i--)
+                {
+                    node initializer = ast_node.depends_on[i];
+                    if (CompileNode(data, initializer, code) == null)
+                    {
+                        data.LogError($"CompileNode: failed to compile dependencies for node: <{ast_node}>.<{initializer}>");
+                        return null;
+                    }
+                }
             }
 
             switch (ast_node.type)
@@ -578,14 +650,14 @@ namespace NSS.Blast.Compiler.Stage
                 // a while loop, consisting of a conditional and a compound 
                 case nodetype.whileloop:
                     {
-                        node n_while_condition = ast_node.get_child(nodetype.condition);
+                        node n_while_condition = ast_node.GetChild(nodetype.condition);
                         if (n_while_condition == null)
                         {
                             data.LogError($"CompileNode: malformed while node: <{ast_node}>, no while condition found");
                             return null;
                         }
 
-                        node n_while_compound = ast_node.get_child(nodetype.whilecompound);
+                        node n_while_compound = ast_node.GetChild(nodetype.whilecompound);
                         if (n_while_compound == null)
                         {
                             data.LogError($"CompileNode: malformed while node: <{ast_node}>, no while compound found");
@@ -598,19 +670,23 @@ namespace NSS.Blast.Compiler.Stage
                         //
                         // [while_depends_on=initializer from for loops]  [condition_label][condition_depends_on] [jz_condition][offset_compound](condition)(compound)[jumpback condition_label][jump_back offset]
 
+
+
+                        // THIS IS NOW DONE FOR EVERY NODE 
+
                         // compile each initializer node, the while loop may actually be a for loop transformed into a while and
                         // a for loop specifies an initializer 
-                        if (ast_node.depends_on != null)
-                        {
-                            foreach (node initializer in ast_node.depends_on)
-                            {
-                                if (CompileNode(data, initializer, code) == null)
-                                {
-                                    data.LogError($"CompileNode: failed to compile initializer for while loop: <{ast_node}>.<{initializer}>");
-                                    return null;
-                                }
-                            }
-                        }
+                      //  if (ast_node.depends_on != null)
+                      //  {
+                      //      foreach (node initializer in ast_node.depends_on)
+                      //      {
+                      //          if (CompileNode(data, initializer, code) == null)
+                      //          {
+                      //              data.LogError($"CompileNode: failed to compile initializer for while loop: <{ast_node}>.<{initializer}>");
+                      //              return null;
+                      //          }
+                      //      }
+                      //  }
 
                         // add dependencies before while condition (result of flatten), maintain jump label
                         code.Add((byte)0, IMJumpLabel.Label(n_while_condition.identifier));
@@ -656,9 +732,9 @@ namespace NSS.Blast.Compiler.Stage
                 case nodetype.ifthenelse:
                     {
                         // get relevant nodes 
-                        node if_condition = ast_node.get_child(nodetype.condition);
-                        node if_then = ast_node.get_child(nodetype.ifthen);
-                        node if_else = ast_node.get_child(nodetype.ifelse);
+                        node if_condition = ast_node.GetChild(nodetype.condition);
+                        node if_then = ast_node.GetChild(nodetype.ifthen);
+                        node if_else = ast_node.GetChild(nodetype.ifelse);
 
                         if (if_condition == null)
                         {
@@ -776,7 +852,7 @@ namespace NSS.Blast.Compiler.Stage
                     IMByteCodeList bcl = CompileNode(data, ast_node);
                     if (bcl != null)
                     {
-                        code.AddRange(CompileNode(data, ast_node)); // easier debugging 
+                        code.AddRange(bcl); //CompileNode(data, ast_node)); // easier debugging 
                     }
                     else
                     {

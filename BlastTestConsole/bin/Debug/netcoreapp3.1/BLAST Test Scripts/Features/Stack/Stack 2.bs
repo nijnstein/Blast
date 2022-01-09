@@ -1,0 +1,119 @@
+﻿
+a = (1 2 3); 
+b = (4 5 6 7); 	  
+c = 8; 
+
+push(a); 
+push(b); 
+push(c); 
+
+c = pop;
+b = pop; 
+a = pop;
+
+d = maxa(a, c);
+e = mina(b, c);
+
+debug(a);                    
+debug(b); 
+debug(c); 
+
+# flatten_function: reduced compound encompassing parameter: < vector function maxa>.<parameter c> 
+# flatten_function: reduced compound encompassing parameter: < vector function mina>.<parameter c> 
+# CompileNode: skipping compound of node < vector compound statement of 1>.< vector function push>
+# CompileNode: skipping compound of node < vector compound statement of 1>.< vector function push>
+# CompileNode: skipping compound of node <compound statement of 1>.<function push>
+# CompileNode: skipping compound of node < vector compound statement of 1>.< vector function debug>
+# CompileNode: skipping compound of node < vector compound statement of 1>.< vector function debug>
+# CompileNode: skipping compound of node <compound statement of 1>.<function debug>
+# WARNING: TODO: compile: set constant float vector not implemented 
+# WARNING: TODO: compile: set constant float vector not implemented 
+# compiler node tree
+# 
+#    root of 14 
+#        vector assignment of a 
+#          constant parameter 1 
+#          constant parameter 2 
+#          constant parameter 3 
+#       /
+#        vector assignment of b 
+#          constant parameter 4 
+#          constant parameter 5 
+#          constant parameter 6 
+#          constant parameter 7 
+#       /
+#       assignment of c 
+#          constant parameter 8 
+#       /
+#        vector compound statement of 1 
+#           vector function push 
+#              vector compound statement of 1 
+#                 vector parameter a 
+#             /
+#          /
+#       /
+#        vector compound statement of 1 
+#           vector function push 
+#              vector compound statement of 1 
+#                 vector parameter b 
+#             /
+#          /
+#       /
+#       compound statement of 1 
+#          function push 
+#             compound statement of 1 
+#                parameter c 
+#             /
+#          /
+#       /
+#       assignment of c 
+#          function pop 
+#       /
+#       assignment of b 
+#          function pop 
+#       /
+#       assignment of a 
+#          function pop 
+#       /
+#       assignment of d 
+#           vector function maxa 
+#              vector parameter a 
+#             parameter c 
+#          /
+#       /
+#       assignment of e 
+#           vector function mina 
+#              vector parameter b 
+#             parameter c 
+#          /
+#       /
+#        vector compound statement of 1 
+#           vector function debug 
+#              vector parameter a 
+#          /
+#       /
+#        vector compound statement of 1 
+#           vector function debug 
+#              vector parameter b 
+#          /
+#       /
+#       compound statement of 1 
+#          function debug 
+#             parameter c 
+#          /
+#       /
+#    /
+# 
+# 
+# 000  001 128 085 086 087 000 001 131 088 138 
+# 010  139 140 000 001 135 089 000 024 018 128 
+# 020  019 024 018 131 019 024 018 135 019 001 
+# 030  135 025 000 001 131 025 000 001 128 025 
+# 040  000 001 136 049 009 128 135 000 001 137 
+# 050  050 009 131 135 000 255 244 128 255 244 
+# 060  131 255 244 135 000 
+# WARNING: codepointer: 19 => 128, no support for vector of size 3 -> 1
+# WARNING: codepointer: 39 => 25, no support for vector of size 3 -> 1
+# Blast.Debug - codepointer: 57, id: 128, NUMERIC: [1,00, 2,00, 3,00], vectorsize: 3
+# Blast.Debug - codepointer: 60, id: 131, NUMERIC: [4,00, 5,00, 6,00, 7,00], vectorsize: 4
+# Blast.Debug - codepointer: 63, id: 135, NUMERIC: 8,00, vectorsize: 1

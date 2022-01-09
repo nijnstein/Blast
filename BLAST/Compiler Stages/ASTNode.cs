@@ -62,6 +62,111 @@ namespace NSS.Blast.Compiler
         public int vector_size;
         public bool is_vector;
 
+        public bool IsCompound => type == nodetype.compound;
+        public bool IsAssigment => type == nodetype.assignment;
+        public bool IsFunction => type == nodetype.function;
+        public bool IsScriptVariable => variable != null;
+        public bool HasDependencies => depends_on != null && depends_on.Count > 0;
+        public bool HasChildren => children != null && children.Count > 0;
+        public bool HasOneChild => children != null && children.Count == 1;
+        public bool HasIndexers => indexers != null && indexers.Count > 0;
+        public bool HasIdentifier => !string.IsNullOrWhiteSpace(identifier); 
+
+        /// <summary>
+        /// check if a node equals a vector definition: 
+        /// 
+        /// ->  ( 1 2 3 ) -> compound[3] ( id id id ) 
+        ///               -> compound[n] ( n[pop | identifier[1]] ) 
+        /// 
+        /// -> root node == compound with n children representing its elements 
+        /// 
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public static bool IsVectorDefinition(node n)
+        {
+            Assert.IsNotNull(n); 
+
+            // must be compound of n elements 
+            if(!n.IsCompound) return false;
+
+            // a vector has more then 1 element 
+            if (n.ChildCount <= 1) return false;
+            
+            // each element is either a
+            // - pop or other function resulting in 1 value 
+            // - identiefieer resulting in 1 value
+
+            for(int i = 0; i < n.ChildCount; i++)
+            {
+                node child = n.children[i];
+
+                if (child.IsFunction)
+                {
+                    if (child.function.ReturnsVectorSize != 1)
+                    {
+                        // not a suitable element for a vector definition like this: (a, b, function) 
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (child.IsScriptVariable)
+                    {
+                        if (child.vector_size != 1)
+                        {
+                            // should always be 1 in this kind of define
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if (child.is_constant && child.vector_size == 1)
+                        {
+
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                }                      
+            }
+
+            return true; 
+        }
+
+        public static bool IsNonNestedVectorDefinition(node n)
+        {
+            Assert.IsNotNull(n);
+
+            // must be compound of n elements 
+            if (!n.IsCompound) return false;
+
+            // a vector has more then 1 element 
+            if (n.ChildCount <= 1) return false;
+
+            // each element is either a
+            // - pop or other function resulting in 1 value 
+            // - identiefieer resulting in 1 value
+
+            for (int i = 0; i < n.ChildCount; i++)
+            {
+                node child = n.children[i];
+
+                if (child.HasChildNodes) continue; 
+                if (child.is_constant || child.IsScriptVariable) continue; 
+
+                switch(child.type)
+                {
+                    case nodetype.parameter: continue; 
+
+                    default: return false; 
+                }
+            }
+            return true; 
+        }
+
 
         public bool is_float {
             get
@@ -260,6 +365,40 @@ namespace NSS.Blast.Compiler
                 }
             }
         }
+                                  
+        public void SetDependency(node ast_node)
+        {
+            Assert.IsNotNull(ast_node);
+
+            // remove it from current parent if any
+            if (ast_node.parent != null)
+            {
+                ast_node.parent.children.Remove(ast_node);
+            }
+
+            AddNodeToDependsOn(ast_node); 
+        }
+
+        public void InsertDependency(node ast_node)
+        {
+            Assert.IsNotNull(ast_node);
+
+            // remove it from current parent if any
+            if (ast_node.parent != null)
+            {
+                ast_node.parent.children.Remove(ast_node);
+            }
+
+            AddNodeToDependsOn(ast_node);
+
+            if (depends_on == null)
+            {
+                depends_on = new List<node>();
+            }
+            ast_node.parent = this;
+            depends_on.Insert(0, ast_node);
+        }
+
 
         /// <summary>
         /// add a node to the list of nodes to depend on, these are tobe inserted before 
@@ -285,17 +424,17 @@ namespace NSS.Blast.Compiler
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        public node get_child(nodetype t)
+        public node GetChild(nodetype t)
         {
             return children.FirstOrDefault(x => x.type == t);
         }
 
-        public node get_child(nodetype first_choice, nodetype second_choice)
+        public node GetChild(nodetype first_choice, nodetype second_choice)
         {
-            node c = get_child(first_choice); 
+            node c = GetChild(first_choice); 
             if(c == null)
             {
-                c = get_child(second_choice);
+                c = GetChild(second_choice);
             }
             return c; 
         }
@@ -305,7 +444,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        public node[] get_other_children(nodetype t)
+        public node[] GetOtherChildren(nodetype t)
         {
             return children.Where(x => x.type != t).ToArray();
         }
@@ -314,7 +453,7 @@ namespace NSS.Blast.Compiler
         /// deep clones node without root parent set
         /// </summary>
         /// <returns></returns>
-        public node deep_clone()
+        public node DeepClone()
         {
             node n = new node(null);
             n.parent = parent;
@@ -323,10 +462,10 @@ namespace NSS.Blast.Compiler
 
             // note:  dependancy cloning not supported  
 
-            foreach (node child in children) n.children.Add(child.deep_clone());
+            foreach (node child in children) n.children.Add(child.DeepClone());
             foreach (node child in n.children) child.parent = n;
 
-            foreach (node child in indexers) n.children.Add(child.deep_clone());
+            foreach (node child in indexers) n.children.Add(child.DeepClone());
             foreach (node child in n.indexers) child.parent = n;
 
             n.type = type;
@@ -349,11 +488,11 @@ namespace NSS.Blast.Compiler
         public List<node> GatherLeafNodes()
         {
             List<node> leafs = new List<node>();
-            gather_leaf_nodes(leafs, this);
+            GatherLeafNodes(leafs, this);
             return leafs;
         }
 
-        static void gather_leaf_nodes(List<node> leafs, node n)
+        static void GatherLeafNodes(List<node> leafs, node n)
         {
             if (n.children.Count == 0)
             {
@@ -365,7 +504,7 @@ namespace NSS.Blast.Compiler
                 {
                     if (c.children.Count > 0)
                     {
-                        gather_leaf_nodes(leafs, c);
+                        GatherLeafNodes(leafs, c);
                     }
                     else
                     {
@@ -377,20 +516,10 @@ namespace NSS.Blast.Compiler
 
 
         /// <summary>
-        /// check if the node contains only a single function call 
-        /// </summary>
-        /// <returns></returns>
-        public bool is_only_1_function()
-        {
-            //    
-            return false;
-        }
-
-        /// <summary>
         /// check if we have 1 child and that it is a compounded statement list
         /// </summary>
         /// <returns></returns>
-        public bool has_single_compound_as_child()
+        public bool HasSingleCompoundAsChild()
         {
             return children.Count == 1 && children[0].type == nodetype.compound;
         }
@@ -400,7 +529,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         /// <param name="op">the op representing the function</param>
         /// <returns>true if used</returns>
-        internal bool check_if_function_is_used_in_tree(script_op op)
+        internal bool CheckIfFunctionIsUsedInTree(script_op op)
         {
             if (this.function != null && this.function.ScriptOp == op)
             {
@@ -408,7 +537,7 @@ namespace NSS.Blast.Compiler
             }
             foreach (var ch in children)
             {
-                if (ch.check_if_function_is_used_in_tree(op))
+                if (ch.CheckIfFunctionIsUsedInTree(op))
                 {
                     return true;
                 }
@@ -479,13 +608,13 @@ namespace NSS.Blast.Compiler
         /// </summary>
         /// <param name="depth"></param>
         /// <returns></returns>
-        internal int get_maximum_depth(int depth = 0)
+        internal int GetMaximumTreeDepth(int depth = 0)
         {
             int t = depth;
 
             foreach (node n in children)
             {
-                t = math.max(t, n.get_maximum_depth(depth + 1));
+                t = math.max(t, n.GetMaximumTreeDepth(depth + 1));
             }
 
             return t;
@@ -520,7 +649,7 @@ namespace NSS.Blast.Compiler
         /// <returns>this node</returns>
         internal node SetChildren(IEnumerable<node> nodes)
         {
-            foreach(node n in nodes)
+            foreach(node n in nodes.ToArray()) // need to protect agains moving our own children and changing the collection
             {
                 SetChild(n); 
             }

@@ -1076,6 +1076,7 @@ namespace NSS.Blast.Compiler.Stage
                                     {
                                         is_constant = true,
                                         identifier = value,
+                                        vector_size = 1, 
                                         type = nodetype.parameter
                                     };
                                 }
@@ -1093,6 +1094,7 @@ namespace NSS.Blast.Compiler.Stage
                                 {
                                     is_constant = true,
                                     identifier = value,
+                                    vector_size = vector_size, 
                                     type = nodetype.parameter
                                 };
                             }
@@ -1116,6 +1118,7 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 is_constant = true,
                                 identifier = value,
+                                vector_size = vector_size,
                                 type = nodetype.parameter
                             };
                         }
@@ -1143,6 +1146,7 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     is_constant = true,
                     identifier = value,
+                    vector_size = vector_size,
                     type = nodetype.parameter
                 };
             }
@@ -1324,6 +1328,21 @@ namespace NSS.Blast.Compiler.Stage
 
                             // compounds embedded in parameters -> statements resulting in values : 'sequences'
                             case BlastScriptToken.OpenParenthesis:
+
+                                if(data.Tokens[idx - 1].Item1 == BlastScriptToken.CloseParenthesis)
+                                {
+                                    if (current_nodes.Count > 0)
+                                    {
+                                        //
+                                        // this is a sequence within the parameter sequence 
+                                        //
+
+                                        // it is either a list of operations or a vector, in both case push it
+                                        n_function.CreateChild(nodetype.compound, BlastScriptToken.Nop, "").SetChildren(current_nodes);
+                                        current_nodes.Clear();
+                                    }
+                                }
+
                                 if (find_next(data, BlastScriptToken.CloseParenthesis, idx + 1, idx_max, out idx_end, true, false))
                                 {
                                     current_nodes.Add(n_function.SetChild(parse_sequence(data, ref idx, idx_end)));
@@ -1385,10 +1404,10 @@ namespace NSS.Blast.Compiler.Stage
                     }
 
                     //if we have nodes in this list, then we need to child them so we create a compounded param asif encountering a comma
-                    if (current_nodes.Count > 1)
+                    if (current_nodes.Count > 0)
                     {
                         // create a child node with the current nodes as children 
-                        foreach (node cnc in current_nodes) n_function.children.Remove(cnc);
+                        ///foreach (node cnc in current_nodes) n_function.children.Remove(cnc);
                         n_function.CreateChild(nodetype.compound, BlastScriptToken.Nop, "").SetChildren(current_nodes);
                     }
 
@@ -1869,6 +1888,8 @@ namespace NSS.Blast.Compiler.Stage
                                 ast_node.InsertBeforeThisNodeInParent(nodetype.operation, BlastScriptToken.Substract);
                                 ast_node.identifier = value; // update to the non-negated value 
                             }
+                            // we know its constant, if no other vectorsize is set force 1
+                            if (ast_node.vector_size < 1) ast_node.vector_size = 1; 
                         }
                         else
                         {

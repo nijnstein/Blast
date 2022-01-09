@@ -287,7 +287,7 @@ namespace NSS.Blast.Compiler
             // should add 20 bytes / 5 floats if supporting yield 
             if(result.CompilerOptions.SupportYield)
             {
-                if (result.root != null && result.root.check_if_function_is_used_in_tree(script_op.yield))
+                if (result.root != null && result.root.CheckIfFunctionIsUsedInTree(script_op.yield))
                 {
                     yield = 20;
                     result.LogTrace("Package.EstimateStackSize: reserving 20 bytes of stack for supporting Yield.");

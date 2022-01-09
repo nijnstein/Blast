@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -17,13 +18,15 @@ namespace NSS.Blast.Compiler.Stage
         /// </summary>
         /// <param name="data"></param>
         /// <param name="root"></param>
-        static void flatten(IBlastCompilationData data, node root)
+        static void flatten(IBlastCompilationData data, node root, int max_iterations = 1)
         {
             int c_replaced;
+            int c_iteration = 0; 
 
             do
             {
                 c_replaced = 0;
+                c_iteration += 1; 
 
                 // start from each root node
                 for (int i = 0; i < root.children.Count; i++)
@@ -36,9 +39,12 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 // assigns the result of a compound 
 
+                                // or is just a function with 
+                               
+
                                 // case 1: assignment of compound, move forward child compounds
                                 // case 2: assign with list possibly having compounds
-                                flatten_compounds(data, ref c_replaced, ref i, c1, c1.has_single_compound_as_child() ? c1.children[0] : c1);
+                                flatten_compounds(data, ref c_replaced, ref i, c1, c1.HasSingleCompoundAsChild() ? c1.children[0] : c1);
                             }
                             break;
 
@@ -49,7 +55,7 @@ namespace NSS.Blast.Compiler.Stage
                             // -->  upon re-entry we need to jump to before these objects.... 
                             // ->> compiler note: make sure to use the dependencies on condition when determining jump back location 
 
-                            node n_condition = c1.get_child(nodetype.condition);
+                            node n_condition = c1.GetChild(nodetype.condition);
                             flatten_compounds(data, ref c_replaced, ref i, c1, n_condition);
 
                             // skip compilation, the while loop compiler will handle these in order to get their jump label 
@@ -59,26 +65,26 @@ namespace NSS.Blast.Compiler.Stage
                             }
 
                             // flatten inner while compound, expand at start of compound
-                            flatten(data, c1.get_child(nodetype.whilecompound));
+                            flatten(data, c1.GetChild(nodetype.whilecompound));
 
                             break;
 
                         case nodetype.ifthenelse:
 
                             // flatten condition, expand before if condition (into its root)
-                            flatten_compounds(data, ref c_replaced, ref i, c1, c1.get_child(nodetype.condition));
+                            flatten_compounds(data, ref c_replaced, ref i, c1, c1.GetChild(nodetype.condition));
 
                             // dont care about dependancies.. unlike in the while loop we wont return here 
 
                             // flatten then and else compound, expand at start of then else
-                            node n_then = c1.get_child(nodetype.ifthen);
+                            node n_then = c1.GetChild(nodetype.ifthen);
                             if (n_then != null)
                             {
                                 flatten(data, n_then);
                                 if (!data.IsOK) return;
                             }
 
-                            node n_else = c1.get_child(nodetype.ifelse);
+                            node n_else = c1.GetChild(nodetype.ifelse);
                             if (n_else != null)
                             {
                                 flatten(data, n_else);
@@ -90,7 +96,54 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
             // keep on it while something was replaced as we only look one compound level deep 
-            while (c_replaced > 0);
+            while (c_replaced > 0 && c_iteration < max_iterations);
+        }
+
+        private static void flatten_function(IBlastCompilationData data, ref int c_replaced, ref int i_insert, node n_insert, node n_function)
+        {
+            for(int i = 0; i < n_function.ChildCount; i++)
+            {
+                node parameter = n_function.children[i];
+
+                while(parameter.ChildCount == 1 && parameter.IsCompound)
+                {
+                    // single compound => reduce to child node  
+                    n_function.children[i] = parameter.children[0];
+                    if (parameter.HasDependencies)
+                    {
+                        n_function.children[i].depends_on.InsertRange(0, parameter.depends_on);
+                    }
+                    
+                    parameter = n_function.children[i];
+                    parameter.parent = n_function;
+
+                    // does it count as a replament ?? not in the sence that we mean it 
+                    // c_replaced++;  // so dont increase it 
+#if TRACE
+                    data.LogTrace($"flatten_function: reduced compound encompassing parameter: <{n_function}>.<{parameter}> ");
+#endif 
+                }
+
+                if (parameter.ChildCount > 0)
+                {
+                    switch (parameter.type)
+                    {
+                        case nodetype.compound:
+                        case nodetype.function:
+                            {
+                                flatten_replace_node(data, ref c_replaced, ref i_insert, n_insert, parameter, true);
+                                break;
+                            }
+
+                        default:
+                            {
+                                break;
+                            }
+                    }
+                }
+            }
+
+
         }
 
 
@@ -105,7 +158,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="n_node_to_flatten">node that needs to be flattened</param>
         /// <param name="n_insert">the insertion node (usually parent), if into insert at front, if not into insert just before</param>
         /// <param name="into">true to select into the insertion node (at front) or false to insert just before the insertion node</param>
-        private static void flatten_compounds(IBlastCompilationData data, ref int c_replaced, ref int i_insert, node n_insert, node n_node_to_flatten, bool into = false)
+        private static void flatten_compounds(IBlastCompilationData data, ref int c_replaced, ref int i_insert, node n_insert, node n_node_to_flatten)
         {
             int j = 0;
             for (; j < n_node_to_flatten.children.Count; j++)
@@ -115,77 +168,22 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     case nodetype.compound:
                         {
-                            if (into)
+                            node inserted = flatten_replace_node(data, ref c_replaced, ref i_insert, n_insert, c2, false);
+                            if (inserted != null)
                             {
-                                int k = 0;
-                                node inserted = flatten_replace_node(data, ref c_replaced, ref k, c2, c2, true);
-                                if (inserted != null)
-                                {
-                                    n_node_to_flatten.depends_on.Insert(0, inserted);
-                                }
-                            }
-                            else
-                            {
-                                node inserted = flatten_replace_node(data, ref c_replaced, ref i_insert, n_insert, c2, false);
-                                if (inserted != null)
-                                {
-                                    n_node_to_flatten.depends_on.Add(inserted);
-                                }
+                                n_node_to_flatten.SetDependency(inserted);
+                                //n_node_to_flatten.depends_on.Add(inserted);
                             }
                         }
                         break;
 
                     case nodetype.function:
-                        data.LogToDo("flatten function parameters");
-                        // could have nested functions .. 
-                        for (int k = 0; k < c2.children.Count; k++)
                         {
-                            node inserted = null; 
-                            node c3 = c2.children[k];
-                            switch (c3.type)
-                            {
-                                //
-                                //@ assignment.compound.function.function 
-                                //
-                                case nodetype.function:
-                                   
-                                    // allow only popX to remain 
-                                    if (!c3.function.IsPopVariant())
-                                    {
-
-                                        inserted = flatten_replace_node(data, ref c_replaced, ref i_insert, n_insert, c3, false);
-                                        if (inserted != null)
-                                        {
-                                            n_node_to_flatten.depends_on.Add(inserted);
-                                        }
-
-
-                                        // move function back, into is not an option with functions 
-
-                                        //
-                                        // if there is another pop then probably it will fuck the order up
-                                        //
-                                        // TODO 
-
-                                        // results in endless loop
-
-                                        ///     node inserted = flatten_replace_node(ref c_replaced, ref i_insert, n_insert, c3, false);
-                                        ///     if (inserted != null) n_node_to_flatten.depends_on.Add(inserted);
-                                    }    
-                                    break;
-
-                                case nodetype.compound:
-                                    inserted = flatten_replace_node(data, ref c_replaced, ref i_insert, n_insert, c3, false);
-                                    if (inserted != null)
-                                    {
-                                        n_node_to_flatten.depends_on.Add(inserted);
-                                    }
-                                    break;
-                            }
-                        }
-
-
-                        break;
+                            flatten_function(data, ref c_replaced, ref i_insert, n_insert, c2);
+                            break;
+                        }   
+                   
+                        // could have nested functions .. 
 
                     default:
                         // do nothing on other node types 
@@ -199,7 +197,8 @@ namespace NSS.Blast.Compiler.Stage
             // determine type of insertion, if its a function only (possibly with parameters) then 
             // use pushf to instruct the interpretor to directly execute the function at hand and push its value to the stack
 
-            bool pushing_function = node_to_replace.is_only_1_function();
+            
+            //  INSERTION POINT moet rekening houden met de andere dependancies en het juist punt pakken om te pushen 
 
             // create a new push op and manually parent it in root 
             node insert = new node(null);
@@ -207,7 +206,7 @@ namespace NSS.Blast.Compiler.Stage
             insert.parent = insertion_node.parent;
             insert.type = nodetype.function;
             insert.function =
-                pushing_function
+                node_to_replace.IsFunction
                 ?
                 data.Blast.GetFunctionById(ReservedScriptFunctionIds.PushFunction)
                 :

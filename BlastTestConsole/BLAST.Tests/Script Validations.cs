@@ -66,6 +66,14 @@ namespace BlastTestConsole
             Xunit.Assert.True(Validate(scriptfile));
         }
 
+        [Theory]
+        [InlineData("Features/Stack/Stack 1.bs")]
+        [InlineData("Features/Stack/Stack 2.bs")]
+        public void Blast_Validate_Stack(string scriptfile)
+        {
+            Xunit.Assert.True(Validate(scriptfile));
+        }
+
         /// <summary>
         /// test validations that should always fail 
         /// </summary>
@@ -102,7 +110,8 @@ namespace BlastTestConsole
         [Theory]
         [InlineData("Features/Vector 3.bs", 24, 24, 24)]
         [InlineData("Features/Vector 4.bs", 8, 9, 10)]
-        [InlineData("Features/Vector 5.bs", -1, -1, -1)]
+        [InlineData("Features/Vector 5.bs", 3, 1, 2)]
+        [InlineData("Features/Vector 6.bs", 9, 5, 6)]
         public void BlastScript_Vectors_1(string scriptfile, float v1, float v2, float v3)
         {
             Blast blast = Blast.Create(Allocator.Persistent);

@@ -265,6 +265,11 @@ namespace NSS.Blast.Compiler.Stage
                                             }
                                         case nodetype.compound:
                                             {
+                                                // expecting (1 2 3) but getting  ( (1 2 3) )  -> dual compound
+                                                // we could remove the outer safely here 
+
+                                                //remove dual compounds  TRANSFORM does that
+
                                                 if (!c.is_vector)
                                                 {
                                                     int cest = wouldbe_vector_size_of_same_sized_elements(c);

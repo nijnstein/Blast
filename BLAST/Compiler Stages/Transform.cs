@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Assertions;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -34,7 +35,7 @@ namespace NSS.Blast.Compiler.Stage
         {
             foreach (node n in nodes)
             {
-                yield return n.deep_clone();
+                yield return n.DeepClone();
             }
         }
 
@@ -108,7 +109,7 @@ namespace NSS.Blast.Compiler.Stage
 
                 n_ifthen_condition.children.AddRange(clone_nodes(condition.children));
                 n_ifthen_condition.CreateChild(nodetype.operation, BlastScriptToken.Equals, "__gen_switch_case__=");
-                n_ifthen_condition.children.AddRange(case_node.get_child(nodetype.condition).children);
+                n_ifthen_condition.children.AddRange(case_node.GetChild(nodetype.condition).children);
 
                 foreach (node child in n_ifthen_condition.children) child.parent = n_ifthen_condition;
 
@@ -116,7 +117,7 @@ namespace NSS.Blast.Compiler.Stage
                 node n_then = new node(n_ifthen);
                 n_then.type = nodetype.ifthen;
 
-                n_then.children.AddRange(case_node.get_other_children(nodetype.condition));
+                n_then.children.AddRange(case_node.GetOtherChildren(nodetype.condition));
 
                 // add a jump to after the last item of this if then sequence, 
                 // skip on last case if no default
@@ -204,6 +205,25 @@ namespace NSS.Blast.Compiler.Stage
             n_while.SetChild(n_compound);
         }
 
+        node transform_merge_compound(IBlastCompilationData data, node n)
+        {
+            Assert.IsTrue(data.IsOK); 
+            Assert.IsNotNull(n); 
+            Assert.IsTrue(n.ChildCount == 1 && n.children[0].IsCompound);
+
+            node new_node = n.children[0];
+            new_node.parent = n.parent;
+
+            n.parent.children[new_node.parent.children.IndexOf(n)] = new_node; 
+            if(n.depends_on.Count > 0)
+            {
+                new_node.depends_on.InsertRange(0, n.depends_on); 
+            }
+            
+            return new_node;
+        }
+
+
         public int Execute(IBlastCompilationData data)
         {
             if (!data.IsOK || data.AST == null) return (int)BlastError.error;
@@ -225,6 +245,16 @@ namespace NSS.Blast.Compiler.Stage
                             // transform into a while loop 
                             transform_for(data, n); 
                             break; 
+                        }
+
+                    case nodetype.compound:
+                        {
+                            // if having only 1 child, merge with it 
+                            while (n.ChildCount == 1 && n.children[0].IsCompound)
+                            {
+                                n = transform_merge_compound(data, n);
+                            }
+                            break;
                         }
 
                     default:
