@@ -203,6 +203,12 @@ namespace BlastTestConsole
         [InlineData("a = (3 3 3 5) * (4 4 4 9) * (1.2 1.2 1.2 4) * (9.9 9.1 9.2 5) * (5 5 3 5) * (92 22 4455 555);", 65577.6f)]       // again should optimize to mula
         [InlineData("a = mula((3 3 3 5), (4 4 4 9), (1.2 1.2 1.2 4), (9.9 9.1 9.2 5), (5 5 3 5), (92 22 4455 555));", 1)]
 
+        
+        [InlineData("a = 2 + 3 + (3 + 4) + 1;", 13)]  // flatten should flatten this but we have no way to verify it other then checking the result   YES
+        [InlineData("a = 2 + 3 + (3 - 4) + 1;", 5)]   // flatten may flatten this but probably wont TODO -> the optimizer SHOULD flatten it TODO !!   HALF -> it is popped.. not needed in this case 
+        [InlineData("a = 2 + 3 - (3 + 4) + 1;", -1)]  // flatten should not be able to flatten this out
+        [InlineData("a = 2 + 3 - (3 - 4) + 1;", 7)]   // flatten should not be able to flatten this out
+
         public void BlastScript_Functions_1(string code, float v1)
         {
             Blast blast = Blast.Create(Allocator.Persistent);
