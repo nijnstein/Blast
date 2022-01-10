@@ -201,21 +201,24 @@ namespace NSS.Blast.Compiler.Stage
             //  INSERTION POINT moet rekening houden met de andere dependancies en het juist punt pakken om te pushen 
 
             // create a new push op and manually parent it in root 
-            node insert = new node(null);
-            insert.identifier = "_gen_push";
-            insert.parent = insertion_node.parent;
-            insert.type = nodetype.function;
-            insert.function =
+            node push = new node(null);
+            push.identifier = "_gen_push";
+            push.parent = insertion_node.parent;
+            push.type = nodetype.function;
+            push.function =
                 node_to_replace.IsFunction
                 ?
                 data.Blast.GetFunctionById(ReservedScriptFunctionIds.PushFunction)
                 :
                 data.Blast.GetFunctionById(ReservedScriptFunctionIds.Push);
 
+            push.is_vector = node_to_replace.is_vector;
+            push.vector_size = node_to_replace.vector_size;
+
             // it should be inserted before the assigment node in the root-child list
             // - or at the front if requested 
             int idx_push = front ? 0 : insertion_node.parent.children.IndexOf(insertion_node);
-            insertion_node.parent.children.Insert(idx_push, insert);
+            insertion_node.parent.children.Insert(idx_push, push);
 
             // create a new pop instruction at c2
             node pop = new node(null);
@@ -223,19 +226,23 @@ namespace NSS.Blast.Compiler.Stage
             pop.parent = node_to_replace.parent;
             pop.type = nodetype.function;
             pop.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.Pop);
+
+            pop.is_vector = node_to_replace.is_vector;
+            pop.vector_size = node_to_replace.vector_size; 
+
             int idx_pop = node_to_replace.parent.children.IndexOf(node_to_replace);
             node_to_replace.parent.children.Insert(idx_pop, pop);
 
             // then we move the compound c2 into the newly inserted node as child
             node_to_replace.parent.children.Remove(node_to_replace);
-            node_to_replace.parent = insert;
-            insert.children.Add(node_to_replace);
+            node_to_replace.parent = push;
+            push.children.Add(node_to_replace);
 
             // and all should be well... 
             c_replaced++;
             i++; // we added a root item, skip it now
 
-            return insert;
+            return push;
         }
 
 

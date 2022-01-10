@@ -32,10 +32,14 @@ public class Program
         Benchmark1("non fma complex", "a = (3 3 3) * (4 4 4) + (1.2 1.2 1.2);", n_runs);
         Benchmark1("fma complex", "a = fma((3 3 3), (4 4 4), (1.2 1.2 1.2));", n_runs);
 
-   //     Benchmark1("mula", "a = (3 3 3) * (4 4 4) * (1.2 1.2 1.2) * (9.9 9.1 9.2) * (5 5 3) * (92 22 4455);", n_runs);
-        Benchmark1("mula", "a = 1 * 2 * 3 * 4 * 5 * 6 * 7;", n_runs);
-  //      Benchmark1("mula", "a = mula((3 3 3), (4 4 4), (1.2 1.2 1.2), (9.9 9.1 9.2), (5 5 3), (92 22 4455));", n_runs);
+        Benchmark1("mul", "a = 1 * 2 * 3 * 4 * 5 * 6 * 7;", n_runs);
         Benchmark1("mula", "a = mula(1, 2, 3, 4, 5, 6, 7);", n_runs);
+
+        Benchmark1("mul", "a = (3 3 3 5) * (4 4 4 9) * (1.2 1.2 1.2 4) * (9.9 9.1 9.2 5) * (5 5 3 5) * (92 22 4455 555);", n_runs);
+        Benchmark1("mula", "a = mula((3 3 3 5), (4 4 4 9), (1.2 1.2 1.2 4), (9.9 9.1 9.2 5), (5 5 3 5), (92 22 4455 555));", n_runs);
+
+       // Benchmark1("mul", "a = (3 3 3) * (4 4 4) * (1.2 1.2 1.2) * (9.9 9.1 9.2) * (5 5 3) * (92 22 4455);", n_runs);
+       // Benchmark1("mula", "a = mula((3 3 3), (4 4 4), (1.2 1.2 1.2), (9.9 9.1 9.2), (5 5 3), (92 22 4455));", n_runs);
 
         Console.ReadKey();
     }

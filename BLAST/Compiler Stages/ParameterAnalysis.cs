@@ -240,11 +240,20 @@ namespace NSS.Blast.Compiler.Stage
                                 // does compound only contain values or pops?
                                 // we could say its a vector then but we should decide at assignment (i think)
 
-                                // update vector size from children 
-                                fsize = 1;
-                                foreach (node fc in current.children)
+                                if (node.IsNonNestedVectorDefinition(current))
                                 {
-                                    fsize = math.max(fsize, fc.vector_size);
+                                    fsize = current.CountChildType(nodetype.parameter);
+                                }
+                                else
+                                {
+                                    // update vector size from children 
+                                    // 
+                                    // TODO -> this assumes that when 2 vectors have a math operation the result is the largest vector... TODO
+                                    fsize = 1;
+                                    foreach (node fc in current.children)
+                                    {
+                                        fsize = math.max(fsize, fc.vector_size);
+                                    }
                                 }
                                 current.vector_size = fsize;
                                 current.is_vector = current.vector_size > 1;

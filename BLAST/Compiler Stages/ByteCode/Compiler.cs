@@ -334,7 +334,6 @@ namespace NSS.Blast.Compiler.Stage
             if (is_flat_parameter_list)
             {
                 bool has_variable_paramcount = ast_function.function.MinParameterCount != ast_function.function.MaxParameterCount;
-                bool supports_vectors = false;  // ast_function.function.AcceptsVectorSize == 0 || ast_function.function.AcceptsVectorSize > 1;
 
                 if (ast_function.function.ScriptOp != script_op.nop)
                 {
@@ -361,7 +360,7 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         // no variable parameter counts on external function counts 
                         // also do this for functions supporting vectorsizes > 1
-                        if (has_variable_paramcount || supports_vectors)
+                        if (has_variable_paramcount)
                         {
                             if (ast_function.children.Count > 63)
                             {
@@ -375,6 +374,25 @@ namespace NSS.Blast.Compiler.Stage
                             // if 255 then 2 bytes for supporting larger vectors and count?
                             byte opcode = (byte)((ast_function.children.Count << 2) | (byte)ast_function.vector_size & 0b11);
                             code.Add(opcode);
+                        }
+                        else
+                        {
+                            // functions like abs sqrt etc have 1 parameter and their outputvectorsize matches inputsize 
+
+                            if(ast_function.function.ScriptOp == script_op.abs)
+                            {
+
+                                ///
+                                ///    WE SHOULD CHECK IF VECTORSIZE OF PARAMETERS EQUALS THAT OF OUTPUT SET IN FUNCTION NODE 
+                                ///    if not -> ERROR
+                                ///    it should happen before we set vectorsize on the result parameter 
+                                ///    
+
+
+
+                            }
+
+
                         }
                     }
 

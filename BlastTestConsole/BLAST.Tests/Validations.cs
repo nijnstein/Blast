@@ -14,11 +14,11 @@ namespace BlastTestConsole
     {
         static unsafe public bool ValidateStack(CompilationData data, float v1, float v2, float v3)
         {
-            if (data.Executable.data[0] == v1
+            if ((data.Executable.data[0] == v1 || float.IsNaN(v1))
                 &&
-                data.Executable.data[1] == v2
+                (data.Executable.data[1] == v2 || float.IsNaN(v2))
                 &&
-                data.Executable.data[2] == v3)
+                (data.Executable.data[2] == v3 || float.IsNaN(v3)))
             {
                 return true;
             }
@@ -28,9 +28,9 @@ namespace BlastTestConsole
         }
         static unsafe public bool ValidateStack(CompilationData data, float v1, float v2)
         {
-            if (data.Executable.data[0] == v1
+            if ((data.Executable.data[0] == v1 || float.IsNaN(v1))
                 &&
-                data.Executable.data[1] == v2)
+                data.Executable.data[1] == v2 || float.IsNaN(v2))
             {
                 return true;
             }

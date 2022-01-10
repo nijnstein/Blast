@@ -549,7 +549,6 @@ namespace NSS.Blast.Interpretor
             if (c >= opt_id)
             {
 #if DEBUG && CHECK_STACK
-                // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -565,7 +564,6 @@ namespace NSS.Blast.Interpretor
             if (c == (byte)script_op.pop)
             {
 #if DEBUG && CHECK_STACK
-                // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 1));
                 int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 1));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -920,7 +918,7 @@ namespace NSS.Blast.Interpretor
 
             if (c >= opt_id)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
@@ -938,8 +936,8 @@ namespace NSS.Blast.Interpretor
             // pop4
             if (c == (byte)script_op.pop4)
             {
-                int stack_offset = package->stack_offset - 4; 
-#if CHECK_STACK
+                int stack_offset = package->stack_offset - 4;
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)stack_offset);
                 int size = GetMetaDataSize(metadata, (byte)stack_offset);
@@ -956,7 +954,7 @@ namespace NSS.Blast.Interpretor
             else
             if (c >= opt_value)
             {
-#if CHECK_STACK
+#if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_value));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_value));
@@ -3228,12 +3226,17 @@ namespace NSS.Blast.Interpretor
 
 
 
-#endregion
+        #endregion
 
-#endregion
+        #region mula family 
 
 
-        float4 get_mula_result(ref int code_pointer, ref bool minus, ref byte vector_size)
+        /// <summary>
+        /// multiply all inputs together
+        /// - equal sized vectors 
+        /// - n elements 
+        /// </summary>
+        void get_mula_result(ref int code_pointer, ref byte vector_size, out float4 result)
         {
             code_pointer++;
             byte c = code[code_pointer];
@@ -3241,7 +3244,8 @@ namespace NSS.Blast.Interpretor
             vector_size = (byte)(c & 0b11);
             c = (byte)((c & 0b1111_1100) >> 2);
 
-            float4 r = float4.zero;
+            result = float.NaN;
+
             Unity.Burst.Intrinsics.v128 v1 = new Unity.Burst.Intrinsics.v128();
             Unity.Burst.Intrinsics.v128 v2 = new Unity.Burst.Intrinsics.v128();
             switch (vector_size)
@@ -3251,283 +3255,280 @@ namespace NSS.Blast.Interpretor
                         switch (c)
                         {
                             case 1:  // should probably just raise a error on this and case 2 
-                                r.x = pop_or_value(code_pointer + 1); //  data[code[code_pointer + 1] - opt_id];
-                                code_pointer += c;
+                                result.x = pop_f1(code_pointer + 1); //  data[code[code_pointer + 1] - opt_id];
+                                code_pointer += 1;
                                 break;
 
                             case 2:
-                                r.x = pop_or_value(code_pointer + 1) * pop_or_value(code_pointer + 2);
-                                code_pointer += c;
+                                result.x = pop_f1(code_pointer + 1) * pop_f1(code_pointer + 2);
+                                code_pointer += 2;
                                 break;
 
                             case 3:
-                                r.x = pop_or_value(code_pointer + 1) * pop_or_value(code_pointer + 2) * pop_or_value(code_pointer + 3);
-                                code_pointer += c;
+                                result.x = pop_f1(code_pointer + 1) * pop_f1(code_pointer + 2) * pop_f1(code_pointer + 3);
+                                code_pointer += 3;
                                 break;
 
                             case 4:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v2.Float0 = pop_or_value(code_pointer + 3);
-                                v2.Float1 = pop_or_value(code_pointer + 4);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v2.Float0 = pop_f1(code_pointer + 3);
+                                v2.Float1 = pop_f1(code_pointer + 4);
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
-                                r.x = v1.Float0 * v1.Float1;
+                                result.x = v1.Float0 * v1.Float1;
                                 code_pointer += c;
                                 break;
 
                             case 5:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v2.Float0 = pop_or_value(code_pointer + 3);
-                                v2.Float1 = pop_or_value(code_pointer + 4);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v2.Float0 = pop_f1(code_pointer + 3);
+                                v2.Float1 = pop_f1(code_pointer + 4);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
-                                r.x = v1.Float0 * v1.Float1 * pop_or_value(code_pointer + 5);
+                                result.x = v1.Float0 * v1.Float1 * pop_f1(code_pointer + 5);
                                 code_pointer += c;
                                 break;
 
                             case 6:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v2.Float0 = pop_or_value(code_pointer + 4);
-                                v2.Float1 = pop_or_value(code_pointer + 5);
-                                v2.Float2 = pop_or_value(code_pointer + 6);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v2.Float0 = pop_f1(code_pointer + 4);
+                                v2.Float1 = pop_f1(code_pointer + 5);
+                                v2.Float2 = pop_f1(code_pointer + 6);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2;
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2;
                                 code_pointer += c;
                                 break;
 
                             case 7:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v2.Float0 = pop_or_value(code_pointer + 4);
-                                v2.Float1 = pop_or_value(code_pointer + 5);
-                                v2.Float2 = pop_or_value(code_pointer + 6);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v2.Float0 = pop_f1(code_pointer + 4);
+                                v2.Float1 = pop_f1(code_pointer + 5);
+                                v2.Float2 = pop_f1(code_pointer + 6);
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2 * pop_or_value(code_pointer + 7);
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2 * pop_f1(code_pointer + 7);
                                 code_pointer += c;
                                 break;
 
                             case 8:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v1.Float3 = pop_or_value(code_pointer + 4);
-                                v2.Float0 = pop_or_value(code_pointer + 5);
-                                v2.Float1 = pop_or_value(code_pointer + 6);
-                                v2.Float2 = pop_or_value(code_pointer + 7);
-                                v2.Float3 = pop_or_value(code_pointer + 8);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v1.Float3 = pop_f1(code_pointer + 4);
+                                v2.Float0 = pop_f1(code_pointer + 5);
+                                v2.Float1 = pop_f1(code_pointer + 6);
+                                v2.Float2 = pop_f1(code_pointer + 7);
+                                v2.Float3 = pop_f1(code_pointer + 8);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3;
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3;
                                 code_pointer += c;
                                 break;
 
                             case 9:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v1.Float3 = pop_or_value(code_pointer + 4);
-                                v2.Float0 = pop_or_value(code_pointer + 5);
-                                v2.Float1 = pop_or_value(code_pointer + 6);
-                                v2.Float2 = pop_or_value(code_pointer + 7);
-                                v2.Float3 = pop_or_value(code_pointer + 8);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v1.Float3 = pop_f1(code_pointer + 4);
+                                v2.Float0 = pop_f1(code_pointer + 5);
+                                v2.Float1 = pop_f1(code_pointer + 6);
+                                v2.Float2 = pop_f1(code_pointer + 7);
+                                v2.Float3 = pop_f1(code_pointer + 8);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3 * pop_or_value(code_pointer + 9);
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3 * pop_f1(code_pointer + 9);
                                 code_pointer += c;
                                 break;
 
                             case 10:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v1.Float3 = pop_or_value(code_pointer + 4);
-                                v2.Float0 = pop_or_value(code_pointer + 5);
-                                v2.Float1 = pop_or_value(code_pointer + 6);
-                                v2.Float2 = pop_or_value(code_pointer + 7);
-                                v2.Float3 = pop_or_value(code_pointer + 8);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v1.Float3 = pop_f1(code_pointer + 4);
+                                v2.Float0 = pop_f1(code_pointer + 5);
+                                v2.Float1 = pop_f1(code_pointer + 6);
+                                v2.Float2 = pop_f1(code_pointer + 7);
+                                v2.Float3 = pop_f1(code_pointer + 8);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                v2.Float0 = pop_or_value(code_pointer + 9);
-                                v2.Float1 = pop_or_value(code_pointer + 10);
+                                v2.Float0 = pop_f1(code_pointer + 9);
+                                v2.Float1 = pop_f1(code_pointer + 10);
                                 v2.Float2 = v1.Float3; // save multiplication by v1.float3 later
                                 v2.Float3 = 1;
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2;// * v1.Float3;
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2;// * v1.Float3;
                                 code_pointer += c;
                                 break;
 
                             case 11:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v1.Float3 = pop_or_value(code_pointer + 4);
-                                v2.Float0 = pop_or_value(code_pointer + 5);
-                                v2.Float1 = pop_or_value(code_pointer + 6);
-                                v2.Float2 = pop_or_value(code_pointer + 7);
-                                v2.Float3 = pop_or_value(code_pointer + 8);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v1.Float3 = pop_f1(code_pointer + 4);
+                                v2.Float0 = pop_f1(code_pointer + 5);
+                                v2.Float1 = pop_f1(code_pointer + 6);
+                                v2.Float2 = pop_f1(code_pointer + 7);
+                                v2.Float3 = pop_f1(code_pointer + 8);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                v2.Float0 = pop_or_value(code_pointer + 9);
-                                v2.Float1 = pop_or_value(code_pointer + 10);
-                                v2.Float2 = pop_or_value(code_pointer + 11);
+                                v2.Float0 = pop_f1(code_pointer + 9);
+                                v2.Float1 = pop_f1(code_pointer + 10);
+                                v2.Float2 = pop_f1(code_pointer + 11);
                                 v2.Float3 = 1;
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3;
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3;
                                 code_pointer += c;
                                 break;
 
                             case 12:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v1.Float3 = pop_or_value(code_pointer + 4);
-                                v2.Float0 = pop_or_value(code_pointer + 5);
-                                v2.Float1 = pop_or_value(code_pointer + 6);
-                                v2.Float2 = pop_or_value(code_pointer + 7);
-                                v2.Float3 = pop_or_value(code_pointer + 8);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v1.Float3 = pop_f1(code_pointer + 4);
+                                v2.Float0 = pop_f1(code_pointer + 5);
+                                v2.Float1 = pop_f1(code_pointer + 6);
+                                v2.Float2 = pop_f1(code_pointer + 7);
+                                v2.Float3 = pop_f1(code_pointer + 8);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                v2.Float0 = pop_or_value(code_pointer + 9);
-                                v2.Float1 = pop_or_value(code_pointer + 10);
-                                v2.Float2 = pop_or_value(code_pointer + 11);
-                                v2.Float3 = pop_or_value(code_pointer + 12);
+                                v2.Float0 = pop_f1(code_pointer + 9);
+                                v2.Float1 = pop_f1(code_pointer + 10);
+                                v2.Float2 = pop_f1(code_pointer + 11);
+                                v2.Float3 = pop_f1(code_pointer + 12);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3;
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3;
                                 code_pointer += c;
                                 break;
 
                             case 13:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v1.Float3 = pop_or_value(code_pointer + 4);
-                                v2.Float0 = pop_or_value(code_pointer + 5);
-                                v2.Float1 = pop_or_value(code_pointer + 6);
-                                v2.Float2 = pop_or_value(code_pointer + 7);
-                                v2.Float3 = pop_or_value(code_pointer + 8);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v1.Float3 = pop_f1(code_pointer + 4);
+                                v2.Float0 = pop_f1(code_pointer + 5);
+                                v2.Float1 = pop_f1(code_pointer + 6);
+                                v2.Float2 = pop_f1(code_pointer + 7);
+                                v2.Float3 = pop_f1(code_pointer + 8);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                v2.Float0 = pop_or_value(code_pointer + 9);
-                                v2.Float1 = pop_or_value(code_pointer + 10);
-                                v2.Float2 = pop_or_value(code_pointer + 11);
-                                v2.Float3 = pop_or_value(code_pointer + 12);
+                                v2.Float0 = pop_f1(code_pointer + 9);
+                                v2.Float1 = pop_f1(code_pointer + 10);
+                                v2.Float2 = pop_f1(code_pointer + 11);
+                                v2.Float3 = pop_f1(code_pointer + 12);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3 * pop_or_value(code_pointer + 13);
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3 * pop_f1(code_pointer + 13);
                                 code_pointer += c;
                                 break;
 
                             case 14:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v1.Float3 = pop_or_value(code_pointer + 4);
-                                v2.Float0 = pop_or_value(code_pointer + 5);
-                                v2.Float1 = pop_or_value(code_pointer + 6);
-                                v2.Float2 = pop_or_value(code_pointer + 7);
-                                v2.Float3 = pop_or_value(code_pointer + 8);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v1.Float3 = pop_f1(code_pointer + 4);
+                                v2.Float0 = pop_f1(code_pointer + 5);
+                                v2.Float1 = pop_f1(code_pointer + 6);
+                                v2.Float2 = pop_f1(code_pointer + 7);
+                                v2.Float3 = pop_f1(code_pointer + 8);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                v2.Float0 = pop_or_value(code_pointer + 9);
-                                v2.Float1 = pop_or_value(code_pointer + 10);
-                                v2.Float2 = pop_or_value(code_pointer + 11);
-                                v2.Float3 = pop_or_value(code_pointer + 12);
+                                v2.Float0 = pop_f1(code_pointer + 9);
+                                v2.Float1 = pop_f1(code_pointer + 10);
+                                v2.Float2 = pop_f1(code_pointer + 11);
+                                v2.Float3 = pop_f1(code_pointer + 12);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                v2.Float0 = pop_or_value(code_pointer + 13);
-                                v2.Float1 = pop_or_value(code_pointer + 14);
+                                v2.Float0 = pop_f1(code_pointer + 13);
+                                v2.Float1 = pop_f1(code_pointer + 14);
                                 v2.Float2 = v1.Float3; // save multiplication by v1.float3 later
                                 v2.Float3 = 1;
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2;
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2;
                                 code_pointer += c;
                                 break;
 
                             case 15:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v1.Float3 = pop_or_value(code_pointer + 4);
-                                v2.Float0 = pop_or_value(code_pointer + 5);
-                                v2.Float1 = pop_or_value(code_pointer + 6);
-                                v2.Float2 = pop_or_value(code_pointer + 7);
-                                v2.Float3 = pop_or_value(code_pointer + 8);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v1.Float3 = pop_f1(code_pointer + 4);
+                                v2.Float0 = pop_f1(code_pointer + 5);
+                                v2.Float1 = pop_f1(code_pointer + 6);
+                                v2.Float2 = pop_f1(code_pointer + 7);
+                                v2.Float3 = pop_f1(code_pointer + 8);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                v2.Float0 = pop_or_value(code_pointer + 9);
-                                v2.Float1 = pop_or_value(code_pointer + 10);
-                                v2.Float2 = pop_or_value(code_pointer + 11);
-                                v2.Float3 = pop_or_value(code_pointer + 12);
+                                v2.Float0 = pop_f1(code_pointer + 9);
+                                v2.Float1 = pop_f1(code_pointer + 10);
+                                v2.Float2 = pop_f1(code_pointer + 11);
+                                v2.Float3 = pop_f1(code_pointer + 12);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                v2.Float0 = pop_or_value(code_pointer + 13);
-                                v2.Float1 = pop_or_value(code_pointer + 14);
-                                v2.Float2 = pop_or_value(code_pointer + 15);
+                                v2.Float0 = pop_f1(code_pointer + 13);
+                                v2.Float1 = pop_f1(code_pointer + 14);
+                                v2.Float2 = pop_f1(code_pointer + 15);
                                 v2.Float3 = 1;
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3;
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3;
                                 code_pointer += c;
                                 break;
 
                             case 16:
-                                v1.Float0 = pop_or_value(code_pointer + 1);
-                                v1.Float1 = pop_or_value(code_pointer + 2);
-                                v1.Float2 = pop_or_value(code_pointer + 3);
-                                v1.Float3 = pop_or_value(code_pointer + 4);
-                                v2.Float0 = pop_or_value(code_pointer + 5);
-                                v2.Float1 = pop_or_value(code_pointer + 6);
-                                v2.Float2 = pop_or_value(code_pointer + 7);
-                                v2.Float3 = pop_or_value(code_pointer + 8);
+                                v1.Float0 = pop_f1(code_pointer + 1);
+                                v1.Float1 = pop_f1(code_pointer + 2);
+                                v1.Float2 = pop_f1(code_pointer + 3);
+                                v1.Float3 = pop_f1(code_pointer + 4);
+                                v2.Float0 = pop_f1(code_pointer + 5);
+                                v2.Float1 = pop_f1(code_pointer + 6);
+                                v2.Float2 = pop_f1(code_pointer + 7);
+                                v2.Float3 = pop_f1(code_pointer + 8);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                v2.Float0 = pop_or_value(code_pointer + 9);
-                                v2.Float1 = pop_or_value(code_pointer + 10);
-                                v2.Float2 = pop_or_value(code_pointer + 11);
-                                v2.Float3 = pop_or_value(code_pointer + 12);
+                                v2.Float0 = pop_f1(code_pointer + 9);
+                                v2.Float1 = pop_f1(code_pointer + 10);
+                                v2.Float2 = pop_f1(code_pointer + 11);
+                                v2.Float3 = pop_f1(code_pointer + 12);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                v2.Float0 = pop_or_value(code_pointer + 13);
-                                v2.Float1 = pop_or_value(code_pointer + 14);
-                                v2.Float2 = pop_or_value(code_pointer + 15);
-                                v2.Float3 = pop_or_value(code_pointer + 16);
+                                v2.Float0 = pop_f1(code_pointer + 13);
+                                v2.Float1 = pop_f1(code_pointer + 14);
+                                v2.Float2 = pop_f1(code_pointer + 15);
+                                v2.Float3 = pop_f1(code_pointer + 16);
 
                                 v1 = Unity.Burst.Intrinsics.X86.Sse.mul_ps(v1, v2);
 
-                                r.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3;
+                                result.x = v1.Float0 * v1.Float1 * v1.Float2 * v1.Float3;
                                 code_pointer += c;
                                 break;
-
-                            // mula for float4
-                            // case > opt_id == vector??
 
                             // any other size run manually as 1 float
                             default:
@@ -3540,124 +3541,170 @@ namespace NSS.Blast.Interpretor
                                         r1 *= pop_or_value(code_pointer + i);
                                     }
 
-                                    r = new float4(r1, 0, 0, 0);
+                                    result = new float4(r1, 0, 0, 0);
                                 }
                                 code_pointer += c - 1;
                                 break;
                         }
                     }
-                    r.x = math.select(r.x, -r.x, minus);
-                    minus = false;
                     break;
 
+                case 2:
+                    switch (c)
+                    {
+                        case 1: result.xy = pop_f2(++code_pointer); break;
+                        case 2: result.xy = pop_f2(++code_pointer) * pop_f2(++code_pointer); break;
+                        case 3: result.xy = pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer); break;
+                        case 4: result.xy = pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer); break;
+                        case 5: result.xy = pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer); break;
+                        case 6: result.xy = pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer); break;
+                        case 7: result.xy = pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer); break;
+                        case 8: result.xy = pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer) * pop_f2(++code_pointer); break;
+                        default:
+                            {
+                                // this probably is just as fast as an unrolled version because of the jumping in pop.. 
+                                result.xy = pop_f2(code_pointer + 1);
+                                for (int i = 2; 2 <= c; i++)
+                                {
+                                    result.xy = result.xy * pop_f2(code_pointer + i);
+                                }
+                            }
+                            break;
+                    }
+                    break;
+
+                case 3:
+                    switch (c)
+                    {
+                        case 1: result.xyz = pop_f3(++code_pointer); break;
+                        case 2: result.xyz = pop_f3(++code_pointer) * pop_f3(++code_pointer); break;
+                        case 3: result.xyz = pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer); break;
+                        case 4: result.xyz = pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer); break;
+                        case 5: result.xyz = pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer); break;
+                        case 6: result.xyz = pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer); break;
+                        case 7: result.xyz = pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer); break;
+                        case 8: result.xyz = pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer) * pop_f3(++code_pointer); break;
+                        default:
+                            {
+                                // this probably is just as fast as an unrolled version because of the jumping in pop.. 
+                                result.xyz = pop_f3(code_pointer + 1);
+                                for (int i = 2; 2 <= c; i++)
+                                {
+                                    result.xyz = result.xyz * pop_f3(code_pointer + i);
+                                }
+                            }
+                            break;
+                    }
+                    break; 
+
+                case 4:
                 case 0: // actually 4
                     {
                         switch (c)
                         {
                             case 1:
                                 {
-                                    r = pop_or_value_4(++code_pointer);
+                                    result = pop_f4(++code_pointer);
                                 }
                                 break;
 
                             case 2:
                                 {
-                                    r = pop_or_value_4(++code_pointer) * pop_or_value_4(++code_pointer);
+                                    result = pop_f4(++code_pointer) * pop_f4(++code_pointer);
                                 }
                                 break;
 
                             case 3:
                                 {
-                                    r = pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer);
+                                    result = pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer);
                                 }
                                 break;
 
                             case 4:
                                 {
-                                    r = pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer);
+                                    result = pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer);
                                 }
                                 break;
 
                             case 5:
                                 {
-                                    r = pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer);
+                                    result = pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer);
                                 }
                                 break;
 
                             case 6:
                                 {
-                                    r = pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer);
+                                    result = pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer);
                                 }
                                 break;
 
                             case 7:
                                 {
-                                    r = pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer);
+                                    result = pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer);
                                 }
                                 break;
 
                             case 8:
                                 {
-                                    r = pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer) *
-                                        pop_or_value_4(++code_pointer);
+                                    result = pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer) *
+                                        pop_f4(++code_pointer);
                                 }
                                 break;
 
                             default:
                                 {
                                     // this probably is just as fast as an unrolled version because of the jumping in pop.. 
-                                    r = pop_or_value_4(code_pointer + 1);
+                                    result = pop_f4(code_pointer + 1);
                                     for (int i = 2; 2 <= c; i++)
                                     {
-                                        r = r * pop_or_value_4(code_pointer + i);
+                                        result = result * pop_f4(code_pointer + i);
                                     }
                                 }
                                 break;
                         }
                     }
-                    r = math.select(r, -r, minus);
-                    minus = false;
                     break;
 
                 default:
                     {
-#if LOG_ERRORS
-                    Standalone.Debug.LogError($"mula: vector size '{vector_size}' not supported ");
+#if DEBUG
+                        Debug.LogError($"mula: vector size '{vector_size}' not supported ");
 #endif
-                        r = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        minus = false;
                     }
                     break;
             }
-
-            return r;
         }
+
+
+        #endregion 
+
+        #endregion
 
         float4 get_adda_result(ref int code_pointer, ref bool minus, ref byte vector_size)
         {
@@ -4215,9 +4262,28 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#region ByteCode Execution
+        #region ByteCode Execution
+
+
+        /// <summary>
+        /// return true if op is a value: 
+        /// - pop counts!!
+        /// - byte value between lowest constant and extended op id  (dont allow constants in extended op id's)
+        /// </summary>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool script_op_is_value(in byte op)
+        {
+            return
+                // its a value if from stack 
+                op == (byte)script_op.pop
+                ||
+                // or between the lowest constant and the highest possible variable 
+                (op >= (byte)script_op.pi && op < 255);
+        }
+
 
         /// <summary>
         /// recursively handle a compounded statement and return its value
@@ -4461,6 +4527,11 @@ namespace NSS.Blast.Interpretor
                                 // fma and friends 
                                 case script_op.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
 
+                                // mula family
+                                case script_op.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+
+
 
 
                                 case script_op.pow:
@@ -4492,10 +4563,6 @@ namespace NSS.Blast.Interpretor
                                     break;
 
 
-
-                                case script_op.mula:
-                                    f4_result = get_mula_result(ref code_pointer, ref minus, ref vector_size);
-                                    break;
 
                                 case script_op.adda:
                                     f4_result = get_adda_result(ref code_pointer, ref minus, ref vector_size);
@@ -4801,108 +4868,167 @@ namespace NSS.Blast.Interpretor
                                     break;
                             }
 
+                            // 
                             // handle results according to vector size 
                             // max vector size is set before settings vector_size and will be update NEXT loop
-                            switch ((BlastVectorSizes)vector_size)
+                            // 
+                            // BUG EXAMPLE: 
+                            // - a = 3 3 3 x 4 4 4 x 1.2 1.2 1.2 
+                            // 
+                            // - growing the vector goes wrong after the first 'x' because it then reads the 4 and multiplies that with (3 3 3) resulting in (12 12 12)
+                            // 
+                            // - we should grow the vector instead if the next operation is also a value and not an opration or the end 
+                            // 
+                            //  after this it now multiplies 3 * 1.2 instead of 12 * 1.2 after second multiply op 
+                                         
+                          /*  bool handle = max_vector_size == 1 || (current_operation != script_op.nop && !script_op_is_value(code[code_pointer + 1]));
+
+                            if (!handle)
                             {
-                                case BlastVectorSizes.float1:
+                                // grow if no operation is enqued, otherwise we keep growing in result 
+                                if (current_operation == script_op.nop)
+                                {
+                                    switch ((BlastVectorSizes)vector_size)
                                     {
-                                        switch ((BlastVectorSizes)max_vector_size)
-                                        {
-                                            case BlastVectorSizes.float1:
-                                                BlastInterpretor.handle_op(current_operation, op, prev_op, ref f1, f4_result.x, ref last_is_op_or_first, ref vector_size);
-                                                break;
-                                            case BlastVectorSizes.float2:
-                                                BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, new float4(f4_result.xx, 0, 0), ref last_is_op_or_first, ref vector_size);
-                                                break;
-                                            case BlastVectorSizes.float3:
-                                                BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, new float4(f4_result.xxx, 0), ref last_is_op_or_first, ref vector_size);
-                                                break;
-                                            case BlastVectorSizes.float4:
-                                                BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, f4_result.xxxx, ref last_is_op_or_first, ref vector_size);
-                                                break;
-                                        }
-                                    }
-                                    break;
+                                        case BlastVectorSizes.float1:
+                                            // setting vector[n] from a vector[1] 
+                                            switch ((BlastVectorSizes)max_vector_size)
+                                            {
+                                                case BlastVectorSizes.float1: f1 = f4_result.x; break;
+                                                default: f4 = f4_result.x; break;
+                                            }
+                                            break;
 
-                                case BlastVectorSizes.float2:
-                                    {
-                                        switch ((BlastVectorSizes)max_vector_size)
-                                        {
-                                            case BlastVectorSizes.float1:
-                                                // normal when growing a vector 
-                                                break;
-                                            case BlastVectorSizes.float2:
-                                            case BlastVectorSizes.float3:
-                                            case BlastVectorSizes.float4:
-                                            default:
+                                        // could add debug check only (max_vector_size == 1) 
+                                        case BlastVectorSizes.float2: f4 = new float4(f4_result.xy, 0, 0); break;
+                                        case BlastVectorSizes.float3: f4 = new float4(f4_result.xyz, 0); break;
+                                        case BlastVectorSizes.float4: f4 = f4_result; break;
+                                        default:
 #if DEBUG
-                                                // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+                                            // these will be in log because of growing a vector from a compound of unknown sizes  
+                                            Debug.LogWarning($"execute: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
-                                                break;
-                                        }
-                                        BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, f4_result.xy, ref last_is_op_or_first, ref vector_size);
+                                            break;
                                     }
-                                    break;
+                                }
+                                else  
+                                {
+                                   if (max_vector_size <= 1 || !prev_op_is_value) f1 = f4.x; 
+                                    //  if(!prev_op_is_value) f1 = f4.x; 
+                                }
+                                 
+                            }
+                            else */
+                            {
 
-                                case BlastVectorSizes.float3:
-                                    {
-                                        switch ((BlastVectorSizes)max_vector_size)
+                                // after an operation with growvector we should stack value
+
+                                switch ((BlastVectorSizes)vector_size)
+                                {
+                                    case BlastVectorSizes.float1:
                                         {
-                                            case BlastVectorSizes.float2:
-                                                // normal when growing a vector
-                                                break;
-
-                                            case BlastVectorSizes.float1:
-                                            case BlastVectorSizes.float3:
-                                            case BlastVectorSizes.float4:
-                                            default:
-#if DEBUG
-                                                // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
-#endif
-                                                break;
+                                            switch ((BlastVectorSizes)max_vector_size)
+                                            {
+                                                case BlastVectorSizes.float1:
+                                                    BlastInterpretor.handle_op(current_operation, op, prev_op, ref f1, f4_result.x, ref last_is_op_or_first, ref vector_size);
+                                                    break;
+                                                case BlastVectorSizes.float2:
+                                                    BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, new float4(f4_result.xx, 0, 0), ref last_is_op_or_first, ref vector_size);
+                                                    break;
+                                                case BlastVectorSizes.float3:
+                                                    BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, new float4(f4_result.xxx, 0), ref last_is_op_or_first, ref vector_size);
+                                                    break;
+                                                case BlastVectorSizes.float4:
+                                                    BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, f4_result.xxxx, ref last_is_op_or_first, ref vector_size);
+                                                    break;
+                                            }
                                         }
-                                        BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, f4_result.xyz, ref last_is_op_or_first, ref vector_size);
-                                    }
-                                    break;
+                                        break;
 
-                                case BlastVectorSizes.float4:
-                                    {
-                                        switch ((BlastVectorSizes)max_vector_size)
+                                    case BlastVectorSizes.float2:
                                         {
-                                            case BlastVectorSizes.float1:
-                                                // have a float 4 but are multiplying with a float1 from earlier
-                                                f4 = new float4(f1, f1, f1, f1);
-                                                break;
-                                            case BlastVectorSizes.float2:
-                                                f4 = new float4(f4.xy, 0, 0);
-                                                break;
-                                            case BlastVectorSizes.float3:
-                                                f4 = new float4(f4.xyz, 0);
-                                                // usually we are growing from float4 to a 4 vector, current op would be nop then 
-                                                break;
-                                            case BlastVectorSizes.float4:
-                                                // have a float 4 and one from earlier.
-                                                break;
-                                            default:
+                                            switch ((BlastVectorSizes)max_vector_size)
+                                            {
+                                                case BlastVectorSizes.float1:
+                                                    // normal when growing a vector 
+                                                    break;
+                                                case BlastVectorSizes.float2:
+                                                case BlastVectorSizes.float3:
+                                                case BlastVectorSizes.float4:
+                                                default:
 #if DEBUG
-                                                Debug.LogError("implement me");
+                                                    // these will be in log because of growing a vector from a compound of unknown sizes  
+                                                    Debug.LogWarning($"execute: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
-                                                break;
+                                                    break;
+                                            }
+                                            BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, f4_result.xy, ref last_is_op_or_first, ref vector_size);
                                         }
-                                        handle_op(current_operation, op, prev_op, ref f4, f4_result, ref last_is_op_or_first, ref vector_size);
-                                    }
-                                    break;
+                                        break;
 
-                                default:
-                                    {
+                                    case BlastVectorSizes.float3:
+                                        {
+                                            switch ((BlastVectorSizes)max_vector_size)
+                                            {
+                                                case BlastVectorSizes.float2:
+                                                    // normal when growing a vector
+                                                    break;
+
+                                                case BlastVectorSizes.float1:
+                                                case BlastVectorSizes.float3:
+                                                case BlastVectorSizes.float4:
+                                                default:
 #if DEBUG
-                                        Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unsupported vector size of {vector_size}");
+                                                    // these will be in log because of growing a vector from a compound of unknown sizes  
+                                                    Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
-                                        return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                                    }
+                                                    break;
+                                            }
+                                            BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, f4_result.xyz, ref last_is_op_or_first, ref vector_size);
+                                        }
+                                        break;
+
+                                    case BlastVectorSizes.float4:
+                                        {
+                                            switch ((BlastVectorSizes)max_vector_size)
+                                            {
+                                                case BlastVectorSizes.float1:
+                                                    // have a float 4 but are multiplying with a float1 from earlier
+                                                    f4 = new float4(f1, f1, f1, f1);
+                                                    break;
+                                                case BlastVectorSizes.float2:
+                                                    f4 = new float4(f4.xy, 0, 0);
+                                                    break;
+                                                case BlastVectorSizes.float3:
+                                                    f4 = new float4(f4.xyz, 0);
+                                                    // usually we are growing from float4 to a 4 vector, current op would be nop then 
+                                                    break;
+                                                case BlastVectorSizes.float4:
+                                                    // have a float 4 and one from earlier.
+                                                    break;
+                                                default:
+#if DEBUG
+                                                    Debug.LogError("implement me");
+#endif
+                                                    break;
+                                            }
+                                            handle_op(current_operation, op, prev_op, ref f4, f4_result, ref last_is_op_or_first, ref vector_size);
+                                        }
+                                        break;
+
+                                    default:
+                                        {
+#if DEBUG
+                                            Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unsupported vector size of {vector_size}");
+#endif
+                                            return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
+                                        }
+                                }
+
+                                if (current_operation != script_op.nop)
+                                {
+                                   // f1 = f4.x;
+                                }
                             }
                         }
                         break;
@@ -4916,7 +5042,7 @@ namespace NSS.Blast.Interpretor
             vector_size = vector_size > max_vector_size ? vector_size : max_vector_size;
             return vector_size > 0 ? f4 : new float4(f1, 0, 0, 0);
         }
- 
+
 
         /// <summary>
         /// 
@@ -5234,11 +5360,20 @@ namespace NSS.Blast.Interpretor
                             // vectorsize assigned MUST match 
                             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
-                            // 3 options: 
+                            //
                             // - a mixed sequence - no nested compound
                             // - a compound -> vector definition? push? compiler flattens everything else
                             // - a function call with sequence after... 
                             //
+
+                            //
+                            // for some functions the return vector size depends on the input vectorsize 
+                            // in those cases the compiler should have correctly estimated the return vector size
+                            // if it did not it would overwrite other data when the compiler allocates to few bytes for the assignee
+                            // 
+                            // !!- any function that is not correctly estimated will result in "BlastError.error_assign_vector_size_mismatch" !!
+                            //
+
 
                             f4_register = get_compound_result(ref code_pointer, ref vector_size);
 
@@ -5362,10 +5497,12 @@ namespace NSS.Blast.Interpretor
                         }
 
 
+                        //
+                        // Extended Op == 255 => next byte encodes an operation not used in switch above (more non standard ops)
+                        //
                     case script_op.ex_op:
                         {                                                                 
                             extended_script_op exop = (extended_script_op)code[code_pointer];
-
                             switch (exop)
                             {
                                 case extended_script_op.call:
@@ -5382,7 +5519,6 @@ namespace NSS.Blast.Interpretor
                                         // write contents of stack to the debug stream as a detailed report; 
                                         // write contents of a data element to the debug stream 
                                         code_pointer++;
-
 #if DEBUG && HANDLE_DEBUG_OP
                                         Handle_DebugStack();
 #endif
@@ -5413,7 +5549,6 @@ namespace NSS.Blast.Interpretor
                                         Debug.LogError($"extended op: only call and debug operation is supported from root, not {exop} ");
 #endif
                                         return (int)BlastError.error_unsupported_operation_in_root;
-
                                     }
                             }
                             break;

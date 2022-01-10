@@ -156,7 +156,8 @@ namespace BlastTestConsole
         [InlineData("a = frac(1231.932);", 0.93200684)]
         [InlineData("a = frac((12.9 23.3));", 0.8999996)]
         [InlineData("a = frac((12.22 11.22 21.33));", 0.22000027)]
-        [InlineData("a = frac((-66.77 12.22 11.22 21.33));", -0.77)]
+        [InlineData("a = frac((-66.77 12.22 11.22 21.33));", 0.23000336)] // wierd but it is correct
+        [InlineData("a = frac(-1.6);", 0.39999998f)] 
 
         [InlineData("a = sqrt(2);", 1.4142135)]
         [InlineData("a = sqrt((2 2));", 1.4142135)]
@@ -191,13 +192,16 @@ namespace BlastTestConsole
         [InlineData("a = fma(3, 4, 1.2);", 13.2f)]                          /// force use of fma by directly calling the op 
         [InlineData("a = fma((3 3), (4 4), (1.2 1.2));", 13.2f)]            /// force use of fma by directly calling the op 
         [InlineData("a = fma((3 3 3), (4 4 4), (1.2 1.2 1.2));", 13.2f)]    /// force use of fma by directly calling the op 
-        [InlineData("a = (3 3 3) * (4 4 4) * (1.2 1.2 1.2);", 13.2f)]       /// verification of normal ops
+        [InlineData("a = (3 3 3) * (4 4 4) * (1.2 1.2 1.2);", 14.400001f)]       /// verification of normal ops
 
-        [InlineData("a = (1 2 3) * (4 5 6) * (7 8 9) * (9.9 9.1 9.2);", 1)] // should optimize to mula
-        [InlineData("a = mula((3 3 3), (4 4 4), (1.2 1.2 1.2), (9.9 9.1 9.2), (5 5 3), (92 22 4455));", 1)]
+        [InlineData("a = (1 2 3) * (4 5 6) * (7 8 9) * (9.9 9.1 9.2);", 277.19998)] // should optimize to mula
+        [InlineData("a = mula((3 3 3), (4 4 4), (1.2 1.2 1.2), (9.9 9.1 9.2), (5 5 3), (92 22 4455));", 65577.6)]
 
         [InlineData("a = 1 * 2 * 3 * 4 * 5 * 6 * 7;", 5040)]
         [InlineData("a = mula(1, 2, 3, 4, 5, 6, 7);", 5040)]
+
+        [InlineData("a = (3 3 3 5) * (4 4 4 9) * (1.2 1.2 1.2 4) * (9.9 9.1 9.2 5) * (5 5 3 5) * (92 22 4455 555);", 65577.6f)]       // again should optimize to mula
+        [InlineData("a = mula((3 3 3 5), (4 4 4 9), (1.2 1.2 1.2 4), (9.9 9.1 9.2 5), (5 5 3 5), (92 22 4455 555));", 1)]
 
         public void BlastScript_Functions_1(string code, float v1)
         {
@@ -259,7 +263,7 @@ namespace BlastTestConsole
 
         [Theory]
         [InlineData("a = (3 4 5) * -1;", -3, -4, -5)]
-        [InlineData("a = abs((3 4 ) * -1);", 3, 4, -1)]
+        [InlineData("a = abs((3 4 ) * -1);", 3, 4, float.NaN)]
         [InlineData("a = abs((3 4 5) * -1);", 3, 4, 5)]
         [InlineData("a = abs((3 4 5 6) * -1);", 3, 4, 5)]
         [InlineData("a = abs((3, -4)); b = 1;", 3, 4, 1)]

@@ -1,4 +1,5 @@
-﻿using Unity.Mathematics;
+﻿using NSS.Blast.Standalone;
+using Unity.Mathematics;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -54,8 +55,15 @@ namespace NSS.Blast.Compiler.Stage
                             break;
                         case nodetype.compound:
                             {
-                                // move up compounds 
+                                // move up compounds if not vector definitions 
+                                if(node.IsVectorDefinition(c))
+                                {
+                                    return n_moves; 
+                                }
+
                                 n_compounds++;
+
+                                /// remove compound only if:
                                 foreach (var cc in c.children)
                                 {
                                     switch (cc.type)
@@ -84,43 +92,44 @@ namespace NSS.Blast.Compiler.Stage
                     }
                 }
 
-                // 
                 if (n_compounds > 0)
                 {
                     // move up compounds
-                        for (int i = 0; i < n.children.Count; i++)
+                    for (int i = 0; i < n.children.Count; i++)
+                    {
+                        if (n.children[i].type == nodetype.compound)
                         {
-                            if (n.children[i].type == nodetype.compound)
+                            //
+                            //   detect if parent is a function, then we should push it to stack and pop as param => flatten
+                            //
+
+                            var cmp = n.children[i];
+                            cmp.parent = null;
+                            foreach (var cc in cmp.children)
                             {
-                                // this should actually be done in flatten ..... 
-
-
-
-                                //
-                                //   detect if parent is a function, then we should push it to stack and pop as param 
-                                //
-
-                                var cmp = n.children[i];
-                                cmp.parent = null;
-                                foreach (var cc in cmp.children)
+                                cc.parent = n;
+                                if (cc.type == nodetype.compound)
                                 {
-                                    cc.parent = n;
-                                    if (cc.type == nodetype.compound) b_again = true; // this should not happen if leaf 
+                                    b_again = true; // this should not happen if leaf 
+#if DEBUG
+                                    Debug.LogWarning("nested compound.. should not happen here");
+#endif
                                 }
-
-                                // 
-                                //  here   mina(1 (-2) 3) became mina( 1 - 2  3)
-                                // 
-
-
-                                n.children.RemoveAt(i);
-                                n.children.InsertRange(i, cmp.children);
-                                i += cmp.children.Count;
-
-                                cmp.children.Clear();
-                                b_again = true;
                             }
+
+                            // 
+                            //  here   mina(1 (-2) 3) became mina( 1 - 2  3)
+                            // 
+
+
+                            n.children.RemoveAt(i);
+                            n.children.InsertRange(i, cmp.children);
+                            i += cmp.children.Count;
+
+                            cmp.children.Clear();
+                            b_again = true;
                         }
+                    }
 
 
                     n_moves += n_compounds;
