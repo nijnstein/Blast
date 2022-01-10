@@ -1770,7 +1770,12 @@ namespace NSS.Blast.Interpretor
             return f4;
         }
 
-        float4 get_pow_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
+        /// <summary>
+        /// raise x to power of y 
+        /// - always 2 parameters 
+        /// - vectorsize in == vectorsize out
+        /// </summary>
+        void get_pow_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             // vector size to be set from input?  
             switch ((BlastVectorSizes)vector_size)
@@ -3600,6 +3605,7 @@ namespace NSS.Blast.Interpretor
                 case 4:
                 case 0: // actually 4
                     {
+                        vector_size = 4; 
                         switch (c)
                         {
                             case 1:
@@ -4311,7 +4317,7 @@ namespace NSS.Blast.Interpretor
             float4 f4 = float4.zero;
 
             // vector_size = 1; now set by callee
-            byte max_vector_size = 1;
+            byte max_vector_size = 1;        //  !!
 
             script_op current_operation = script_op.nop;
 
@@ -4528,7 +4534,7 @@ namespace NSS.Blast.Interpretor
                                 case script_op.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
 
                                 // mula family
-                                case script_op.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); max_vector_size = vector_size; break;
 
 
 
@@ -4988,6 +4994,8 @@ namespace NSS.Blast.Interpretor
                                         }
                                         break;
 
+
+                                    case 0: 
                                     case BlastVectorSizes.float4:
                                         {
                                             switch ((BlastVectorSizes)max_vector_size)
@@ -5008,7 +5016,7 @@ namespace NSS.Blast.Interpretor
                                                     break;
                                                 default:
 #if DEBUG
-                                                    Debug.LogError("implement me");
+                                                    Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                     break;
                                             }
@@ -5360,6 +5368,12 @@ namespace NSS.Blast.Interpretor
                             // vectorsize assigned MUST match 
                             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
+                            // correct vectorsize 4 => it is 0 after compressing into 2 bits
+                            
+                            // -> compounds
+                            //  s_assignee = (byte) math.select(4, s_assignee, s_assignee == 0); 
+                            
+
                             //
                             // - a mixed sequence - no nested compound
                             // - a compound -> vector definition? push? compiler flattens everything else
@@ -5384,7 +5398,7 @@ namespace NSS.Blast.Interpretor
                                     //if(Unity.Burst.CompilerServices.Hint.Unlikely(s_assignee != 1))
                                     if (s_assignee != 1)
                                     {
-#if LOG_ERRORS
+#if DEBUG
                                           Standalone.Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;

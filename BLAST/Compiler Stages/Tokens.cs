@@ -38,11 +38,15 @@
 
         push,         // stack functions
         pop,
-        pop2,
-        pop3,
-        pop4,
+
+        pop2,     // UNDEFINED ???
+        pop3,     // UNDEFINED ???
+        pop4,     // UNDEFINED ???
+
         pushv,
+
         popv,
+
         peek,
         peekv,        // == 31   
 
@@ -51,8 +55,6 @@
         //------------------------
 
         fma,          // fused multiply add
-        undefined1,          // fused substract multiply
-        undefined2,          // fused multiply substract 
 
         adda,         // add all operands together until [nop]
         mula,         // add all operands together until [nop]
@@ -107,6 +109,16 @@
 
         exp,
         log2,
+
+
+
+
+
+
+
+
+        undefined1,          
+        undefined2,         
 
         //------------------------
         // constant math values start here at PI
@@ -176,7 +188,7 @@
         inv_value_360 = 127,
 
         //------------------------
-        id = 128,          // parameter id's start from here 
+        id = 128,          // parameter id's start from here up until 254
 
         ex_op = 255           // extend into a multi token instruction  
     }

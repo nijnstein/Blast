@@ -1840,6 +1840,9 @@ namespace NSS.Blast.Compiler.Stage
 
                         // check if the parsed statement is an assignment 
                         check_if_assignment_node(data, ast_node);
+
+                        // get all function nodes 
+                        // node[] functions = ast_node.GetChildren(nodetype.function);
                     }
                 }
             }
@@ -1916,6 +1919,7 @@ namespace NSS.Blast.Compiler.Stage
                     // if we compile using system constant then use opcodes for known constants 
                     if (data.CompilerOptions.CompileWithSystemConstants)
                     {
+                        
                         // its a constant, only lookup the positive part of values, if a match on negated we add back a minus op
                         string value = is_negated ? ast_node.identifier.Substring(1) : ast_node.identifier;
 
@@ -1931,13 +1935,21 @@ namespace NSS.Blast.Compiler.Stage
                             // dont create variables for constant ops 
                             ast_node.is_constant = true;
                             ast_node.constant_op = op;
+
                             // if the value was negated before matching then add the minus sign before it
-                            // this is cheaper then adding a full 32 bit value
+                            // - this is cheaper then adding a full 32 bit value
+                            // - this makes it more easy to see for analyzers if stuff is negated 
                             if (is_negated)
                             {
+                                // put this node in a compound
+                                // - effectively do this:  parent->child  ->  parent->compound->child
+                                node compound = ast_node.InsertParent(new node(nodetype.compound, BlastScriptToken.Identifier));  
+                                
+                                // and replace it at parent 
                                 ast_node.InsertBeforeThisNodeInParent(nodetype.operation, BlastScriptToken.Substract);
                                 ast_node.identifier = value; // update to the non-negated value 
                             }
+
                             // we know its constant, if no other vectorsize is set force 1
                             if (ast_node.vector_size < 1) ast_node.vector_size = 1; 
                         }
@@ -1946,6 +1958,7 @@ namespace NSS.Blast.Compiler.Stage
                             // non op encoded constant, create a variable for it 
                             ast_node.variable = cdata.CreateVariable(ast_node.identifier);
                         }
+
                     }
                     else
                     {
@@ -1993,7 +2006,7 @@ namespace NSS.Blast.Compiler.Stage
             // identify parameters 
             if (exitcode == (int)BlastError.success)
             {
-                // walk each node, map each identifier as a variableor system constant
+                // walk each node, map each identifier as a variable or system constant
                 // we start at the root and walk to each leaf, anything not known should raise an error 
                 if (!map_identifiers(data, data.AST))
                 {

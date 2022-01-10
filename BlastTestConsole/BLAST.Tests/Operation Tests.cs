@@ -172,11 +172,16 @@ namespace BlastTestConsole
         [InlineData("a = sin(1);", 0.84147096)]
         [InlineData("a = sin(-1);", -0.84147096)]
 
-
         [InlineData("a = cos(1);", 0.5403023)]
         [InlineData("a = cos(-1);", 0.5403023)]
+        [InlineData("a = cos((1 1));", 0.5403023)]
+        [InlineData("a = cos((1 1 1));", 0.5403023)]
+        [InlineData("a = cos((1 1 1 1));", 0.5403023)]
 
         [InlineData("a = tan(1);", 1.5574077)]
+        [InlineData("a = tan((1 1));", 1.5574077)]
+        [InlineData("a = tan((1 1 1));", 1.5574077)]
+        [InlineData("a = tan((1 1 1 1));", 1.5574077)]
         [InlineData("a = tan(-1);", -1.5574077)]
 
         [InlineData("a = atan(1);", 0.7853982)]
@@ -200,14 +205,32 @@ namespace BlastTestConsole
         [InlineData("a = 1 * 2 * 3 * 4 * 5 * 6 * 7;", 5040)]
         [InlineData("a = mula(1, 2, 3, 4, 5, 6, 7);", 5040)]
 
-        [InlineData("a = (3 3 3 5) * (4 4 4 9) * (1.2 1.2 1.2 4) * (9.9 9.1 9.2 5) * (5 5 3 5) * (92 22 4455 555);", 65577.6f)]       // again should optimize to mula
-        [InlineData("a = mula((3 3 3 5), (4 4 4 9), (1.2 1.2 1.2 4), (9.9 9.1 9.2 5), (5 5 3 5), (92 22 4455 555));", 1)]
-
+        [InlineData("a = (3 3 3 5) * (4 4 4 9) * (1.2 1.2 1.2 4) * (9.9 9 9 5) * (5 5 3 5) * (92 2 4 5);", 65577.6f)]       // again should optimize to mula
+        [InlineData("a = mula((3 3 3 5), (4 4 4 9), (1.2 1.2 1.2 4), (9.9 9 9 5), (5 5 3 5), (92 2 4 5));", 65577.6f)]
         
         [InlineData("a = 2 + 3 + (3 + 4) + 1;", 13)]  // flatten should flatten this but we have no way to verify it other then checking the result   YES
         [InlineData("a = 2 + 3 + (3 - 4) + 1;", 5)]   // flatten may flatten this but probably wont TODO -> the optimizer SHOULD flatten it TODO !!   HALF -> it is popped.. not needed in this case 
         [InlineData("a = 2 + 3 - (3 + 4) + 1;", -1)]  // flatten should not be able to flatten this out
         [InlineData("a = 2 + 3 - (3 - 4) + 1;", 7)]   // flatten should not be able to flatten this out
+
+        [InlineData("a = 1 * -2;", -2)]                  
+        [InlineData("a = -1 * 2;", -2)]
+        [InlineData("a = 1 + 2 * 2;", 5)]
+        [InlineData("a = 1 + 2 * 2 + 5;", 10)]
+        [InlineData("a = 1 - 2 * 2 + 5;", 2)]
+        [InlineData("a = 1 + 2 * 2 - 5;", 0)]
+        [InlineData("a = 1 + - 2 * 2 + 5;", 2)]
+
+        [InlineData("a = 1 + 2 / 6;", 1.3333334f)]
+        [InlineData("a = 1 + -2 / 6;", 0.6666666f)]
+
+        [InlineData("a = 1 + 1 * (1 / 2) * 2;", 2)]
+        [InlineData("a = 2 * (2 * 2 * 2) * 2;", 32)]
+        [InlineData("a = 2 - 2 - 2 - 2 - 2 - 2;", -8)]
+        [InlineData("a = 1 & -2 | 1;", 1)]
+        [InlineData("a = 1 & 2 & 3 & 4 & 5;", 1)]
+        [InlineData("a = 1 * 10 * 3 * (3 + 4 * 2);", 330)]
+        [InlineData("a = 1 * (2 * 3 / 4) * 5;", 7.5f)]
 
         public void BlastScript_Functions_1(string code, float v1)
         {

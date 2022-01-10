@@ -283,9 +283,9 @@ namespace NSS.Blast.Compiler
         }
 
         public override string ToString()
-        {
+        {                                       
             string sconstant = is_constant ? "constant " : "";
-            string svector = is_vector ? " vector " : "";
+            string svector = is_vector ? $" vector[{vector_size}]" : "";
             switch (type)
             {
                 case nodetype.root: return $"{sconstant}{svector}root of {children.Count}";
@@ -422,8 +422,6 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// get the first child found of a given nodetype
         /// </summary>
-        /// <param name="t"></param>
-        /// <returns></returns>
         public node GetChild(nodetype t)
         {
             return children.FirstOrDefault(x => x.type == t);
@@ -440,13 +438,79 @@ namespace NSS.Blast.Compiler
         }
 
         /// <summary>
+        /// get children of given nodetype
+        /// </summary>
+        public node[] GetChildren(nodetype t)
+        {
+            node[] nodes = new node[CountChildren(t)];
+
+            if (nodes.Length > 0)
+            {
+                int count = 0;
+                foreach (node c in children)
+                {
+                    if (c.type == t) nodes[count] = c;
+                }
+            }
+
+            return nodes;
+        }
+
+        /// <summary>
         /// get child nodes not of the type t
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
         public node[] GetOtherChildren(nodetype t)
         {
-            return children.Where(x => x.type != t).ToArray();
+            node[] others = new node[CountOtherChildren(t)];
+
+            if (others.Length > 0)
+            {
+                int count = 0;
+                foreach (node c in children)
+                {
+                    if (c.type != t)  others[count] = c;
+                }
+            }
+
+            return others; 
+            
+            // using linq will probably make it harder to port 
+            // return children.Where(x => x.type != t).ToArray();
+        }
+
+
+        /// <summary>
+        /// count nr of childnodes with not nodetype t
+        /// </summary>
+        public int CountOtherChildren(nodetype t)
+        {
+            int count = 0;
+            foreach (node c in children)
+            {
+                if (c.type != t)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// count children of given nodetype 
+        /// </summary>
+        public int CountChildren(nodetype t)
+        {
+            int count = 0;
+            foreach (node c in children)
+            {
+                if (c.type == t)
+                {
+                    count++;
+                }
+            }
+            return count;
         }
 
         /// <summary>
@@ -801,10 +865,12 @@ namespace NSS.Blast.Compiler
         /// </summary>
         /// <param name="type">node type</param>
         /// <param name="op">script operation</param>
-        internal node InsertBeforeThisNodeInParent(nodetype type, BlastScriptToken token)
-        {
+        public node InsertBeforeThisNodeInParent(nodetype type, BlastScriptToken token)
+        { 
             if (parent != null)
             {
+                Assert.IsNotNull(parent.children); 
+
                 node n = new node(null) { type = type, token = token };
                 n.parent = this.parent;
 
@@ -815,6 +881,33 @@ namespace NSS.Blast.Compiler
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// insert a node as new parent to this node => before: Parent.Child, after: Parent.NewNode.Child
+        /// </summary>
+        /// <param name="node">the node to insert/replace as a new parent</param>
+        public node InsertParent(node node)
+        {
+            Assert.IsNotNull(node);
+            Assert.IsNotNull(this.parent);
+            Assert.IsNotNull(this.parent.children);
+            Assert.IsNotNull(node.children);
+
+            node.parent = this.parent; 
+            node.children.Add(this);
+
+            this.parent = node;
+            int index = node.parent.children.IndexOf(this);
+
+            Assert.IsTrue(index >= 0);
+            node.parent.children[index] = node;
+
+            node.is_vector = this.is_vector;
+            node.vector_size = this.vector_size;
+            node.is_constant = this.is_constant;
+
+            return node; 
         }
 
         /// <summary>
