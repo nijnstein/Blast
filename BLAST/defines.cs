@@ -5,13 +5,6 @@ using Unity.Mathematics;
 namespace NSS.Blast
 {
 
-    public enum BlastLanguageVersion : int
-    {
-        None = 0,
-        BS1 = 1,
-        HPC = 2
-    }
-
     public enum BlastVectorSizes : byte
     {
         float1 = 1,
@@ -22,15 +15,17 @@ namespace NSS.Blast
 
     public enum BlastVectorTypes : byte
     {
-        v1 = 0, 
-        v2 = 1, 
-        v3 = 2, 
+        v1 = 0,
+        v2 = 1,
+        v3 = 2,
         v4 = 3,
         v3x2 = 4,
         v3x3 = 5,
         v3x4 = 6,
         v4x4 = 7
     }
+
+
 
     public enum BlastPackageCapacities : int
     {
@@ -63,26 +58,13 @@ namespace NSS.Blast
         /// </summary>
         /// 
         Float,
-        /// <summary>
-        /// ID or INDEX -> int bitpattern encoded in float type 
-        /// </summary>
-        ID,
-        /// <summary>
-        /// just 1 or 0 for true and false 
-        /// </summary>
-        Boolean
 
+        /// <summary>
+        /// ID or INDEX
+        /// </summary>
+        ID
     }
    
-
-
-    public enum BlastEngineSystemConstant : int
-    {
-        Time = 256 + extended_script_constant.time,
-        DeltaTime = 256 + extended_script_constant.deltatime,
-        FixedDeltaTime = 256 + extended_script_constant.fixeddeltatime,
-        FrameCount = 256 + extended_script_constant.framecount
-    }
 
 
 }

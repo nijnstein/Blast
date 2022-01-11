@@ -108,8 +108,6 @@ namespace BlastTestConsole
             try
             {
                 blast = Blast.Create(Allocator.Persistent);
-                blast.SyncConstants(); 
-
                 Assert.True(blast.IsCreated);
             }
             finally
@@ -129,11 +127,7 @@ namespace BlastTestConsole
             Blast blast = Blast.Create(Allocator.Persistent);
             BlastScript script = BlastScript.FromText(code);
 
-            var options = new BlastCompilerOptions();
-            options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
+            var options = new BlastCompilerOptions(64);
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -157,10 +151,6 @@ b = 1 + a;
             BlastScript script = BlastScript.FromText(code);
 
             var options = new BlastCompilerOptions();
-            options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -169,7 +159,6 @@ b = 1 + a;
 
             if (res.CanValidate)
             {
-                blast.SyncConstants();
                 validated = BlastCompiler.Validate(res, blast.Engine);
             }
 

@@ -1,13 +1,20 @@
 ﻿using NSS.Blast.Cache;
+#if NOT_USING_UNITY
+using NSS.Blast.Standalone;
+#else
+using UnityEngine; 
+#endif 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace NSS.Blast.Reflection
+namespace NSS.Blast.Register
 {
-
+    /// <summary>
+    /// provides utilities for finding and loading compile-time blast scripts and hpc jobs
+    /// </summary>
     public static class BlastReflect
     {
         static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
@@ -47,7 +54,7 @@ namespace NSS.Blast.Reflection
             }
             catch (Exception ex)
             {
-                Standalone.Debug.LogError("BlastReflect.FindCompileTimeBlastScripts: failed to enumerate blast script to pre-compile: " + ex.ToString());
+                Debug.LogError("BlastReflect.FindCompileTimeBlastScripts: failed to enumerate blast script to pre-compile: " + ex.ToString());
                 return null;
             }
         }

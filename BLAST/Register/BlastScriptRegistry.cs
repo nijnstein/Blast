@@ -27,7 +27,7 @@ namespace NSS.Blast.Register
         {
             EnsureInitialized(); 
 
-            List<CompileTimeBlastScript> cts = Reflection.BlastReflect.FindCompileTimeBlastScripts();
+            List<CompileTimeBlastScript> cts = BlastReflect.FindCompileTimeBlastScripts();
             if (cts != null)
             {
                 foreach (CompileTimeBlastScript bs in cts)

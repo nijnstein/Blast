@@ -92,6 +92,25 @@ namespace NSS.Blast
         /// </summary>
         public static BlastCompilerOptions Default => new BlastCompilerOptions();
 
+
+        /// <summary>
+        /// initialize default options with given stacksize 
+        /// </summary>
+        /// <param name="stack_size"></param>
+        public BlastCompilerOptions(int stack_size)
+        {
+            DefaultStackSize = stack_size;
+            EstimateStackSize = false; 
+        }
+
+        /// <summary>
+        /// initialize with default options 
+        /// </summary>
+        public BlastCompilerOptions()
+        {
+        }
+
+
         /// <summary>
         /// add a compiler define 
         /// </summary>

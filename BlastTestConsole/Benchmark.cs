@@ -51,7 +51,6 @@ public class Program
         Console.Write($"> Benchmark: {name.ToUpper()} => {code}".PadRight(110));
 
         Blast blast = Blast.Create(Unity.Collections.Allocator.Persistent);
-        blast.SyncConstants();
 
         BlastScript script = BlastScript.FromText(code);
 

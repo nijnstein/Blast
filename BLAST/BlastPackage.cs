@@ -58,8 +58,8 @@ namespace NSS.Blast
         //------------------------- data -----------------------------------
         public BlastPackageMode package_mode;
         public byte allocator;
-        public byte unused_padding_1;
-        public byte unused_padding_2;
+        public byte reserved_1;   // => language version 
+        public byte reserved_2;
 
         /// <summary>
         /// code size in bytes 
@@ -94,7 +94,7 @@ namespace NSS.Blast
 
 
     /// <summary>
-    /// Blast Package 
+    /// Blast Package as executed by the interpretor  
     /// - starts with the header struct: BlastPackageInfo
     /// - contains code pointer and offsets 
     /// - including header should be exactly 32 bytes large 
@@ -331,6 +331,10 @@ namespace NSS.Blast
     public class BlastScriptPackage
     {
         public IntPtr PackagePtr;
+
+        /// <summary>
+        /// the actual native package 
+        /// </summary>
         public unsafe BlastPackage* BlastPackage => (BlastPackage*)PackagePtr;
 
         /// <summary>
@@ -422,9 +426,9 @@ namespace NSS.Blast
 
                     StringBuilder sb = new StringBuilder();
                     sb.Append($"Code Segment: { BlastPackage->info.code_size} bytes\n\n");
-                    sb.Append(BlastUtils.GetByteCodeByteText(code, BlastPackage->info.code_size, width));
+                    sb.Append(Blast.GetByteCodeByteText(code, BlastPackage->info.code_size, width));
                     sb.Append("\n");
-                    sb.Append(BlastUtils.GetReadableByteCode(code, BlastPackage->info.code_size));
+                    sb.Append(Blast.GetReadableByteCode(code, BlastPackage->info.code_size));
                     sb.Append("\n");
 
                     //TextReader tr = new StringReader(Blast.GetHumanReadableCode(byte* code, int size));

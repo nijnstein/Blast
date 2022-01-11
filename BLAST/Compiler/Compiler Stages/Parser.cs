@@ -1043,7 +1043,6 @@ namespace NSS.Blast.Compiler.Stage
             bool has_indexer = false;
             
             int vector_size = 1;
-            bool is_vector = false; 
 
             string value = data.Tokens[idx].Item2;
             idx++;

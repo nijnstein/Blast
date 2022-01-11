@@ -1,4 +1,6 @@
-﻿namespace NSS.Blast.Compiler.Stage
+﻿using NSS.Blast.Compiler;
+
+namespace NSS.Blast
 {
 
     /// <summary>

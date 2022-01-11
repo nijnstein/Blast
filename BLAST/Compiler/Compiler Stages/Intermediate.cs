@@ -117,8 +117,8 @@ namespace NSS.Blast.Compiler
                     package_mode = BlastPackageMode.Compiler,
                     package_size = (ushort)(code_capacity + data_capacity),
                     stack_size = (ushort)((data_capacity / 4) - data_count),   // todo verify this?? todo
-                    unused_padding_1 = 0,
-                    unused_padding_2 = 0
+                    reserved_1 = 0,
+                    reserved_2 = 0
                 },
             };
 

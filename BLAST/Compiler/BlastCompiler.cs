@@ -194,7 +194,6 @@ namespace NSS.Blast.Compiler
         static bool validate(CompilationData result)
         {
             Blast blast = Blast.Create(Unity.Collections.Allocator.Persistent);
-            blast.SyncConstants();
 
             bool b_result = Validate(result, blast.Engine);
 

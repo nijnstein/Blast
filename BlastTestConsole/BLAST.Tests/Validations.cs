@@ -60,7 +60,6 @@ namespace BlastTestConsole
 
                 if (res.CanValidate)
                 {
-                    blast.SyncConstants();
                     validated = BlastCompiler.Validate(res, blast.Engine);
                 }
 

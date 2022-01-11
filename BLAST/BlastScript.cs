@@ -13,19 +13,37 @@ namespace NSS.Blast
 {
 
     /// <summary>
-    /// A script, code with name and id 
+    /// the different compiler outputs / language targets 
+    /// </summary>
+    public enum BlastLanguageVersion : int
+    {
+        None = 0,
+
+        /// <summary>
+        /// BLAST Script, default script / bytecode 
+        /// </summary>
+        BS1 = 1,
+
+        /// <summary>
+        /// BLAST Single Script Multiple Data
+        /// </summary>
+        BSSMD1 = 2,
+
+        /// <summary>
+        /// Burstable C# code packed in functions for burst to compile at designtime
+        /// </summary>
+        HPC = 3
+    }
+
+    /// <summary>
+    /// A BLAST Script
     /// </summary>
     public class BlastScript
     {
-        private bool changed = false;
-        public bool HasChanged { get { return changed; } }
-
-        public BlastLanguageVersion LanguageVersion = BlastLanguageVersion.BS1;
-        public int Id;
-        public string Name;
-
-        private string _code;
-        public virtual string Code { get { return _code; } }
+        public BlastLanguageVersion LanguageVersion { get; internal set; } = BlastLanguageVersion.BS1; 
+        public int Id { get; internal set; }
+        public string Name { get; internal set; }
+        public string Code { get; internal set; }
 
  
         /// <summary>
@@ -39,9 +57,10 @@ namespace NSS.Blast
         {
             return new BlastScript()
             {
+                LanguageVersion = BlastLanguageVersion.BS1, 
                 Id = id,
                 Name = string.IsNullOrWhiteSpace(name) ? string.Empty : name,
-                _code = code
+                Code = code
             };
         }
 
@@ -74,14 +93,6 @@ namespace NSS.Blast
             return $"script: id: {Id}, name: {Name}";
         }
 
-        /// <summary>
-        /// update script code and set the changed flag 
-        /// </summary>
-        public void UpdateCode(string code)
-        {                               
-            _code = code ?? string.Empty; // prevent nulls
-            changed = true; 
-        }
     }
 
 }
