@@ -6,8 +6,7 @@ namespace NSS.Blast.Compiler.Stage
 
     /// <summary>
     /// Parameter Analysis
-    /// !! all identifiers have been defined by the parser, any undefined should have raised an error 
-    /// - determine parameter types (float, vectorsize) (todo future: bool, int, matrix)
+    /// - determine parameter types (float, vectorsize) 
     /// - confirm inputs used (warnings if not) and outputs set (not set = error)
     /// - validate correct parameter usage
     /// </summary>

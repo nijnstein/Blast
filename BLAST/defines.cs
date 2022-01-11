@@ -46,25 +46,5 @@ namespace NSS.Blast
         c960 = 960
     }
 
-    public enum SimulationFunctionHandlerReturnType
-    {
-        /// <summary>
-        /// returns nothing 
-        /// </summary>  
-        None,
-
-        /// <summary>
-        /// returns some float
-        /// </summary>
-        /// 
-        Float,
-
-        /// <summary>
-        /// ID or INDEX
-        /// </summary>
-        ID
-    }
-   
-
 
 }

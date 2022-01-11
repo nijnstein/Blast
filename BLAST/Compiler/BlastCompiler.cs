@@ -10,9 +10,8 @@ using NSS.Blast.Compiler.Stage;
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
-using UnityEngine;
+using NSS.Blast.Standalone;
 
 namespace NSS.Blast.Compiler
 {
@@ -244,15 +243,14 @@ namespace NSS.Blast.Compiler
                         continue;
                     }
 
-                    // determine vector size...... from get_datasize 
-                    f_a = result.Executable.get_float(result.Offsets[v_a.Id]);
+                    f_a = result.Executable.GetDataSegmentElement(result.Offsets[v_a.Id]);
 
                     // b can be a float or a parameter 
                     if (float.IsNaN(f_b = node.AsFloat(b)))
                     {
                         // try to get as parameter 
                         var v_b = result.GetVariable(b);
-                        f_b = result.Executable.get_float(result.Offsets[v_b.Id]);
+                        f_b = result.Executable.GetDataSegmentElement(result.Offsets[v_b.Id]);
                     }
 
                     // compare validations using the epsilon set in compiler options 
@@ -583,7 +581,7 @@ namespace NSS.Blast.Compiler
                 case BlastPackageMode.CodeDataStack:
                 case BlastPackageMode.Code:
                     {
-                        BlastPackage* package_ptr = (BlastPackage*)UnsafeUtility.Malloc(32 + (int)package_info.package_size, 4, options.PackageAllocator);
+                        BlastPackage* package_ptr = (BlastPackage*)UnsafeUtils.Malloc(32 + (int)package_info.package_size, 4, options.PackageAllocator);
                         Package(result, package_info, (byte*)package_ptr);
 
 #if DEBUG
@@ -602,6 +600,30 @@ namespace NSS.Blast.Compiler
 
         #endregion
 
+        #region compile 
+
+        static public CompilationData Compile(Blast blast, string code, BlastCompilerOptions options = null)
+        {
+            return Compile(blast, BlastScript.FromText(code), options);
+        }
+
+        static public CompilationData Compile(string code, BlastCompilerOptions options = null)
+        {
+            return Compile(BlastScript.FromText(code), options);
+        }
+
+        static public CompilationData Compile(BlastScript script, BlastCompilerOptions options = null)
+        {
+            Blast blast = Blast.Create(Allocator.Temp);
+            try
+            {
+                return Compile(blast, script, options);
+            }
+            finally
+            {
+                blast.Destroy();
+            }
+        }       
 
         static public CompilationData Compile(Blast blast, BlastScript script, BlastCompilerOptions options = null)
         {
@@ -737,6 +759,8 @@ namespace NSS.Blast.Compiler
                 return null;
             }
         }
+
+        #endregion 
 
     }
 

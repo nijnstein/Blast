@@ -16,7 +16,7 @@ namespace NSS.Blast.Standalone
             System.Runtime.InteropServices.Marshal.FreeHGlobal((IntPtr)memory); 
         }
 
-        unsafe public void MemCpy(void* destination, void* source, long size)
+        unsafe public static void MemCpy(void* destination, void* source, long size)
         {
             byte* d = (byte*)destination;
             byte* s = (byte*)source; 
@@ -26,7 +26,7 @@ namespace NSS.Blast.Standalone
             }
         }
 
-        unsafe public void MemCpyReplicate(void* destination, void* source, int size, int count)
+        unsafe public static void MemCpyReplicate(void* destination, void* source, int size, int count)
         {
             byte* d = (byte*)destination;
             byte* s = (byte*)source;

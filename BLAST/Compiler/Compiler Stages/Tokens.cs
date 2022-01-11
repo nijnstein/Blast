@@ -39,13 +39,7 @@
         push,         // stack functions
         pop,
 
-        undefined_pop2,     // UNDEFINED ???
-        undefined_pop3,     // UNDEFINED ???
-        undefined_pop4,     // UNDEFINED ???
-
         pushv,
-
-        popv,
 
         peek,
         peekv,        // == 31   
@@ -94,35 +88,33 @@
         cosh,
         sinh,
 
-        undefined7, //distance,
-        undefined8,// distancesq,
-        undefined9,// length,
-        undefined10, //lengthsq,
-
         degrees,
         radians,
 
         sqrt,
-        rsqrt,
 
-        pow,
 
+        undefined_rsqrt,
+        undefined_pow,
+
+        undefined_232,
         undefined3,
         undefined4,
-
-
-
-
-
-
-
-
-        undefined1,          
-        undefined2,         
+        
+        undefined7, //distance,
+        undefined8,// distancesq,
+        undefined9,// length,
+        undefined10, //lengthsq,
+        undefined_pop2,     // UNDEFINED ???
+        
+        undefined_pop3,     // UNDEFINED ???
+        undefined_pop4,     // UNDEFINED ???
+        undefined3431,
+        undefined1,
 
         //------------------------
         // constant math values start here at PI
-        pi,
+        pi,       // = 77
         inv_pi,
 
         // The difference between 1.0f and the next representable f32/single precision number.
@@ -188,7 +180,7 @@
         inv_value_360 = 127,
 
         //------------------------
-        id = 128,          // parameter id's start from here up until 254
+        id = 128,             // parameter id's start from here up until 254
 
         ex_op = 255           // extend into a multi token instruction  
     }
@@ -205,23 +197,15 @@
         cross,
         dot,
 
+        rsqrt, 
+        pow,
+
         debugstack = 252,
         debug = 253,
         call = 254, // call external
         ex = 255 // extend further if ever needed. 
     }
 
-    /// <summary>
-    /// todo        requires updates in pop or value... 
-    /// </summary>
-    public enum extended_script_constant : byte
-    {
-        none = 0,
-        fixeddeltatime = 1,
-        time = 2,
-        framecount = 3,
-        deltatime = 4
-    }
 
     public enum BlastScriptToken : byte
     {

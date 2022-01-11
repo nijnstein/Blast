@@ -182,7 +182,7 @@ namespace NSS.Blast.Compiler.Stage
                     }
                 }
             }
-            return (int)(cdata.IsOK ? BlastError.success : BlastError.error);
+            return (int)(cdata.IsOK ? BlastError.success : BlastError.compile_packaging_error);
         }
 
         /// <summary>
@@ -197,13 +197,6 @@ namespace NSS.Blast.Compiler.Stage
             // package & return 
             CompilationData cdata = (CompilationData)data; 
             BlastError res = (BlastError)PackageIntermediate(cdata, cdata.code);
-
-            if(res == BlastError.success)
-            {
-                // if packaged into intermediate 
-
-            }
-
 
             return (int)res; 
         }

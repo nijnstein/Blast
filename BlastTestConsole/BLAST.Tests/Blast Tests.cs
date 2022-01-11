@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using Unity.Collections;
 using Xunit;
+using NSS.Blast.Standalone; 
 
 namespace BlastTestConsole
 {
@@ -136,8 +137,30 @@ namespace BlastTestConsole
 
             Xunit.Assert.True(res.Success);
         }
-      
-           
+
+        [Theory]
+        [InlineData("value = random(1, 2);")]
+        [InlineData("value = random(10);")]
+        [InlineData("value = random(100)")]
+        [InlineData("value = random(-100, -90);")]
+        public void Blast_Random(string code)
+        {
+            Assert.True(Blast.Execute(code) == 0);
+        }
+
+        [Theory]
+        [InlineData("value = random(1, 2);")]
+        public void Blast_Package(string code)
+        {
+
+            ///  THE PACKEGER IS COMPLETELY BROKEN :=)
+
+            BlastScriptPackage package = Blast.Package(code);
+            Assert.True(Blast.Execute(package) == 0); 
+        }
+
+
+
         [Fact]
         public void Blast_Validate()
         {

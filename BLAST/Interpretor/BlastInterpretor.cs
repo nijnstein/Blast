@@ -4458,9 +4458,7 @@ namespace NSS.Blast.Interpretor
                     else
                     {
                         // if the previous op also gave back a value 
-                        if (prev_op_is_value ||
-                            prev_op == (byte)script_op.pop ||
-                            prev_op == (byte)script_op.popv)
+                        if (prev_op_is_value || prev_op == (byte)script_op.pop)
                         {
                             // we grow vector 
                             switch ((script_op)op)
@@ -4477,9 +4475,6 @@ namespace NSS.Blast.Interpretor
                                     pop(out f1);
                                     grow_vector = true;
                                     break;
-
-                                case script_op.popv:
-                                    return (int)BlastError.stack_error_variable_pop_not_supported;
 
                                 default:
                                     // reset vector on all other operations 
@@ -4605,8 +4600,8 @@ namespace NSS.Blast.Interpretor
                                 case script_op.begin:
                                     ++code_pointer;
                                     // should not reach here
-#if LOG_ERRORS
-                                    Standalone.Debug.LogWarning("should not be nesting compounds... compiler did not do its job wel");
+#if DEBUG
+                                    // Debug.LogWarning("should not be nesting compounds... compiler did not do its job wel");
 #endif
                                     f4_result = get_compound_result(ref code_pointer, ref vector_size);
                                     break;
@@ -4624,7 +4619,6 @@ namespace NSS.Blast.Interpretor
                                 case script_op.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -4633,7 +4627,6 @@ namespace NSS.Blast.Interpretor
                                 case script_op.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.pow: get_pow_result(ref code_pointer, ref vector_size, out f4_result); break;
 
                                 // math utils 
                                 case script_op.select: get_select_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -4648,18 +4641,13 @@ namespace NSS.Blast.Interpretor
                                 // mula family
                                 case script_op.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); max_vector_size = vector_size; break;
 
-
-                                                            
                                 ///
                                 ///  FROM HERE NOT CONVERTED YET TO METADATA USE
                                 /// 
 
-
                                 case script_op.random:
                                     get_random_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
                                     break;
-
-
 
                                 case script_op.adda:
                                     f4_result = get_adda_result(ref code_pointer, ref minus, ref vector_size);
@@ -4725,6 +4713,8 @@ namespace NSS.Blast.Interpretor
                                             case extended_script_op.exp: get_exp_result(ref code_pointer, ref vector_size, out f4_result); break;
                                             case extended_script_op.dot: get_dot_result(ref code_pointer, ref vector_size, out f4_result); break;
                                             case extended_script_op.log2: get_log2_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_script_op.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_script_op.pow: get_pow_result(ref code_pointer, ref vector_size, out f4_result); break;
 #if DEBUG
                                             default:
                                                 Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
@@ -4918,58 +4908,6 @@ namespace NSS.Blast.Interpretor
                                     }
                                     break;
                             }
-
-                            // 
-                            // handle results according to vector size 
-                            // max vector size is set before settings vector_size and will be update NEXT loop
-                            // 
-                            // BUG EXAMPLE: 
-                            // - a = 3 3 3 x 4 4 4 x 1.2 1.2 1.2 
-                            // 
-                            // - growing the vector goes wrong after the first 'x' because it then reads the 4 and multiplies that with (3 3 3) resulting in (12 12 12)
-                            // 
-                            // - we should grow the vector instead if the next operation is also a value and not an opration or the end 
-                            // 
-                            //  after this it now multiplies 3 * 1.2 instead of 12 * 1.2 after second multiply op 
-                                         
-                          /*  bool handle = max_vector_size == 1 || (current_operation != script_op.nop && !script_op_is_value(code[code_pointer + 1]));
-
-                            if (!handle)
-                            {
-                                // grow if no operation is enqued, otherwise we keep growing in result 
-                                if (current_operation == script_op.nop)
-                                {
-                                    switch ((BlastVectorSizes)vector_size)
-                                    {
-                                        case BlastVectorSizes.float1:
-                                            // setting vector[n] from a vector[1] 
-                                            switch ((BlastVectorSizes)max_vector_size)
-                                            {
-                                                case BlastVectorSizes.float1: f1 = f4_result.x; break;
-                                                default: f4 = f4_result.x; break;
-                                            }
-                                            break;
-
-                                        // could add debug check only (max_vector_size == 1) 
-                                        case BlastVectorSizes.float2: f4 = new float4(f4_result.xy, 0, 0); break;
-                                        case BlastVectorSizes.float3: f4 = new float4(f4_result.xyz, 0); break;
-                                        case BlastVectorSizes.float4: f4 = f4_result; break;
-                                        default:
-#if DEBUG
-                                            // these will be in log because of growing a vector from a compound of unknown sizes  
-                                            Debug.LogWarning($"execute: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
-#endif
-                                            break;
-                                    }
-                                }
-                                else  
-                                {
-                                   if (max_vector_size <= 1 || !prev_op_is_value) f1 = f4.x; 
-                                    //  if(!prev_op_is_value) f1 = f4.x; 
-                                }
-                                 
-                            }
-                            else */
                             {
 
                                 // after an operation with growvector we should stack value
@@ -5154,50 +5092,6 @@ namespace NSS.Blast.Interpretor
                         }
 
                     case script_op.nop:
-                        break;
-
-                    case script_op.popv:
-                        switch (code[code_pointer++])
-                        {
-                            case 1:
-                                pop(out f4_register.x);
-                                fdata[code[code_pointer++] - opt_id] = f4_register.x;
-                                break;
-                            case 2:
-                                pop(out f4_register.y);
-                                pop(out f4_register.x);
-                                fdata[code[code_pointer] - opt_id] = f4_register.x;
-                                fdata[code[code_pointer] - opt_id + 1] = f4_register.y;
-                                code_pointer++;
-                                break;
-                            case 3:
-                                pop(out f4_register.z);
-                                pop(out f4_register.y);
-                                pop(out f4_register.x);
-                                fdata[code[code_pointer] - opt_id] = f4_register.x;
-                                fdata[code[code_pointer] - opt_id + 1] = f4_register.y;
-                                fdata[code[code_pointer] - opt_id + 2] = f4_register.z;
-                                code_pointer++;
-                                break;
-                            case 4:
-                                pop(out f4_register.w);
-                                pop(out f4_register.z);
-                                pop(out f4_register.y);
-                                pop(out f4_register.x);
-                                fdata[code[code_pointer] - opt_id] = f4_register.x;
-                                fdata[code[code_pointer] - opt_id + 1] = f4_register.y;
-                                fdata[code[code_pointer] - opt_id + 2] = f4_register.z;
-                                fdata[code[code_pointer] - opt_id + 3] = f4_register.w;
-                                code_pointer++;
-                                break;
-                            default:
-
-#if LOG_ERRORS
-                            Standalone.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack pop");
-#endif
-                                // could use set_datasize for var size vectors 
-                                break;
-                        }
                         break;
 
                     case script_op.push:

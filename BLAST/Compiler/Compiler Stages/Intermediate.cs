@@ -24,7 +24,6 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public int Id;
 
-
         /// <summary>
         /// size of code in bytes
         /// </summary>
@@ -45,10 +44,6 @@ namespace NSS.Blast.Compiler
         /// maximum reached stack size in floats  
         /// </summary>
         public byte max_stack_size;
-
-        public byte padding;
-
-        // -------------------- 16 byte boundary here --------------------
 
         /// <summary>
         /// byte code compiled from script
@@ -74,15 +69,20 @@ namespace NSS.Blast.Compiler
         public byte DataCount => data_count;
         public int DataByteSize => data_count * data_element_bytesize;
 
-
+        /// <summary>
+        /// read a float from the datasegement at given element index
+        /// </summary>
+        /// <param name="data_segment_index">element index into data segment</param>
+        /// <returns>the data </returns>
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public float get_float(in int variable_index)
+        public float GetDataSegmentElement(in int data_segment_index)
         {
-            return data[variable_index];
+            return data[data_segment_index];
         }
 
-        public void SetMetaData(in BlastVariableDataType datatype, in byte size, in byte offset)
+
+        internal void SetMetaData(in BlastVariableDataType datatype, in byte size, in byte offset)
         {
             fixed (byte* metadata = this.metadata)
             {
@@ -90,6 +90,9 @@ namespace NSS.Blast.Compiler
             }
         }
 
+        /// <summary>
+        /// validate intermediate 
+        /// </summary>
         public int Validate(in IntPtr blast)
         {
             return Execute(in blast, true); 
@@ -158,5 +161,34 @@ namespace NSS.Blast.Compiler
 
             return (int)BlastError.success;
         }
+
+        /// <summary>
+        /// package code
+        /// </summary>
+        /// <param name="code_segment"></param>
+        public void PackageInto(ref BlastCodeSegment code_segment)
+        {
+
+        }
+
+        /// <summary>
+        /// package metadata 
+        /// </summary>
+        /// <param name="metadata_segment"></param>
+        public void PackageInto(ref BlastMetaDataSegment metadata_segment)
+        {
+
+        }
+
+        /// <summary>
+        /// package data/stack
+        /// </summary>
+        /// <param name="data_segment"></param>
+        public void PackageInto(ref BlastDataStackSegment data_segment)
+        {
+
+        }
+
+
     }
 }

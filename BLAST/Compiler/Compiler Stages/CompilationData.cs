@@ -310,8 +310,6 @@ namespace NSS.Blast.Compiler
                         case script_op.equals: sb.Append("= "); break;
                         case script_op.not_equals: sb.Append("!= "); break;
                         case script_op.fma: sb.Append("fma "); break;
-                        case script_op.undefined1: sb.Append("UNDEFINED1 "); break;
-                        case script_op.undefined2: sb.Append("UNDEFINED2 "); break;
                         case script_op.adda: sb.Append("adda "); break;
                         case script_op.mula: sb.Append("mula "); break;
                         case script_op.diva: sb.Append("diva "); break;
@@ -326,7 +324,6 @@ namespace NSS.Blast.Compiler
                         case script_op.pushf: sb.Append("push function "); break;
                         case script_op.pushv: sb.Append("push vector "); break;
                         case script_op.pop: sb.Append("pop "); break;
-                        case script_op.popv: sb.Append("popv "); break;
 
                         case script_op.abs: sb.Append("abs "); break;
 
@@ -345,9 +342,6 @@ namespace NSS.Blast.Compiler
                         case script_op.saturate: sb.Append("saturate "); break;
                         case script_op.clamp: sb.Append("clamp "); break;
 
-                        case script_op.sqrt: sb.Append("sqrt "); break;
-                        case script_op.rsqrt: sb.Append("rsqrt "); break;
-
                         case script_op.ceil: sb.Append("ceil "); break;
                         case script_op.floor: sb.Append("floor "); break;
                         case script_op.frac: sb.Append("frac "); break;
@@ -363,6 +357,7 @@ namespace NSS.Blast.Compiler
                         case script_op.radians: sb.Append("radians "); break;
 
                         case script_op.ret: sb.Append("return "); break;
+                        case script_op.sqrt: sb.Append("sqrt "); break;
 
                         case script_op.value_0: sb.Append("0 "); break;
                         case script_op.value_1: sb.Append("1 "); break;
@@ -423,6 +418,9 @@ namespace NSS.Blast.Compiler
                                 case extended_script_op.dot: sb.Append("dot "); break;
                                 case extended_script_op.debug: sb.Append("debug "); break;
                                 case extended_script_op.debugstack: sb.Append("debugstack "); break;
+                                case extended_script_op.rsqrt: sb.Append("rsqrt "); break;
+                                case extended_script_op.pow: sb.Append("pow "); break;
+
                                 case extended_script_op.call:
                                     sb.Append("call ");
                                     // next 4 bytes are the function id 

@@ -13,6 +13,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using System.Text;
 using Unity.Burst;
+using NSS.Blast.Interpretor;
 
 #if !NOT_USING_UNITY
 using Unity.Entities;
@@ -144,6 +145,9 @@ namespace NSS.Blast
             return blast;
         }
 
+        /// <summary>
+        /// Destroy blast handler 
+        /// </summary>
         public unsafe void Destroy()
         {
             if (data != null)
@@ -161,6 +165,105 @@ namespace NSS.Blast
             }
             is_created = false;
         }
+
+        #endregion
+
+        #region Execute 
+
+        [BurstDiscard]
+        public static int Execute(string code, int stack_size = 64)
+        {
+            Blast blast = Blast.Create(Allocator.Temp);
+            try
+            {
+                BlastIntermediate blast_im = BlastCompiler.Compile(blast, code, new BlastCompilerOptions(stack_size)).Executable;
+                return blast_im.Execute(blast.Engine);
+            }
+            finally
+            {
+                blast.Destroy(); 
+            }
+        }
+
+        [BurstDiscard]
+        public static int Execute(BlastScriptPackage package)
+        {
+            unsafe
+            {
+                Blast blast = Blast.Create(Allocator.Temp);
+                try
+                {
+                    BlastInterpretor blaster = default;
+                    blaster.SetPackage(package.BlastPackage);
+                    return blaster.Execute(blast.Engine); 
+                }
+                finally
+                {
+                    blast.Destroy();
+                }
+            }
+        }
+
+        [BurstDiscard]
+        public int Execute(string code)
+        {
+            return BlastCompiler
+                .Compile(this, code, new BlastCompilerOptions(64))
+                .Executable
+                .Execute(Engine); 
+        }
+
+        /// <summary>
+        /// execute package in given environment with attached caller data
+        /// </summary>
+        /// <param name="package">the package to execute</param>
+        /// <param name="environment">optional environment data [global-data]</param>
+        /// <param name="caller">optional callerdata [threadonly]</param>
+        /// <returns>exitcode 0 on success</returns>
+        [BurstDiscard]
+        public int Execute(BlastScriptPackage package, IntPtr environment, IntPtr caller)
+        {
+            BlastInterpretor blaster = default;
+            blaster.SetPackage(package.BlastPackage);
+            return blaster.Execute(Engine, environment, caller);
+        }
+
+
+        #endregion
+
+        #region Package
+
+        [BurstDiscard]
+        public static BlastScriptPackage Package(BlastScript script)
+        {
+            Blast blast = Blast.Create(Allocator.Temp);
+            try
+            {
+                return blast.Package(script);
+            }
+            finally
+            {
+                blast.Destroy();
+            }
+        }
+        [BurstDiscard]
+        public static BlastScriptPackage Package(string code)
+        {
+            return Blast.Package(BlastScript.FromText(code)); 
+        }
+
+        [BurstDiscard]
+        public BlastScriptPackage Package(string code, BlastCompilerOptions options = null)
+        {
+            return BlastCompiler.CompilePackage(this, BlastScript.FromText(code), options);
+        }
+
+        [BurstDiscard]
+        public BlastScriptPackage Package(BlastScript script, BlastCompilerOptions options = null)
+        {
+            return BlastCompiler.CompilePackage(this, script, options);
+        }
+
         #endregion
 
         #region Constants 
@@ -172,6 +275,12 @@ namespace NSS.Blast
             // structs dont carry arround function tables so this seems ok... 
             yield return script_op.pi;
             yield return script_op.inv_pi;
+            yield return script_op.epsilon;
+            yield return script_op.infinity;
+            yield return script_op.negative_infinity;
+            yield return script_op.nan;
+            yield return script_op.min_value;
+
             yield return script_op.value_0;
             yield return script_op.value_1;
             yield return script_op.value_2;
@@ -227,7 +336,7 @@ namespace NSS.Blast
                 //case script_op.time: return Time.time;
                 //case script_op.framecount: return Time.frameCount;
                 //case script_op.fixeddeltatime: return Time.fixedDeltaTime; 
-
+                // The difference between 1.0f and the next representable f32/single precision number.
                 case script_op.pi: return math.PI;
                 case script_op.inv_pi: return 1 / math.PI;
                 case script_op.epsilon: return math.EPSILON;
@@ -304,6 +413,9 @@ namespace NSS.Blast
         /// <returns>nop on no match, nan of not a string match and no float, operation on match</returns>
         public script_op GetConstantValueOperation(string value, float constant_epsilon = 0.0001f)
         {
+            // prevent matching to epsilon and/or min flt values (as they are very close to 0) 
+            if (value == "0") return script_op.value_0; 
+
             // constant names should have been done earlier. check anyway
             script_op constant_op = IsSystemConstant(value);
             if (constant_op != script_op.nop)
@@ -453,7 +565,7 @@ namespace NSS.Blast
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Seed, "seed", 1, 1, 0, 0, script_op.seed),
 
             new ScriptFunctionDefinition(7, "sqrt", 1, 1, 0, 0, script_op.sqrt),
-            new ScriptFunctionDefinition(8, "rsqrt", 1, 1, 0, 0, script_op.rsqrt),
+            new ScriptFunctionDefinition(8, "rsqrt", 1, 1, 0, 0, extended_script_op.rsqrt),
 
             new ScriptFunctionDefinition(9, "lerp", 3, 3, 0, 0, script_op.lerp, "a", "b", "t"),
             new ScriptFunctionDefinition(10, "slerp", 3, 3, 4, 4, script_op.slerp, "a", "b", "t"),
@@ -482,7 +594,7 @@ namespace NSS.Blast
 
             new ScriptFunctionDefinition(46, "fma", 3, 3, 0, 0, script_op.fma, "m1", "m2", "a1"),
 
-            new ScriptFunctionDefinition(33, "pow", 2, 2, 0, 0,script_op.pow, "a", "power"),
+            new ScriptFunctionDefinition(33, "pow", 2, 2, 0, 0, extended_script_op.pow, null, "a", "power"),
 
             // would be nice to have a parameter giving min and max vector size 
             new ScriptFunctionDefinition(32, "normalize", 1, 1, 0, 0, script_op.normalize, "a"),
@@ -579,7 +691,7 @@ namespace NSS.Blast
         }
 #endregion
 
-#region Compiletime Function Pointers 
+        #region Compiletime Function Pointers 
 
         static public List<ExternalFunctionCall> FunctionCalls = new List<ExternalFunctionCall>();
 
@@ -651,7 +763,7 @@ namespace NSS.Blast
         /// <param name="returns"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        static public int RegisterFunction(string name, SimulationFunctionHandlerReturnType returns, string[] parameters)
+        static public int RegisterFunction(string name, BlastVariableDataType returns, string[] parameters)
         {
             return RegisterFunction(default(NonGenericFunctionPointer), name, returns, parameters);
         }
@@ -685,7 +797,7 @@ namespace NSS.Blast
         /// <param name="returns"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        static public int RegisterFunction(NonGenericFunctionPointer fp, string name, SimulationFunctionHandlerReturnType returns, string[] parameters)
+        static public int RegisterFunction(NonGenericFunctionPointer fp, string name, BlastVariableDataType returns, string[] parameters)
         {
             Assert.IsNotNull(FunctionCalls);
 
@@ -726,7 +838,7 @@ namespace NSS.Blast
 
 #endregion
 
-#region Designtime CompileRegistry
+        #region Designtime CompileRegistry
 
         /// <summary>
         /// Enumerates all scripts known by blast 
@@ -767,7 +879,7 @@ namespace NSS.Blast
 #endif
 #endregion
 
-#region Runtime compilation of configuration into compiletime script for use next compilation
+        #region Runtime compilation of configuration into compiletime script for use next compilation
 
         static public bool CompileIntoRegistry(Blast blast, BlastScript script, string script_directory)
         {
@@ -803,7 +915,7 @@ namespace NSS.Blast
 
 #endregion
 
-#region HPC Jobs 
+        #region HPC Jobs 
         static Dictionary<int, IBlastHPCScriptJob> _hpc_jobs = null;
         public Dictionary<int, IBlastHPCScriptJob> HPCJobs
         {
@@ -913,16 +1025,11 @@ namespace NSS.Blast
                     case script_op.push: sb.Append("push "); break;
                     case script_op.pop: sb.Append("pop "); break;
                     case script_op.pushv: sb.Append("pushv "); break;
-                    case script_op.popv: sb.Append("popv "); break;
                     case script_op.peek: sb.Append("peek "); break;
                     case script_op.peekv: sb.Append("peekv "); break;
                     case script_op.pushf: sb.Append("pushf "); break;
 
                     case script_op.fma:
-                        break;
-                    case script_op.undefined1:
-                        break;
-                    case script_op.undefined2:
                         break;
                     case script_op.adda:
                         break;
@@ -986,11 +1093,6 @@ namespace NSS.Blast
                         break;
                     case script_op.sqrt:
                         break;
-                    case script_op.rsqrt:
-                        break;
-                    case script_op.pow:
-                        break;
-
 
                     case script_op.value_0: sb.Append("0 "); break;
                     case script_op.value_1: sb.Append("1 "); break;
@@ -1049,6 +1151,8 @@ namespace NSS.Blast
                             case extended_script_op.cross:
                             case extended_script_op.dot:
                             case extended_script_op.ex:
+                            case extended_script_op.rsqrt:
+                            case extended_script_op.pow:
                                 sb.Append($"{ex} ");
                                 break;
 
@@ -1071,7 +1175,6 @@ namespace NSS.Blast
         }
 
         #endregion 
-
 
         #region Execute Scripts (UNITY)
 #if !NOT_USING_UNITY
@@ -1259,7 +1362,7 @@ namespace NSS.Blast
 
 #endregion
 
-#region Bytecode Packages 
+        #region Bytecode Packages 
         static Dictionary<int, BlastScriptPackage> _bytecode_packages = null;
         public Dictionary<int, BlastScriptPackage> BytecodePackages
         {
@@ -1326,9 +1429,9 @@ namespace NSS.Blast
             return null;
         }
 
-#endregion
+     #endregion
 
-#region Runtime Registration/Compilation of scripts 
+        #region Runtime Registration/Compilation of scripts 
 
         static public int RegisterAndCompile(Blast blast, BlastScript script)
         {

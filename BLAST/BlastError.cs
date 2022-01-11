@@ -30,6 +30,8 @@
         error_too_many_parameters = -23,
         error_failed_to_translate_offset_into_index = -24,
         error_vector_size_not_supported = -25,
+        datasegment_size_larger_then_target = -26,
+        compile_packaging_error = -27,
     }
 
     public static class BlastErrorTranslator

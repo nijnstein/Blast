@@ -45,6 +45,7 @@ public class Program
 
         Benchmark1("lerp", "a = lerp((100 1 9 2), (200 1 99 32), (6.7 6.7 6.7 6.7));", n_runs);
 
+        Benchmark1("loop", "a = 1000; b = 0; while(b < 1000) ( a = a - 1; b = b + 1;);");
 
         Console.ReadKey();
     }
