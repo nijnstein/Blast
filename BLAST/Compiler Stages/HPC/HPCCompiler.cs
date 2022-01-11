@@ -118,8 +118,6 @@ namespace NSS.Blast.Compiler.Stage
                         break;
                     case script_op.lengthsq:
                         break;
-                    case script_op.dot:
-                        break;
                     case script_op.degrees:
                         break;
                     case script_op.radians:
@@ -128,15 +126,22 @@ namespace NSS.Blast.Compiler.Stage
                     case script_op.sqrt: return "math.sqrt";
                     case script_op.rsqrt: return "math.rsqrt"; 
                     case script_op.pow: return "math.pow"; 
-                    case script_op.exp: return "math.exp"; 
-                    case script_op.log2: return "math.log2"; 
 
                     case script_op.ex_op:
+                        switch(function.ExtendedScriptOp)
+                        {
+                            case extended_script_op.exp: return "math.exp";
+                            case extended_script_op.exp10: return "math.exp10";
+                            case extended_script_op.log10: return "math.log10";
+                            case extended_script_op.log2: return "math.log2";
+                            case extended_script_op.logn: return "math.logn";
+                            case extended_script_op.dot: return "math.dot";
+                            case extended_script_op.cross: return "math.cross"; 
+                        }
                         break;
                 }
             }
-            data.LogError("null function");
-            return string.Empty;
+            return "<unnamed function definition>";
         }
 
         /// <summary>

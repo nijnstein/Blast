@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Mathematics;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -244,13 +245,84 @@ namespace NSS.Blast.Compiler.Stage
                                                 return false;
                                             }
 
-                                            foreach (node ast_child in ast_param.children)
+                                            for(int i_param_child = 0; i_param_child < ast_param.ChildCount; i_param_child++)
                                             {
-                                                // compile each child as a simple param (variable or constant or pop)
-                                                if (!CompileParameter(data, ast_child, code, true))
-                                                {      
-                                                    data.LogError($"CompileFunction: failed to compile {ast_child.type} child node: <{ast_child.parent}>.<{ast_child}> as a [simple] parameter (may only be constant, scriptvar or pop)");
-                                                    return false;
+                                                node ast_child = ast_param.children[i_param_child]; 
+                                                node parameter_to_compile = ast_child; 
+
+                                                // if the parameter is a compound, we should only compile its result
+                                                // - this only happens for negated values
+                                                if (ast_child.IsCompound
+                                                    && ast_child.ChildCount == 2
+                                                    && ast_child.children[0].token == BlastScriptToken.Substract)
+                                                {
+                                                    // we have an identifier, that should be mapped to a constant
+                                                    script_op constant = ast_child.children[1].constant_op;
+
+                                                    // - error if not a constant operation value 
+                                                    if (constant  < script_op.pi || constant >= script_op.id)
+                                                    {
+                                                        data.LogError($"CompileFunction: parameter mapping failure, element should map to a constant at: <{ast_param.parent}>.<{ast_param}>.<{ast_child}> but instead has token {constant}");
+                                                        return false; 
+                                                    }
+
+                                                    // get constant value and negate it 
+                                                    float f = -Blast.GetConstantValue(constant);
+
+                                                    BlastVariable negated_variable = null; 
+
+                                                    // check all constant variables 
+                                                    // - these variables are set by constant values in script
+                                                    foreach(BlastVariable variable in data.ConstantVariables)
+                                                    {
+                                                        // does one match our new value? 
+                                                        if(variable.VectorSize == 1)
+                                                        {
+                                                            if(float.TryParse(variable.Name, out float fvar))
+                                                            {
+                                                                if (f == fvar ||
+                                                                   (
+                                                                   f >= (fvar - data.CompilerOptions.ConstantEpsilon)
+                                                                   &&
+                                                                   f <= (fvar + data.CompilerOptions.ConstantEpsilon)
+                                                                   ))
+                                                                {
+                                                                    // yes matched
+                                                                    negated_variable = variable; 
+                                                                }                                                                
+                                                            }
+                                                        }
+                                                    } 
+                                                    
+                                                    if(negated_variable == null)
+                                                    {
+                                                        // we have to create one
+                                                        negated_variable = data.CreateVariable(f.ToString(), false, false);
+
+                                                        // recalculate data-offsets 
+                                                        data.CalculateVariableOffsets();
+                                                    }
+
+                                                    parameter_to_compile = ast_child.children[1];
+                                                    parameter_to_compile.variable = negated_variable;
+                                                    parameter_to_compile.identifier = negated_variable.Name;
+                                                    parameter_to_compile.constant_op = script_op.nop; 
+
+                                                    // remove substract operation 
+                                                    ast_child.children.RemoveAt(0);
+
+                                                    // reduce compound 
+                                                    ast_param.children[i_param_child] = parameter_to_compile;
+                                                    parameter_to_compile.parent = ast_param;
+                                                }                                                                                           
+
+                                                {
+                                                    // compile each child as a simple param (variable or constant or pop)
+                                                    if (!CompileParameter(data, parameter_to_compile, code, true))
+                                                    {
+                                                        data.LogError($"CompileFunction: failed to compile {ast_child.type} child node: <{ast_child.parent}>.<{ast_child}> as a [simple] parameter (may only be constant, scriptvar or pop)");
+                                                        return false;
+                                                    }
                                                 }
                                             }
                                         }
@@ -378,21 +450,6 @@ namespace NSS.Blast.Compiler.Stage
                         else
                         {
                             // functions like abs sqrt etc have 1 parameter and their outputvectorsize matches inputsize 
-
-                            if(ast_function.function.ScriptOp == script_op.abs)
-                            {
-
-                                ///
-                                ///    WE SHOULD CHECK IF VECTORSIZE OF PARAMETERS EQUALS THAT OF OUTPUT SET IN FUNCTION NODE 
-                                ///    if not -> ERROR
-                                ///    it should happen before we set vectorsize on the result parameter 
-                                ///    
-
-
-
-                            }
-
-
                         }
                     }
 

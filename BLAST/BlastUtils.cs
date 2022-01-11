@@ -74,9 +74,6 @@ namespace NSS.Blast
 
                     case script_op.push: sb.Append("push "); break;
                     case script_op.pop: sb.Append("pop "); break;
-                    case script_op.pop2: sb.Append("pop2 "); break;
-                    case script_op.pop3: sb.Append("pop3 "); break;
-                    case script_op.pop4: sb.Append("pop4 "); break;
                     case script_op.pushv: sb.Append("pushv "); break;
                     case script_op.popv: sb.Append("popv "); break;
                     case script_op.peek: sb.Append("peek "); break;
@@ -153,8 +150,6 @@ namespace NSS.Blast
                         break;
                     case script_op.lengthsq:
                         break;
-                    case script_op.dot:
-                        break;
                     case script_op.degrees:
                         break;
                     case script_op.radians:
@@ -165,10 +160,7 @@ namespace NSS.Blast
                         break;
                     case script_op.pow:
                         break;
-                    case script_op.exp:
-                        break;
-                    case script_op.log2:
-                        break;
+                   
 
                     case script_op.value_0: sb.Append("0 "); break;
                     case script_op.value_1: sb.Append("1 "); break;
@@ -219,10 +211,13 @@ namespace NSS.Blast
                         switch (ex)
                         {
                             case extended_script_op.nop: break;
+                            case extended_script_op.exp:
+                            case extended_script_op.log2:
                             case extended_script_op.exp10:
                             case extended_script_op.log10:
                             case extended_script_op.logn:
                             case extended_script_op.cross:
+                            case extended_script_op.dot:
                             case extended_script_op.ex:
                                 sb.Append($"{ex} ");
                                 break;

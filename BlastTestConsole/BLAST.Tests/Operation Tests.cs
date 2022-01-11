@@ -126,12 +126,12 @@ namespace BlastTestConsole
 
         [InlineData("a = maxa(1, 2, 3);", 3)]
         [InlineData("a = maxa((1 2 3));", 3)]
-        [InlineData("a = maxa(2, (1 -2 3));", 3)]
+        [InlineData("a = maxa(2, (1, -2 3));", 3)]
         [InlineData("a = maxa(1, 2, 3, 4, 5, 6);", 6)]
-        [InlineData("a = maxa((3 -4 5), (12 -3), (33 3 3 5));", 33)]
+        [InlineData("a = maxa((3, -4 5), (12, -3), (33 3 3 5));", 33)]
 
         [InlineData("a = mina(1, 2, 3);", 1)]
-        [InlineData("a = mina((1 -2 3));", 1)]
+        [InlineData("a = mina((1, -2 3));", -2)]
         [InlineData("a = mina(2, (1 2 3));", 1)]
         [InlineData("a = mina(1, 2, 3, -4, 5, 6);", -4)]
         [InlineData("a = mina(1, 2, 3, 4, 5, 6, 7, 8);", 1)]
@@ -232,6 +232,53 @@ namespace BlastTestConsole
         [InlineData("a = 1 * 10 * 3 * (3 + 4 * 2);", 330)]
         [InlineData("a = 1 * (2 * 3 / 4) * 5;", 7.5f)]
 
+        [InlineData("a = pow(2, 1);", 2)]
+        [InlineData("a = pow((2 2), (2 2));", 4)]
+        [InlineData("a = pow((2 2 2), (3 2 2));", 8)]
+        [InlineData("a = pow((2 2 2 2), (4 2 2 2));", 16)]
+
+        [InlineData("a = dot(1,1);", 1)]
+        [InlineData("a = dot((1 2),(1 2));", 5)]
+        [InlineData("a = dot((1 2 3),(1 2 3));", 14)]
+        [InlineData("a = dot((1 2 3 4),(1 2 3 4));", 30)]
+
+        [InlineData("a = cross((1 1 1), (1 1 1));", 0)]
+        [InlineData("a = cross((3 4 3), (5 6 5));", 2)]
+
+        [InlineData("a = log(100);", 4.6051702)]
+        [InlineData("a = log((1 2));", 0)]
+        [InlineData("a = log((1 2 3));", 0)]
+        [InlineData("a = log((1 2 3 4));", 0)]
+
+        [InlineData("a = log2(100);", 6.643856)]
+        [InlineData("a = log2((1 2));", 0)]
+        [InlineData("a = log2((1 2 3));", 0)]
+        [InlineData("a = log2((1 2 3 4));", 0)]
+
+        [InlineData("a = log10(100);", 2)]
+        [InlineData("a = log10((1 2));", 0)]
+        [InlineData("a = log10((1 2 3));", 0)]
+        [InlineData("a = log10((1 2 3 4));", 0)]
+
+        [InlineData("a = exp(1);", 2.7182817f)]
+        [InlineData("a = exp((1 2));", 2.7182817f)]
+        [InlineData("a = exp((1 2 3));", 2.7182817f)]
+        [InlineData("a = exp((1 2 3 4));", 2.7182817f)]
+
+        [InlineData("a = exp10(2);", 100.00001)]
+        [InlineData("a = exp10((2 2));", 100.00001)]
+        [InlineData("a = exp10((2 2 2));", 100.00001)]
+        [InlineData("a = exp10((2 2 2 2));", 100.00001)]
+
+        [InlineData("a = saturate(22);", 1)]
+        [InlineData("a = saturate(-22);", 0)]
+        [InlineData("a = saturate(0.3);", 0.3f)]
+        [InlineData("a = saturate((22 23 0.2, -100));", 1)]
+        [InlineData("a = saturate((22 33, -22));", 1)]
+
+        [InlineData("a = normalize((0.3 0.9));", 0.3162278f)]
+        [InlineData("a = normalize((22 23 0.2, -100));", 0.20963755f)]
+        [InlineData("a = normalize((22 33, -22));", 0.48507124f)]
         public void BlastScript_Functions_1(string code, float v1)
         {
             Blast blast = Blast.Create(Allocator.Persistent);
@@ -258,6 +305,37 @@ namespace BlastTestConsole
 
             blast.Destroy();
         }
+
+        [Theory]
+        [InlineData("a = saturate(0.3);", 0.3f)]
+        public void BlastScript_Functions_1_2(string code, float v1)
+        {
+            Blast blast = Blast.Create(Allocator.Persistent);
+
+            BlastScript script = BlastScript.FromText(code);
+
+            var options = new BlastCompilerOptions();
+            options.AutoValidate = false;
+            options.Optimize = true;
+            options.CompileWithSystemConstants = true;
+            options.ConstantEpsilon = 0.001f;
+            options.DefaultStackSize = 64;
+            options.EstimateStackSize = false;
+
+            var res = BlastCompiler.Compile(blast, script, options);
+
+            Xunit.Assert.True(res.IsOK, "failed to compile");
+
+            unsafe
+            {
+                Xunit.Assert.True(res.Executable.Execute((IntPtr)blast.Engine) == 0, "failed to execute");
+                Xunit.Assert.True(res.Executable.data[0] == v1, $"failed to validate data, should be {v1} but found {res.Executable.data[0]}");
+            }
+
+            blast.Destroy();
+        }
+
+
 
         [Theory]
         [InlineData("a = 34 * 55 * 555 * 2 + 10.2;", 2075710.2)]
@@ -315,7 +393,7 @@ namespace BlastTestConsole
         [InlineData("a = sinh((-0.84147096, -0.84147096, -0.84147096));", -0.9443504, -0.9443504, -0.9443504)]
 
         [InlineData("a = cosh((1 1 1));", 1.5430807, 1.5430807, 1.5430807)]
-        [InlineData("a = cosh((-1, -1, -1));", -1.5430807, -1.5430807, -1.5430807)]
+        [InlineData("a = cosh((-1, -1, -1));", 1.5430807, 1.5430807, 1.5430807)]
 
         public void BlastScript_Functions_2(string code, float v1, float v2, float v3)
         {

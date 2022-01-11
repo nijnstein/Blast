@@ -168,31 +168,33 @@ namespace NSS.Blast.Compiler.Stage
 
                         case nodetype.function:
 
-                            switch (current.function.ScriptOp)
+                            if (current.function.ReturnsVectorSize > 0)
                             {
-                                case script_op.mina:
-                                case script_op.maxa:
-                                    // these always return a single value 
-                                    current.vector_size = 1;
-                                    break;
-
-                                case script_op.pop4:
-                                    // these always return a float 4 
-                                    current.vector_size = 4; break;
-
-                                default:
-                                    {// update vector size from children ( they should equal by now.. )
-                                     // same as compound 
-                                        fsize = 1;
-                                        foreach (node fc in current.children)
-                                        {
-                                            fsize = math.max(fsize, fc.vector_size);
-                                        }
-                                        current.vector_size = fsize;
-                                    }
-                                    break;
+                                current.vector_size = current.function.ReturnsVectorSize;
                             }
+                            else
+                            {
+                                switch (current.function.ScriptOp)
+                                {
+                                    case script_op.mina:
+                                    case script_op.maxa:
+                                        // these always return a single value 
+                                        current.vector_size = 1;
+                                        break;
 
+                                    default:
+                                        {// update vector size from children ( they should equal by now.. )
+                                         // same as compound 
+                                            fsize = 1;
+                                            foreach (node fc in current.children)
+                                            {
+                                                fsize = math.max(fsize, fc.vector_size);
+                                            }
+                                            current.vector_size = fsize;
+                                        }
+                                        break;
+                                }
+                            }
                             break;
 
                         case nodetype.compound:
@@ -200,8 +202,8 @@ namespace NSS.Blast.Compiler.Stage
 
                             if (node.IsNonNestedVectorDefinition(current))
                             {
-                                // count children 
-                                fsize = current.CountChildType(nodetype.parameter); 
+                                // count children (we can include the compound)
+                                fsize = current.ChildCount; //.CountChildTypes(nodetype.parameter, nodetype.compound); 
                             }
                             else
                             {
@@ -242,7 +244,7 @@ namespace NSS.Blast.Compiler.Stage
 
                                 if (node.IsNonNestedVectorDefinition(current))
                                 {
-                                    fsize = current.CountChildType(nodetype.parameter);
+                                    fsize = current.ChildCount; // CountChildType(nodetype.parameter, nodetype.compound);
                                 }
                                 else
                                 {
@@ -327,22 +329,30 @@ namespace NSS.Blast.Compiler.Stage
                                                 }
                                                 else
                                                 {
-                                                    // update vector size from children 
-                                                    fsize = 1;
-                                                    foreach (node fc in c.children)
+                                                    if (c.function.ReturnsVectorSize > 0)
                                                     {
-                                                        fsize = math.max(fsize, fc.vector_size);
-                                                    }
-
-                                                    if (c.function.AcceptsVectorSize == 0 || fsize == c.function.AcceptsVectorSize)
-                                                    {
-                                                        set_function_vector_size(fsize, c);
+                                                        // returned vectorsize is fixed 
+                                                        fsize = c.function.ReturnsVectorSize; 
                                                     }
                                                     else
                                                     {
-                                                        // errorrr 
-                                                        data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {c.function.Match} at {c}, function allows vectorsize {c.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {fsize} ");
-                                                        return; 
+                                                        // update vector size from children 
+                                                        fsize = 1;
+                                                        foreach (node fc in c.children)
+                                                        {
+                                                            fsize = math.max(fsize, fc.vector_size);
+                                                        }
+
+                                                        if (c.function.AcceptsVectorSize == 0 || fsize == c.function.AcceptsVectorSize)
+                                                        {
+                                                            set_function_vector_size(fsize, c);
+                                                        }
+                                                        else
+                                                        {
+                                                            // errorrr 
+                                                            data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {c.function.Match} at {c}, function allows vectorsize {c.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {fsize} ");
+                                                            return;
+                                                        }
                                                     }
                                                 }
                                                 size = math.max(size, c.vector_size);
@@ -358,7 +368,9 @@ namespace NSS.Blast.Compiler.Stage
 
                                 if (current.type == nodetype.function)
                                 {
-                                    if (current.function.AcceptsVectorSize == 0 || size == current.function.AcceptsVectorSize)
+                                    if (current.function.AcceptsVectorSize == 0 
+                                        ||
+                                        size == current.function.AcceptsVectorSize)
                                     {
                                         set_function_vector_size(size, current); 
                                     }
@@ -403,6 +415,7 @@ namespace NSS.Blast.Compiler.Stage
                             break;
                     }
                 }
+
                 current = current.parent;
             }
         }
@@ -431,8 +444,6 @@ namespace NSS.Blast.Compiler.Stage
             {
                 return (int)BlastError.error;
             }
-
-            data.LogToDo("Validate parameter usage / vector flow");
 
             return (int)BlastError.success;
         }

@@ -12,6 +12,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using System.Text;
+using Unity.Burst;
 
 #if !NOT_USING_UNITY
 using Unity.Entities;
@@ -148,7 +149,7 @@ namespace NSS.Blast
 
             for (int b = 0; b < 256; b++)
             {
-                blast.data->constants[b] = BlastValues.GetConstantValue((script_op)b);
+                blast.data->constants[b] = Blast.GetConstantValue((script_op)b);
             }
 
             blast.data->functionpointer_count = FunctionCalls.Count;
@@ -215,6 +216,7 @@ namespace NSS.Blast
             return exitcode.ok;
         }
 
+        [BurstDiscard]
         public IEnumerable<script_op> ValueOperations()
         {
             // we dont want this as static, but on a struct its also no good as field 
@@ -267,6 +269,83 @@ namespace NSS.Blast
             yield return script_op.inv_value_360;
         }
 
+        [BurstCompatible]
+        public static float GetConstantValue(script_op op)
+        {
+            switch (op)
+            {
+                //case script_op.deltatime: return Time.deltaTime;
+                //case script_op.time: return Time.time;
+                //case script_op.framecount: return Time.frameCount;
+                //case script_op.fixeddeltatime: return Time.fixedDeltaTime; 
+
+                case script_op.pi: return math.PI;
+                case script_op.inv_pi: return 1 / math.PI;
+                case script_op.epsilon: return math.EPSILON;
+                case script_op.infinity: return math.INFINITY;
+                case script_op.negative_infinity: return -math.INFINITY;
+                case script_op.nan: return math.NAN;
+                case script_op.min_value: return math.FLT_MIN_NORMAL;
+                case script_op.value_0: return 0f;
+                case script_op.value_1: return 1f;
+                case script_op.value_2: return 2f;
+                case script_op.value_3: return 3f;
+                case script_op.value_4: return 4f;
+                case script_op.value_8: return 8f;
+                case script_op.value_10: return 10f;
+                case script_op.value_16: return 16f;
+                case script_op.value_24: return 24f;
+                case script_op.value_32: return 32f;
+                case script_op.value_64: return 64f;
+                case script_op.value_100: return 100f;
+                case script_op.value_128: return 128f;
+                case script_op.value_256: return 256f;
+                case script_op.value_512: return 512f;
+                case script_op.value_1000: return 1000f;
+                case script_op.value_1024: return 1024f;
+                case script_op.value_30: return 30f;
+                case script_op.value_45: return 45f;
+                case script_op.value_90: return 90f;
+                case script_op.value_180: return 180f;
+                case script_op.value_270: return 270f;
+                case script_op.value_360: return 360f;
+                case script_op.inv_value_2: return 1f / 2f;
+                case script_op.inv_value_3: return 1f / 3f;
+                case script_op.inv_value_4: return 1f / 4f;
+                case script_op.inv_value_8: return 1f / 8f;
+                case script_op.inv_value_10: return 1f / 10f;
+                case script_op.inv_value_16: return 1f / 16f;
+                case script_op.inv_value_24: return 1f / 24f;
+                case script_op.inv_value_32: return 1f / 32f;
+                case script_op.inv_value_64: return 1f / 64f;
+                case script_op.inv_value_100: return 1f / 100f;
+                case script_op.inv_value_128: return 1f / 128f;
+                case script_op.inv_value_256: return 1f / 256f;
+                case script_op.inv_value_512: return 1f / 512f;
+                case script_op.inv_value_1000: return 1f / 1000f;
+                case script_op.inv_value_1024: return 1f / 1024f;
+                case script_op.inv_value_30: return 1f / 30f;
+                case script_op.inv_value_45: return 1f / 45f;
+                case script_op.inv_value_90: return 1f / 90f;
+                case script_op.inv_value_180: return 1f / 180f;
+                case script_op.inv_value_270: return 1f / 270f;
+                case script_op.inv_value_360: return 1f / 360f;
+
+                // what to do? screw up intentionally? yeah :)
+                default:
+
+#if CHECK_STACK
+#if !NOT_USING_UNITY
+                    Standalone.Debug.LogError($"blast.get_constant_value({op}) -> not a value -> NaN returned to caller");
+#else
+                    System.Diagnostics.Debug.WriteLine($"blast.get_constant_value({op}) -> not a value -> NaN returned to caller");
+#endif
+#endif
+                    return float.NaN;
+            }
+        }
+
+
         /// <summary>
         /// get the script_op belonging to a constant value, eiter by name or value 
         /// </summary>
@@ -292,7 +371,7 @@ namespace NSS.Blast
 
             foreach (script_op value_op in ValueOperations())
             {
-                float f2 = BlastValues.GetConstantValue(value_op);
+                float f2 = Blast.GetConstantValue(value_op);
                 if (f2 > f - constant_epsilon && f2 < f + constant_epsilon)
                 {
                     return value_op;
@@ -335,15 +414,6 @@ namespace NSS.Blast
             }
         }
 
-        /// <summary>
-        /// get a constant float value represented by an operation 
-        /// </summary>
-        /// <param name="op"></param>
-        /// <returns></returns>
-        public float GetScriptOpFloatValue(script_op op)
-        {
-            return BlastValues.GetConstantValue(op);
-        }
 
 #endregion
 
@@ -428,12 +498,6 @@ namespace NSS.Blast
             new ScriptFunctionDefinition(3, "mina", 1, 63, 1, 0, script_op.mina),
             new ScriptFunctionDefinition(4, "maxa", 1, 63, 1, 0, script_op.maxa),
 
-
-
-
-
-
-
             new ScriptFunctionDefinition(5, "select", 3, 3, 0, 0, script_op.select, "a", "b", "c"),
 
             new ScriptFunctionDefinition(6, "random", 0, 2, 0, 0, script_op.random),  // random value from 0 to 1 (inclusive), 0 to max, or min to max depending on parameter count 1
@@ -466,42 +530,42 @@ namespace NSS.Blast
             new ScriptFunctionDefinition(28, "degrees", 1, 1, 0, 0, script_op.degrees),
             new ScriptFunctionDefinition(29, "rad", 1, 1, 0, 0, script_op.radians),
 
+            new ScriptFunctionDefinition(46, "fma", 3, 3, 0, 0, script_op.fma, "m1", "m2", "a1"),
+
+            new ScriptFunctionDefinition(33, "pow", 2, 2, 0, 0,script_op.pow, "a", "power"),
+
+            // would be nice to have a parameter giving min and max vector size 
+            new ScriptFunctionDefinition(32, "normalize", 1, 1, 0, 0, script_op.normalize, "a"),
             new ScriptFunctionDefinition(30, "saturate", 1, 1, 0, 0, script_op.saturate, "a"),
+
+
             new ScriptFunctionDefinition(31, "clamp", 3, 3, 0, 0, script_op.clamp, "a", "min", "max"),
 
-            new ScriptFunctionDefinition(32, "normalize", 1, 1,  0, 0, script_op.normalize, "a"),
-
-            new ScriptFunctionDefinition(33, "pow", 2, 2,  0, 0,script_op.pow, "a", "power"),
+            
 
             new ScriptFunctionDefinition(34, "distance", 2, 2,  0, 0,script_op.distance, "a", "b"),
             new ScriptFunctionDefinition(35, "distancesq", 2, 2,  0, 0,script_op.distancesq, "a", "b"),
             new ScriptFunctionDefinition(36, "length", 2, 2,  0, 0,script_op.length, "a", "b"),
             new ScriptFunctionDefinition(37, "lengthsq", 2, 2,  0, 0,script_op.lengthsq, "a", "b"),
 
-            new ScriptFunctionDefinition(38, "cross", 2, 2, 0, 0, extended_script_op.cross, null, "a", "b"),
-            new ScriptFunctionDefinition(39, "dot", 2, 2,  0, 0,script_op.dot, "a", "b"),
 
-            new ScriptFunctionDefinition(40, "exp", 2, 2,  0, 0,script_op.exp, "a", "b"),
-            new ScriptFunctionDefinition(41, "log2", 1, 1,  0, 0,script_op.log2, "a", "b"),
-
+            new ScriptFunctionDefinition(41, "log2", 1, 1,  0, 0, extended_script_op.log2, null, "a", "b"),
             new ScriptFunctionDefinition(42, "log10", 1, 1, 0, 0, extended_script_op.log10, null, "a"),
             new ScriptFunctionDefinition(43, "log", 1, 1, 0, 0, extended_script_op.logn, null, "a"),
-            new ScriptFunctionDefinition(44, "exp10", 2, 2, 0, 0, extended_script_op.exp10, null, "a", "b"),
+            new ScriptFunctionDefinition(40, "exp", 1, 1,  0, 0, extended_script_op.exp, null, "exponent_of_e"),
+            new ScriptFunctionDefinition(44, "exp10", 1, 1, 0, 0, extended_script_op.exp10, null, "a", "b"),
+            new ScriptFunctionDefinition(38, "cross", 2, 2, 3, 3, extended_script_op.cross, null, "a", "b"),
+            new ScriptFunctionDefinition(39, "dot", 2, 2, 1, 0, extended_script_op.dot, null, "a", "b"),
 
             new ScriptFunctionDefinition(45, "return", 0, 0,  0, 0,script_op.ret),
 
 
-
-            new ScriptFunctionDefinition(46, "fma", 3, 3, 0, 0, script_op.fma, "m1", "m2", "a1"), 
 
 
 
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Push, "push", 1, 4, 0, 0,script_op.push, "n", "a"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushFunction, "pushf", 1, 1, 0, 0,script_op.pushf, "n", "a"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop, "pop", 0, 0, 0, 0,script_op.pop, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop2, "pop2", 0, 0, 0, 0,script_op.pop2, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop3, "pop3", 0, 0, 0, 0,script_op.pop3, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop4, "pop4", 0, 0, 0, 0,script_op.pop4, "n"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Peek, "peek", 0, 1, 0, 0, script_op.peek, "n"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Yield, "yield", 0, 1, 0, 0,script_op.yield, "n"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Input, "input", 3, 3, 0, 0,script_op.nop, "id", "offset", "length"),

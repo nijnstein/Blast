@@ -19,7 +19,10 @@ namespace NSS.Blast.Compiler.Stage
         /// </summary>
         static int simplify_compound_arithmetic(IBlastCompilationData data, node n)
         {
-            if (n.type == nodetype.function) return 0;  
+            if (n.type == nodetype.function) return 0;
+            
+            // leave alone vectors
+            if (n.is_vector) return 0; 
 
             // 1 or more compounds
             // fully arithmetic 

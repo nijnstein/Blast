@@ -39,9 +39,9 @@
         push,         // stack functions
         pop,
 
-        pop2,     // UNDEFINED ???
-        pop3,     // UNDEFINED ???
-        pop4,     // UNDEFINED ???
+        undefined_pop2,     // UNDEFINED ???
+        undefined_pop3,     // UNDEFINED ???
+        undefined_pop4,     // UNDEFINED ???
 
         pushv,
 
@@ -98,7 +98,7 @@
         length,
         lengthsq,
 
-        dot,
+        undefined5,
         degrees,
         radians,
 
@@ -107,8 +107,8 @@
 
         pow,
 
-        exp,
-        log2,
+        undefined3,
+        undefined4,
 
 
 
@@ -197,14 +197,17 @@
     {
         nop = 0,
 
+        exp,
         exp10,
         log10,
         logn,
+        log2,
         cross,
+        dot,
 
-        debugstack = 243,
-        debug = 244,
-        call = 245, // call external
+        debugstack = 252,
+        debug = 253,
+        call = 254, // call external
         ex = 255 // extend further if ever needed. 
     }
 

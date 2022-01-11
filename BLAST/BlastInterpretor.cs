@@ -774,7 +774,8 @@ namespace NSS.Blast.Interpretor
             return float.NaN;
         }
 
-        #endregion 
+        #endregion
+
 
         /// <summary>
         /// get the next value from the datasegment, stack or constant dictionary 
@@ -934,7 +935,7 @@ namespace NSS.Blast.Interpretor
             }
             else
             // pop4
-            if (c == (byte)script_op.pop4)
+            if (c == (byte)script_op.pop)
             {
                 int stack_offset = package->stack_offset - 4;
 #if DEBUG && CHECK_STACK
@@ -1465,6 +1466,9 @@ namespace NSS.Blast.Interpretor
         #region Function Handlers 
 
 
+
+
+
         float4 get_select_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
         {
             // vector size to be set from input?  
@@ -1658,36 +1662,6 @@ namespace NSS.Blast.Interpretor
             return f4;
         }
 
-        float4 get_normalize_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.normalize(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                case BlastVectorSizes.float1:
-                default:
-                    {
-#if LOG_ERRORS
-                    Standalone.Debug.LogError($"normalize: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
 
         float4 get_clamp_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
         {
@@ -1731,88 +1705,7 @@ namespace NSS.Blast.Interpretor
             return f4;
         }
         
-        float4 get_saturate_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.saturate(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 1;
-                        break;
-                    }
 
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.saturate(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"saturate: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
-
-        /// <summary>
-        /// raise x to power of y 
-        /// - always 2 parameters 
-        /// - vectorsize in == vectorsize out
-        /// </summary>
-        void get_pow_result(ref int code_pointer, ref byte vector_size, out float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.pow(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2));
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 2;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.pow(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 2;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"pow: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
 
         float4 get_distance_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
         {
@@ -1970,270 +1863,6 @@ namespace NSS.Blast.Interpretor
             return f4;
         }
 
-        float4 get_exp_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.exp(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.exp(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"exp: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
-       
-        float4 get_exp10_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.exp10(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.exp10(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"exp10: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
-
-        float4 get_log2_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.log2(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.log2(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Debug.LogError($"log2: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
-     
-        float4 get_log_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.log(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.log(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"log: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
-
-        float4 get_log10_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.log10(pop_or_value_4(code_pointer + 1));
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.log10(pop_or_value(code_pointer + 1));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 1;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"log10: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
-
-        float4 get_cross_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4.xyz = math.cross(pop_or_value_4(code_pointer + 1).xyz, pop_or_value_4(code_pointer + 2).xyz);
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 2;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"cross: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
-
-        float4 get_dot_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.dot(pop_or_value_4(code_pointer + 1), pop_or_value_4(code_pointer + 2));
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 2;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.dot(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 2;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                        Standalone.Debug.LogError($"dot: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
 
 
 
@@ -2641,6 +2270,83 @@ namespace NSS.Blast.Interpretor
             }
         }
 
+        /// <summary>
+        /// normalize vector 
+        /// - single vector input, size > 1 
+        /// - same sized vector output
+        /// </summary>
+        void get_normalize_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in normalize not implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            switch ((BlastVectorSizes)vector_size)
+            {
+
+                case BlastVectorSizes.float2: f4.xy = math.normalize(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.normalize(((float3*)fdata)[0]); break;
+                case 0:
+                case BlastVectorSizes.float4: f4.xyzw = math.normalize(((float4*)fdata)[0]); vector_size = 4; break;
+#if DEBUG
+                case BlastVectorSizes.float1:
+                    {
+                        Debug.LogError($"normalize: cannot normalize a scalar variable");
+                        break;
+                    }
+                default:
+                    {
+                        Debug.LogError($"normalize: NUMERIC({vector_size}) vectorsize '{vector_size}' not supported");
+                        break;
+                    }
+#endif                  
+            }
+        }
+
+        /// <summary>
+        /// saturate a vector (clamp between 0.0 and 1.0 including 0 and 1)
+        /// - 
+        /// </summary>
+        void get_saturate_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in saturate not implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case BlastVectorSizes.float1: f4.x = math.saturate(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.saturate(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.saturate(((float3*)fdata)[0]); break;
+                case 0:
+                case BlastVectorSizes.float4: f4.xyzw = math.saturate(((float4*)fdata)[0]); vector_size = 4; break;
+#if DEBUG
+                default:
+                    {
+                        Debug.LogError($"saturate: NUMERIC({vector_size}) vectorsize '{vector_size}' not supported");
+                        break;
+                    }
+#endif                  
+            }
+        }
 
         /// <summary>
         /// get value rounded up (ceiling)
@@ -3148,6 +2854,377 @@ namespace NSS.Blast.Interpretor
             }
         }
 
+        /// <summary>
+        /// calc base2 log from params
+        /// - 1 parameter 
+        /// - input == output vectorsize 
+        /// </summary>
+        void get_log2_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in log2 not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.log2(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.log2(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.log2(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.log2(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Standalone.Debug.LogError($"log2: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// calculate natural logarithm
+        /// - 1 input
+        /// - input == output vectorsize 
+        /// </summary>
+        void get_log_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in log not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.log(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.log(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.log(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.log(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Standalone.Debug.LogError($"log: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// get base 10 logarithm
+        /// - 1 parameter 
+        /// - input = output vectorsize 
+        /// </summary>
+        void get_log10_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in log10 not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.log10(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.log10(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.log10(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.log10(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Standalone.Debug.LogError($"log10: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// raise e to given power
+        /// - 1 parameter 
+        /// - input = output vectorsize 
+        /// </summary>
+        void get_exp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in exp not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.exp(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.exp(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.exp(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.exp(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Standalone.Debug.LogError($"exp: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        /// <summary>
+        /// get base 10 exponential for parameter 
+        /// - 1 parameter 
+        /// - input = output vectorsize 
+        /// </summary>
+        void get_exp10_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEBUG
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in exp10 not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+#endif
+
+            // vector size is set by input            
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+                case BlastVectorSizes.float4: f4 = math.exp10(((float4*)fdata)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.exp10(((float*)fdata)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.exp10(((float2*)fdata)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.exp10(((float3*)fdata)[0]); break;
+#if DEBUG
+                default:
+                    {
+                        Standalone.Debug.LogError($"exp10: numeric vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+        }
+
+        #endregion
+
+        #region fixed input count math functions
+
+        /// <summary>
+        /// raise x to power of y 
+        /// - always 2 parameters 
+        /// - vectorsize in == vectorsize out
+        /// </summary>
+        void get_pow_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            f4 = float.NaN;
+            BlastVariableDataType datatype;
+         
+            float* d1 = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
+
+#if DEBUG
+            BlastVariableDataType datatype_2;
+            byte vector_size_2;          
+
+            float* d2 = (float*)pop_with_info(code_pointer + 2, out datatype_2, out vector_size_2);
+
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in pow not implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+            if(datatype != datatype_2 || vector_size != vector_size_2)
+            {
+                Debug.LogError($"pow: input parameter datatype|vector_size mismatch, these must be equal. p1 = {datatype}.{vector_size}, p2 = {datatype_2}.{vector_size_2}");
+                return; 
+            }
+#endif
+
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+#if DEBUG 
+                case BlastVectorSizes.float4: f4 = math.pow(((float4*)d1)[0], ((float4*)d2)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.pow(((float*)d1)[0], ((float*)d2)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.pow(((float2*)d1)[0], ((float2*)d2)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.pow(((float3*)d1)[0], ((float3*)d2)[0]); break;
+#else
+                // in release build we dont need information on the second parameter 
+                case BlastVectorSizes.float4: f4 = math.pow(((float4*)d1)[0], pop_f4(code_pointer + 2)); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.pow(((float*)d1)[0], pop_f1(code_pointer + 2)); break;
+                case BlastVectorSizes.float2: f4.xy = math.pow(((float2*)d1)[0], pop_f2(code_pointer + 2)); break;
+                case BlastVectorSizes.float3: f4.xyz = math.pow(((float3*)d1)[0], pop_f3(code_pointer + 2)); break;
+#endif 
+
+#if DEBUG
+                default:
+                    {
+                        Standalone.Debug.LogError($"pow: {datatype} vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+
+            code_pointer += 2;
+        }
+
+        /// <summary>
+        /// get dot product of 2 paramaters 
+        /// - 2 inputs
+        /// - inputvector size = any
+        /// - output vectorsize == 1
+        /// </summary>
+        void get_dot_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            f4 = float.NaN;
+            BlastVariableDataType datatype;
+
+            float* d1 = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
+
+#if DEBUG
+            BlastVariableDataType datatype_2;
+            byte vector_size_2;
+
+            float* d2 = (float*)pop_with_info(code_pointer + 2, out datatype_2, out vector_size_2);
+
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in dot not implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+            if (datatype != datatype_2 || vector_size != vector_size_2)
+            {
+                Debug.LogError($"dot: input parameter datatype|vector_size mismatch, these must be equal. p1 = {datatype}.{vector_size}, p2 = {datatype_2}.{vector_size_2}");
+                return;
+            }
+#endif
+
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+#if DEBUG 
+                case BlastVectorSizes.float4: f4.x = math.dot(((float4*)d1)[0], ((float4*)d2)[0]); break;
+                case BlastVectorSizes.float1: f4.x = math.dot(((float*)d1)[0], ((float*)d2)[0]); break;
+                case BlastVectorSizes.float2: f4.x = math.dot(((float2*)d1)[0], ((float2*)d2)[0]); break;
+                case BlastVectorSizes.float3: f4.x = math.dot(((float3*)d1)[0], ((float3*)d2)[0]); break;
+#else
+                // in release build we dont need information on the second parameter 
+                case BlastVectorSizes.float4: f4.x = math.dot(((float4*)d1)[0], pop_f4(code_pointer + 2)); break;
+                case BlastVectorSizes.float1: f4.x = math.dot(((float*)d1)[0], pop_f1(code_pointer + 2)); break;
+                case BlastVectorSizes.float2: f4.x = math.dot(((float2*)d1)[0], pop_f2(code_pointer + 2)); break;
+                case BlastVectorSizes.float3: f4.x = math.dot(((float3*)d1)[0], pop_f3(code_pointer + 2)); break;
+#endif 
+
+#if DEBUG
+                default:
+                    {
+                        Standalone.Debug.LogError($"dot: {datatype} vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+
+            code_pointer += 2;      
+            vector_size = 1;
+        }
+
+
+        /// <summary>
+        /// cross product of 2 inputs 
+        /// - 2 input parameters 
+        /// - input vectorsize == 3
+        /// - output vectorsize == 3
+        /// </summary>
+        void get_cross_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            f4 = float.NaN;
+            BlastVariableDataType datatype;
+
+            float* d1 = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
+
+#if DEBUG
+            BlastVariableDataType datatype_2;
+            byte vector_size_2;
+
+            float* d2 = (float*)pop_with_info(code_pointer + 2, out datatype_2, out vector_size_2);
+
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in cross not implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+            if (datatype != datatype_2 || vector_size != vector_size_2)
+            {
+                Debug.LogError($"cross: input parameter datatype|vector_size mismatch, these must be equal. p1 = {datatype}.{vector_size}, p2 = {datatype_2}.{vector_size_2}");
+                return;
+            }
+#endif
+
+            switch ((BlastVectorSizes)vector_size)
+            {
+#if DEBUG 
+                case BlastVectorSizes.float3: f4.xyz = math.cross(((float3*)d1)[0], ((float3*)d2)[0]); break;
+#else
+                // in release build we dont need information on the second parameter 
+                case BlastVectorSizes.float3: f4.xyz = math.cross(((float3*)d1)[0], pop_f3(code_pointer + 2)); break;
+#endif 
+
+#if DEBUG
+                default:
+                    {
+                        Standalone.Debug.LogError($"cross: {datatype} vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+
+            code_pointer += 2;
+        }
+
+
         #endregion
 
         #region fused substract multiply actions
@@ -3231,7 +3308,7 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #endregion
+#endregion
 
         #region mula family 
 
@@ -3708,9 +3785,14 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion 
+        #endregion
 
         #endregion
+
+
+
+
+
 
         float4 get_adda_result(ref int code_pointer, ref bool minus, ref byte vector_size)
         {
@@ -4241,36 +4323,11 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        /// <summary>
-        /// execute the next extended operation (ops use 255/exop to use these) 
-        /// - not all are handled here, only those resulting in an operation 
-        ///   call and debug for example are left out 
-        /// </summary>
-        float4 get_extended_operation_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            code_pointer++;
-            extended_script_op op = (extended_script_op)code[code_pointer];
-
-            switch(op)
-            {
-                case extended_script_op.logn: return get_log_result(ref code_pointer, ref minus, ref vector_size, ref f4); 
-                case extended_script_op.log10: return get_log10_result(ref code_pointer, ref minus, ref vector_size, ref f4);
-                case extended_script_op.exp10: return get_exp10_result(ref code_pointer, ref minus, ref vector_size, ref f4);
-                case extended_script_op.cross: return get_cross_result(ref code_pointer, ref minus, ref vector_size, ref f4);
-            }
-
-            // handle op 
-#if DEBUG
-            Debug.LogError($"get_extended_operation_result: code_pointer: {code_pointer}, operation {op} not handled / supported / implemented ");
-#endif
-
-            return f4;
-        }
 
 
-        #endregion
+#endregion
 
-        #region ByteCode Execution
+#region ByteCode Execution
 
 
         /// <summary>
@@ -4350,9 +4407,6 @@ namespace NSS.Blast.Interpretor
                         // if the previous op also gave back a value 
                         if (prev_op_is_value ||
                             prev_op == (byte)script_op.pop ||
-                            prev_op == (byte)script_op.pop2 ||
-                            prev_op == (byte)script_op.pop3 ||
-                            prev_op == (byte)script_op.pop4 ||
                             prev_op == (byte)script_op.popv)
                         {
                             // we grow vector 
@@ -4370,11 +4424,6 @@ namespace NSS.Blast.Interpretor
                                     pop(out f1);
                                     grow_vector = true;
                                     break;
-
-                                case script_op.pop2:
-                                case script_op.pop3:
-                                case script_op.pop4:
-                                    return (int)BlastError.stack_error_pop_multi_from_root;
 
                                 case script_op.popv:
                                     return (int)BlastError.stack_error_variable_pop_not_supported;
@@ -4512,6 +4561,8 @@ namespace NSS.Blast.Interpretor
 
                                 // math functions 
                                 case script_op.abs: get_abs_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.mina: get_mina_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.max: get_max_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -4529,6 +4580,8 @@ namespace NSS.Blast.Interpretor
                                 case script_op.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.pow: get_pow_result(ref code_pointer, ref vector_size, out f4_result); break; 
+
 
                                 // fma and friends 
                                 case script_op.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -4538,19 +4591,6 @@ namespace NSS.Blast.Interpretor
 
 
 
-
-
-                                case script_op.pow:
-                                    get_pow_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.exp:
-                                    get_exp_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.log2:
-                                    get_log2_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
 
 
 
@@ -4599,20 +4639,9 @@ namespace NSS.Blast.Interpretor
                                     get_slerp_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
                                     break;
 
-                                case script_op.normalize:
-                                    get_normalize_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.saturate:
-                                    get_saturate_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
                                 case script_op.clamp:
                                     get_clamp_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
                                     break;
-
-
-
 
                                 case script_op.distance:
                                     get_distance_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
@@ -4630,9 +4659,6 @@ namespace NSS.Blast.Interpretor
                                     get_lengthsq_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
                                     break;
 
-                                case script_op.dot:
-                                    get_dot_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
 
                                 case script_op.pop:
                                     BlastVariableDataType popped_type;
@@ -4656,14 +4682,6 @@ namespace NSS.Blast.Interpretor
                                     minus = false;
                                     break;
 
-                                case script_op.pop2:
-                                case script_op.pop3:
-                                case script_op.pop4:
-#if DEBUG
-                                    Debug.LogError($"codepointer: {code_pointer} => reference popN instruction which should not be used ");
-#endif
-                                    return float.NaN;
-
                                 case script_op.ex_op:
 
                                     code_pointer++;
@@ -4678,16 +4696,19 @@ namespace NSS.Blast.Interpretor
                                     {
                                         switch (exop)
                                         {
-                                            case extended_script_op.logn: f4_result = get_log_result(ref code_pointer, ref minus, ref vector_size, ref f4); break;
-                                            case extended_script_op.log10: f4_result = get_log10_result(ref code_pointer, ref minus, ref vector_size, ref f4); break;
-                                            case extended_script_op.exp10: f4_result = get_exp10_result(ref code_pointer, ref minus, ref vector_size, ref f4); break;
-                                            case extended_script_op.cross: f4_result = get_cross_result(ref code_pointer, ref minus, ref vector_size, ref f4); break;
-                                        }
-
-                                        // handle op 
+                                            case extended_script_op.logn: get_log_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_script_op.log10: get_log10_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_script_op.exp10: get_exp10_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_script_op.cross: get_cross_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_script_op.exp: get_exp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_script_op.dot: get_dot_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_script_op.log2: get_log2_result(ref code_pointer, ref vector_size, out f4_result); break;
 #if DEBUG
-                                        Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, get_extended_operation_result: operation {op} not handled / supported / implemented ");
+                                            default:
+                                                Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
+                                                break;
 #endif
+                                        }
                                     }
                                     // prev_op = (byte)script_op.ex_op;
                                     // prev_op_is_value = false;
@@ -5109,41 +5130,6 @@ namespace NSS.Blast.Interpretor
                         }
 
                     case script_op.nop:
-                        break;
-
-                    case script_op.pop:
-                        pop(out f4_register.x);
-                        fdata[code[code_pointer++] - opt_id] = f4_register.x;
-                        break;
-
-                    case script_op.pop2:
-                        pop(out f4_register.y);
-                        pop(out f4_register.x);
-                        fdata[code[code_pointer] - opt_id] = f4_register.x;
-                        fdata[code[code_pointer] - opt_id + 1] = f4_register.y;
-                        code_pointer++;
-                        break;
-
-                    case script_op.pop3:
-                        pop(out f4_register.z);
-                        pop(out f4_register.y);
-                        pop(out f4_register.x);
-                        fdata[code[code_pointer] - opt_id] = f4_register.x;
-                        fdata[code[code_pointer] - opt_id + 1] = f4_register.y;
-                        fdata[code[code_pointer] - opt_id + 2] = f4_register.z;
-                        code_pointer++;
-                        break;
-
-                    case script_op.pop4:
-                        pop(out f4_register.w);
-                        pop(out f4_register.z);
-                        pop(out f4_register.y);
-                        pop(out f4_register.x);
-                        fdata[code[code_pointer] - opt_id] = f4_register.x;
-                        fdata[code[code_pointer] - opt_id + 1] = f4_register.y;
-                        fdata[code[code_pointer] - opt_id + 2] = f4_register.z;
-                        fdata[code[code_pointer] - opt_id + 3] = f4_register.w;
-                        code_pointer++;
                         break;
 
                     case script_op.popv:

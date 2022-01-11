@@ -1190,7 +1190,14 @@ namespace NSS.Blast.Compiler.Stage
             if (is_number)
             {
                 // just return a numeric constant
-                return scan_and_parse_numeric(data, ref idx, in idx_max);
+                node n_var_or_constant = scan_and_parse_numeric(data, ref idx, in idx_max);
+                
+                if(n_var_or_constant != null && minus)
+                {
+                    // add back the negative sign, in a later stage it will get stripped when determining wether to load value from constants 
+                    n_var_or_constant.identifier = "-" + n_var_or_constant.identifier;
+                }
+                return n_var_or_constant; 
             }
 
 
@@ -1199,21 +1206,50 @@ namespace NSS.Blast.Compiler.Stage
             if (function != null)
             {
                 // parse out function
-                return scan_and_parse_function(data, function, ref idx, in idx_max);
+                node n_function = scan_and_parse_function(data, function, ref idx, in idx_max);
 
-                // now n_id should end up containing function and possible an index chain 
+                return NegateNodeInCompound(minus, n_function);
             }
             else
             {
+                // now n_id should end up containing function and possible an index chain 
                 node n_id = new node(null);
                 n_id.identifier = data.Tokens[idx].Item2;
                 n_id.type = nodetype.parameter;
                 idx++;
 
                 // grow a chain of indices 
-                return grow_index_chain(data, n_id, ref idx, in idx_max);
+                return NegateNodeInCompound(minus, grow_index_chain(data, n_id, ref idx, in idx_max));
             }
+        }
 
+        /// <summary>
+        /// if minus:
+        /// - insert a parent compound: parent.function => parent.compound.function 
+        /// - insert sibling with substract opcode
+        /// </summary>
+        /// <param name="minus"></param>
+        /// <param name="n_function"></param>
+        /// <returns></returns>
+        private static node NegateNodeInCompound(bool minus, node n_function)
+        {
+            // negate function result ? 
+            if (minus)
+            {
+                // set a compound as parent 
+                n_function.InsertParent(new node(nodetype.compound, BlastScriptToken.Nop));
+
+                // add a substract op 
+                n_function.InsertChild(0, new node(nodetype.operation, BlastScriptToken.Substract));
+
+                // return the compound
+                return n_function.parent;
+            }
+            else
+            {
+                // return the function node 
+                return n_function;
+            }
         }
 
         /// <summary>
@@ -1491,6 +1527,9 @@ namespace NSS.Blast.Compiler.Stage
                     if(token != BlastScriptToken.Substract)
                     {
                         // should we raise error ?  or just allow it TODO 
+#if DEBUG
+                        data.LogTrace(", used in non parameter sequence");
+#endif 
                     }
                 }
 
@@ -1503,6 +1542,8 @@ namespace NSS.Blast.Compiler.Stage
                         if (prev_token == BlastScriptToken.Identifier) if_sure_its_vector_define = true; 
 
                         node ident = n_sequence.SetChild(scan_and_parse_identifier(data, ref idx, idx_max, minus));
+
+                        // reset minus sign after reading an identifier 
                         minus = false; 
                         break;
 

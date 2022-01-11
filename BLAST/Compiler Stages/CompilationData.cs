@@ -326,9 +326,6 @@ namespace NSS.Blast.Compiler
                         case script_op.pushf: sb.Append("push function "); break;
                         case script_op.pushv: sb.Append("push vector "); break;
                         case script_op.pop: sb.Append("pop "); break;
-                        case script_op.pop2: sb.Append("pop2 "); break;
-                        case script_op.pop3: sb.Append("pop3 "); break;
-                        case script_op.pop4: sb.Append("pop4 "); break;
                         case script_op.popv: sb.Append("popv "); break;
 
                         case script_op.abs: sb.Append("abs "); break;
@@ -369,11 +366,6 @@ namespace NSS.Blast.Compiler
                         case script_op.distancesq: sb.Append("distancesq "); break;
                         case script_op.length: sb.Append("lengthsq "); break;
                         case script_op.lengthsq: sb.Append("lengthsq "); break;
-
-                        case script_op.dot: sb.Append("dot "); break;
-
-                        case script_op.log2: sb.Append("log2 "); break;
-                        case script_op.exp: sb.Append("exponent "); break;
 
                         case script_op.ret: sb.Append("return "); break;
 
@@ -426,10 +418,14 @@ namespace NSS.Blast.Compiler
                             extended_script_op exop = (extended_script_op)code[i];
                             switch (exop)
                             {
+                                case extended_script_op.log2: sb.Append("log2 "); break;
+                                case extended_script_op.exp: sb.Append("exponent "); break;
+
                                 case extended_script_op.exp10: sb.Append("exp10 "); break;
                                 case extended_script_op.log10: sb.Append("log10 "); break;
                                 case extended_script_op.logn: sb.Append("logn "); break;
                                 case extended_script_op.cross: sb.Append("cross "); break;
+                                case extended_script_op.dot: sb.Append("dot "); break;
                                 case extended_script_op.debug: sb.Append("debug "); break;
                                 case extended_script_op.debugstack: sb.Append("debugstack "); break;
                                 case extended_script_op.call:
@@ -498,7 +494,7 @@ namespace NSS.Blast.Compiler
                             }
                             else if (op >= BlastCompiler.opt_value)
                             {
-                                sb.Append(BlastValues.GetConstantValue((script_op)op) + " ");
+                                sb.Append(Blast.GetConstantValue((script_op)op) + " ");
                             }
                             else
                             {
@@ -567,7 +563,16 @@ namespace NSS.Blast.Compiler
         public IMByteCodeList code; 
 
         public node AST => root;
+
         public List<BlastVariable> Variables { get; set; }
+        public IEnumerable<BlastVariable> ConstantVariables
+        {
+            get
+            {
+                foreach (BlastVariable v in Variables) if (v.IsConstant) yield return v;
+                yield break;
+            }
+        }
         public List<byte> Offsets { get; set; }
         public List<Tuple<int, int>> Jumps { get; set; }
         public Dictionary<string, string> Defines { get; set; }

@@ -155,11 +155,46 @@ namespace NSS.Blast.Compiler
                 node child = n.children[i];
 
                 if (child.HasChildNodes) continue; 
-                if (child.is_constant || child.IsScriptVariable) continue; 
+                if (child.is_constant || child.IsScriptVariable) continue;
+
+                // this does assume its a vectorsize 1 pop.... 
+                if (child.IsFunction)
+                {
+                    // allow pops 
+                    if (child.function.IsPopVariant()) continue;
+
+                    // allow returnsize 1 
+                    if (child.function.ReturnsVectorSize == 1) continue;
+                    else
+                    {
+                        // if we would allow this we would open a can of worms:
+                        // - allow variable vector sizes to add up to 1 of total length ? 
+                        // - getting vectorsize needs updates for that / probably rewrite 
+                        return false;
+                    }
+                }
+
 
                 switch(child.type)
                 {
-                    case nodetype.parameter: continue; 
+                    case nodetype.parameter: continue;
+
+                    case nodetype.compound:
+                        //
+                        // allow 1 special case: compound (-2)
+                        // - this is done by parser to negate constants 
+                        //
+                        {
+                            if (child.ChildCount == 2
+                                &&
+                                child.children[0].token == BlastScriptToken.Substract
+                                &&
+                                child.children[1].token == BlastScriptToken.Identifier)
+                            {
+                                continue; 
+                            }
+                        }
+                        return false; 
 
                     default: return false; 
                 }
@@ -759,6 +794,14 @@ namespace NSS.Blast.Compiler
             return children == null ? 0 : children.Count(x => x.type == type);
         }
 
+        /// <summary>
+        /// count all children matching one of 2 types 
+        /// </summary>
+        public int CountChildType(nodetype type_a, nodetype type_b)
+        {
+            return children == null ? 0 : children.Count(x => x.type == type_a || x.type == type_b);
+        }
+
         public bool HasChildNodes => children != null && children.Count > 0;
 
                 /// <summary>
@@ -884,24 +927,44 @@ namespace NSS.Blast.Compiler
         }
 
         /// <summary>
+        /// insert a child not at given index 
+        /// - removes new child from old parent
+        /// - set new childs parent to this node
+        /// </summary>
+        public node InsertChild(int index, node node)
+        {
+            Assert.IsNotNull(node);
+            Assert.IsNotNull(children);
+
+            children.Insert(0, node);
+
+            if (node.parent != null && node.parent.ChildCount > 0) node.parent.children.Remove(node);
+            node.parent = this;
+
+            return node; 
+        }
+
+        /// <summary>
         /// insert a node as new parent to this node => before: Parent.Child, after: Parent.NewNode.Child
         /// </summary>
         /// <param name="node">the node to insert/replace as a new parent</param>
         public node InsertParent(node node)
         {
             Assert.IsNotNull(node);
-            Assert.IsNotNull(this.parent);
-            Assert.IsNotNull(this.parent.children);
             Assert.IsNotNull(node.children);
 
             node.parent = this.parent; 
             node.children.Add(this);
 
             this.parent = node;
-            int index = node.parent.children.IndexOf(this);
 
-            Assert.IsTrue(index >= 0);
-            node.parent.children[index] = node;
+            if (node.parent != null && node.parent.ChildCount > 0)
+            {
+                // replace old node in parents child list 
+                int index = node.parent.children.IndexOf(this);
+                Assert.IsTrue(index >= 0);
+                node.parent.children[index] = node;
+            }
 
             node.is_vector = this.is_vector;
             node.vector_size = this.vector_size;
@@ -923,7 +986,7 @@ namespace NSS.Blast.Compiler
                 if (constant_op != script_op.nop)
                 {
                     // maps to constant op 
-                    return data.Blast.GetScriptOpFloatValue(constant_op);
+                    return Blast.GetConstantValue(constant_op);
                 }
 
                 // if it encodes to some system constant op then get its value 
