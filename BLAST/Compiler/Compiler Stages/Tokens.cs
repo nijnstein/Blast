@@ -77,6 +77,7 @@
 
         lerp,
         slerp,
+        nlerp,
 
         saturate,         //   return clamp(x, new float3(0.0f), new float3(1.0f));
         clamp,
@@ -98,7 +99,6 @@
         undefined9,// length,
         undefined10, //lengthsq,
 
-        undefined5,
         degrees,
         radians,
 

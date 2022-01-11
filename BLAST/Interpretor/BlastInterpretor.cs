@@ -1545,81 +1545,6 @@ namespace NSS.Blast.Interpretor
             return f4;
         }
 
-        float4 get_lerp_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.lerp(
-                            pop_or_value_4(code_pointer + 1),
-                            pop_or_value_4(code_pointer + 2),
-                            pop_or_value(code_pointer + 3));
-                        f4 = math.select(f4, -f4, minus);
-                        code_pointer += 3;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                    {
-                        vector_size = 1;
-                        f4.x = math.lerp(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2), pop_or_value(code_pointer + 3));
-                        f4.x = math.select(f4.x, -f4.x, minus);
-                        code_pointer += 3;
-                        break;
-                    }
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                    Standalone.Debug.LogError($"lerp: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            minus = false;
-            return f4;
-        }
-
-        float4 get_slerp_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // vector size to be set from input?  
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float4:
-                    {
-                        vector_size = 4;
-                        f4 = math.slerp(
-                            new quaternion(pop_or_value_4(code_pointer + 1)),
-                            new quaternion(pop_or_value_4(code_pointer + 2)),
-                            pop_or_value(code_pointer + 3)).value;
-                        code_pointer += 3;
-                        break;
-                    }
-
-                case BlastVectorSizes.float1:
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if LOG_ERRORS
-                    Standalone.Debug.LogError($"slerp: vector size '{vector_size}' not supported ");
-#endif
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        break;
-                    }
-            }
-
-            f4 = math.select(f4, -f4, minus);
-            minus = false;
-            return f4;
-        }
 
 
 
@@ -3159,17 +3084,16 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         void get_clamp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
-            BlastVariableDataType datatype_mm;
             BlastVariableDataType datatype_a;
-            byte vector_size_mm;
-            
-            void* p1 = pop_with_info(code_pointer + 2, out datatype_mm, out vector_size_mm);
-            void* p2 = pop_with_info(code_pointer + 3, out datatype_a, out vector_size);
-
-            // instead of init to NaN we init to float p1 (even if its wrong)
             f4 = float.NaN; 
+            byte vector_size_mm;
+            BlastVariableDataType datatype_mm;
+     
+            void* p1 = pop_with_info(code_pointer + 2, out datatype_mm, out vector_size_mm);
+            void* p2 = pop_with_info(code_pointer + 3, out datatype_a, out vector_size);       // could optimize this to pop_fx in release but not much win
 
 #if DEBUG
+
             if (datatype_mm != datatype_a || vector_size_mm != vector_size)
             {
                 Debug.LogError($"get_clamp_result: parameter type mismatch, p1 = {datatype_mm}.{vector_size_mm}, p2 = {datatype_a}.{vector_size} at codepointer {code_pointer}");
@@ -3229,6 +3153,210 @@ namespace NSS.Blast.Interpretor
 #endif
                             break;
                         }
+                }
+            }
+        }
+
+        /// <summary>
+        /// linear interpolation from a to b at step c 
+        /// 
+        /// - 3 inputs:   3 vectors equal size or first 2 equal and last = 1 
+        /// - only numeric input
+        /// 
+        /// - lerp((1 2), (10 20), 0.5); 
+        /// - lerp((1 2), (10 20), (0.5 0.1)); 
+        /// 
+        /// returns vector size of input values 
+        /// </summary>
+        void get_lerp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            BlastVariableDataType p1_datatype;
+            BlastVariableDataType p2_datatype; byte p2_vector_size;
+            BlastVariableDataType p3_datatype; byte p3_vector_size;
+
+            void* p1 = pop_with_info(code_pointer + 1, out p1_datatype, out vector_size);
+            void* p2 = pop_with_info(code_pointer + 2, out p2_datatype, out p2_vector_size);
+            void* p3 = pop_with_info(code_pointer + 3, out p3_datatype, out p3_vector_size);
+
+            f4 = float.NaN;
+            code_pointer += 3;
+
+#if DEBUG
+            if(p1_datatype != p2_datatype || vector_size != p2_vector_size)
+            {
+                Debug.LogError($"lerp: parameter type mismatch, min = {p1_datatype}.{vector_size}, max = {p2_datatype}.{p2_vector_size} at codepointer {code_pointer}, min/max vectorsizes must be equal");
+                return; 
+            }
+            if(p1_datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"lerp: ID datatype not supported");
+                return; 
+            }
+            if (vector_size != p3_vector_size && p3_vector_size != 1)
+            {
+                Debug.LogError($"lerp: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, c = {p3_datatype}.{p3_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
+                return;
+            }
+#endif 
+            
+            if(p3_vector_size == 1)
+            {
+                switch ((BlastVectorSizes)vector_size)
+                {
+                    case 0:
+                    case BlastVectorSizes.float4: f4 = math.lerp(((float4*)p1)[0], ((float4*)p2)[0], ((float*)p3)[0]); vector_size = 4; break;
+                    case BlastVectorSizes.float1: f4.x = math.lerp(((float*)p1)[0], ((float*)p2)[0], ((float*)p3)[0]); break;
+                    case BlastVectorSizes.float2: f4.xy = math.lerp(((float2*)p1)[0], ((float2*)p2)[0], ((float*)p3)[0]); break;
+                    case BlastVectorSizes.float3: f4.xyz = math.lerp(((float3*)p1)[0], ((float3*)p2)[0], ((float*)p3)[0]); break;
+#if DEBUG
+                    default:
+                        Debug.LogError($"lerp: vector_size {vector_size} not supported");
+                        break;
+#endif
+                }
+            }
+            else
+            {
+                switch ((BlastVectorSizes)vector_size)
+                {
+                    case 0:
+                    case BlastVectorSizes.float4: f4 = math.lerp(((float4*)p1)[0], ((float4*)p2)[0], ((float4*)p3)[0]); vector_size = 4; break;
+                    case BlastVectorSizes.float1: f4.x = math.lerp(((float*)p1)[0], ((float*)p2)[0], ((float*)p3)[0]); break;
+                    case BlastVectorSizes.float2: f4.xy = math.lerp(((float2*)p1)[0], ((float2*)p2)[0], ((float2*)p3)[0]); break;
+                    case BlastVectorSizes.float3: f4.xyz = math.lerp(((float3*)p1)[0], ((float3*)p2)[0], ((float3*)p3)[0]); break;
+#if DEBUG
+                    default:
+                        Debug.LogError($"lerp: vector_size {vector_size} not supported");
+                        break;
+#endif
+                }
+            }
+        }
+
+        /// <summary>
+        /// spherical linear interpolation 
+        /// - 2 quaternion + float in
+        /// returns float4/quaternion
+        /// </summary>
+        void get_slerp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            BlastVariableDataType p1_datatype;
+            BlastVariableDataType p2_datatype; byte p2_vector_size;
+            BlastVariableDataType p3_datatype; byte p3_vector_size;
+
+            void* p1 = pop_with_info(code_pointer + 1, out p1_datatype, out vector_size);
+            void* p2 = pop_with_info(code_pointer + 2, out p2_datatype, out p2_vector_size);
+            void* p3 = pop_with_info(code_pointer + 3, out p3_datatype, out p3_vector_size);
+
+            f4 = float.NaN;
+            code_pointer += 3;
+
+#if DEBUG
+            if (p1_datatype != p2_datatype || vector_size != p2_vector_size)
+            {
+                Debug.LogError($"slerp: parameter type mismatch, min = {p1_datatype}.{vector_size}, max = {p2_datatype}.{p2_vector_size} at codepointer {code_pointer}, only float4/quaternions are supported in slerp");
+                return;
+            }
+            if (p1_datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"slerp: ID datatype not supported");
+                return;
+            }
+            if (vector_size != p3_vector_size && p3_vector_size != 1)
+            {
+                Debug.LogError($"slerp: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, c = {p3_datatype}.{p3_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
+                return;
+            }
+#endif
+
+            if (p3_vector_size == 1)
+            {
+                switch ((BlastVectorSizes)vector_size)
+                {
+                    case 0:
+                    case BlastVectorSizes.float4: f4 = math.slerp(((quaternion*)p1)[0], ((quaternion*)p2)[0], ((float*)p3)[0]).value; vector_size = 4; break;
+#if DEBUG
+                    default:
+                        Debug.LogError($"slerp: vector_size {vector_size} not supported");
+                        break; 
+#endif 
+                }
+            }
+            else
+            {
+                switch ((BlastVectorSizes)vector_size)
+                {
+                    case 0:
+                    case BlastVectorSizes.float4: f4 = math.slerp(((quaternion*)p1)[0], ((quaternion*)p2)[0], ((float*)p3)[0]).value; vector_size = 4; break;
+#if DEBUG
+                    default:
+                        Debug.LogError($"slerp: vector_size {vector_size} not supported");
+                        break;
+#endif
+                }
+            }
+        }
+
+        /// <summary>
+        /// normalized linear interpolation 
+        /// - 2 quaternion + float in
+        /// returns float4/quaternion
+        /// </summary>
+        void get_nlerp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            BlastVariableDataType p1_datatype;
+            BlastVariableDataType p2_datatype; byte p2_vector_size;
+            BlastVariableDataType p3_datatype; byte p3_vector_size;
+
+            void* p1 = pop_with_info(code_pointer + 1, out p1_datatype, out vector_size);
+            void* p2 = pop_with_info(code_pointer + 2, out p2_datatype, out p2_vector_size);
+            void* p3 = pop_with_info(code_pointer + 3, out p3_datatype, out p3_vector_size);
+
+            f4 = float.NaN;
+            code_pointer += 3;
+
+#if DEBUG
+            if (p1_datatype != p2_datatype || vector_size != p2_vector_size)
+            {
+                Debug.LogError($"nlerp: parameter type mismatch, min = {p1_datatype}.{vector_size}, max = {p2_datatype}.{p2_vector_size} at codepointer {code_pointer}, only float4/quaternions are supported in slerp");
+                return;
+            }
+            if (p1_datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"nlerp: ID datatype not supported");
+                return;
+            }
+            if (vector_size != p3_vector_size && p3_vector_size != 1)
+            {
+                Debug.LogError($"nlerp: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, c = {p3_datatype}.{p3_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
+                return;
+            }
+#endif
+
+            if (p3_vector_size == 1)
+            {
+                switch ((BlastVectorSizes)vector_size)
+                {
+                    case 0:
+                    case BlastVectorSizes.float4: f4 = math.nlerp(((quaternion*)p1)[0], ((quaternion*)p2)[0], ((float*)p3)[0]).value; vector_size = 4; break;
+#if DEBUG
+                    default:
+                        Debug.LogError($"nlerp: vector_size {vector_size} not supported");
+                        break;
+#endif
+                }
+            }
+            else
+            {
+                switch ((BlastVectorSizes)vector_size)
+                {
+                    case 0:
+                    case BlastVectorSizes.float4: f4 = math.nlerp(((quaternion*)p1)[0], ((quaternion*)p2)[0], ((float*)p3)[0]).value; vector_size = 4; break;
+#if DEBUG
+                    default:
+                        Debug.LogError($"nlerp: vector_size {vector_size} not supported");
+                        break;
+#endif
                 }
             }
         }
@@ -4510,6 +4638,9 @@ namespace NSS.Blast.Interpretor
                                 // math utils 
                                 case script_op.select: get_select_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case script_op.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case script_op.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break; 
 
                                 // fma and friends 
                                 case script_op.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -4518,21 +4649,7 @@ namespace NSS.Blast.Interpretor
                                 case script_op.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); max_vector_size = vector_size; break;
 
 
-
-
-
-                                case script_op.lerp:
-                                    get_lerp_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case script_op.slerp:
-                                    get_slerp_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-
-
-
-
+                                                            
                                 ///
                                 ///  FROM HERE NOT CONVERTED YET TO METADATA USE
                                 /// 

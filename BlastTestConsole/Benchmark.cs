@@ -17,20 +17,22 @@ public class Program
         n_runs = 1000; 
         Console.WriteLine(">");
         Console.WriteLine("> DEBUG BUILD: C#/.NET");
+        Console.WriteLine($"> executing {n_runs} cycles");
         Console.WriteLine(">");
 #else
-        n_runs = 1000 * 100;
+        n_runs = 1000 * 1000;
         Console.WriteLine(">");
         Console.WriteLine("> RELEASE BUILD: C#/.NET");
+        Console.WriteLine($"> executing {n_runs} cycles");
         Console.WriteLine(">");
 #endif 
 
         Benchmark1("1", "a = 34 * 55 * 555 * 2 + 10.2;", n_runs);
         Benchmark1("2", "a = (23 34 33) * (55 555 2) + 10.2;", n_runs);
-        Benchmark1("non fma", "a = 2 * 3 + 4;", n_runs);
-        Benchmark1("fma", "a = fma(2, 3, 4);", n_runs);
-        Benchmark1("non fma complex", "a = (3 3 3) * (4 4 4) + (1.2 1.2 1.2);", n_runs);
-        Benchmark1("fma complex", "a = fma((3 3 3), (4 4 4), (1.2 1.2 1.2));", n_runs);
+        Benchmark1("fma optimizer", "a = 2 * 3 + 4;", n_runs);
+        Benchmark1("fma coded", "a = fma(2, 3, 4);", n_runs);
+        Benchmark1("fma optimizer", "a = (3 3 3) * (4 4 4) + (1.2 1.2 1.2);", n_runs);
+        Benchmark1("fma coded", "a = fma((3 3 3), (4 4 4), (1.2 1.2 1.2));", n_runs);
 
         Benchmark1("mul", "a = 1 * 2 * 3 * 4 * 5 * 6 * 7;", n_runs);
         Benchmark1("mula", "a = mula(1, 2, 3, 4, 5, 6, 7);", n_runs);
@@ -40,6 +42,8 @@ public class Program
 
         Benchmark1("mul", "a = (3 3 3 5) * (4 4 4 9) * (1.2 1 1.2 4) * (9.9 9.1 9 5) * (5 5 3 5) * (92 2 4 5);", n_runs);
         Benchmark1("mula", "a = mula((3 3 3 5), (4 4 4 9), (1.2 1 1.2 4), (9.9 9.1 9 5), (5 5 3 5), (92 2 4 5));", n_runs);
+
+        Benchmark1("lerp", "a = lerp((100 1 9 2), (200 1 99 32), (6.7 6.7 6.7 6.7));", n_runs);
 
 
         Console.ReadKey();

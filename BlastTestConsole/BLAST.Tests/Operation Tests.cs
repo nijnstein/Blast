@@ -325,6 +325,18 @@ namespace BlastTestConsole
         [InlineData("a = clamp((1 2 3 4), 1, 2);", 1)]
         [InlineData("a = clamp((0 1 2 3), (1 2 3 4), (2 4 6 8));", 1)]
 
+        [InlineData("a = lerp(1, 10, 6.7);", 61.3)]
+        [InlineData("a = lerp((10 2), (20 32), 6.7);", 77)]
+        [InlineData("a = lerp((100 9 2), (200 99 32), 6.7);", 770)]
+        [InlineData("a = lerp((100 1 9 2), (200 1 99 32), 6.7);", 770)]
+        [InlineData("a = lerp((10 2), (20 32), (6.7 6.7));", 77)]
+        [InlineData("a = lerp((100 9 2), (200 99 32), (6.7 6.7 6.7));", 770)]
+        [InlineData("a = lerp((100 1 9 2), (200 1 99 32), (6.7 6.7 6.7 6.7));", 770)]
+
+        [InlineData("a = nlerp((1 1 1 1), (1 1 1 1), 1);", 0.5)]
+        [InlineData("a = slerp((1 1 1 1), (1 1 1 1), 1);", 0.5)]
+
+
         public void BlastScript_Functions_1_2(string code, float v1)
         {
             Blast blast = Blast.Create(Allocator.Persistent);

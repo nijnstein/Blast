@@ -456,7 +456,8 @@ namespace NSS.Blast
             new ScriptFunctionDefinition(8, "rsqrt", 1, 1, 0, 0, script_op.rsqrt),
 
             new ScriptFunctionDefinition(9, "lerp", 3, 3, 0, 0, script_op.lerp, "a", "b", "t"),
-            new ScriptFunctionDefinition(10, "slerp", 3, 3, 0, 0,script_op.slerp, "a", "b", "t"),
+            new ScriptFunctionDefinition(10, "slerp", 3, 3, 4, 4, script_op.slerp, "a", "b", "t"),
+            new ScriptFunctionDefinition(47, "nlerp", 3, 3, 4, 4, script_op.nlerp, "a", "b", "t"),
 
             new ScriptFunctionDefinition(11, "any", 2, 63, 0, 0, script_op.any),
             new ScriptFunctionDefinition(12, "all", 2, 63, 0, 0, script_op.all),
