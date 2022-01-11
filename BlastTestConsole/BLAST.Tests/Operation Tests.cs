@@ -308,6 +308,23 @@ namespace BlastTestConsole
 
         [Theory]
         [InlineData("a = saturate(0.3);", 0.3f)]
+
+        [InlineData("a = select(1, 2, 1);", 2)]
+
+        [InlineData("a = select((1 2), (2 3), 1);", 2)]
+        [InlineData("a = select((1 2 3), (4 5 6), 0);", 1)]
+        [InlineData("a = select((1 2 3 4), (5 6 7 8), 1);", 5)]
+
+        [InlineData("a = select((1 2), (2 3), (1 1));", 2)]
+        [InlineData("a = select((1 2 3), (4 5 6), (0 0 0));", 1)]
+        [InlineData("a = select((1 2 3 4), (5 6 7 8), (1 0 0 1));", 5)]
+
+        [InlineData("a = clamp(101, 1, 2);", 2)]
+        [InlineData("a = clamp((0.3 12), 1, 2);", 1)] 
+        [InlineData("a = clamp((1 2 3), 1, 2);", 1)]
+        [InlineData("a = clamp((1 2 3 4), 1, 2);", 1)]
+        [InlineData("a = clamp((0 1 2 3), (1 2 3 4), (2 4 6 8));", 1)]
+
         public void BlastScript_Functions_1_2(string code, float v1)
         {
             Blast blast = Blast.Create(Allocator.Persistent);

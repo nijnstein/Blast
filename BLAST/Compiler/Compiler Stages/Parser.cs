@@ -1426,7 +1426,7 @@ namespace NSS.Blast.Compiler.Stage
                                 }
                                 else
                                 {
-                                    data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.Match}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)} ");
+                                    data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.Match}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)}  => \n{n_function.ToNodeTreeString()}");
                                     return null;
                                 }
                                 break; 
@@ -1440,7 +1440,7 @@ namespace NSS.Blast.Compiler.Stage
                             case BlastScriptToken.Switch:
                             case BlastScriptToken.Case:
                             case BlastScriptToken.Default:
-                                data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.Match}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)} ");
+                                data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.Match}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)}  => \n{n_function.ToNodeTreeString()}");
                                 return null;
                         }
                     }
@@ -1465,7 +1465,12 @@ namespace NSS.Blast.Compiler.Stage
                 int param_count = n_function.children.Count;
                 if (param_count < function.MinParameterCount || param_count > function.MaxParameterCount)
                 {
-                    data.LogError($"parser.parse_function: found function {function.Match} with {param_count} parameters while it should have {function.MinParameterCount} to {function.MaxParameterCount} parameters");
+                    //  fails in case: 
+                    //  reads:          clamp((1 2), 3, 4)    
+                    //  produces:       clamp(((1 2) 3) 4)
+                    //  -> dueue to tokenizer removing the , after the )
+
+                    data.LogError($"parser.parse_function: found function {function.Match} with {param_count} parameters while it should have {function.MinParameterCount} to {function.MaxParameterCount} parameters => \n{n_function.ToNodeTreeString()}");
                     return null;
                 }
 
@@ -1482,7 +1487,7 @@ namespace NSS.Blast.Compiler.Stage
                 }
                 else
                 {
-                    data.LogError($"parser.parse_function: found function {function.Match} without parameters while at minimum {function.MinParameterCount} parameters are expected.");
+                    data.LogError($"parser.parse_function: found function {function.Match} without parameters while at minimum {function.MinParameterCount} parameters are expected => \n{n_function.ToNodeTreeString()}");
                     return null;
                 }
             }

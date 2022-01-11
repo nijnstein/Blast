@@ -32,6 +32,17 @@
         error_vector_size_not_supported = -25,
     }
 
+    public static class BlastErrorTranslator
+    {
+        public static string TranslateError(BlastError error, int locale = 0)
+        {
+            // todo, translations in NL + EN 
+
+
+
+            return error.ToString(); 
+        }
+    }
 
 }
 

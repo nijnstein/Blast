@@ -362,11 +362,6 @@ namespace NSS.Blast.Compiler
                         case script_op.degrees: sb.Append("degrees "); break;
                         case script_op.radians: sb.Append("radians "); break;
 
-                        case script_op.distance: sb.Append("distance "); break;
-                        case script_op.distancesq: sb.Append("distancesq "); break;
-                        case script_op.length: sb.Append("lengthsq "); break;
-                        case script_op.lengthsq: sb.Append("lengthsq "); break;
-
                         case script_op.ret: sb.Append("return "); break;
 
                         case script_op.value_0: sb.Append("0 "); break;

@@ -447,7 +447,7 @@ namespace NSS.Blast
             new ScriptFunctionDefinition(3, "mina", 1, 63, 1, 0, script_op.mina),
             new ScriptFunctionDefinition(4, "maxa", 1, 63, 1, 0, script_op.maxa),
 
-            new ScriptFunctionDefinition(5, "select", 3, 3, 0, 0, script_op.select, "a", "b", "c"),
+            new ScriptFunctionDefinition(5, "select", 3, 3, 0, 0, script_op.select, "a", "b", "condition"),
 
             new ScriptFunctionDefinition(6, "random", 0, 2, 0, 0, script_op.random),  // random value from 0 to 1 (inclusive), 0 to max, or min to max depending on parameter count 1
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Seed, "seed", 1, 1, 0, 0, script_op.seed),
@@ -488,14 +488,11 @@ namespace NSS.Blast
             new ScriptFunctionDefinition(30, "saturate", 1, 1, 0, 0, script_op.saturate, "a"),
 
 
+
             new ScriptFunctionDefinition(31, "clamp", 3, 3, 0, 0, script_op.clamp, "a", "min", "max"),
 
-            
+                           
 
-            new ScriptFunctionDefinition(34, "distance", 2, 2,  0, 0,script_op.distance, "a", "b"),
-            new ScriptFunctionDefinition(35, "distancesq", 2, 2,  0, 0,script_op.distancesq, "a", "b"),
-            new ScriptFunctionDefinition(36, "length", 2, 2,  0, 0,script_op.length, "a", "b"),
-            new ScriptFunctionDefinition(37, "lengthsq", 2, 2,  0, 0,script_op.lengthsq, "a", "b"),
 
 
             new ScriptFunctionDefinition(41, "log2", 1, 1,  0, 0, extended_script_op.log2, null, "a", "b"),
@@ -981,14 +978,6 @@ namespace NSS.Blast
                     case script_op.cosh:
                         break;
                     case script_op.sinh:
-                        break;
-                    case script_op.distance:
-                        break;
-                    case script_op.distancesq:
-                        break;
-                    case script_op.length:
-                        break;
-                    case script_op.lengthsq:
                         break;
                     case script_op.degrees:
                         break;

@@ -74,8 +74,6 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     case script_op.ret: return "return"; 
                     case script_op.fma: return "blast.fma";
-                    case script_op.undefined1: return "blast.UNDEFINED1";
-                    case script_op.undefined2: return "blast.UNDEFINED2";  
                     case script_op.adda: return "blast.adda"; 
                     case script_op.mula: return "blast.mula"; 
                     case script_op.diva: return "blast.diva"; 
@@ -94,14 +92,14 @@ namespace NSS.Blast.Compiler.Stage
 
                     case script_op.lerp: return "math.lerp"; 
                     case script_op.slerp: return "math.slerp";
-                    case script_op.saturate: return "math.saturate"; 
                     case script_op.clamp: return "math.clamp"; 
+                    case script_op.saturate: return "math.saturate"; 
+                    
                     case script_op.normalize: return "math.normalize"; 
+                    
                     case script_op.ceil: return "math.ceil"; 
                     case script_op.floor: return "math.floor"; 
-                    
-                    case script_op.frac:
-                        break;
+                    case script_op.frac: return "math.frac";
                     
                     case script_op.sin: return "math.sin";
                     case script_op.cos: return "math.cos"; 
@@ -110,21 +108,12 @@ namespace NSS.Blast.Compiler.Stage
                     case script_op.cosh: return "math.cosh";
                     case script_op.sinh: return "math.sinh";
                     
-                    case script_op.distance:
-                        break;
-                    case script_op.distancesq:
-                        break;
-                    case script_op.length:
-                        break;
-                    case script_op.lengthsq:
-                        break;
-                    case script_op.degrees:
-                        break;
-                    case script_op.radians:
-                        break;
-                    
+                    case script_op.degrees: return "math.degrees"; 
+                    case script_op.radians: return "math.radians"; 
+
                     case script_op.sqrt: return "math.sqrt";
                     case script_op.rsqrt: return "math.rsqrt"; 
+                    
                     case script_op.pow: return "math.pow"; 
 
                     case script_op.ex_op:

@@ -116,7 +116,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>true if a whitespace character</returns>
         static bool is_whitespace(char ch)
         {
-            return ch == ' ' || ch == '\t' || ch == (char)10 || ch == (char)13 || ch == ',';
+            return ch == ' ' || ch == '\t' || ch == (char)10 || ch == (char)13;// || ch == ',';
         }
 
         /// <summary>
@@ -486,7 +486,6 @@ namespace NSS.Blast.Compiler.Stage
                     bool whitespace = is_whitespace(ch);
                     bool eof = i2 == code.Length;
                     bool istoken = is_token(ch);
-                    bool have_comma_seperator_next = ch == ',';
 
                     if ((have_numeric && ch == '.') || (!whitespace && !istoken && !eof))
                     {
@@ -506,14 +505,6 @@ namespace NSS.Blast.Compiler.Stage
                         // read next part of identifier 
                         i2++;
                         continue;
-                    }
-                    else
-                    {
-                        // did we get a comma? 
-                        //if (ch == ',')
-                        //{
-                        //   tokens.Add(new Tuple<BlastScriptToken, string>(BlastScriptToken.Comma, ","));
-                        //}
                     }
 
                     // indexed indentifiers are rebuilt in a later stage 
@@ -611,13 +602,6 @@ namespace NSS.Blast.Compiler.Stage
                             }
                         }
                     }
-
-                    // need to injext a comma/nop? 
-                    if(have_comma_seperator_next)
-                    {
-                        tokens.Add(new Tuple<BlastScriptToken, string>(BlastScriptToken.Comma, ","));
-                    }
-
 
                     // reaching here means we added an identifier and need to restart the outer loop
                     break;

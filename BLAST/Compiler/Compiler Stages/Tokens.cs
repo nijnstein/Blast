@@ -93,10 +93,10 @@
         cosh,
         sinh,
 
-        distance,
-        distancesq,
-        length,
-        lengthsq,
+        undefined7, //distance,
+        undefined8,// distancesq,
+        undefined9,// length,
+        undefined10, //lengthsq,
 
         undefined5,
         degrees,
