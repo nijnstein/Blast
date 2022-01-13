@@ -151,7 +151,15 @@ namespace NSS.Blast.Compiler.Stage
         /// </summary>
         public List<IMByteCodeList> segments { get; set; }
         public int SegmentCount => segments == null ? 0 : segments.Count;
-        public bool HasSegments => segments == null ? false : segments.Count > 0; 
+        public bool IsSegmented => segments == null ? false : segments.Count > 0; 
+        public bool IsZeroTerminated
+        {
+            get
+            {
+                if (list == null || list.Count < 1) return false;
+                return list[list.Count - 1].code == 0; 
+            }
+        }
         
         public List<IMByteCode> list { get; set; }
         public IMByteCodeList() { list = new List<IMByteCode>(); segments = null; }
@@ -257,7 +265,7 @@ namespace NSS.Blast.Compiler.Stage
         /// </summary>
         public void ReduceSegments()
         {
-            if (HasSegments)
+            if (IsSegmented)
             {
                 foreach (IMByteCodeList segment in segments)
                 {

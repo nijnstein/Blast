@@ -9,8 +9,7 @@ namespace NSS.Blast.Compiler.Stage
     {
         public Version Version => new Version(0, 1, 0);
         public BlastCompilerStageType StageType => BlastCompilerStageType.Packaging;
-
-      
+     
 
         /// <summary>
         /// package the compiled code into BlastIntermediate 
@@ -21,9 +20,15 @@ namespace NSS.Blast.Compiler.Stage
         static internal unsafe int PackageIntermediate(CompilationData cdata, IMByteCodeList code)
         {
             // reduce any segmented code list that resulted from multithreading
-            if(code != null && code.HasSegments)
+            if(code != null && code.IsSegmented)
             {
                 code.ReduceSegments(); 
+            }
+
+            // make sure code is zero terminated, it might not always be possible to know for the compiler when to keep it 
+            if (!cdata.code.IsZeroTerminated)
+            {
+                cdata.code.Add(script_op.nop);
             }
 
             // reset any packaged data already set by overwriting it
@@ -160,7 +165,7 @@ namespace NSS.Blast.Compiler.Stage
                         byte offsetindex = (byte)cdata.Offsets.IndexOf(id);
                         if (offsetindex < 0)
                         {
-                            cdata.LogError($"data segment error, failed to get variable index from offset {id} at codepointer {i}");
+                            cdata.LogError($"compiler.packaging: data segment error, failed to get variable index from offset {id} at codepointer {i}");
                             return (int)BlastError.error_failed_to_translate_offset_into_index;
                         }
                         else
@@ -168,7 +173,7 @@ namespace NSS.Blast.Compiler.Stage
                             // it should equal the value in replace 
                             if(id != replace[offsetindex])
                             {
-                                cdata.LogError($"data segment error, failed to get variable index from offset {id} at codepointer {i} and match it to the calculated offset of {replace[offsetindex]}");
+                                cdata.LogError($"compiler.packaging: data segment error, failed to get variable index from offset {id} at codepointer {i} and match it to the calculated offset of {replace[offsetindex]}");
                                 return (int)BlastError.error_failed_to_translate_offset_into_index;
                             }
 

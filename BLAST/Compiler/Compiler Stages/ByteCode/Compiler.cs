@@ -965,7 +965,7 @@ namespace NSS.Blast.Compiler.Stage
             IMByteCodeList code = CompileNodes(data, data.AST);
             if(code != null)
             {
-                if (code.HasSegments)
+                if (code.IsSegmented)
                 {
                     // if segmented add the closing nop as a segment 
                     IMByteCodeList segment = new IMByteCodeList();

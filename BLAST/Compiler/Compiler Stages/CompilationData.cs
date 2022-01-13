@@ -208,7 +208,7 @@ namespace NSS.Blast.Compiler
 
 
         /// <summary>
-        /// this version has a little more information than the generic package bytecode reader 
+        /// this version has a little more information than the generic bytecode reader in blast due to having access to all compilation data
         /// </summary>
         /// <returns></returns>
         public unsafe string GetHumanReadableCode()
@@ -218,7 +218,7 @@ namespace NSS.Blast.Compiler
             if (Executable.code_size > 0)
             {
                 List<byte> bytes = new List<byte>(Executable.code_size);
-                for (int i = 0; i < bytes.Count; i++) bytes.Add(Executable.code[i]);
+                for (int i = 0; i < Executable.code_size; i++) bytes.Add(Executable.code[i]);
                 WriteHumanReadableCode(sb, bytes);
 
                 // ending a jump after program end?
@@ -260,7 +260,7 @@ namespace NSS.Blast.Compiler
                 if (i % 10 == 0)
                 {
                     if (i != 0) sb.Append("\n");
-                    sb.Append("#" + i.ToString().PadLeft(3, '0') + " ");
+                    sb.Append("" + i.ToString().PadLeft(3, '0') + "| ");
                 }
 
 
@@ -501,7 +501,6 @@ namespace NSS.Blast.Compiler
 
             }
         }
-
         public unsafe string GetHumanReadableBytes()
         {
             StringBuilder sb = StringBuilderCache.Acquire();
@@ -512,7 +511,7 @@ namespace NSS.Blast.Compiler
                 {
                     if (i % 10 == 0)
                     {
-                        sb.Append($"{i.ToString().PadLeft(3, '0')}  ");
+                        sb.Append($"{i.ToString().PadLeft(3, '0')}| ");
                     }
                     sb.Append($"{Executable.code[i].ToString().PadLeft(3, '0')} ");
                     if (i % 10 == 9)
@@ -530,7 +529,7 @@ namespace NSS.Blast.Compiler
                     {
                         if (i % 10 == 0)
                         {
-                            sb.Append($"{i.ToString().PadLeft(3, '0')}  ");
+                            sb.Append($"{i.ToString().PadLeft(3, '0')}| ");
                         }
                         sb.Append($"{code.list[i].ToString().PadLeft(3, '0')} ");
                         if (i % 10 == 9)

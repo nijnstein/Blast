@@ -803,17 +803,19 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // remove any extra nop's trailing
-            while (code.Count > 2 
+/*            while (code.Count > 2 
                 && code[code.Count - 1].op == script_op.nop 
                 && code[code.Count - 2].op == script_op.nop)
             {
+                // we should not do this.. 
+
                 // remove 1 before last allowing jumplabels to all move to that last nop if needed
                 if(!code.RemoveAtAndMoveJumpLabels(data, code.Count - 2))
                 {
                     data.LogError("ByteCodeOptimizer: failure removing nop duplicate"); 
                     return false; 
                 }
-            }
+            }*/ 
 
             // write back modified code
             /*for (i = 0; i < ops.Count; i++)
@@ -835,7 +837,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns></returns>
         int Optimize(CompilationData cdata)
         {
-            if (cdata.code.HasSegments && cdata.CompilerOptions.ParallelCompilation)
+            if (cdata.code.IsSegmented && cdata.CompilerOptions.ParallelCompilation)
             {
                 int[] res = new int[cdata.code.SegmentCount];
                 Parallel.ForEach(cdata.code.segments,
@@ -847,7 +849,7 @@ namespace NSS.Blast.Compiler.Stage
             }
             else
             {
-                if(cdata.code.HasSegments)
+                if(cdata.code.IsSegmented)
                 {
                     foreach(IMByteCodeList segment in cdata.code.segments)
                     {

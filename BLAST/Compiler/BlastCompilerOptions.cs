@@ -23,7 +23,7 @@ namespace NSS.Blast
         /// <summary>
         /// compile script using constant data fields 
         /// </summary>
-        public bool CompileWithSystemConstants = true;
+        public readonly bool CompileWithSystemConstants = true;
 
         /// <summary>
         /// compare epsilon for constants, on fast float mode it wont match on float.epsilon
@@ -72,9 +72,9 @@ namespace NSS.Blast
         /// <summary>
         /// package mode
         /// </summary>
-        public BlastPackageMode PackageMode = BlastPackageMode.CodeDataStack;
+        public BlastPackageMode PackageMode = BlastPackageMode.Normal;
 
-        public Allocator PackageAllocator = Allocator.Temp;
+        public Allocator PackageAllocator = Allocator.Persistent;
 
         /// <summary>
         /// enable for partially parallel compilation 
@@ -109,7 +109,6 @@ namespace NSS.Blast
         public BlastCompilerOptions()
         {
         }
-
 
         /// <summary>
         /// add a compiler define 

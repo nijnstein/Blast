@@ -15,7 +15,9 @@ namespace NSS.Blast
         // The value 360 was chosen in discussion with performance experts as a compromise between using
         // as litle memory (per thread) as possible and still covering a large part of short-lived
         // StringBuilder creations on the startup path of VS designers.
-        private const int MAX_BUILDER_SIZE = 360;
+        //
+        // for blast i updated it to a larger size to fit larger console messages 
+        private const int MAX_BUILDER_SIZE = 768;
 
         [ThreadStatic]
         private static StringBuilder CachedInstance;

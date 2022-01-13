@@ -1,14 +1,10 @@
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BlastUnitTests.exe
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BlastUnitTests.dll
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BLAST.dll
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\Unity.Mathematics.dll
-F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\UnityEngine.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\testhost.exe
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\testhost.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\Microsoft.TestPlatform.PlatformAbstractions.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\xunit.runner.visualstudio.dotnetcore.testadapter.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\xunit.runner.reporters.netcoreapp10.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\xunit.runner.utility.netcoreapp10.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BlastUnitTests.exe
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BLAST Test Scripts\F4 - Datatypes.bs
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BLAST Test Scripts\Features\Debug.bs
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BLAST Test Scripts\Features\DebugStack.bs
@@ -37,6 +33,7 @@ F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BLAST Test Sc
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BlastUnitTests.deps.json
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BlastUnitTests.runtimeconfig.json
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BlastUnitTests.runtimeconfig.dev.json
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BlastUnitTests.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BlastUnitTests.pdb
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\Microsoft.VisualStudio.CodeCoverage.Shim.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\Microsoft.TestPlatform.CoreUtilities.dll
@@ -116,6 +113,9 @@ F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\zh-Hans\Micro
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\zh-Hant\Microsoft.TestPlatform.CommunicationUtilities.resources.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\zh-Hant\Microsoft.TestPlatform.CrossPlatEngine.resources.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\zh-Hant\Microsoft.VisualStudio.TestPlatform.Common.resources.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BLAST.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\Unity.Mathematics.dll
+F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\UnityEngine.dll
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\BLAST.pdb
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\Unity.Mathematics.pdb
 F:\Repo\Nijnstein\Blast\BlastTestConsole\bin\Release\netcoreapp3.1\UnityEngine.pdb

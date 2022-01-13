@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Mathematics;
 using NSS.Blast.Standalone;
+using Unity.Assertions;
 
 namespace NSS.Blast.Compiler
 {
@@ -147,7 +148,7 @@ namespace NSS.Blast.Compiler
             // resolve jumps 
             new BlastJumpResolver(),
             
-            // package bytecode
+            // package bytecode into the intermediate 
             new BlastPackaging()
         };
 
@@ -353,29 +354,131 @@ namespace NSS.Blast.Compiler
 
 
         /// <summary>
+        /// Package in normal mode. 
+        /// 
+        /// - packagemode       = NORMAL
+        /// - languageversion   = BS1
+        /// </summary>
+        /// <param name="cdata">Compiler data</param>
+        /// <param name="allocator">Allocation type</param>
+        /// <param name="code_size">size of code in bytes</param>
+        /// <param name="metadata_size">size of metadata in bytes, 1 byte per data element in data and stack segment combined</param>
+        /// <param name="data_size">size of datasegment in bytes</param>
+        /// <param name="stack_size">size of stacksegement in bytes</param>
+        /// <param name="flags">flags: alignment, stack</param>
+        /// <returns>blast package data</returns>
+        static BlastPackageData PackageNormal(CompilationData cdata, Allocator allocator, int code_size, int metadata_size, int data_size, int stack_size, BlastPackageFlags flags = BlastPackageFlags.None)
+        {
+            Assert.IsTrue(metadata_size == (data_size + stack_size) / 4, 
+                $"PackageNormal: metadata size misaligned with combined datastack size, there are {metadata_size} entries in metadata while there are {((data_size + stack_size) / 4)} combined data/stack entries.");
+
+            bool a8 = (flags & BlastPackageFlags.Aligned8) == BlastPackageFlags.Aligned8;
+            bool a4 = !a8 && (flags & BlastPackageFlags.Aligned4) == BlastPackageFlags.Aligned4;
+            bool has_stack = (flags & BlastPackageFlags.NoStack) == BlastPackageFlags.NoStack;
+
+            // align data offsets 
+            int alignto = (a4 | a8) ? (a4 ? 4 : 8) : 0;
+            int align_data = 0;
+            int align_stack = 0;
+
+            if (a4 || a8)
+            {
+                // align data offset 
+                while (((code_size + metadata_size + align_data) % alignto) != 0) align_data++;
+
+                // if a4, then no need to align stackoffset because each dataelement is 32bit
+                if (a8)
+                {
+                    // align stack offset to 64bit boundary
+                    while (((code_size + metadata_size + align_data + data_size + align_stack) % alignto) != 0) align_stack++;
+                }
+            }
+
+            // calculate package size including alignments 
+            int package_size = code_size + metadata_size + align_data + data_size + align_stack + stack_size;
+
+            /// [----CODE----|----METADATA----|----DATA----|----STACK----]
+            ///              1                2            3             4  
+            /// 
+            /// ** ALL OFFSETS IN PACKAGE IN BYTES ***
+            /// 
+            /// 1 = metadata offset   | codesize 
+            /// 2 = data_offset       | codesize + metadatasize 
+            /// 3 = stack_offset 
+            /// 4 = package_size  
+
+            BlastPackageData data = default;
+            data.PackageMode = BlastPackageMode.Normal;
+            data.Flags = flags;
+            data.LanguageVersion = BlastLanguageVersion.BS1;
+            data.O1 = (ushort)code_size;
+            data.O2 = (ushort)(code_size + metadata_size + align_data);
+            data.O3 = (ushort)(code_size + metadata_size + align_data + data_size + align_stack);
+            data.O4 = (ushort)package_size;
+            data.P2 = IntPtr.Zero;
+
+            // allocate 
+            unsafe
+            {
+                data.CodeSegmentPtr = new IntPtr(UnsafeUtils.Malloc(package_size, 8, allocator));
+                data.Allocator = (byte)allocator;
+
+                // copy code segment 
+                int i = 0;
+                while (i < code_size)
+                {
+                    data.Code[i] = cdata.Executable.code[i]; 
+                    i++;
+                }
+
+                // copy metadata for variables 
+                i = 0;
+                while (i < cdata.Executable.data_count)
+                {
+                    data.Metadata[i] = cdata.Executable.metadata[i];
+                    i++; 
+                }
+                while (i < metadata_size)
+                {
+                    // fill stack metadata with 0's
+                    data.Metadata[i] = 0;
+                    i++; 
+                }
+
+                // copy initial variable data => datasegment 
+                i = 0;
+                while (i < cdata.Executable.data_count)
+                {
+                    data.Data[i] = cdata.Executable.data[i];
+                    i++;
+                }
+
+                // fill stack with NaNs
+                if (has_stack && stack_size > 0)
+                {
+                    i = 0;
+                    while (i < math.floor(stack_size / 4f)) // could be we have odd bits if not aligned 
+                    {
+                        data.Stack[i] = float.NaN;
+                        i++;
+                    }
+                }
+            }
+
+            // return the datapackage 
+            return data; 
+        }
+
+
+
+
+        /// <summary>
         /// estimate size of package needed to execute the script
         /// </summary>
         /// <returns>size in bytes</returns>
-        static public unsafe BlastPackageInfo EstimatePackageInfo(CompilationData result, BlastPackageMode package_mode)
+        static public BlastPackageData Package(CompilationData result, BlastCompilerOptions options)
         {
-            // target package sizes, if larger then allocation dynamic 
-            int[] target_sizes = new int[] {
-                (int)BlastPackageCapacities.c32,
-                (int)BlastPackageCapacities.c48,
-                (int)BlastPackageCapacities.c64,
-                (int)BlastPackageCapacities.c96,
-                (int)BlastPackageCapacities.c128,
-                (int)BlastPackageCapacities.c192,
-                (int)BlastPackageCapacities.c256,
-                (int)BlastPackageCapacities.c320,
-                (int)BlastPackageCapacities.c384,
-                (int)BlastPackageCapacities.c448,
-                (int)BlastPackageCapacities.c512,
-                (int)BlastPackageCapacities.c640,
-                (int)BlastPackageCapacities.c768,
-                (int)BlastPackageCapacities.c896,
-                (int)BlastPackageCapacities.c960
-            };
+            BlastPackageMode package_mode = options.PackageMode; 
 
             // get sizes of seperate segments 
             int stack_size = EstimateStackSize(result);
@@ -383,220 +486,25 @@ namespace NSS.Blast.Compiler
             int data_size = result.Executable.data_count * 4;
             int metadata_size = result.Executable.data_count * 1; 
 
-            // total package size without size of datasizes[] 
-            int package_size = 0;
-
             switch (package_mode)
             {
-                case BlastPackageMode.CodeDataStack:
-                    package_size = stack_size + code_size + data_size + metadata_size + 12; // max 3x 4 byte align  // + 20 for yield support 
+                case BlastPackageMode.Normal:
+
+                    // code - meta - data - stack 
+                    return PackageNormal(result, Allocator.Persistent,
+                                         code_size,
+                                         metadata_size,
+                                         data_size,
+                                         stack_size);
+
+                case BlastPackageMode.Compiler:
+                case BlastPackageMode.Entity:
+                case BlastPackageMode.SSMD:
+                    Debug.LogError($"BlastCompiler.Package: package mode {package_mode} not supported");
                     break;
-
-                case BlastPackageMode.Code:
-                    package_size = code_size;
-                    break;
-
-                default:
-                    result.LogError($"Packagemode {package_mode} not supported"); 
-                    return default;
             }
-
-            // size of datasizes[] depends on data capacity which is the left over space in the given package size
-
-            int target_size = 0;
-
-            for (int i = 0; i < target_sizes.Length; i++)
-            {
-                if (package_mode == BlastPackageMode.CodeDataStack)
-                {
-                    // need to fit code, data and stack 
-                    int target_data_sizes = (target_sizes[i] - code_size) / 4;
-                    if (target_data_sizes < 0) continue;
-
-                    int minimal_package_size = package_size + target_data_sizes;
-
-                    if (minimal_package_size < target_sizes[i])
-                    {
-                        target_size = target_sizes[i];
-                        break;
-                    }
-                }
-                else
-                {
-                    // need only to fit the code
-                    if (package_size < target_sizes[i])
-                    {
-                        target_size = target_sizes[i];
-                        break;
-                    }
-                }
-            }
-
-            if (target_size == 0)
-            {
-                // on var size mode determines package size
-                switch (package_mode)
-                {
-                    case BlastPackageMode.Code:
-                        package_size = code_size;
-                        break;
-                    case BlastPackageMode.CodeDataStack:
-                        package_size = package_size + (stack_size + data_size) / 4;
-                        break;
-                }
-
-                // variable package size -> outside allocation 
-                return new BlastPackageInfo()
-                {
-                    package_mode = package_mode,
-                    code_size = (ushort)code_size,
-                    data_size = (ushort)data_size,
-                    package_size = (ushort)package_size,
-                    stack_size = (ushort)stack_size,
-                    allocator = (byte)Allocator.None
-                };
-            }
-            else
-            {
-                return new BlastPackageInfo()
-                {
-                    package_mode = package_mode,
-                    code_size = (ushort)code_size,
-                    data_size = (ushort)data_size,
-                    package_size = (ushort)target_size,
-                    stack_size = (ushort)stack_size,
-                    allocator = (byte)Allocator.Invalid
-                };
-            }
+            return default;
         }
-
-        static unsafe public BlastPackage512 Package512(CompilationData result, BlastPackageInfo info)
-        {
-            BlastPackage512 package = default(BlastPackage512);
-
-            Package(result, info, (byte*)(void*)&package);
-
-            return package;
-        }
-
-        static unsafe public BlastPackagePtr* Package(CompilationData result, BlastPackageInfo info, byte* package_ptr)
-        {
-            // cast to generic package and set information 
-            BlastPackage* p = (BlastPackage*)package_ptr;
-            p->info = info;
-            p->code_pointer = 0;
-
-            // get a pointer to the data buffer 
-            BlastPackagePtr* ptr = (BlastPackagePtr*)package_ptr;
-            byte* p_segment = (byte*)p + sizeof(BlastPackage);
-
-            BlastIntermediate exe = result.Executable;
-
-            /// the script buffer:
-            /// 
-            /// was: 
-            /// [....code...|...variables&constants...|.datasizes.|...stack.....................]
-            /// 
-            /// became:
-            /// [...code...|...metadata...|...variables&constants...|...stack...................]
-
-
-            int i = 0;
-            while (i < exe.code_size)
-            {
-                p_segment[i] = exe.code[i];  //todo memset... 
-                i++;
-            }
-            
-            if(info.package_mode == BlastPackageMode.Code)
-            {
-                // code mode
-                return ptr; 
-            }
-
-            // copy metadata segment
-            // it has 1 byte for each element in capacity, does not need to be aligned
-            p->data_sizes_start = (ushort)i;
-            int j = 0;
-            while (j < exe.data_count)
-            {
-                p_segment[i] = exe.metadata[j];
-                i++;
-                j++;
-            }
-
-            // after the metadata for variables follows the stack metadata
-            // which is null now, but we need to reserve 1 byte per capacity
-            // - this memory block is located before the datasegment for interpretor 
-            //   it can more directly get offset into needed data 
-            j = 0; 
-            while(j < exe.max_stack_size)
-            {
-                p_segment[i] = 0;
-                i++;
-                j++; 
-            }
-
-            // Copy Data Segment 
-            // - align data segment on 4 byte boundary from code segment start
-            // - have to account for this while estimating buffer sizes... always + 12?? 
-            //
-
-            while (i % 4 != 0) { p_segment[i] = 0; i++; }
-            p->data_start = (ushort)i;
-
-            // copy data segment 
-            j = 0;
-            byte* p_data = (byte*)((void*)exe.data);
-            while (j < exe.data_count * 4)
-            {
-                p_segment[i] = p_data[j]; 
-                i++;
-                j++;
-            }
-           
-            // stack starts after data
-            p->stack_start = (ushort)i;
-
-            // fill the rest of the package / stack with zeros 
-            while (i < p->info.package_size)
-            {
-                p_segment[i] = 0; 
-                i++;
-            }
-            return ptr;
-        }
-
-        static unsafe BlastPackage* Package(CompilationData result, BlastCompilerOptions options)
-        {
-            if (!result.Success) return null;
-
-            BlastPackageInfo package_info = EstimatePackageInfo(result, options.PackageMode);
-
-            // force allocation as we dont have a ref 
-            package_info.allocator = (byte)options.PackageAllocator;
-
-            switch (package_info.package_mode)
-            {
-                case BlastPackageMode.CodeDataStack:
-                case BlastPackageMode.Code:
-                    {
-                        BlastPackage* package_ptr = (BlastPackage*)UnsafeUtils.Malloc(32 + (int)package_info.package_size, 4, options.PackageAllocator);
-                        Package(result, package_info, (byte*)package_ptr);
-
-#if DEBUG
-                        BlastPackage* pkg = package_ptr; 
-                        Standalone.Debug.Log($"<blastcompiler.package> package size: {package_info.package_size}, code size: {pkg->info.code_size}, data size: {pkg->info.data_size}, metadata size: {pkg->info.data_sizes_size}, data start: {pkg->data_start}, data offset: {pkg->data_offset}, stack offset: {pkg->stack_offset}, allocator: {options.PackageAllocator}");
-#endif
-
-                        return package_ptr; 
-                    }
-            }
-
-            result.LogError("package: only code data stack package mode is supported ");
-            return null;
-        }
-
 
         #endregion
 
@@ -643,8 +551,8 @@ namespace NSS.Blast.Compiler
                     if (options.Verbose || options.Trace)
                     {
                         Standalone.Debug.Log(result.root.ToNodeTreeString());
-                        Standalone.Debug.Log(result.GetHumanReadableCode());
-                        Standalone.Debug.Log(result.GetHumanReadableBytes());
+                        Standalone.Debug.Log(result.GetHumanReadableCode() + "\n");
+                        Standalone.Debug.Log(result.GetHumanReadableBytes() + "\n");
                     }
                     return result;
                 }
@@ -653,8 +561,10 @@ namespace NSS.Blast.Compiler
             if (options.Verbose || options.Trace)
             {
                 Standalone.Debug.Log(result.root.ToNodeTreeString());
-                Standalone.Debug.Log(result.GetHumanReadableCode());
-                Standalone.Debug.Log(result.GetHumanReadableBytes());
+                Standalone.Debug.Log(result.GetHumanReadableCode() + "\n");
+                Standalone.Debug.Log(result.GetHumanReadableBytes() + "\n");
+
+           //     Debug.Log(Blast.GetReadableByteCode(result.Executable.code, result.Executable.code_size); 
             }
 
             // run validations if any are defined
@@ -739,12 +649,9 @@ namespace NSS.Blast.Compiler
             CompilationData result = Compile(blast, script, options);
             if (result.Success)
             {
-                //return CompilePackage(result, EstimatePackageInfo(result, options.PackageMode), options);
-                BlastPackage* ptr = Package(result, options);
-
                 BlastScriptPackage pkg = new BlastScriptPackage()
                 {
-                    PackagePtr = (IntPtr)ptr,
+                    Package = Package(result, options),
                     Variables = result.Variables.ToArray(),
                     VariableOffsets = result.Offsets.ToArray(),
                     Inputs = result.Inputs.ToArray(),

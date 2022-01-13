@@ -41,9 +41,6 @@ namespace BlastTestConsole
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -79,9 +76,6 @@ namespace BlastTestConsole
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -288,8 +282,6 @@ namespace BlastTestConsole
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
             options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -307,6 +299,9 @@ namespace BlastTestConsole
         }
 
         [Theory]
+        [InlineData("a = -1 * 2;", -2)]
+        [InlineData("a = 1 * -2;", -2)]
+        [InlineData("a = -1 * 2; b = 1 * -2;", -2)]
         [InlineData("a = saturate(0.3);", 0.3f)]
 
         [InlineData("a = select(1, 2, 1);", 2)]
@@ -345,9 +340,6 @@ namespace BlastTestConsole
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -377,9 +369,6 @@ namespace BlastTestConsole
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -431,9 +420,6 @@ namespace BlastTestConsole
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -454,6 +440,19 @@ namespace BlastTestConsole
         }
 
 
+        [Theory]
+        [InlineData("h = 3; for(i = 1; i < 10; i = i + 1)( h = h + 1; h = sqrt(h); );")]
+        [InlineData("h = 3; for(i = 1; i < 10; i = i + 1)( h = sqrt(h + 1); );")]
+        [InlineData("h = (2 3 2); for(i = 1; i < 10; i = i + 1)( h = sqrt(h + 1); );")]
+        [InlineData("h = (3 3 3); for(i = 1; i < 100; i = i + 1)( h = sqrt(h + 1); );")]
+        [InlineData("a = 1; b = 100; c = 1; while(a <= b) (a = a + 1; c = c * 1 * 2 * 3 * 1/100 * 1;);")]
+
+        public void BlastScript_Script_1(string code)
+        {
+            Xunit.Assert.True(Blast.Execute(code) == (int)BlastError.success); 
+        }
+
+
 
         [Theory]
         [InlineData("push(321); a = pop;", 321)]
@@ -466,9 +465,6 @@ namespace BlastTestConsole
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -498,8 +494,8 @@ namespace BlastTestConsole
 
         [Theory]
         [InlineData("Features/F1.bs")]
-        [InlineData("Features/F2.bs")]
-        [InlineData("Features/F3.bs")]
+       // [InlineData("Features/F2.bs")]
+     //  [InlineData("Features/F3.bs")]
         [InlineData("Features/Minus 1.bs")]
         [InlineData("Features/Minus 2.bs")]
         [InlineData("Features/Minus 3.bs")]
@@ -525,9 +521,6 @@ namespace BlastTestConsole
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -557,9 +550,6 @@ namespace BlastTestConsole
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 

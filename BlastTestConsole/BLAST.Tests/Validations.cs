@@ -50,7 +50,6 @@ namespace BlastTestConsole
                 var options = new BlastCompilerOptions();
                 options.AutoValidate = false;
                 options.Optimize = true;
-                options.CompileWithSystemConstants = true;
                 options.ConstantEpsilon = 0.001f;
                 options.DefaultStackSize = 64;
                 options.EstimateStackSize = false;
@@ -108,11 +107,11 @@ namespace BlastTestConsole
             Xunit.Assert.False(Validations.Validate(scriptfile));
         }
 
-        [Fact]
-        public void Blast_Validate_VariableTypes()
-        {
-            Xunit.Assert.True(Validations.Validate("F4 - DataTypes.bs"));
-        }
+//        [Fact]
+//        public void Blast_Validate_VariableTypes()
+//        {
+//            Xunit.Assert.True(Validations.Validate("F4 - DataTypes.bs"));
+//        }
     }
 }
             

@@ -194,7 +194,7 @@ namespace NSS.Blast
                 try
                 {
                     BlastInterpretor blaster = default;
-                    blaster.SetPackage(package.BlastPackage);
+                    blaster.SetPackage(package.Package);
                     return blaster.Execute(blast.Engine); 
                 }
                 finally
@@ -224,7 +224,7 @@ namespace NSS.Blast
         public int Execute(BlastScriptPackage package, IntPtr environment, IntPtr caller)
         {
             BlastInterpretor blaster = default;
-            blaster.SetPackage(package.BlastPackage);
+            blaster.SetPackage(package.Package);
             return blaster.Execute(Engine, environment, caller);
         }
 
@@ -1310,7 +1310,7 @@ namespace NSS.Blast
                 {
                     r = new runner(script_id, runner_type.bs)
                     {
-                        Package = pkg.BlastPackage,
+                        Package = pkg.Package,
                     };
                 }
             }
@@ -1342,7 +1342,7 @@ namespace NSS.Blast
             public runner_type Type;
 
             // option 1
-            public BlastPackage* Package;
+            public BlastPackageData Package;
 
 #if !NOT_USING_UNITY
             // option 2

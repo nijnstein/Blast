@@ -1,6 +1,5 @@
-﻿#if  true
+﻿#if DEBUG
 #define LOG_ERRORS
-#define CHECK_STACK
 #define HANDLE_DEBUG_OP    // forces inclusion of BurstString.h
 #endif
 
@@ -74,12 +73,11 @@ namespace NSS.Blast.Interpretor
         internal unsafe IntPtr caller_ptr;
 
 
-        /// <summary>
-        /// package info, data segment may not be present depending on action mode
-        /// </summary>
-        [NoAlias]
-        [NativeDisableUnsafePtrRestriction]
-        internal unsafe BlastPackage* package;
+        internal BlastPackageData package; 
+
+        internal int code_pointer;
+        internal int stack_offset;  
+
 
         /// <summary>
         /// code segment pointer
@@ -106,101 +104,64 @@ namespace NSS.Blast.Interpretor
         /// <summary>
         /// stack segment pointer
         /// </summary>
-        [NoAlias]
-        [NativeDisableUnsafePtrRestriction]
-        internal unsafe float* stack;
+        ///[NoAlias]
+        ///[NativeDisableUnsafePtrRestriction]
+        ///internal unsafe float* stack;
 
         /// <summary>
         /// if true, the script is executed in validation mode:
         /// - external calls just return 0's
-        /// - ... 
         /// </summary>
         public bool ValidationMode;
 
         #region Reset & Set Package
 
-        public void Reset([NoAlias]BlastEngineData* blast)
+        /// <summary>
+        /// reset code_pointer and stack_offset to their initial states 
+        /// </summary>
+        /// <param name="blast">pointer to blast engine data</param>
+        public void Reset([NoAlias]BlastEngineData* blast, BlastPackageData pkg)
         {
             engine_ptr = blast;
-
-            switch (package->info.package_mode)
-            {
-                case BlastPackageMode.CodeDataStack:
-                    {
-                        package->code_pointer = 0;
-                        // stack is shared on data segment 
-                        package->stack_offset = package->data_offset;
-                    }
-                    break;
-
-                case BlastPackageMode.Compiler:
-                    {
-                        package->code_pointer = 0;
-                        // BUG:  stack is shared on data segment but its pointer is already offset 
-                      //  package->stack_offset = 0; 
-                        package->stack_offset = package->data_offset;
-                    }
-                    break;
-
-                default:
-                case BlastPackageMode.Code:
-                    {
-                        package->code_pointer = 0;
-                        // stack seperate 
-                        package->stack_offset = 0;
-                    }
-                    break;
-
-            }
+            SetPackage(pkg); 
         }
 
         /// <summary>
         /// we might need to know if we need to copy back data  (or we use a dummy)
         /// </summary>
-        public void SetPackage(BlastPackage* ptr)
+        public void SetPackage(BlastPackageData pkg)
         {
-            package = ptr;
+            package  = pkg;
 
-            byte* code_segment = (byte*)ptr;
-            code_segment = code_segment + 32;
+            // the compiler supllies its own pointers to various segments 
+            if (pkg.PackageMode != BlastPackageMode.Compiler)
+            {
+                code = package.Code;
+                data = package.Data;
+                metadata = package.Metadata;
+            }
+            code_pointer = 0;
 
-            code = code_segment;
-            data = (float*)(code_segment + ptr->data_start);
-            metadata = (byte*)(code_segment + ptr->data_sizes_start);
-            stack = (float*)(code_segment + ptr->data_offset);
+            // stack starts at an aligned point in the datasegment
+            stack_offset = package.DataSegmentStackOffset / 4; // package talks in bytes, interpretor uses elements in data made of 4 bytes 
         }
-
-        /// <summary>
-        /// set package with code and data segment seperate
-        /// </summary>
-        /// <param name="ptr"></param>
-        /// <param name="data_segment"></param>
-        public void SetPackage(BlastPackage* ptr, byte* data_segment)
-        {
-            package = ptr;
-            code = (byte*)ptr + 32;
-
-            data = (float*)data_segment;
-            metadata = (byte*)(data_segment + (ptr->data_sizes_start - ptr->data_start));
-            stack = (float*)(data_segment + (ptr->data_offset - ptr->data_start));
-        }
-
 
         /// <summary>
         /// set package data from package and seperate buffers 
         /// </summary>
-        /// <param name="ptr"></param>
-        /// <param name="_code"></param>
-        /// <param name="_data"></param>
-        /// <param name="_metadata"></param>
-        /// <param name="_stack"></param>
-        public void SetPackage(BlastPackage* ptr, byte* _code, float* _data, byte* _metadata, float* _stack)
+        /// <param name="pkg">the package data</param>
+        /// <param name="_code">code pointer</param>
+        /// <param name="_data">data & stack pointer</param>
+        /// <param name="_metadata">metadata</param>
+        public void SetPackage(BlastPackageData pkg, byte* _code, float* _data, byte* _metadata, int initial_stack_offset)
         {
-            package = ptr;
+            package = pkg;
             code = _code;
             data = _data;
             metadata = _metadata;
-            stack = _stack;
+
+            code_pointer = 0;
+            stack_offset = initial_stack_offset; 
         }
 
         #endregion
@@ -237,7 +198,7 @@ namespace NSS.Blast.Interpretor
             }
             else
             {
-                Reset(blast);
+                Reset(blast, package);
             }
 
             // killing yield.. 
@@ -287,162 +248,122 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void push(float f)
         {
-            ushort offset = package->stack_offset;
+            // set stack value 
+            ((float*)data)[stack_offset] = f;
 
-            ((float*)data)[offset] = f;
-            SetMetaData(metadata, BlastVariableDataType.Numeric, 1, (byte)offset);
+            // update metadata with type set 
+            SetMetaData(metadata, BlastVariableDataType.Numeric, 1, (byte)stack_offset);
 
-            offset += 1;
-            package->stack_offset = offset;
+            // advance 1 element in stack offset 
+            stack_offset += 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void push(float2 f2)
         {
-            ushort offset = package->stack_offset;
-
             // really... wonder how this compiles (should be simple 8byte move) TODO 
-            ((float2*)(void*)&((float*)data)[offset])[0] = f2;
+            ((float2*)(void*)&((float*)data)[stack_offset])[0] = f2;
 
-            SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)offset);
+            SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)stack_offset);
 
-            offset += 2;  // size 2
-            package->stack_offset = offset;
+            stack_offset += 2; 
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void push(float3 f3)
         {
-            ushort offset = package->stack_offset;
+            ((float3*)(void*)&((float*)data)[stack_offset])[0] = f3;
 
-            // really... wonder how this compiles (should be simple 8byte move) TODO 
-            ((float3*)(void*)&((float*)data)[offset])[0] = f3;
+            SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)stack_offset);
 
-            SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)offset);
-
-            offset += 3;  // size 3
-            package->stack_offset = offset;
+            stack_offset += 3;  // size 3
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void push(float4 f4)
         {
-            ushort offset = package->stack_offset;
-
             // really... wonder how this compiles (should be simple 8byte move) TODO 
-            ((float4*)(void*)&((float*)data)[offset])[0] = f4;
+            ((float4*)(void*)&((float*)data)[stack_offset])[0] = f4;
 
-            SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)offset);
+            SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)stack_offset);
 
-            offset += 4;  // size 4
-            package->stack_offset = offset;
-        }
-
-
-        public void push(int i)
-        {
-#if CHECK_STACK
-        //   if (data_offset + stack_offset + 1 > data_capacity)
-        //    {
-        //        Standalone.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
-        //        return;
-        //    }
-#endif
-            ushort offset = package->stack_offset;
-
-            ((int*)data)[offset] = i;
-            SetMetaData(metadata, BlastVariableDataType.Numeric, 1, (byte)offset);
-
-            offset += 1;
-            package->stack_offset = offset;
+            stack_offset += 4;  // size 4
         }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void push(int4 i)
+        public void push(int i)
         {
-#if CHECK_STACK
-         //   if (data_offset + stack_offset + 4 > data_capacity)
-         //   {
-         //       Standalone.Debug.LogError($"blast.stack: attempting to push [{f}] onto a full stack, stacksize = {data_capacity - data_offset}");
-         //       return;
-         //   }
+#if DEBUG || CHECK_STACK
+            if (stack_offset + 1 > package.StackCapacity)
+            {
+                Standalone.Debug.LogError($"blast.stack: attempting to push [{i}] onto a full stack, stack capacity = {package.StackCapacity}");
+                return;
+            }
 #endif
-            ushort offset = package->stack_offset;
-
-            float* fdata = (float*)data;
-            fdata[offset] = i.x;
-            fdata[offset + 1] = i.y;
-            fdata[offset + 2] = i.z;
-            fdata[offset + 3] = i.w;
-
-            SetMetaData(metadata, BlastVariableDataType.ID, 4, (byte)offset);
-
-            offset += 4;
-            package->stack_offset = offset;
+            ((int*)data)[stack_offset] = i;
+            SetMetaData(metadata, BlastVariableDataType.ID, 1, (byte)stack_offset);
+            stack_offset += 1;
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void pop(out float f)
         {
-            int stack_offset = (ushort)(package->stack_offset - 1);
+           stack_offset = stack_offset - 1;
 
-#if CHECK_STACK
+#if DEBUG || CHECK_STACK
             if (stack_offset < 0)
             {
-                Standalone.Debug.LogError($"blast.stack: attempting to pop too much data (1 float) from the stack, offset = {stack_offset}");
+                Debug.LogError($"blast.stack: attempting to pop too much data (1 float) from the stack, offset = {stack_offset}");
                 f = float.NaN; 
                 return;
             }
             if (GetMetaDataType(metadata, (byte)stack_offset) != BlastVariableDataType.Numeric)
             {
-                Standalone.Debug.LogError($"blast.stack: pop(float) type mismatch, stack contains Integer/ID datatype");
+                Debug.LogError($"blast.stack: pop(float) type mismatch, stack contains Integer/ID datatype");
                 f = float.NaN;
                 return;
             }
             byte size = GetMetaDataSize(metadata, (byte)stack_offset); 
             if (size != 1)
             {
-                Standalone.Debug.LogError($"blast.stack: pop(float) size mismatch, stack contains vectorsize {size} datatype while size 1 is expected");
+                Debug.LogError($"blast.stack: pop(float) size mismatch, stack contains vectorsize {size} datatype while size 1 is expected");
                 f = float.NaN;
                 return;
             }
 #endif
 
             f = ((float*)data)[stack_offset];
-            package->stack_offset = (ushort)stack_offset;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void pop(out int i)
         {
-            int stack_offset = (package->stack_offset - 1);
+            stack_offset = stack_offset - 1;
 
-#if CHECK_STACK
+#if DEBUG || CHECK_STACK
             if (stack_offset < 0)
             {
-                Standalone.Debug.LogError($"blast.stack: attempting to pop too much data (1 int) from the stack, offset = {stack_offset}");
+                Debug.LogError($"blast.stack: attempting to pop too much data (1 int) from the stack, offset = {stack_offset}");
                 i = int.MinValue;
                 return;
             }
             if (GetMetaDataType(metadata, (byte)stack_offset) != BlastVariableDataType.ID)
             {
-                Standalone.Debug.LogError($"blast.stack: pop(int) type mismatch, stack contains Numeric datatype");
+                Debug.LogError($"blast.stack: pop(int) type mismatch, stack contains Numeric datatype");
                 i = int.MinValue; 
                 return;
             }
             byte size = GetMetaDataSize(metadata, (byte)stack_offset);
             if (size != 1)
             {
-                Standalone.Debug.LogError($"blast.stack: pop(int) size mismatch, stack contains vectorsize {size} datatype while size 1 is expected");
+                Debug.LogError($"blast.stack: pop(int) size mismatch, stack contains vectorsize {size} datatype while size 1 is expected");
                 i = int.MinValue; 
                 return;
             }
 #endif
 
             i = ((int*)data)[stack_offset];
-            package->stack_offset = (ushort)stack_offset;
         }
 
 
@@ -450,24 +371,25 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void pop(out float4 f)
         {
-            int stack_offset = package->stack_offset - 4;
-#if CHECK_STACK
+            stack_offset = stack_offset - 4;
+
+#if DEBUG || CHECK_STACK
             if (stack_offset < 0)
             {
-                Standalone.Debug.LogError($"blast.stack: attempting to pop too much data (4 numerics) from the stack, offset = {stack_offset}");
+                Debug.LogError($"blast.stack: attempting to pop too much data (4 numerics) from the stack, offset = {stack_offset}");
                 f = float.NaN;
                 return;
             }
             if (GetMetaDataType(metadata, (byte)stack_offset) != BlastVariableDataType.Numeric)
             {
-                Standalone.Debug.LogError($"blast.stack: pop(numeric4) type mismatch, stack contains ID datatype");
+                Debug.LogError($"blast.stack: pop(numeric4) type mismatch, stack contains ID datatype");
                 f = float.NaN;
                 return;
             }
             byte size = GetMetaDataSize(metadata, (byte)stack_offset);
             if (size != 4)
             {
-                Standalone.Debug.LogError($"blast.stack: pop(numeric4) size mismatch, stack contains vectorsize {size} datatype while size 4 is expected");
+                Debug.LogError($"blast.stack: pop(numeric4) size mismatch, stack contains vectorsize {size} datatype while size 4 is expected");
                 f = float.NaN;
                 return;
             }
@@ -477,31 +399,31 @@ namespace NSS.Blast.Interpretor
             f.y = fdata[stack_offset + 1];
             f.z = fdata[stack_offset + 2];
             f.w = fdata[stack_offset + 3];
-            package->stack_offset = (ushort)stack_offset;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void pop(out int4 i)
         {
-            int stack_offset = package->stack_offset - 4;
-#if CHECK_STACK
+            stack_offset = stack_offset - 4;
+
+#if DEBUG || CHECK_STACK
             if (stack_offset < 0)
             {
-                Standalone.Debug.LogError($"blast.stack: attempting to pop too much data (4 ints) from the stack, offset = {stack_offset}");
+                Debug.LogError($"blast.stack: attempting to pop too much data (4 ints) from the stack, offset = {stack_offset}");
                 i = int.MinValue;
                 return;
             }
             BlastVariableDataType type = GetMetaDataType(metadata, (byte)stack_offset);
             if (type != BlastVariableDataType.ID)
             {
-                Standalone.Debug.LogError($"blast.stack: pop(int4) type mismatch, stack contains {type} datatype");
+                Debug.LogError($"blast.stack: pop(int4) type mismatch, stack contains {type} datatype");
                 i = int.MinValue;
                 return;
             }
             byte size = GetMetaDataSize(metadata, (byte)stack_offset);
             if (size != 4)
             {
-                Standalone.Debug.LogError($"blast.stack: pop(int4) size mismatch, stack contains vectorsize {size} datatype while size 4 is expected");
+                Debug.LogError($"blast.stack: pop(int4) size mismatch, stack contains vectorsize {size} datatype while size 4 is expected");
                 i = int.MinValue;
                 return;
             }
@@ -510,14 +432,13 @@ namespace NSS.Blast.Interpretor
             i.x = idata[stack_offset];
             i.y = idata[stack_offset + 1];
             i.z = idata[stack_offset + 2];
-            i.w = idata[stack_offset + 3];
-            package->stack_offset = (ushort)stack_offset;
+            i.w = idata[stack_offset + 3];            
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool peek(int n = 1)
         {
-            return package->stack_offset >= n;
+            return stack_offset >= n;
         }
 
         /// <summary>
@@ -553,7 +474,7 @@ namespace NSS.Blast.Interpretor
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - opt_id}");
+                    Debug.LogError($"blast.stack, pop_or_value -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
                 }
 #endif 
@@ -564,17 +485,17 @@ namespace NSS.Blast.Interpretor
             if (c == (byte)script_op.pop)
             {
 #if DEBUG && CHECK_STACK
-                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 1));
-                int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 1));
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(stack_offset - 1));
+                int size = GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {package->stack_offset - 1}");
-                    return float.NaN;
+                    Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
+                    return float.NaN;                                                                                                                                      
                 }
 #endif         
                 // stack pop 
-                package->stack_offset = (ushort)(package->stack_offset - 1);
-                return stack[package->stack_offset];
+                stack_offset = stack_offset - 1;
+                return ((float*)data)[stack_offset];
             }
             else
             if (c >= opt_value)
@@ -603,7 +524,7 @@ namespace NSS.Blast.Interpretor
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
                 if (size != 2 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_f2 -> data mismatch, expecting numeric of size 2, found {type} of size {size} at data offset {c - opt_id}");
+                    Debug.LogError($"blast.stack, pop_f2 -> data mismatch, expecting numeric of size 2, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
                 }
 #endif 
@@ -614,19 +535,20 @@ namespace NSS.Blast.Interpretor
             else
             if (c == (byte)script_op.pop)
             {
+                stack_offset = stack_offset - 2;
+
 #if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
-                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 2));
-                int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 2));
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)stack_offset);
+                int size = GetMetaDataSize(metadata, (byte)stack_offset);
                 if (size != 2 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 2, found {type} of size {size} at stack offset {package->stack_offset - 2}");
+                    Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 2, found {type} of size {size} at stack offset {stack_offset}");
                     return float.NaN;
                 }
 #endif         
                 // stack pop 
-                package->stack_offset = (ushort)(package->stack_offset - 2);
-                return new float2(stack[package->stack_offset], stack[package->stack_offset + 1]);
+                return new float2(((float*)data)[stack_offset], ((float*)data)[stack_offset + 1]);
             }
             else
             if (c >= opt_value)
@@ -654,7 +576,7 @@ namespace NSS.Blast.Interpretor
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
                 if (size != 3 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_f3 -> data mismatch, expecting numeric of size 3, found {type} of size {size} at data offset {c - opt_id}");
+                    Debug.LogError($"blast.stack, pop_f3 -> data mismatch, expecting numeric of size 3, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
                 }
 #endif 
@@ -667,19 +589,21 @@ namespace NSS.Blast.Interpretor
             else
             if (c == (byte)script_op.pop)
             {
+                stack_offset = stack_offset - 3;
+
 #if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
-                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 3));
-                int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 3));
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)stack_offset);
+                int size = GetMetaDataSize(metadata, (byte)stack_offset);
                 if (size != 3 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 3, found {type} of size {size} at stack offset {package->stack_offset - 3}");
+                    Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 3, found {type} of size {size} at stack offset {stack_offset}");
                     return float.NaN;
                 }
 #endif         
                 // stack pop 
-                package->stack_offset = (ushort)(package->stack_offset - 3);
-                return new float3(stack[package->stack_offset], stack[package->stack_offset + 1], stack[package->stack_offset + 2]);
+                float* fdata = (float*)data;
+                return new float3(fdata[stack_offset], fdata[stack_offset + 1], fdata[stack_offset + 2]);
             }
             else
             if (c >= opt_value)
@@ -707,7 +631,7 @@ namespace NSS.Blast.Interpretor
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
                 if (size != 4 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_f4 -> data mismatch, expecting numeric of size 4, found {type} of size {size} at data offset {c - opt_id}");
+                    Debug.LogError($"blast.stack, pop_f4 -> data mismatch, expecting numeric of size 4, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
                 }
 #endif 
@@ -718,19 +642,21 @@ namespace NSS.Blast.Interpretor
             else
             if (c == (byte)script_op.pop)
             {
+                stack_offset = stack_offset - 4;
+
 #if DEBUG && CHECK_STACK
                 // verify type of data / eventhough it is not stack 
-                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 4));
-                int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 4));
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)stack_offset);
+                int size = GetMetaDataSize(metadata, (byte)stack_offset);
                 if (size != 4 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 4, found {type} of size {size} at stack offset {package->stack_offset - 4}");
+                    Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 4, found {type} of size {size} at stack offset {stack_offset}");
                     return float.NaN;
                 }
 #endif         
                 // stack pop 
-                package->stack_offset = (ushort)(package->stack_offset - 4);
-                return new float4(stack[package->stack_offset], stack[package->stack_offset + 1], stack[package->stack_offset + 2], stack[package->stack_offset + 3]);
+                float* stack = (float*)data;
+                return new float4(stack[stack_offset], stack[stack_offset + 1], stack[stack_offset + 2], stack[stack_offset + 3]);
             }
             else
             if (c >= opt_value)
@@ -783,6 +709,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="type">datatype of element popped</param>
         /// <param name="vector_size">vectorsize of element popped</param>
         /// <returns>pointer to data castable to valuetype*</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void* pop_with_info(in int code_pointer, out BlastVariableDataType type, out byte vector_size)
         {
             // we get either a pop instruction or an instruction to get a value 
@@ -799,20 +726,14 @@ namespace NSS.Blast.Interpretor
             if (c == (byte)script_op.pop)
             {
                 // stacked 
-                //package->stack_offset--;
+                vector_size = GetMetaDataSize(metadata, (byte)(stack_offset - 1));
+                type = GetMetaDataType(metadata, (byte)(stack_offset - 1));
 
-                vector_size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 1));
-                type = GetMetaDataType(metadata, (byte)(package->stack_offset - 1));
+                // need to advance past vectorsize instead of only 1 that we need to probe 
 
-                // need to advance past vectorsize instead of only 1 
-                // 
-                //  translate vectorsize: TODO
-                // 
-                // vectorsize 0 == vectorsize 4 !!!
+                stack_offset -= math.select(vector_size, 4, vector_size == 0); 
 
-                package->stack_offset -= (ushort)math.select(vector_size, 4, vector_size == 0); 
-
-                return &stack[package->stack_offset];
+                return &((float*)data)[stack_offset];
             }
             else
             if (c >= opt_value)
@@ -849,7 +770,7 @@ namespace NSS.Blast.Interpretor
 
             if (c >= opt_id)
             {
-#if DEBUG && CHECK_STACK
+#if DEBUG || CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id)); 
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
@@ -865,24 +786,25 @@ namespace NSS.Blast.Interpretor
             else
             if (c == (byte)script_op.pop)
             {
-#if DEBUG && CHECK_STACK
+                stack_offset = stack_offset - 1;
+
+#if DEBUG || CHECK_STACK
                 // verify type of data / eventhough it is not stack 
-                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(package->stack_offset - 1));
-                int size = GetMetaDataSize(metadata, (byte)(package->stack_offset - 1));
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)stack_offset);
+                int size = GetMetaDataSize(metadata, (byte)stack_offset);
                 if (size != 1 || type != BlastVariableDataType.Numeric)
                 {
-                    Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {package->stack_offset - 1}");
+                    Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
                     return float.NaN;
-                }
+               }
 #endif         
                 // stack pop 
-                package->stack_offset = (ushort)(package->stack_offset - 1);
-                return stack[package->stack_offset];
+                return ((float*)data)[stack_offset];
             }
             else
             if (c >= opt_value)
             {
-#if DEBUG && CHECK_STACK
+#if DEBUG || CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 //BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_value));
                 //int size = GetMetaDataSize(metadata, (byte)(c - opt_value));
@@ -919,13 +841,13 @@ namespace NSS.Blast.Interpretor
 
             if (c >= opt_id)
             {
-#if DEBUG && CHECK_STACK
+#if DEBUG || CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
                 if (size != 4 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_or_value4 -> data mismatch, expecting numeric of size 4, found {type} of size {size} at data offset {c - opt_id}");
+                    Debug.LogError($"blast.stack, pop_or_value4 -> data mismatch, expecting numeric of size 4, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
                 }
 #endif 
@@ -937,36 +859,35 @@ namespace NSS.Blast.Interpretor
             // pop4
             if (c == (byte)script_op.pop)
             {
-                int stack_offset = package->stack_offset - 4;
-#if DEBUG && CHECK_STACK
+                stack_offset = stack_offset - 4;
+#if DEBUG || CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)stack_offset);
                 int size = GetMetaDataSize(metadata, (byte)stack_offset);
                 if (size != 4 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_or_value4 -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {package->stack_offset - 1}");
+                    Debug.LogError($"blast.stack, pop_or_value4 -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
                     return float.NaN;
                 }
 #endif         
-
-                package->stack_offset = (ushort)( package->stack_offset - 4);
-                return new float4(stack[package->stack_offset + 0], stack[package->stack_offset + 1], stack[package->stack_offset + 2], stack[package->stack_offset + 3]);
+                float* stack = (float*)data; 
+                return new float4(stack[stack_offset + 0], stack[stack_offset + 1], stack[stack_offset + 2], stack[stack_offset + 3]);
             }
             else
             if (c >= opt_value)
             {
-#if DEBUG && CHECK_STACK
+#if DEBUG || CHECK_STACK
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_value));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_value));
                 if (size != 4 || type != BlastVariableDataType.Numeric)
                 {
-                    Standalone.Debug.LogError($"blast.stack, pop_or_value4 -> constant data mismatch, expecting numeric of size 4, found {type} of size {size} at offset {c - opt_value}");
+                    Debug.LogError($"blast.stack, pop_or_value4 -> constant data mismatch, expecting numeric of size 4, found {type} of size {size} at offset {c - opt_value}");
                     return float.NaN;
                 }
+                Debug.LogWarning("?? constant vectors ??");
 #endif         
                 // constant                
-                Standalone.Debug.LogWarning("constant vectors ");
                 return engine_ptr->constants[c];
             }
             else
@@ -1047,16 +968,16 @@ namespace NSS.Blast.Interpretor
             push(f4_register);
 
             // get nr of frames to yield 
-            byte b = code[package->code_pointer];
+            byte b = code[code_pointer];
             if (b >= opt_value)
             {
-                push(pop_or_value(package->code_pointer));
+                push(pop_or_value(code_pointer));
             }
             else
             {
                 // return next frame (remember to pop everything back to correct state) 
                 //  -> allow b to be a number < opt_value in opcode
-                push(b);
+                push((float)b);
             }
         }
         #endregion
@@ -1252,6 +1173,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="pdata"></param>
         static void Handle_DebugData(int code_pointer, byte vector_size, int op_id, BlastVariableDataType datatype, void* pdata)
         {
+#if DEBUG
             if (pdata != null)
             {
                 // in burst we can only directly log to debug.. so this gets verbose .. 
@@ -1314,24 +1236,27 @@ namespace NSS.Blast.Interpretor
                         break; 
                 }
             }
+#endif
         }
-                     
+
         /// <summary>
         /// printout an overview of the datasegment/stack (if shared)
         /// </summary>
         void Handle_DebugStack()
         {
-            for(int i = 0; i < package->stack_offset; i++ )
+#if DEBUG
+            for(int i = 0; i < stack_offset; i++ )
             {
-                if (i < package->data_offset)
+                if (i < package.DataSegmentStackOffset / 4)
                 {
-                    Debug.Log($"DATA  {i} = {((float*)stack)[i]}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
+                    Debug.Log($"DATA  {i} = {((float*)data)[i]}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
                 }
                 else
                 {
-                    Debug.Log($"STACK {i} = {((float*)stack)[i]}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
+                    Debug.Log($"STACK {i} = {((float*)data)[i]}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
                 }
             }
+#endif 
         }
 
         /// <summary>
@@ -1444,7 +1369,7 @@ namespace NSS.Blast.Interpretor
                     default:
 #if LOG_ERRORS
                         Debug.LogError($"function id {id}, with paremetercount {p.parameter_count} is not supported yet");
-#endif 
+#endif
                         break; 
                 }
 
@@ -1463,7 +1388,7 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #region Function Handlers 
+#region Function Handlers 
 
 
 
@@ -1913,13 +1838,6 @@ namespace NSS.Blast.Interpretor
         void get_abs_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             code_pointer += 1;
-
-            // for ABS we dont need it, we could use the data for validations in some debug moder
-            // - 
-            // - better: compiler removes it in case of a function like this 
-            // -
-            // byte c = decode62(in code[code_pointer], ref vector_size);    
-
             f4 = float.NaN;
 
             BlastVariableDataType datatype; 
@@ -2907,7 +2825,7 @@ namespace NSS.Blast.Interpretor
 
 #endregion
 
-        #region fused substract multiply actions
+#region fused substract multiply actions
 
         /// <summary>
         /// fused multiply add 
@@ -2988,9 +2906,9 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #endregion
+#endregion
 
-        #region math utility functions (select, lerp etc) 
+#region math utility functions (select, lerp etc) 
 
         /// <summary>
         /// 3 inputs, first 2 any type, 3rd type equal or scalar bool
@@ -3197,7 +3115,7 @@ namespace NSS.Blast.Interpretor
                 Debug.LogError($"lerp: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, c = {p3_datatype}.{p3_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
                 return;
             }
-#endif 
+#endif
             
             if(p3_vector_size == 1)
             {
@@ -3279,7 +3197,7 @@ namespace NSS.Blast.Interpretor
                     default:
                         Debug.LogError($"slerp: vector_size {vector_size} not supported");
                         break; 
-#endif 
+#endif
                 }
             }
             else
@@ -3361,9 +3279,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion 
+#endregion
 
-        #region mula family 
+#region mula family 
 
 
         /// <summary>
@@ -4426,20 +4344,17 @@ namespace NSS.Blast.Interpretor
             float temp = 0;
             float4 f4 = float4.zero;
 
-            // vector_size = 1; now set by callee
-            byte max_vector_size = 1;        //  !!
+            byte max_vector_size = 1;       
 
             script_op current_operation = script_op.nop;
 
-            while (code_pointer < package->info.code_size)
+            while (code_pointer < package.CodeSize)
             {
                 prev_op = op;
                 prev_op_is_value = op_is_value;
 
                 op = code[code_pointer];
                 op_is_value = op >= opt_value && op != 255;
-
-                // todo -> id all early outs 
 
                 max_vector_size = max_vector_size < vector_size ? vector_size : max_vector_size;
 
@@ -4499,7 +4414,7 @@ namespace NSS.Blast.Interpretor
                                 break;
                             case BlastVectorSizes.float4:
 #if LOG_ERRORS
-                                Standalone.Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
+                                Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
 #endif
                                 return (int)BlastError.error_update_vector_fail;
                         }
@@ -4556,10 +4471,10 @@ namespace NSS.Blast.Interpretor
                         {
                             if (last_is_op_or_first)
                             {
-#if LOG_ERRORS
+#if DEBUG
                                 if (not)
                                 {
-                                    Standalone.Debug.LogError("double token: ! !, this will be become nothing, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
+                                    Debug.LogError("double token: ! !, this will be become nothing, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
                                 }
 #endif
                                 not = !not;
@@ -4576,10 +4491,10 @@ namespace NSS.Blast.Interpretor
                         {
                             if (last_is_op_or_first)
                             {
-#if LOG_ERRORS
+#if DEBUG 
                                 if (minus)
                                 {
-                                    Standalone.Debug.LogError("double token: - -, this will be become +, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
+                                    Debug.LogError("double token: - -, this will be become +, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
                                 }
 #endif
                                 minus = !minus;
@@ -4730,7 +4645,7 @@ namespace NSS.Blast.Interpretor
                                     break;
 
                                 case script_op.ret:
-                                    code_pointer = package->info.code_size + 1;
+                                    code_pointer = package.CodeSize + 1;
                                     return float4.zero;
 
                                 // 
@@ -4900,7 +4815,9 @@ namespace NSS.Blast.Interpretor
                                             //
                                             // if we predict this at the compiler we could use the opcodes value as value constant
                                             //
+#if DEBUG
                                             Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(script_op)op}");
+#endif
 
                                             // this should screw stuff up 
                                             return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -5044,20 +4961,17 @@ namespace NSS.Blast.Interpretor
         /// <returns></returns>
         unsafe int execute([NoAlias]BlastEngineData* blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller, in float4 register, ref int code_pointer)
         {
-            if(code_pointer > 0)
-            {
-                ;
-            }
-
             int iterations = 0;
             float4 f4_register = register;
 
             engine_ptr = blast; 
             environment_ptr = environment;
             caller_ptr = caller; 
+        
+            float* fdata = (float*)data;
 
             // main loop 
-            while (code_pointer < package->info.code_size)
+            while (code_pointer < package.CodeSize)
             {
                 iterations++;
                 if (iterations > max_iterations) return (int)BlastError.error_max_iterations;
@@ -5082,7 +4996,6 @@ namespace NSS.Blast.Interpretor
                 //   - put back code pointer 
                 //   - switch to operation 
                 //   --- in that operation case we know it needed compound so there we advance codepointer
-                float* fdata = (float*)data;
 
                 switch (op)
                 {
@@ -5118,7 +5031,7 @@ namespace NSS.Blast.Interpretor
                                     break;
                                 default:
 #if LOG_ERRORS
-                                Standalone.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push of compound");
+                                    Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push of compound");
 #endif
                                     return (int)BlastError.error_variable_vector_compound_not_supported;
                             }
@@ -5223,8 +5136,8 @@ namespace NSS.Blast.Interpretor
                             case 3: push(f4_register.xyz); break;
                             case 4: push(f4_register.xyzw); break;
                             default:
-#if LOG_ERRORS
-                            Standalone.Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push");
+#if DEBUG
+                                Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push");
 #endif
                                 return (int)BlastError.error_variable_vector_op_not_supported;
                         }
@@ -5241,18 +5154,13 @@ namespace NSS.Blast.Interpretor
                         break;
 
                     case script_op.begin:
-                        {
 #if DEBUG
-                            Debug.LogWarning($"burstscript.interpretor warning: scriptop.begin not expected in root at codepointer: {code_pointer}, f4: {f4_register}");
-                            //return (int)BlastError.error_begin_end_sequence_in_root;
-                            break;
-#else
-                            break; 
+                            // jumping in from somewhere
+//                          Debug.LogWarning($"burstscript.interpretor warning: scriptop.begin not expected in root at codepointer: {code_pointer}, f4: {f4_register}");
 #endif
-                        }
+                            break; 
 
-                    case script_op.end:
-                        break;
+                    case script_op.end: break;
 
                     /// if the compiler can detect:
                     /// - simple assign (1 function call or 1 parameter set)
@@ -5303,7 +5211,7 @@ namespace NSS.Blast.Interpretor
                                     if (s_assignee != 1)
                                     {
 #if DEBUG
-                                          Standalone.Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
+                                        Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -5313,8 +5221,8 @@ namespace NSS.Blast.Interpretor
                                 case (byte)BlastVectorSizes.float2:
                                     if (s_assignee != 2)
                                     {
-#if LOG_ERRORS
-                                    Standalone.Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
+#if DEBUG
+                                    Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -5325,8 +5233,8 @@ namespace NSS.Blast.Interpretor
                                 case (byte)BlastVectorSizes.float3:
                                     if (s_assignee != 3)
                                     {
-#if LOG_ERRORS
-                                    Standalone.Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
+#if DEBUG
+                                    Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -5338,8 +5246,8 @@ namespace NSS.Blast.Interpretor
                                 case (byte)BlastVectorSizes.float4:
                                     if (s_assignee != 4)
                                     {
-#if LOG_ERRORS
-                                    Standalone.Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
+#if DEBUG
+                                        Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -5349,11 +5257,11 @@ namespace NSS.Blast.Interpretor
                                     fdata[assignee + 3] = f4_register.w;
                                     break;
 
-#if LOG_ERRORS
                             default:
-                                Standalone.Debug.LogError($"burstscript.interpretor: vector size {vector_size} not allowed");
-                                return (int)BlastError.error_unsupported_operation_in_root; 
+#if DEBUG
+                                Debug.LogError($"blast.interpretor: vector size {vector_size} not allowed at codepointer {code_pointer}");
 #endif
+                                return (int)BlastError.error_unsupported_operation_in_root; 
                             }
                         }
                         break;
@@ -5361,12 +5269,7 @@ namespace NSS.Blast.Interpretor
                     case script_op.jz:
                         {
                             // calc endlocation of 
-                            // code_pointer++;
                             int offset = code[code_pointer];
-                           // if(offset == 19)
-                           // {
-                              //  Debug.LogWarning(" TODO REMVOE ME");
-                           // }
                             int jump_to = code_pointer + offset;
 
                             // eval condition 
@@ -5374,20 +5277,13 @@ namespace NSS.Blast.Interpretor
                             f4_register = get_compound_result(ref code_pointer, ref vector_size);
 
                             // jump if zero to else condition or after then when no else 
-                            //int jump_to = code_pointer + offset;
                             code_pointer = math.select(code_pointer, jump_to, f4_register.x == 0);
-
-                            //if(f4_register.x == 0)
-                            //{
-                            //    break; 
-                            //}
                         }
                         break;
 
                     case script_op.jnz:
                         {
                             // calc endlocation of 
-                            // code_pointer++;
                             int offset = code[code_pointer];
                             int jump_to = code_pointer + offset;
 
@@ -5437,7 +5333,7 @@ namespace NSS.Blast.Interpretor
                                         // write contents of stack to the debug stream as a detailed report; 
                                         // write contents of a data element to the debug stream 
                                         code_pointer++;
-#if DEBUG && HANDLE_DEBUG_OP
+#if DEBUG
                                         Handle_DebugStack();
 #endif
                                     }
@@ -5454,7 +5350,7 @@ namespace NSS.Blast.Interpretor
                                         // even if not in debug, if the command is encoded any stack op needs to be popped 
                                         void* pdata = pop_with_info(code_pointer, out datatype, out vector_size);
 
-#if DEBUG && HANDLE_DEBUG_OP
+#if DEBUG
                                         Handle_DebugData(code_pointer, vector_size, op_id, datatype, pdata);
 #endif
                                         code_pointer++;
@@ -5475,7 +5371,7 @@ namespace NSS.Blast.Interpretor
                     default:
                         {
 #if DEBUG
-                            Debug.LogError($"burstscript.interpretor: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
+                            Debug.LogError($"blast: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
 #endif
                             return (int)BlastError.error_unsupported_operation_in_root;
                         }

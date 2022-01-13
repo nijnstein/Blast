@@ -1397,6 +1397,7 @@ namespace NSS.Blast.Compiler.Stage
                                 break;
 
                             // operations
+                            case BlastScriptToken.Add:
                             case BlastScriptToken.Substract:
                             case BlastScriptToken.Divide:
                             case BlastScriptToken.Multiply:

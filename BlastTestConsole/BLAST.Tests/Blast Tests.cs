@@ -33,9 +33,6 @@ namespace BlastTestConsole
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 
@@ -64,9 +61,6 @@ namespace BlastTestConsole
 
             var options = new BlastCompilerOptions();
             options.AutoValidate = false;
-            options.Optimize = true;
-            options.CompileWithSystemConstants = true;
-            options.ConstantEpsilon = 0.001f;
             options.DefaultStackSize = 64;
             options.EstimateStackSize = false;
 

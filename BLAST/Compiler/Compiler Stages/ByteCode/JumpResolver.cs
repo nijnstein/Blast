@@ -164,6 +164,13 @@ namespace NSS.Blast.Compiler.Stage
 
                     // update jump offset (negative!!!)
                     code[offset.Item2].UpdateOpCode((byte)(abs_jump_size));
+
+                    // if we updated the last item in the list to a jump offset
+                    if(offset.Item2 == code.Count - 1)
+                    {
+                        // list does not end with nop anymore
+                        // - optimizer removed the double nop neglecting labels?
+                    }
                 }
             }
 
@@ -182,7 +189,7 @@ namespace NSS.Blast.Compiler.Stage
             // as long as we dont support goto this should be able to run in parallel on segments 
             CompilationData cdata = (CompilationData)data;
 
-            if(cdata.code.HasSegments)
+            if (cdata.code.IsSegmented)
             {
                 if (cdata.CompilerOptions.ParallelCompilation)
                 {
@@ -190,23 +197,23 @@ namespace NSS.Blast.Compiler.Stage
                     bool[] ires = new bool[cdata.code.SegmentCount];
                     Parallel.ForEach(
                         cdata.code.segments,
-                        segment 
-                        => 
+                        segment
+                        =>
                         ires[cdata.code.segments.IndexOf(segment)] = ResolveJumps(cdata, segment));
 
                     bool any_false = false;
                     foreach (bool b in ires) if (b == false)
                         {
                             any_false = true;
-                            break; 
+                            break;
                         }
 
                     return any_false ? (int)BlastError.error : (int)BlastError.success;
                 }
                 else
-                {   
+                {
                     // run single threaded
-                    foreach(IMByteCodeList segment in cdata.code.segments)
+                    foreach (IMByteCodeList segment in cdata.code.segments)
                     {
                         if (!ResolveJumps(cdata, segment))
                         {

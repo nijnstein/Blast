@@ -15,40 +15,10 @@ namespace NSS.Blast
     /// </summary>
     public class BlastScriptPackage
     {
-        public IntPtr PackagePtr;
-
         /// <summary>
         /// the actual native package 
         /// </summary>
-        public unsafe BlastPackage* BlastPackage => (BlastPackage*)PackagePtr;
-
-        /// <summary>
-        /// points into the codesegment in blastpackage
-        /// </summary>
-        public unsafe byte* CodeSegment
-        {
-            get
-            {
-                byte* code_segment = (byte*)PackagePtr;
-                return (byte*)(code_segment + 32);
-            }
-        }
-
-        /// <summary>
-        /// points into the datasegment in blastpackage 
-        /// </summary>
-        public unsafe float* DataSegment
-        {
-            get
-            {
-                byte* code_segment = (byte*)PackagePtr;
-
-                int offset = BlastPackage->info.code_size;
-                while (offset % 4 != 0) offset++;
-
-                return (float*)(code_segment + offset + 32);
-            }
-        }
+        public BlastPackageData Package;
 
         // -- input / output mapping -------------------------------------
         public BlastVariableMapping[] Inputs;
@@ -63,25 +33,19 @@ namespace NSS.Blast
         public byte[] VariableOffsets;
 
         // -- methods & properties ---------------------------------------
-        public bool IsAllocated => PackagePtr != IntPtr.Zero;
+        public bool IsAllocated => Package.IsAllocated; 
         public void Destroy()
         {
-            if (IsAllocated)
+            if (Package.IsAllocated)
             {
-                unsafe
-                {
-                    if (BlastPackage->info.Allocator != Allocator.Invalid && BlastPackage->info.Allocator != Allocator.None)
-                    {
-                        UnsafeUtils.Free((void*)PackagePtr, BlastPackage->info.Allocator);
-                    }
-                    PackagePtr = IntPtr.Zero;
-                }
+                Package.Free(); 
             }
 
             Inputs = null;
             Outputs = null;
             Variables = null;
             VariableOffsets = null;
+            Package = default; 
         }
 
         #region ToString + getxxxxText()
@@ -92,7 +56,7 @@ namespace NSS.Blast
             {
                 unsafe
                 {
-                    return $"BlastScriptPackage, size = {this.BlastPackage->info.package_size}";
+                    return $"BlastScriptPackage, package size = {Package.CodeSegmentSize + Package.DataSegmentSize}";
                 }
             }
             else
@@ -107,13 +71,13 @@ namespace NSS.Blast
             {
                 unsafe
                 {
-                    byte* code = CodeSegment;
+                    byte* code = Package.Code;
 
                     StringBuilder sb = new StringBuilder();
-                    sb.Append($"Code Segment: { BlastPackage->info.code_size} bytes\n\n");
-                    sb.Append(Blast.GetByteCodeByteText(code, BlastPackage->info.code_size, width));
+                    sb.Append($"Code Segment: { Package.CodeSize} bytes\n\n");
+                    sb.Append(Blast.GetByteCodeByteText(code, Package.CodeSize, width));
                     sb.Append("\n");
-                    sb.Append(Blast.GetReadableByteCode(code, BlastPackage->info.code_size));
+                    sb.Append(Blast.GetReadableByteCode(code, Package.CodeSize));
                     sb.Append("\n");
 
                     //TextReader tr = new StringReader(Blast.GetHumanReadableCode(byte* code, int size));
@@ -140,9 +104,9 @@ namespace NSS.Blast
                 unsafe
                 {
                     StringBuilder sb = new StringBuilder();
-                    sb.Append($"Data Segment, data = {BlastPackage->info.data_size} bytes, metadata = {BlastPackage->info.data_sizes_size} bytes \n");
+                    sb.Append($"Data Segment, data = {Package.DataSize } bytes, metadata = {Package.MetadataSize} bytes, stack = {Package.StackSize} bytes \n");
 
-                    float* data_segment = DataSegment;
+                    float* data_segment = Package.Data;
 
                     for (int i = 0; i < Variables.Length; i++)
                     {
@@ -184,37 +148,31 @@ namespace NSS.Blast
             {
                 unsafe
                 {
-                    StringBuilder sb = new StringBuilder();
+                    StringBuilder sb = StringBuilderCache.Acquire(); 
                     sb.Append("BlastScriptPackage Information\n");
-                    sb.Append($"- size = {this.BlastPackage->info.package_size}\n");
-                    sb.Append($"- mode = {this.BlastPackage->info.package_mode}\n");
-                    sb.Append($"- memory = {(this.BlastPackage->info.is_fixed_size ? "fixed" : "variable")}\n");
+                    sb.Append($"- language        = {Package.LanguageVersion.ToString()}\n");
+                    sb.Append($"- mode            = {Package.PackageMode}\n");
+                    sb.Append($"- flags           = {Package.PackageMode}\n");
 
-                    sb.Append($"- code size = {this.BlastPackage->info.code_size} bytes\n");
-                    sb.Append($"- data size = {this.BlastPackage->info.data_size} bytes, offset = {this.BlastPackage->data_start} bytes\n");
-                    sb.Append($"- meta size = {this.BlastPackage->info.data_sizes_size} bytes, offset = {this.BlastPackage->data_sizes_start} bytes\n");
-
-                    int stack_offset = 0;
-                    int stack_capacity = 0;
-
-                    switch (this.BlastPackage->info.package_mode)
+                    switch(Package.PackageMode)
                     {
-                        case BlastPackageMode.CodeDataStack:
-                        case BlastPackageMode.Compiler:
-                            stack_offset = this.BlastPackage->data_sizes_start + this.BlastPackage->info.data_sizes_size;
-                            stack_capacity = BlastPackage->info.package_size - stack_offset;
+                        case BlastPackageMode.Normal:
+                            sb.Append($"- package size    = {Package.CodeSegmentSize + Package.DataSegmentSize} bytes\n");
                             break;
 
                         default:
-                        case BlastPackageMode.Code:
-                            stack_offset = 0;
-                            stack_capacity = 0;
-                            break;
+                            sb.Append("please implement me TODO");
+                            break; 
                     }
 
-                    sb.Append($"- stack capacity = {stack_capacity} bytes, offset = {stack_offset} bytes\n\n");
+                    sb.Append($"- code size       = {Package.CodeSize} bytes\n");
+                    sb.Append($"- meta size       = {Package.MetadataSize} bytes\n");
+                    sb.Append($"- data size       = {Package.DataSize} bytes\n");
+                    sb.Append($"- stack size      = {Package.StackSize} bytes\n");
+                    sb.Append($"- stack capacity  = {Package.StackCapacity} elements\n"); 
+                    sb.Append($"- stack offset    = {Package.DataSegmentStackOffset}\n\n");
 
-                    return sb.ToString();
+                    return StringBuilderCache.GetStringAndRelease(ref sb);
                 }
             }
             else
@@ -225,52 +183,6 @@ namespace NSS.Blast
 
         #endregion 
 
-        /// <summary>
-        /// setup data segment 
-        /// - only for packagemode == code 
-        /// 
-        /// returns bytes used by data and metadata
-        /// </summary>
-        /// <param name="data"></param>
-        unsafe public int SetupDataSegment(byte* data_segment, byte* data, int bytesize, bool zero_variables = true)
-        {
-            Assert.IsTrue(PackagePtr != IntPtr.Zero);
-           
-            int i = BlastPackage->info.data_size;
-            i += BlastPackage->info.data_sizes_size;
-            while (i % 4 != 0) i++;
-
-            if (i > bytesize)
-            {
-                Debug.LogError($"SetupDataSegment: size larger then destination: {i} < {bytesize}");
-                return (int)BlastError.datasegment_size_larger_then_target;
-            }
-            else
-            {
-                // setup initial data segment for script 
-                UnsafeUtils.MemCpy(data, data_segment, i);
-
-                // zero data possibly from any previous execution   
-                if(zero_variables)
-                {
-                    for(int j = 0; j < Variables.Length; j++)
-                    {
-                        BlastVariable v = Variables[j]; 
-                        if(!v.IsConstant)
-                        {
-                            int o = VariableOffsets[j];
-
-                            for(int k = 0; k < v.VectorSize; k++)
-                            {
-                                ((float*)data)[o + k] = 0f; 
-                            }
-                        }
-                    }
-                }
-                return i;
-            }
-        }
 
     }
-
 }

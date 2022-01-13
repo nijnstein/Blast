@@ -106,24 +106,19 @@ namespace NSS.Blast.Compiler
         public int Execute(in IntPtr blast, bool validation_run = false)
         {
             // setup a package to run 
-            BlastPackage pkg = new BlastPackage()
-            {
-                code_pointer = 0,
-                data_offset = data_count,
-                data_start = 0,
-                stack_offset = 0,
-                info = new BlastPackageInfo()
-                {
-                    allocator = (byte)Allocator.Invalid,
-                    code_size = (ushort)code_size,
-                    data_size = (ushort)data_count,              // offset in #float
-                    package_mode = BlastPackageMode.Compiler,
-                    package_size = (ushort)(code_capacity + data_capacity),
-                    stack_size = (ushort)((data_capacity / 4) - data_count),   // todo verify this?? todo
-                    reserved_1 = 0,
-                    reserved_2 = 0
-                },
-            };
+            BlastPackageData package = default;
+            
+            package.PackageMode = BlastPackageMode.Compiler;
+            package.LanguageVersion = BlastLanguageVersion.BS1;
+            package.Flags = BlastPackageFlags.None;
+            package.Allocator = (byte)Allocator.None; 
+            
+            package.O1 = (ushort)code_size;
+            package.O2 = (ushort)data_capacity; // 1 byte of metadata for each capacity 
+            package.O3 = (ushort)(data_count * 4);  // 4 bytes / dataelement 
+            package.O4 = (ushort)(data_capacity * 4); // capacity is in byte count on intermediate 
+
+            int initial_stack_offset = package.DataSegmentStackOffset / 4; 
 
             // run the interpretation 
             BlastInterpretor blaster = new BlastInterpretor();
@@ -134,14 +129,14 @@ namespace NSS.Blast.Compiler
             {
                 // estimate stack size while at it: set stack memory too all INF's, 
                 // this assumes the intermediate has more then enough stack
-                float* stack = pdata + pkg.data_offset;
-                for (int i = 0; i < pkg.info.stack_size; i++)
+                float* stack = pdata + initial_stack_offset;
+                for (int i = 0; i < package.StackCapacity; i++)
                 {
                     stack[i] = math.INFINITY;
                 }
 
                 // set package 
-                blaster.SetPackage(&pkg, pcode, pdata, pmetadata, pdata); // NOTE BUG: stack offset by stack offset. data and stack share buffer   + pkg.data_offset);
+                blaster.SetPackage(package, pcode, pdata, pmetadata, initial_stack_offset);
                 blaster.ValidationMode = validation_run; 
 
                 // run it 
@@ -150,43 +145,16 @@ namespace NSS.Blast.Compiler
 
                 // determine used stack size from nr of stack slots not INF anymore 
                 max_stack_size = 0;
-                while (!math.isinf(stack[max_stack_size]) && max_stack_size < pkg.info.stack_size) max_stack_size++;
+                while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
 
                 // if we ran out of stack we should return that error 
-                if (max_stack_size >= pkg.info.stack_size)
+                if (max_stack_size >= package.StackCapacity)
                 {
                     return (int)BlastError.validate_error_stack_too_small;
                 }
             }
 
             return (int)BlastError.success;
-        }
-
-        /// <summary>
-        /// package code
-        /// </summary>
-        /// <param name="code_segment"></param>
-        public void PackageInto(ref BlastCodeSegment code_segment)
-        {
-
-        }
-
-        /// <summary>
-        /// package metadata 
-        /// </summary>
-        /// <param name="metadata_segment"></param>
-        public void PackageInto(ref BlastMetaDataSegment metadata_segment)
-        {
-
-        }
-
-        /// <summary>
-        /// package data/stack
-        /// </summary>
-        /// <param name="data_segment"></param>
-        public void PackageInto(ref BlastDataStackSegment data_segment)
-        {
-
         }
 
 
