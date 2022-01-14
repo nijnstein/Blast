@@ -26,9 +26,11 @@ namespace NSS.Blast.Compiler.Stage
                 case BlastScriptToken.Substract: return "-";
                 case BlastScriptToken.Divide: return "/"; 
                 case BlastScriptToken.Multiply: return "*"; 
-                case BlastScriptToken.Equals: return "=="; 
+                case BlastScriptToken.Equals: return "==";
+#if SUPPORT_TERNARY
                 case BlastScriptToken.Ternary: return "?";
                 case BlastScriptToken.TernaryOption: return ":"; 
+#endif
                 case BlastScriptToken.SmallerThen: return "<";
                 case BlastScriptToken.GreaterThen: return ">";
                 case BlastScriptToken.SmallerThenEquals: return "<="; 
@@ -72,59 +74,59 @@ namespace NSS.Blast.Compiler.Stage
 
                 switch (function.ScriptOp)
                 {
-                    case script_op.ret: return "return"; 
-                    case script_op.fma: return "blast.fma";
-                    case script_op.adda: return "blast.adda"; 
-                    case script_op.mula: return "blast.mula"; 
-                    case script_op.diva: return "blast.diva"; 
-                    case script_op.suba: return "blast.suba";
-                    case script_op.all: return "blast.all"; 
-                    case script_op.any: return "blast.any"; 
-                    case script_op.abs: return "math.abs"; 
-                    case script_op.select: return "math.select";
+                    case blast_operation.ret: return "return"; 
+                    case blast_operation.fma: return "blast.fma";
+                    case blast_operation.adda: return "blast.adda"; 
+                    case blast_operation.mula: return "blast.mula"; 
+                    case blast_operation.diva: return "blast.diva"; 
+                    case blast_operation.suba: return "blast.suba";
+                    case blast_operation.all: return "blast.all"; 
+                    case blast_operation.any: return "blast.any"; 
+                    case blast_operation.abs: return "math.abs"; 
+                    case blast_operation.select: return "math.select";
                     
-                    case script_op.random: return "blast.random"; 
-                    case script_op.seed: return "blast.seed"; 
-                    case script_op.max: return "blast.max"; 
-                    case script_op.min: return "blast.min"; 
-                    case script_op.maxa: return "blast.maxa";
-                    case script_op.mina: return "blast.mina"; 
+                    case blast_operation.random: return "blast.random"; 
+                    case blast_operation.seed: return "blast.seed"; 
+                    case blast_operation.max: return "blast.max"; 
+                    case blast_operation.min: return "blast.min"; 
+                    case blast_operation.maxa: return "blast.maxa";
+                    case blast_operation.mina: return "blast.mina"; 
 
-                    case script_op.lerp: return "math.lerp"; 
-                    case script_op.slerp: return "math.slerp";
-                    case script_op.clamp: return "math.clamp"; 
-                    case script_op.saturate: return "math.saturate"; 
+                    case blast_operation.lerp: return "math.lerp"; 
+                    case blast_operation.slerp: return "math.slerp";
+                    case blast_operation.clamp: return "math.clamp"; 
+                    case blast_operation.saturate: return "math.saturate"; 
                     
-                    case script_op.normalize: return "math.normalize"; 
+                    case blast_operation.normalize: return "math.normalize"; 
                     
-                    case script_op.ceil: return "math.ceil"; 
-                    case script_op.floor: return "math.floor"; 
-                    case script_op.frac: return "math.frac";
+                    case blast_operation.ceil: return "math.ceil"; 
+                    case blast_operation.floor: return "math.floor"; 
+                    case blast_operation.frac: return "math.frac";
                     
-                    case script_op.sin: return "math.sin";
-                    case script_op.cos: return "math.cos"; 
-                    case script_op.tan: return "math.tan";
-                    case script_op.atan: return "math.atan";
-                    case script_op.cosh: return "math.cosh";
-                    case script_op.sinh: return "math.sinh";
+                    case blast_operation.sin: return "math.sin";
+                    case blast_operation.cos: return "math.cos"; 
+                    case blast_operation.tan: return "math.tan";
+                    case blast_operation.atan: return "math.atan";
+                    case blast_operation.cosh: return "math.cosh";
+                    case blast_operation.sinh: return "math.sinh";
                     
-                    case script_op.degrees: return "math.degrees"; 
-                    case script_op.radians: return "math.radians"; 
+                    case blast_operation.degrees: return "math.degrees"; 
+                    case blast_operation.radians: return "math.radians"; 
 
-                    case script_op.sqrt: return "math.sqrt";
+                    case blast_operation.sqrt: return "math.sqrt";
 
-                    case script_op.ex_op:
+                    case blast_operation.ex_op:
                         switch(function.ExtendedScriptOp)
                         {
-                            case extended_script_op.exp: return "math.exp";
-                            case extended_script_op.exp10: return "math.exp10";
-                            case extended_script_op.log10: return "math.log10";
-                            case extended_script_op.log2: return "math.log2";
-                            case extended_script_op.logn: return "math.logn";
-                            case extended_script_op.dot: return "math.dot";
-                            case extended_script_op.cross: return "math.cross";
-                            case extended_script_op.rsqrt: return "math.rsqrt";
-                            case extended_script_op.pow: return "math.pow";
+                            case extended_blast_operation.exp: return "math.exp";
+                            case extended_blast_operation.exp10: return "math.exp10";
+                            case extended_blast_operation.log10: return "math.log10";
+                            case extended_blast_operation.log2: return "math.log2";
+                            case extended_blast_operation.logn: return "math.logn";
+                            case extended_blast_operation.dot: return "math.dot";
+                            case extended_blast_operation.cross: return "math.cross";
+                            case extended_blast_operation.rsqrt: return "math.rsqrt";
+                            case extended_blast_operation.pow: return "math.pow";
                         }
                         break;
                 }
@@ -322,7 +324,7 @@ namespace NSS.Blast.Compiler.Stage
             // special cases: yield and push
             switch (n.function.ScriptOp)
             {
-                case script_op.yield:
+                case blast_operation.yield:
                     code.Append("Yield(___bs_stack_root, ___bs_stack_size "); 
                     if(n.HasChildNodes)
                     {
@@ -339,7 +341,7 @@ namespace NSS.Blast.Compiler.Stage
                     //            float* stack = stackalloc float[stack_size];
                     //            stack[0] = 3; stack++;
                     //            variables[0] = (--stack)[0];
-                case script_op.push:
+                case blast_operation.push:
 
                     code.Append($"___bs_stack[0] = ");
                     if (!CompileParameter(data, n.children[0], code))
@@ -351,7 +353,7 @@ namespace NSS.Blast.Compiler.Stage
 
                     return (int)BlastError.success;
 
-                case script_op.pushv:
+                case blast_operation.pushv:
                     data.LogError($"HPCCompiler.CompileFunction: node <{n}> encodes pushv operation, this is not supported in hpc code and should have been converted into a variable assignment");
                     return (int)BlastError.error_unsupported_operation;
             }
@@ -362,7 +364,7 @@ namespace NSS.Blast.Compiler.Stage
             {
                 bool has_variable_paramcount = n.function.MinParameterCount != n.function.MaxParameterCount;
 
-                if (n.function.ScriptOp != script_op.nop)
+                if (n.function.ScriptOp != blast_operation.nop)
                 {
                     // output name of function followed by parameter name 
                     code.Append(GetFunctionName(data, n.function));

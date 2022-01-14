@@ -39,12 +39,12 @@ namespace NSS.Blast.Interpretor
         /// <summary>
         /// >= opt_value < opt_id is opcode for constant
         /// </summary>
-        const byte opt_value = (byte)script_op.pi;
+        const byte opt_value = (byte)blast_operation.pi;
 
         /// <summary>
         /// >= opt_id is opcode for parameter
         /// </summary>
-        const byte opt_id = (byte)script_op.id;
+        const byte opt_id = (byte)blast_operation.id;
 
         /// <summary>
         /// maxiumum iteration count, usefull to avoid endless loop bugs
@@ -482,7 +482,7 @@ namespace NSS.Blast.Interpretor
                 return ((float*)data)[c - opt_id];
             }
             else
-            if (c == (byte)script_op.pop)
+            if (c == (byte)blast_operation.pop)
             {
 #if DEBUG && CHECK_STACK
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(stack_offset - 1));
@@ -533,7 +533,7 @@ namespace NSS.Blast.Interpretor
                 return  new float2( ((float*)data)[c - opt_id], ((float*)data)[c - opt_id + 1]) ;
             }
             else
-            if (c == (byte)script_op.pop)
+            if (c == (byte)blast_operation.pop)
             {
                 stack_offset = stack_offset - 2;
 
@@ -587,7 +587,7 @@ namespace NSS.Blast.Interpretor
                 return new float3(fdata[index], fdata[index + 1], fdata[index + 2]);
             }
             else
-            if (c == (byte)script_op.pop)
+            if (c == (byte)blast_operation.pop)
             {
                 stack_offset = stack_offset - 3;
 
@@ -640,7 +640,7 @@ namespace NSS.Blast.Interpretor
                 return ((float4*)data)[c - opt_id];
             }
             else
-            if (c == (byte)script_op.pop)
+            if (c == (byte)blast_operation.pop)
             {
                 stack_offset = stack_offset - 4;
 
@@ -723,7 +723,7 @@ namespace NSS.Blast.Interpretor
                 return &((float*)data)[c - opt_id];
             }
             else
-            if (c == (byte)script_op.pop)
+            if (c == (byte)blast_operation.pop)
             {
                 // stacked 
                 vector_size = GetMetaDataSize(metadata, (byte)(stack_offset - 1));
@@ -784,7 +784,7 @@ namespace NSS.Blast.Interpretor
                 return ((float*)data)[c - opt_id];
             }
             else
-            if (c == (byte)script_op.pop)
+            if (c == (byte)blast_operation.pop)
             {
                 stack_offset = stack_offset - 1;
 
@@ -857,7 +857,7 @@ namespace NSS.Blast.Interpretor
             }
             else
             // pop4
-            if (c == (byte)script_op.pop)
+            if (c == (byte)blast_operation.pop)
             {
                 stack_offset = stack_offset - 4;
 #if DEBUG || CHECK_STACK
@@ -1018,34 +1018,34 @@ namespace NSS.Blast.Interpretor
         // 
         
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in script_op op, in byte current, in byte previous, ref float4 a, in float4 b, ref bool last_is_op_or_first, ref byte vector_size)
+        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float4 b, ref bool last_is_op_or_first, ref byte vector_size)
         {
             last_is_op_or_first = false;
             switch (op)
             {
                 default:
-                case script_op.nop:
+                case blast_operation.nop:
                     {
                         a = b;
                     }
                     return;
 
-                case script_op.add: a = a + b; return;
-                case script_op.substract: a = a - b; return;
-                case script_op.multiply: a = a * b; return;
-                case script_op.divide: a = a / b; return;
+                case blast_operation.add: a = a + b; return;
+                case blast_operation.substract: a = a - b; return;
+                case blast_operation.multiply: a = a * b; return;
+                case blast_operation.divide: a = a / b; return;
 
-                case script_op.and: a = math.select(0f, 1f, math.all(a) && math.all(b)); return;
-                case script_op.or: a = math.select(0f, 1f, math.any(a) || math.any(b)); return;
-                case script_op.xor: a = math.select(0f, 1f, math.any(a) ^ math.any(b)); return;
+                case blast_operation.and: a = math.select(0f, 1f, math.all(a) && math.all(b)); return;
+                case blast_operation.or: a = math.select(0f, 1f, math.any(a) || math.any(b)); return;
+                case blast_operation.xor: a = math.select(0f, 1f, math.any(a) ^ math.any(b)); return;
 
-                case script_op.greater: a = math.select(0f, 1f, a > b); return;
-                case script_op.smaller: a = math.select(0f, 1f, a < b); return;
-                case script_op.smaller_equals: a = math.select(0f, 1f, a <= b); return;
-                case script_op.greater_equals: a = math.select(0f, 1f, a >= b); return;
-                case script_op.equals: a = math.select(0f, 1f, a == b); return;
+                case blast_operation.greater: a = math.select(0f, 1f, a > b); return;
+                case blast_operation.smaller: a = math.select(0f, 1f, a < b); return;
+                case blast_operation.smaller_equals: a = math.select(0f, 1f, a <= b); return;
+                case blast_operation.greater_equals: a = math.select(0f, 1f, a >= b); return;
+                case blast_operation.equals: a = math.select(0f, 1f, a == b); return;
 
-                case script_op.not:
+                case blast_operation.not:
 #if UNITY_EDITOR || LOG_ERRORS
                     Standalone.Debug.LogError("not");
 #endif
@@ -1054,34 +1054,34 @@ namespace NSS.Blast.Interpretor
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in script_op op, in byte current, in byte previous, ref float4 a, in float3 b, ref bool last_is_op_or_first, ref byte vector_size)
+        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float3 b, ref bool last_is_op_or_first, ref byte vector_size)
         {
             last_is_op_or_first = false;
             switch (op)
             {
                 default:
-                case script_op.nop:
+                case blast_operation.nop:
                     {
                         a.xyz = b;
                     }
                     return;
 
-                case script_op.add: a.xyz = a.xyz + b; return;
-                case script_op.substract: a.xyz = a.xyz - b; return;
-                case script_op.multiply: a.xyz = a.xyz * b; return;
-                case script_op.divide: a.xyz = a.xyz / b; return;
+                case blast_operation.add: a.xyz = a.xyz + b; return;
+                case blast_operation.substract: a.xyz = a.xyz - b; return;
+                case blast_operation.multiply: a.xyz = a.xyz * b; return;
+                case blast_operation.divide: a.xyz = a.xyz / b; return;
 
-                case script_op.and: a.xyz = math.select(0f, 1f, math.all(a.xyz) && math.all(b)); return;
-                case script_op.or: a.xyz = math.select(0f, 1f, math.any(a.xyz) || math.any(b)); return;
-                case script_op.xor: a.xyz = math.select(0f, 1f, math.any(a.xyz) ^ math.any(b)); return;
+                case blast_operation.and: a.xyz = math.select(0f, 1f, math.all(a.xyz) && math.all(b)); return;
+                case blast_operation.or: a.xyz = math.select(0f, 1f, math.any(a.xyz) || math.any(b)); return;
+                case blast_operation.xor: a.xyz = math.select(0f, 1f, math.any(a.xyz) ^ math.any(b)); return;
 
-                case script_op.greater: a.xyz = math.select(0f, 1f, a.xyz > b); return;
-                case script_op.smaller: a.xyz = math.select(0f, 1f, a.xyz < b); return;
-                case script_op.smaller_equals: a.xyz = math.select(0f, 1f, a.xyz <= b); return;
-                case script_op.greater_equals: a.xyz = math.select(0f, 1f, a.xyz >= b); return;
-                case script_op.equals: a.xyz = math.select(0f, 1f, a.xyz == b); return;
+                case blast_operation.greater: a.xyz = math.select(0f, 1f, a.xyz > b); return;
+                case blast_operation.smaller: a.xyz = math.select(0f, 1f, a.xyz < b); return;
+                case blast_operation.smaller_equals: a.xyz = math.select(0f, 1f, a.xyz <= b); return;
+                case blast_operation.greater_equals: a.xyz = math.select(0f, 1f, a.xyz >= b); return;
+                case blast_operation.equals: a.xyz = math.select(0f, 1f, a.xyz == b); return;
 
-                case script_op.not:
+                case blast_operation.not:
 #if UNITY_EDITOR || LOG_ERRORS
                     Standalone.Debug.LogError("not");
 #endif
@@ -1090,34 +1090,34 @@ namespace NSS.Blast.Interpretor
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in script_op op, in byte current, in byte previous, ref float4 a, in float2 b, ref bool last_is_op_or_first, ref byte vector_size)
+        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float2 b, ref bool last_is_op_or_first, ref byte vector_size)
         {
             last_is_op_or_first = false;
             switch (op)
             {
                 default:
-                case script_op.nop:
+                case blast_operation.nop:
                     {
                         a.xy = b;
                     }
                     return;
 
-                case script_op.add: a.xy = a.xy + b; return;
-                case script_op.substract: a.xy = a.xy - b; return;
-                case script_op.multiply: a.xy = a.xy * b; return;
-                case script_op.divide: a.xy = a.xy / b; return;
+                case blast_operation.add: a.xy = a.xy + b; return;
+                case blast_operation.substract: a.xy = a.xy - b; return;
+                case blast_operation.multiply: a.xy = a.xy * b; return;
+                case blast_operation.divide: a.xy = a.xy / b; return;
 
-                case script_op.and: a.xy = math.select(0, 1, math.all(a.xy) && math.all(b)); return;
-                case script_op.or: a.xy = math.select(0, 1, math.any(a.xy) || math.any(b)); return;
-                case script_op.xor: a.xy = math.select(0, 1, math.any(a.xy) ^ math.any(b)); return;
+                case blast_operation.and: a.xy = math.select(0, 1, math.all(a.xy) && math.all(b)); return;
+                case blast_operation.or: a.xy = math.select(0, 1, math.any(a.xy) || math.any(b)); return;
+                case blast_operation.xor: a.xy = math.select(0, 1, math.any(a.xy) ^ math.any(b)); return;
 
-                case script_op.greater: a.xy = math.select(0f, 1f, a.xy > b); return;
-                case script_op.smaller: a.xy = math.select(0f, 1f, a.xy < b); return;
-                case script_op.smaller_equals: a.xy = math.select(0f, 1f, a.xy <= b); return;
-                case script_op.greater_equals: a.xy = math.select(0f, 1f, a.xy >= b); return;
-                case script_op.equals: a.xy = math.select(0f, 1f, a.xy == b); return;
+                case blast_operation.greater: a.xy = math.select(0f, 1f, a.xy > b); return;
+                case blast_operation.smaller: a.xy = math.select(0f, 1f, a.xy < b); return;
+                case blast_operation.smaller_equals: a.xy = math.select(0f, 1f, a.xy <= b); return;
+                case blast_operation.greater_equals: a.xy = math.select(0f, 1f, a.xy >= b); return;
+                case blast_operation.equals: a.xy = math.select(0f, 1f, a.xy == b); return;
 
-                case script_op.not:
+                case blast_operation.not:
 #if LOG_ERRORS
                     Standalone.Debug.LogError("not");
 #endif
@@ -1126,34 +1126,34 @@ namespace NSS.Blast.Interpretor
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in script_op op, in byte current, in byte previous, ref float a, in float b, ref bool last_is_op_or_first, ref byte vector_size)
+        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float a, in float b, ref bool last_is_op_or_first, ref byte vector_size)
         {
             last_is_op_or_first = false;
             switch (op)
             {
                 default: return;
-                case script_op.nop:
+                case blast_operation.nop:
                     {
                         a = b;
                     }
                     return;
 
-                case script_op.add: a = a + b; return;
-                case script_op.substract: a = a - b; return;
-                case script_op.multiply: a = a * b; return;
-                case script_op.divide: a = a / b; return;
+                case blast_operation.add: a = a + b; return;
+                case blast_operation.substract: a = a - b; return;
+                case blast_operation.multiply: a = a * b; return;
+                case blast_operation.divide: a = a / b; return;
 
-                case script_op.and: a = math.select(0, 1, a != 0 && b != 0); return;
-                case script_op.or: a = math.select(0, 1, a != 0 || b != 0); return;
-                case script_op.xor: a = math.select(0, 1, a != 0 ^ b != 0); return;
+                case blast_operation.and: a = math.select(0, 1, a != 0 && b != 0); return;
+                case blast_operation.or: a = math.select(0, 1, a != 0 || b != 0); return;
+                case blast_operation.xor: a = math.select(0, 1, a != 0 ^ b != 0); return;
 
-                case script_op.greater: a = math.select(0f, 1f, a > b); return;
-                case script_op.smaller: a = math.select(0f, 1f, a < b); return;
-                case script_op.smaller_equals: a = math.select(0f, 1f, a <= b); return;
-                case script_op.greater_equals: a = math.select(0f, 1f, a >= b); return;
-                case script_op.equals: a = math.select(0f, 1f, a == b); return;
+                case blast_operation.greater: a = math.select(0f, 1f, a > b); return;
+                case blast_operation.smaller: a = math.select(0f, 1f, a < b); return;
+                case blast_operation.smaller_equals: a = math.select(0f, 1f, a <= b); return;
+                case blast_operation.greater_equals: a = math.select(0f, 1f, a >= b); return;
+                case blast_operation.equals: a = math.select(0f, 1f, a == b); return;
 
-                case script_op.not:
+                case blast_operation.not:
 #if UNITY_EDITOR || LOG_ERRORS
                     Standalone.Debug.LogError("not");
 #endif
@@ -4312,10 +4312,10 @@ namespace NSS.Blast.Interpretor
         {
             return
                 // its a value if from stack 
-                op == (byte)script_op.pop
+                op == (byte)blast_operation.pop
                 ||
                 // or between the lowest constant and the highest possible variable 
-                (op >= (byte)script_op.pi && op < 255);
+                (op >= (byte)blast_operation.pi && op < 255);
         }
 
 
@@ -4346,7 +4346,7 @@ namespace NSS.Blast.Interpretor
 
             byte max_vector_size = 1;       
 
-            script_op current_operation = script_op.nop;
+            blast_operation current_operation = blast_operation.nop;
 
             while (code_pointer < package.CodeSize)
             {
@@ -4362,7 +4362,7 @@ namespace NSS.Blast.Interpretor
                 // results in wierdnes on wierd ops.. should filter those in the analyser if that could occur 
 
                 // determine if growing a vector, ifso update the next element
-                if (op != 0 && op != (byte)script_op.end)
+                if (op != 0 && op != (byte)blast_operation.end)
                 {
                     bool grow_vector = false;
 
@@ -4373,20 +4373,20 @@ namespace NSS.Blast.Interpretor
                     else
                     {
                         // if the previous op also gave back a value 
-                        if (prev_op_is_value || prev_op == (byte)script_op.pop)
+                        if (prev_op_is_value || prev_op == (byte)blast_operation.pop)
                         {
                             // we grow vector 
-                            switch ((script_op)op)
+                            switch ((blast_operation)op)
                             {
-                                case script_op.peek:
+                                case blast_operation.peek:
                                     f1 = peek(1) ? 1f : 0f;
                                     grow_vector = true;
                                     break;
 
-                                case script_op.peekv:
+                                case blast_operation.peekv:
                                     return (int)BlastError.stack_error_peek;
 
-                                case script_op.pop:
+                                case blast_operation.pop:
                                     pop(out f1);
                                     grow_vector = true;
                                     break;
@@ -4426,13 +4426,13 @@ namespace NSS.Blast.Interpretor
                 float4 f4_result = f4;
 
                 // switch on an operation to take
-                switch ((script_op)op)
+                switch ((blast_operation)op)
                 {
-                    case script_op.end:
+                    case blast_operation.end:
                         vector_size = vector_size > max_vector_size ? vector_size : max_vector_size;
                         return vector_size > 1 ? f4 : new float4(f1, 0, 0, 0);
 
-                    case script_op.nop:
+                    case blast_operation.nop:
                         // assignments will end with nop and not with end as a compounded statement
                         // at this point vector_size is decisive for the returned value
                         code_pointer++;
@@ -4441,23 +4441,23 @@ namespace NSS.Blast.Interpretor
                         return vector_size > 1 ? f4 : new float4(f1, 0, 0, 0);
 
                     // arithmetic ops 
-                    case script_op.add:
-                    case script_op.multiply:
-                    case script_op.divide:
+                    case blast_operation.add:
+                    case blast_operation.multiply:
+                    case blast_operation.divide:
                     // boolean ops 
-                    case script_op.or:
-                    case script_op.and:
-                    case script_op.xor:
-                    case script_op.smaller:
-                    case script_op.smaller_equals:
-                    case script_op.greater:
-                    case script_op.greater_equals:
-                    case script_op.equals:
+                    case blast_operation.or:
+                    case blast_operation.and:
+                    case blast_operation.xor:
+                    case blast_operation.smaller:
+                    case blast_operation.smaller_equals:
+                    case blast_operation.greater:
+                    case blast_operation.greater_equals:
+                    case blast_operation.equals:
                         {
-                            current_operation = (script_op)op;
+                            current_operation = (blast_operation)op;
                             if (prev_op == 0) // nop op -> any - is at start of ops
                             {
-                                if ((script_op)op == script_op.substract)
+                                if ((blast_operation)op == blast_operation.substract)
                                 {
                                     minus = true;
                                 }
@@ -4467,7 +4467,7 @@ namespace NSS.Blast.Interpretor
                         }
                         break;
 
-                    case script_op.not:
+                    case blast_operation.not:
                         {
                             if (last_is_op_or_first)
                             {
@@ -4481,13 +4481,13 @@ namespace NSS.Blast.Interpretor
                             }
                             else
                             {
-                                current_operation = script_op.not;
+                                current_operation = blast_operation.not;
                                 last_is_op_or_first = true;
                             }
                         }
                         break;
 
-                    case script_op.substract:
+                    case blast_operation.substract:
                         {
                             if (last_is_op_or_first)
                             {
@@ -4501,7 +4501,7 @@ namespace NSS.Blast.Interpretor
                             }
                             else
                             {
-                                current_operation = script_op.substract;
+                                current_operation = blast_operation.substract;
                                 last_is_op_or_first = true;
                             }
                         }
@@ -4510,9 +4510,9 @@ namespace NSS.Blast.Interpretor
                     default:
                         {
                             // get result for op 
-                            switch ((script_op)op)
+                            switch ((blast_operation)op)
                             {
-                                case script_op.begin:
+                                case blast_operation.begin:
                                     ++code_pointer;
                                     // should not reach here
 #if DEBUG
@@ -4523,69 +4523,69 @@ namespace NSS.Blast.Interpretor
 
 
                                 // math functions 
-                                case script_op.abs: get_abs_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.mina: get_mina_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.max: get_max_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.min: get_min_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.abs: get_abs_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.mina: get_mina_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.max: get_max_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.min: get_min_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
 
                                 // math utils 
-                                case script_op.select: get_select_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case script_op.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break; 
+                                case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break; 
 
                                 // fma and friends 
-                                case script_op.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
 
                                 // mula family
-                                case script_op.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); max_vector_size = vector_size; break;
+                                case blast_operation.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); max_vector_size = vector_size; break;
 
                                 ///
                                 ///  FROM HERE NOT CONVERTED YET TO METADATA USE
                                 /// 
 
-                                case script_op.random:
+                                case blast_operation.random:
                                     get_random_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
                                     break;
 
-                                case script_op.adda:
+                                case blast_operation.adda:
                                     f4_result = get_adda_result(ref code_pointer, ref minus, ref vector_size);
                                     break;
 
-                                case script_op.suba:
+                                case blast_operation.suba:
                                     f4_result = get_suba_result(ref code_pointer, ref minus, ref vector_size);
                                     break;
 
-                                case script_op.diva:
+                                case blast_operation.diva:
                                     f4_result = get_diva_result(ref code_pointer, ref minus, ref vector_size);
                                     break;
 
-                                case script_op.all:
+                                case blast_operation.all:
                                     f4_result = get_all_result(ref code_pointer, ref minus, ref not, ref vector_size);
                                     break;
 
-                                case script_op.any:
+                                case blast_operation.any:
                                     f4_result = get_any_result(ref code_pointer, ref minus, ref not, ref vector_size);
                                     break;
 
                                 
-                                case script_op.pop:
+                                case blast_operation.pop:
                                     BlastVariableDataType popped_type;
                                     byte popped_vector_size;
 
@@ -4607,12 +4607,12 @@ namespace NSS.Blast.Interpretor
                                     minus = false;
                                     break;
 
-                                case script_op.ex_op:
+                                case blast_operation.ex_op:
 
                                     code_pointer++;
-                                    extended_script_op exop = (extended_script_op)code[code_pointer];
+                                    extended_blast_operation exop = (extended_blast_operation)code[code_pointer];
 
-                                    if (exop == extended_script_op.call)
+                                    if (exop == extended_blast_operation.call)
                                     {
                                         // call external function 
                                         f4_result = CallExternal(ref code_pointer, ref minus, ref vector_size, ref f4);
@@ -4621,15 +4621,15 @@ namespace NSS.Blast.Interpretor
                                     {
                                         switch (exop)
                                         {
-                                            case extended_script_op.logn: get_log_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_script_op.log10: get_log10_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_script_op.exp10: get_exp10_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_script_op.cross: get_cross_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_script_op.exp: get_exp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_script_op.dot: get_dot_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_script_op.log2: get_log2_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_script_op.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_script_op.pow: get_pow_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_blast_operation.logn: get_log_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_blast_operation.log10: get_log10_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_blast_operation.exp10: get_exp10_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_blast_operation.cross: get_cross_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_blast_operation.exp: get_exp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_blast_operation.dot: get_dot_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_blast_operation.log2: get_log2_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                            case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4_result); break;
 #if DEBUG
                                             default:
                                                 Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
@@ -4639,69 +4639,69 @@ namespace NSS.Blast.Interpretor
                                     }
                                     // prev_op = (byte)script_op.ex_op;
                                     // prev_op_is_value = false;
-                                    op = (byte)script_op.nop;
+                                    op = (byte)blast_operation.nop;
                                     op_is_value = true;
                                     last_is_op_or_first = code_pointer == 0;
                                     break;
 
-                                case script_op.ret:
+                                case blast_operation.ret:
                                     code_pointer = package.CodeSize + 1;
                                     return float4.zero;
 
                                 // 
                                 // this should give us a decent jump-table, saving some conditional jumps later  
                                 //
-                                case script_op.pi:
-                                case script_op.inv_pi:
-                                case script_op.epsilon:
-                                case script_op.infinity:
-                                case script_op.negative_infinity:
-                                case script_op.nan:
-                                case script_op.min_value:
-                                case script_op.value_0:
-                                case script_op.value_1:
-                                case script_op.value_2:
-                                case script_op.value_3:
-                                case script_op.value_4:
-                                case script_op.value_8:
-                                case script_op.value_10:
-                                case script_op.value_16:
-                                case script_op.value_24:
-                                case script_op.value_32:
-                                case script_op.value_64:
-                                case script_op.value_100:
-                                case script_op.value_128:
-                                case script_op.value_256:
-                                case script_op.value_512:
-                                case script_op.value_1000:
-                                case script_op.value_1024:
-                                case script_op.value_30:
-                                case script_op.value_45:
-                                case script_op.value_90:
-                                case script_op.value_180:
-                                case script_op.value_270:
-                                case script_op.value_360:
-                                case script_op.inv_value_2:
-                                case script_op.inv_value_3:
-                                case script_op.inv_value_4:
-                                case script_op.inv_value_8:
-                                case script_op.inv_value_10:
-                                case script_op.inv_value_16:
-                                case script_op.inv_value_24:
-                                case script_op.inv_value_32:
-                                case script_op.inv_value_64:
-                                case script_op.inv_value_100:
-                                case script_op.inv_value_128:
-                                case script_op.inv_value_256:
-                                case script_op.inv_value_512:
-                                case script_op.inv_value_1000:
-                                case script_op.inv_value_1024:
-                                case script_op.inv_value_30:
-                                case script_op.inv_value_45:
-                                case script_op.inv_value_90:
-                                case script_op.inv_value_180:
-                                case script_op.inv_value_270:
-                                case script_op.inv_value_360:
+                                case blast_operation.pi:
+                                case blast_operation.inv_pi:
+                                case blast_operation.epsilon:
+                                case blast_operation.infinity:
+                                case blast_operation.negative_infinity:
+                                case blast_operation.nan:
+                                case blast_operation.min_value:
+                                case blast_operation.value_0:
+                                case blast_operation.value_1:
+                                case blast_operation.value_2:
+                                case blast_operation.value_3:
+                                case blast_operation.value_4:
+                                case blast_operation.value_8:
+                                case blast_operation.value_10:
+                                case blast_operation.value_16:
+                                case blast_operation.value_24:
+                                case blast_operation.value_32:
+                                case blast_operation.value_64:
+                                case blast_operation.value_100:
+                                case blast_operation.value_128:
+                                case blast_operation.value_256:
+                                case blast_operation.value_512:
+                                case blast_operation.value_1000:
+                                case blast_operation.value_1024:
+                                case blast_operation.value_30:
+                                case blast_operation.value_45:
+                                case blast_operation.value_90:
+                                case blast_operation.value_180:
+                                case blast_operation.value_270:
+                                case blast_operation.value_360:
+                                case blast_operation.inv_value_2:
+                                case blast_operation.inv_value_3:
+                                case blast_operation.inv_value_4:
+                                case blast_operation.inv_value_8:
+                                case blast_operation.inv_value_10:
+                                case blast_operation.inv_value_16:
+                                case blast_operation.inv_value_24:
+                                case blast_operation.inv_value_32:
+                                case blast_operation.inv_value_64:
+                                case blast_operation.inv_value_100:
+                                case blast_operation.inv_value_128:
+                                case blast_operation.inv_value_256:
+                                case blast_operation.inv_value_512:
+                                case blast_operation.inv_value_1000:
+                                case blast_operation.inv_value_1024:
+                                case blast_operation.inv_value_30:
+                                case blast_operation.inv_value_45:
+                                case blast_operation.inv_value_90:
+                                case blast_operation.inv_value_180:
+                                case blast_operation.inv_value_270:
+                                case blast_operation.inv_value_360:
                                     {
                                         // index constant 
                                         temp = engine_ptr->constants[op];
@@ -4816,7 +4816,7 @@ namespace NSS.Blast.Interpretor
                                             // if we predict this at the compiler we could use the opcodes value as value constant
                                             //
 #if DEBUG
-                                            Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(script_op)op}");
+                                            Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(blast_operation)op}");
 #endif
 
                                             // this should screw stuff up 
@@ -4933,7 +4933,7 @@ namespace NSS.Blast.Interpretor
                                         }
                                 }
 
-                                if (current_operation != script_op.nop)
+                                if (current_operation != blast_operation.nop)
                                 {
                                    // f1 = f4.x;
                                 }
@@ -4977,7 +4977,7 @@ namespace NSS.Blast.Interpretor
                 if (iterations > max_iterations) return (int)BlastError.error_max_iterations;
 
                 byte vector_size = 1;
-                script_op op = (script_op)code[code_pointer];
+                blast_operation op = (blast_operation)code[code_pointer];
                 code_pointer++;
 
                 // 
@@ -4999,17 +4999,17 @@ namespace NSS.Blast.Interpretor
 
                 switch (op)
                 {
-                    case script_op.ret:
+                    case blast_operation.ret:
                         {
                             return 0;
                         }
 
-                    case script_op.nop:
+                    case blast_operation.nop:
                         break;
 
-                    case script_op.push:
+                    case blast_operation.push:
 
-                        if (code[code_pointer] == (byte)script_op.begin)
+                        if (code[code_pointer] == (byte)blast_operation.begin)
                         {
                             code_pointer++;
 
@@ -5048,7 +5048,7 @@ namespace NSS.Blast.Interpretor
                     //
                     // pushv knows more about what it is pushing up the stack, it can do it without running the compound 
                     //
-                    case script_op.pushv:
+                    case blast_operation.pushv:
                         byte param_count = code[code_pointer++];
                         vector_size = (byte)(param_count & 0b00001111); // vectorsize == lower 4 
                         param_count = (byte)((param_count & 0b11110000) >> 4);  // param_count == upper 4 
@@ -5121,7 +5121,7 @@ namespace NSS.Blast.Interpretor
                     //
                     // push the result from a function directly onto the stack, saving a call to getcompound 
                     //
-                    case script_op.pushf:
+                    case blast_operation.pushf:
                         // push the result of a function directly onto the stack instead of assigning it first or something
 
                         //
@@ -5144,37 +5144,37 @@ namespace NSS.Blast.Interpretor
                         break; 
 
 
-                    case script_op.yield:
+                    case blast_operation.yield:
                         yield(f4_register);
                         return (int)BlastError.yield;
 
-                    case script_op.seed:
+                    case blast_operation.seed:
                         f4_register.x = pop_or_value(++code_pointer);
                         engine_ptr->Seed(math.asuint(f4_register.x));
                         break;
 
-                    case script_op.begin:
+                    case blast_operation.begin:
 #if DEBUG
                             // jumping in from somewhere
 //                          Debug.LogWarning($"burstscript.interpretor warning: scriptop.begin not expected in root at codepointer: {code_pointer}, f4: {f4_register}");
 #endif
                             break; 
 
-                    case script_op.end: break;
+                    case blast_operation.end: break;
 
                     /// if the compiler can detect:
                     /// - simple assign (1 function call or 1 parameter set)
                     /// then use an extra op:  assign1 that doesnt go into get_compound
-                    case script_op.assign:
+                    case blast_operation.assign:
                         {
                             // advance 1 if on assign 
-                            code_pointer += math.select(0, 1, code[code_pointer] == (byte)script_op.assign);
+                            code_pointer += math.select(0, 1, code[code_pointer] == (byte)blast_operation.assign);
 
                             byte assignee_op = code[code_pointer];
                             byte assignee = (byte)(assignee_op - opt_id);
 
                             // advance 2 if on begin 1 otherwise
-                            code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)script_op.begin);
+                            code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
 
                             // get vectorsize of the assigned parameter 
                             // vectorsize assigned MUST match 
@@ -5266,14 +5266,14 @@ namespace NSS.Blast.Interpretor
                         }
                         break;
 
-                    case script_op.jz:
+                    case blast_operation.jz:
                         {
                             // calc endlocation of 
                             int offset = code[code_pointer];
                             int jump_to = code_pointer + offset;
 
                             // eval condition 
-                            code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)script_op.begin);
+                            code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
                             f4_register = get_compound_result(ref code_pointer, ref vector_size);
 
                             // jump if zero to else condition or after then when no else 
@@ -5281,14 +5281,14 @@ namespace NSS.Blast.Interpretor
                         }
                         break;
 
-                    case script_op.jnz:
+                    case blast_operation.jnz:
                         {
                             // calc endlocation of 
                             int offset = code[code_pointer];
                             int jump_to = code_pointer + offset;
 
                             // eval condition 
-                            code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)script_op.begin);
+                            code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
                             f4_register = get_compound_result(ref code_pointer, ref vector_size);
 
                             // jump if NOT zero to else condition or after then when no else 
@@ -5296,14 +5296,14 @@ namespace NSS.Blast.Interpretor
                         }
                         break;
 
-                    case script_op.jump:
+                    case blast_operation.jump:
                         {
                             int offset = code[code_pointer];
                             code_pointer = code_pointer + offset;
                             break;
                         }
 
-                    case script_op.jump_back:
+                    case blast_operation.jump_back:
                         {
                             int offset = code[code_pointer];
                             code_pointer = code_pointer - offset;
@@ -5314,12 +5314,12 @@ namespace NSS.Blast.Interpretor
                         //
                         // Extended Op == 255 => next byte encodes an operation not used in switch above (more non standard ops)
                         //
-                    case script_op.ex_op:
+                    case blast_operation.ex_op:
                         {                                                                 
-                            extended_script_op exop = (extended_script_op)code[code_pointer];
+                            extended_blast_operation exop = (extended_blast_operation)code[code_pointer];
                             switch (exop)
                             {
-                                case extended_script_op.call:
+                                case extended_blast_operation.call:
                                     {
                                         // call external function, any returned data is neglected on root 
                                         bool minus = false;
@@ -5328,7 +5328,7 @@ namespace NSS.Blast.Interpretor
                                     }
                                     break;
 
-                                case extended_script_op.debugstack:
+                                case extended_blast_operation.debugstack:
                                     {
                                         // write contents of stack to the debug stream as a detailed report; 
                                         // write contents of a data element to the debug stream 
@@ -5339,7 +5339,7 @@ namespace NSS.Blast.Interpretor
                                     }
                                     break;
 
-                                case extended_script_op.debug:
+                                case extended_blast_operation.debug:
                                     {
                                         // write contents of a data element to the debug stream 
                                         code_pointer++;

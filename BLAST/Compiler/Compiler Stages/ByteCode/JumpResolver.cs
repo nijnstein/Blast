@@ -140,11 +140,11 @@ namespace NSS.Blast.Compiler.Stage
                 }
 
                 // get jump operation (should be before the offset)
-                script_op op = (script_op)code[(byte)(offset.Item2 - 1)].code;
+                blast_operation op = (blast_operation)code[(byte)(offset.Item2 - 1)].code;
                 if (jump_size > 0)
                 {
                     // verify jump is a JZ, JNZ or JUMP 
-                    if (!(op == script_op.jump || op == script_op.jnz || op == script_op.jz))
+                    if (!(op == blast_operation.jump || op == blast_operation.jnz || op == blast_operation.jz))
                     {
                         cdata.LogError($"Compiler Failure: encountered invalid jumptype <{op}> for forward jump of size {jump_size}");
                         return false;
@@ -156,7 +156,7 @@ namespace NSS.Blast.Compiler.Stage
                 else
                 {
                     // verify jump is a JUMPBACK. it is the only instruction that can jump backward 
-                    if (op != script_op.jump_back)
+                    if (op != blast_operation.jump_back)
                     {
                         cdata.LogError($"Compiler Failure: encountered invalid operation <{op}> for backward jump of size {jump_size}");
                         return false;

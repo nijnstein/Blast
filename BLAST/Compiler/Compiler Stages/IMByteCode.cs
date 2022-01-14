@@ -58,7 +58,7 @@ namespace NSS.Blast.Compiler.Stage
     public class IMByteCode
     {
         public byte code { get; protected set; }
-        public script_op op => (script_op)code;
+        public blast_operation op => (blast_operation)code;
 
         public List<IMJumpLabel> labels { get; protected set; }
 
@@ -184,7 +184,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="op"></param>
         /// <param name="label">optional jump label</param>
         /// <returns>the index of the op</returns>
-        public int Add(script_op op, IMJumpLabel label = null)
+        public int Add(blast_operation op, IMJumpLabel label = null)
         {
             return Add((byte)op, label);
         }

@@ -28,7 +28,7 @@ namespace NSS.Blast.Compiler.Stage
             // make sure code is zero terminated, it might not always be possible to know for the compiler when to keep it 
             if (!cdata.code.IsZeroTerminated)
             {
-                cdata.code.Add(script_op.nop);
+                cdata.code.Add(blast_operation.nop);
             }
 
             // reset any packaged data already set by overwriting it
@@ -121,9 +121,9 @@ namespace NSS.Blast.Compiler.Stage
                 is_call =
                     i > 2
                     &&
-                    code[i - 2].op == script_op.ex_op
+                    code[i - 2].op == blast_operation.ex_op
                     &&
-                    code[i - 1].code == (byte)extended_script_op.call;
+                    code[i - 1].code == (byte)extended_blast_operation.call;
 
                 if(is_call)
                 {
@@ -138,10 +138,10 @@ namespace NSS.Blast.Compiler.Stage
                 }
                 else
                 {
-                    script_op op = code[i].op;
+                    blast_operation op = code[i].op;
 
                     // skip next if extended op 
-                    if (op == script_op.ex_op
+                    if (op == blast_operation.ex_op
                         ||
                         // skip interpreting next value if it is hardcoded
                         Blast.IsJumpOperation(op)
@@ -155,7 +155,7 @@ namespace NSS.Blast.Compiler.Stage
                         next_is_hardcoded_value += 1; 
                     }
 
-                    if (op != script_op.ex_op && (byte)op >= BlastCompiler.opt_ident)
+                    if (op != blast_operation.ex_op && (byte)op >= BlastCompiler.opt_ident)
                     {
                         // validate parameter offset & index 
                         // - get parameter index from offset location 

@@ -251,7 +251,7 @@ namespace NSS.Blast.Compiler
         public unsafe void WriteHumanReadableCode(StringBuilder sb, List<byte> code)
         {
             int i = 0;
-            script_op prev = script_op.nop;
+            blast_operation prev = blast_operation.nop;
 
             for (; i < code.Count; i++)
             {
@@ -278,150 +278,150 @@ namespace NSS.Blast.Compiler
                     sb.Append($"@label_{Jumps.IndexOf(jump)} ");
                 }
 
-                if (prev == script_op.jump ||
-                    prev == script_op.jump_back ||
-                    prev == script_op.jz ||
-                    prev == script_op.jnz)
+                if (prev == blast_operation.jump ||
+                    prev == blast_operation.jump_back ||
+                    prev == blast_operation.jz ||
+                    prev == blast_operation.jnz)
                 {
                     sb.Append(((byte)op).ToString() + " ");
 
-                    prev = script_op.nop;
+                    prev = blast_operation.nop;
                 }
                 else
                 {
-                    switch ((script_op)op)
+                    switch ((blast_operation)op)
                     {
-                        case script_op.nop: sb.Append("nop "); break;
-                        case script_op.assign: sb.Append("set "); break;
-                        case script_op.add: sb.Append("+ "); break;
-                        case script_op.substract: sb.Append("- "); break;
-                        case script_op.multiply: sb.Append("* "); break;
-                        case script_op.divide: sb.Append("/ "); break;
-                        case script_op.begin: sb.Append("( "); break;
-                        case script_op.end: sb.Append(") "); break;
-                        case script_op.and: sb.Append("& "); break;
-                        case script_op.or: sb.Append("| "); break;
-                        case script_op.not: sb.Append("! "); break;
-                        case script_op.xor: sb.Append("^ "); break;
-                        case script_op.smaller: sb.Append("< "); break;
-                        case script_op.greater: sb.Append("> "); break;
-                        case script_op.smaller_equals: sb.Append("<= "); break;
-                        case script_op.greater_equals: sb.Append(">= "); break;
-                        case script_op.equals: sb.Append("= "); break;
-                        case script_op.not_equals: sb.Append("!= "); break;
-                        case script_op.fma: sb.Append("fma "); break;
-                        case script_op.adda: sb.Append("adda "); break;
-                        case script_op.mula: sb.Append("mula "); break;
-                        case script_op.diva: sb.Append("diva "); break;
-                        case script_op.suba: sb.Append("suba "); break;
-                        case script_op.all: sb.Append("all "); break;
-                        case script_op.any: sb.Append("any "); break;
-                        case script_op.max: sb.Append("max "); break;
-                        case script_op.min: sb.Append("min "); break;
-                        case script_op.peek: sb.Append("peek "); break;
-                        case script_op.peekv: sb.Append("peek "); break;
-                        case script_op.push: sb.Append("push "); break;
-                        case script_op.pushf: sb.Append("push function "); break;
-                        case script_op.pushv: sb.Append("push vector "); break;
-                        case script_op.pop: sb.Append("pop "); break;
+                        case blast_operation.nop: sb.Append("nop "); break;
+                        case blast_operation.assign: sb.Append("set "); break;
+                        case blast_operation.add: sb.Append("+ "); break;
+                        case blast_operation.substract: sb.Append("- "); break;
+                        case blast_operation.multiply: sb.Append("* "); break;
+                        case blast_operation.divide: sb.Append("/ "); break;
+                        case blast_operation.begin: sb.Append("( "); break;
+                        case blast_operation.end: sb.Append(") "); break;
+                        case blast_operation.and: sb.Append("& "); break;
+                        case blast_operation.or: sb.Append("| "); break;
+                        case blast_operation.not: sb.Append("! "); break;
+                        case blast_operation.xor: sb.Append("^ "); break;
+                        case blast_operation.smaller: sb.Append("< "); break;
+                        case blast_operation.greater: sb.Append("> "); break;
+                        case blast_operation.smaller_equals: sb.Append("<= "); break;
+                        case blast_operation.greater_equals: sb.Append(">= "); break;
+                        case blast_operation.equals: sb.Append("= "); break;
+                        case blast_operation.not_equals: sb.Append("!= "); break;
+                        case blast_operation.fma: sb.Append("fma "); break;
+                        case blast_operation.adda: sb.Append("adda "); break;
+                        case blast_operation.mula: sb.Append("mula "); break;
+                        case blast_operation.diva: sb.Append("diva "); break;
+                        case blast_operation.suba: sb.Append("suba "); break;
+                        case blast_operation.all: sb.Append("all "); break;
+                        case blast_operation.any: sb.Append("any "); break;
+                        case blast_operation.max: sb.Append("max "); break;
+                        case blast_operation.min: sb.Append("min "); break;
+                        case blast_operation.peek: sb.Append("peek "); break;
+                        case blast_operation.peekv: sb.Append("peek "); break;
+                        case blast_operation.push: sb.Append("push "); break;
+                        case blast_operation.pushf: sb.Append("push function "); break;
+                        case blast_operation.pushv: sb.Append("push vector "); break;
+                        case blast_operation.pop: sb.Append("pop "); break;
 
-                        case script_op.abs: sb.Append("abs "); break;
+                        case blast_operation.abs: sb.Append("abs "); break;
 
-                        case script_op.random: sb.Append("random "); break;
-                        case script_op.seed: sb.Append("seed "); break;
+                        case blast_operation.random: sb.Append("random "); break;
+                        case blast_operation.seed: sb.Append("seed "); break;
 
-                        case script_op.yield: sb.Append("yield "); break;
-                        case script_op.jz: sb.Append("jz "); break;
-                        case script_op.jnz: sb.Append("jnz "); break;
-                        case script_op.jump: sb.Append("jump "); break;
-                        case script_op.jump_back: sb.Append("jumpback "); break;
+                        case blast_operation.yield: sb.Append("yield "); break;
+                        case blast_operation.jz: sb.Append("jz "); break;
+                        case blast_operation.jnz: sb.Append("jnz "); break;
+                        case blast_operation.jump: sb.Append("jump "); break;
+                        case blast_operation.jump_back: sb.Append("jumpback "); break;
 
-                        case script_op.lerp: sb.Append("lerp "); break;
-                        case script_op.slerp: sb.Append("slerp "); break;
+                        case blast_operation.lerp: sb.Append("lerp "); break;
+                        case blast_operation.slerp: sb.Append("slerp "); break;
 
-                        case script_op.saturate: sb.Append("saturate "); break;
-                        case script_op.clamp: sb.Append("clamp "); break;
+                        case blast_operation.saturate: sb.Append("saturate "); break;
+                        case blast_operation.clamp: sb.Append("clamp "); break;
 
-                        case script_op.ceil: sb.Append("ceil "); break;
-                        case script_op.floor: sb.Append("floor "); break;
-                        case script_op.frac: sb.Append("frac "); break;
+                        case blast_operation.ceil: sb.Append("ceil "); break;
+                        case blast_operation.floor: sb.Append("floor "); break;
+                        case blast_operation.frac: sb.Append("frac "); break;
 
-                        case script_op.sin: sb.Append("sin "); break;
-                        case script_op.cos: sb.Append("cos "); break;
-                        case script_op.tan: sb.Append("tan "); break;
-                        case script_op.atan: sb.Append("atan "); break;
-                        case script_op.cosh: sb.Append("cosh "); break;
-                        case script_op.sinh: sb.Append("sinh "); break;
+                        case blast_operation.sin: sb.Append("sin "); break;
+                        case blast_operation.cos: sb.Append("cos "); break;
+                        case blast_operation.tan: sb.Append("tan "); break;
+                        case blast_operation.atan: sb.Append("atan "); break;
+                        case blast_operation.cosh: sb.Append("cosh "); break;
+                        case blast_operation.sinh: sb.Append("sinh "); break;
 
-                        case script_op.degrees: sb.Append("degrees "); break;
-                        case script_op.radians: sb.Append("radians "); break;
+                        case blast_operation.degrees: sb.Append("degrees "); break;
+                        case blast_operation.radians: sb.Append("radians "); break;
 
-                        case script_op.ret: sb.Append("return "); break;
-                        case script_op.sqrt: sb.Append("sqrt "); break;
+                        case blast_operation.ret: sb.Append("return "); break;
+                        case blast_operation.sqrt: sb.Append("sqrt "); break;
 
-                        case script_op.value_0: sb.Append("0 "); break;
-                        case script_op.value_1: sb.Append("1 "); break;
-                        case script_op.value_2: sb.Append("2 "); break;
-                        case script_op.value_3: sb.Append("3 "); break;
-                        case script_op.value_4: sb.Append("4 "); break;
-                        case script_op.value_8: sb.Append("8 "); break;
-                        case script_op.value_10: sb.Append("10 "); break;
-                        case script_op.value_16: sb.Append("16 "); break;
-                        case script_op.value_24: sb.Append("24 "); break;
-                        case script_op.value_30: sb.Append("30 "); break;
-                        case script_op.value_32: sb.Append("32 "); break;
-                        case script_op.value_45: sb.Append("45 "); break;
-                        case script_op.value_64: sb.Append("64 "); break;
-                        case script_op.value_90: sb.Append("90 "); break;
-                        case script_op.value_100: sb.Append("100 "); break;
-                        case script_op.value_128: sb.Append("128 "); break;
-                        case script_op.value_180: sb.Append("180 "); break;
-                        case script_op.value_256: sb.Append("256 "); break;
-                        case script_op.value_270: sb.Append("270 "); break;
-                        case script_op.value_360: sb.Append("360 "); break;
-                        case script_op.value_512: sb.Append("512 "); break;
-                        case script_op.value_1024: sb.Append("1024 "); break;
+                        case blast_operation.value_0: sb.Append("0 "); break;
+                        case blast_operation.value_1: sb.Append("1 "); break;
+                        case blast_operation.value_2: sb.Append("2 "); break;
+                        case blast_operation.value_3: sb.Append("3 "); break;
+                        case blast_operation.value_4: sb.Append("4 "); break;
+                        case blast_operation.value_8: sb.Append("8 "); break;
+                        case blast_operation.value_10: sb.Append("10 "); break;
+                        case blast_operation.value_16: sb.Append("16 "); break;
+                        case blast_operation.value_24: sb.Append("24 "); break;
+                        case blast_operation.value_30: sb.Append("30 "); break;
+                        case blast_operation.value_32: sb.Append("32 "); break;
+                        case blast_operation.value_45: sb.Append("45 "); break;
+                        case blast_operation.value_64: sb.Append("64 "); break;
+                        case blast_operation.value_90: sb.Append("90 "); break;
+                        case blast_operation.value_100: sb.Append("100 "); break;
+                        case blast_operation.value_128: sb.Append("128 "); break;
+                        case blast_operation.value_180: sb.Append("180 "); break;
+                        case blast_operation.value_256: sb.Append("256 "); break;
+                        case blast_operation.value_270: sb.Append("270 "); break;
+                        case blast_operation.value_360: sb.Append("360 "); break;
+                        case blast_operation.value_512: sb.Append("512 "); break;
+                        case blast_operation.value_1024: sb.Append("1024 "); break;
 
-                        case script_op.inv_value_2: sb.Append((1f / 2f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_3: sb.Append((1f / 3f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_4: sb.Append((1f / 4f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_8: sb.Append((1f / 8f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_10: sb.Append((1f / 10f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_16: sb.Append((1f / 16f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_24: sb.Append((1f / 24f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_30: sb.Append((1f / 30f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_32: sb.Append((1f / 32f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_45: sb.Append((1f / 45f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_64: sb.Append((1f / 64f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_90: sb.Append((1f / 90f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_100: sb.Append((1f / 100f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_128: sb.Append((1f / 128f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_180: sb.Append((1f / 180f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_256: sb.Append((1f / 256f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_270: sb.Append((1f / 270f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_360: sb.Append((1f / 360f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_512: sb.Append((1f / 512f).ToString("0.000") + " "); break;
-                        case script_op.inv_value_1024: sb.Append((1f / 1024f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_2: sb.Append((1f / 2f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_3: sb.Append((1f / 3f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_4: sb.Append((1f / 4f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_8: sb.Append((1f / 8f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_10: sb.Append((1f / 10f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_16: sb.Append((1f / 16f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_24: sb.Append((1f / 24f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_30: sb.Append((1f / 30f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_32: sb.Append((1f / 32f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_45: sb.Append((1f / 45f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_64: sb.Append((1f / 64f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_90: sb.Append((1f / 90f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_100: sb.Append((1f / 100f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_128: sb.Append((1f / 128f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_180: sb.Append((1f / 180f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_256: sb.Append((1f / 256f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_270: sb.Append((1f / 270f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_360: sb.Append((1f / 360f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_512: sb.Append((1f / 512f).ToString("0.000") + " "); break;
+                        case blast_operation.inv_value_1024: sb.Append((1f / 1024f).ToString("0.000") + " "); break;
 
-                        case script_op.ex_op:
+                        case blast_operation.ex_op:
                             i++;
-                            extended_script_op exop = (extended_script_op)code[i];
+                            extended_blast_operation exop = (extended_blast_operation)code[i];
                             switch (exop)
                             {
-                                case extended_script_op.log2: sb.Append("log2 "); break;
-                                case extended_script_op.exp: sb.Append("exponent "); break;
+                                case extended_blast_operation.log2: sb.Append("log2 "); break;
+                                case extended_blast_operation.exp: sb.Append("exponent "); break;
 
-                                case extended_script_op.exp10: sb.Append("exp10 "); break;
-                                case extended_script_op.log10: sb.Append("log10 "); break;
-                                case extended_script_op.logn: sb.Append("logn "); break;
-                                case extended_script_op.cross: sb.Append("cross "); break;
-                                case extended_script_op.dot: sb.Append("dot "); break;
-                                case extended_script_op.debug: sb.Append("debug "); break;
-                                case extended_script_op.debugstack: sb.Append("debugstack "); break;
-                                case extended_script_op.rsqrt: sb.Append("rsqrt "); break;
-                                case extended_script_op.pow: sb.Append("pow "); break;
+                                case extended_blast_operation.exp10: sb.Append("exp10 "); break;
+                                case extended_blast_operation.log10: sb.Append("log10 "); break;
+                                case extended_blast_operation.logn: sb.Append("logn "); break;
+                                case extended_blast_operation.cross: sb.Append("cross "); break;
+                                case extended_blast_operation.dot: sb.Append("dot "); break;
+                                case extended_blast_operation.debug: sb.Append("debug "); break;
+                                case extended_blast_operation.debugstack: sb.Append("debugstack "); break;
+                                case extended_blast_operation.rsqrt: sb.Append("rsqrt "); break;
+                                case extended_blast_operation.pow: sb.Append("pow "); break;
 
-                                case extended_script_op.call:
+                                case extended_blast_operation.call:
                                     sb.Append("call ");
                                     // next 4 bytes are the function id 
                                     int id = this.code[i + 1].code << 24;
@@ -441,7 +441,7 @@ namespace NSS.Blast.Compiler
 
                                     break;
                                 default:
-                                    sb.Append($"\n\noperation {(script_op)op} {exop} not yet translated in source debug\n\n");
+                                    sb.Append($"\n\noperation {(blast_operation)op} {exop} not yet translated in source debug\n\n");
                                     break;
                             }
                             break;
@@ -487,16 +487,16 @@ namespace NSS.Blast.Compiler
                             }
                             else if (op >= BlastCompiler.opt_value)
                             {
-                                sb.Append(Blast.GetConstantValue((script_op)op) + " ");
+                                sb.Append(Blast.GetConstantValue((blast_operation)op) + " ");
                             }
                             else
                             {
-                                sb.Append($"\n\noperation {(script_op)op} not yet translated in source debug\n\n");
+                                sb.Append($"\n\noperation {(blast_operation)op} not yet translated in source debug\n\n");
                             }
                             break;
                     }
 
-                    prev = (script_op)op;
+                    prev = (blast_operation)op;
                 }
 
             }

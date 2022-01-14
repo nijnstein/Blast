@@ -24,28 +24,28 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="data"></param>
         /// <param name="token">the token to map</param>
         /// <returns>script opcode</returns>
-        static public script_op GetOperationOpCode(IBlastCompilationData data, BlastScriptToken token)
+        static public blast_operation GetOperationOpCode(IBlastCompilationData data, BlastScriptToken token)
         {
             switch (token)
             {
-                case BlastScriptToken.Add: return script_op.add;
-                case BlastScriptToken.Substract: return script_op.substract;
-                case BlastScriptToken.Divide: return script_op.divide;
-                case BlastScriptToken.Multiply: return script_op.multiply;
-                case BlastScriptToken.And: return script_op.and;
-                case BlastScriptToken.Or: return script_op.or;
-                case BlastScriptToken.Not: return script_op.not;
-                case BlastScriptToken.Xor: return script_op.xor;
-                case BlastScriptToken.Equals: return script_op.equals;
-                case BlastScriptToken.NotEquals: return script_op.not_equals;
-                case BlastScriptToken.GreaterThen: return script_op.greater;
-                case BlastScriptToken.SmallerThen: return script_op.smaller;
-                case BlastScriptToken.GreaterThenEquals: return script_op.greater_equals;
-                case BlastScriptToken.SmallerThenEquals: return script_op.smaller_equals;
+                case BlastScriptToken.Add: return blast_operation.add;
+                case BlastScriptToken.Substract: return blast_operation.substract;
+                case BlastScriptToken.Divide: return blast_operation.divide;
+                case BlastScriptToken.Multiply: return blast_operation.multiply;
+                case BlastScriptToken.And: return blast_operation.and;
+                case BlastScriptToken.Or: return blast_operation.or;
+                case BlastScriptToken.Not: return blast_operation.not;
+                case BlastScriptToken.Xor: return blast_operation.xor;
+                case BlastScriptToken.Equals: return blast_operation.equals;
+                case BlastScriptToken.NotEquals: return blast_operation.not_equals;
+                case BlastScriptToken.GreaterThen: return blast_operation.greater;
+                case BlastScriptToken.SmallerThen: return blast_operation.smaller;
+                case BlastScriptToken.GreaterThenEquals: return blast_operation.greater_equals;
+                case BlastScriptToken.SmallerThenEquals: return blast_operation.smaller_equals;
 
             }
             data.LogError($"GetOperationOp: invalid token for mapping to operation opcode: {token}");
-            return script_op.nop;
+            return blast_operation.nop;
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // encode any constant value that is frequently used 
-            if (ast_param.constant_op != script_op.nop)
+            if (ast_param.constant_op != blast_operation.nop)
             {
                 // just encode the value into the code 
                 code.Add(ast_param.constant_op);
@@ -204,9 +204,9 @@ namespace NSS.Blast.Compiler.Stage
             // special cases: yield and push
             switch (ast_function.function.ScriptOp)
             {
-                case script_op.yield:
+                case blast_operation.yield:
                     {
-                        code.Add((byte)script_op.yield);
+                        code.Add((byte)blast_operation.yield);
                         if (!CompileParameters(data, ast_function, code, ast_function.children, 0, 1))
                         {
                             return false;
@@ -214,8 +214,8 @@ namespace NSS.Blast.Compiler.Stage
                     }
                     return true;
 
-                case script_op.push:
-                case script_op.pushv:
+                case blast_operation.push:
+                case blast_operation.pushv:
                     {
                         // push each child 
                         foreach (node ast_param in ast_function.children)
@@ -233,7 +233,7 @@ namespace NSS.Blast.Compiler.Stage
                                         {
                                             // insert using pushv, besides using 1 less opcode
                                             // it is also more efficient executing 
-                                            code.Add(script_op.pushv);
+                                            code.Add(blast_operation.pushv);
 
                                             byte vp = (byte)((ast_param.vector_size & 0b00001111) | ((ast_param.ChildCount & 0b00001111) << 4));
 
@@ -257,10 +257,10 @@ namespace NSS.Blast.Compiler.Stage
                                                     && ast_child.children[0].token == BlastScriptToken.Substract)
                                                 {
                                                     // we have an identifier, that should be mapped to a constant
-                                                    script_op constant = ast_child.children[1].constant_op;
+                                                    blast_operation constant = ast_child.children[1].constant_op;
 
                                                     // - error if not a constant operation value 
-                                                    if (constant  < script_op.pi || constant >= script_op.id)
+                                                    if (constant  < blast_operation.pi || constant >= blast_operation.id)
                                                     {
                                                         data.LogError($"CompileFunction: parameter mapping failure, element should map to a constant at: <{ast_param.parent}>.<{ast_param}>.<{ast_child}> but instead has token {constant}");
                                                         return false; 
@@ -306,7 +306,7 @@ namespace NSS.Blast.Compiler.Stage
                                                     parameter_to_compile = ast_child.children[1];
                                                     parameter_to_compile.variable = negated_variable;
                                                     parameter_to_compile.identifier = negated_variable.Name;
-                                                    parameter_to_compile.constant_op = script_op.nop; 
+                                                    parameter_to_compile.constant_op = blast_operation.nop; 
 
                                                     // remove substract operation 
                                                     ast_child.children.RemoveAt(0);
@@ -329,8 +329,8 @@ namespace NSS.Blast.Compiler.Stage
                                         else
                                         {
                                             // push result of compound on stack
-                                            code.Add(script_op.push);
-                                            code.Add(script_op.begin);
+                                            code.Add(blast_operation.push);
+                                            code.Add(blast_operation.begin);
 
                                             foreach (node ast_child in ast_param.children)
                                             {
@@ -341,7 +341,7 @@ namespace NSS.Blast.Compiler.Stage
                                                 }
                                             }
 
-                                            code.Add(script_op.end);
+                                            code.Add(blast_operation.end);
                                         }
                                     }
                                     break;
@@ -350,12 +350,12 @@ namespace NSS.Blast.Compiler.Stage
                                     {
                                         if (ast_param.is_vector)
                                         {
-                                            code.Add((byte)script_op.pushv);
+                                            code.Add((byte)blast_operation.pushv);
                                             code.Add((byte)ast_param.vector_size);
                                         }
                                         else
                                         {
-                                            code.Add((byte)script_op.push);
+                                            code.Add((byte)blast_operation.push);
                                         }
                                         if (!CompileParameter(data, ast_param, code))
                                         {
@@ -407,13 +407,13 @@ namespace NSS.Blast.Compiler.Stage
             {
                 bool has_variable_paramcount = ast_function.function.MinParameterCount != ast_function.function.MaxParameterCount;
 
-                if (ast_function.function.ScriptOp != script_op.nop)
+                if (ast_function.function.ScriptOp != blast_operation.nop)
                 {
                     // function known to blast
                     // encode function op 
                     code.Add(ast_function.function.ScriptOp);
 
-                    if (ast_function.function.ScriptOp == script_op.ex_op)
+                    if (ast_function.function.ScriptOp == blast_operation.ex_op)
                     {
                         // if extended then add extended operation 
                         code.Add((byte)ast_function.function.ExtendedScriptOp);
@@ -529,7 +529,7 @@ namespace NSS.Blast.Compiler.Stage
                         data.LogError($"CompileNode: encountered [nop] node <{ast_node}> with child nodes => this is not allowed without a valid type");
                         return null;
                     }
-                    if (compile_nops) code.Add(script_op.nop);
+                    if (compile_nops) code.Add(blast_operation.nop);
                     break;
 
                 // if we get here something is very wrong 
@@ -543,21 +543,21 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         switch (ast_node.token)
                         {
-                            case BlastScriptToken.Nop: code.Add(script_op.nop); break;  
-                            case BlastScriptToken.Add: code.Add(script_op.add); break; 
-                            case BlastScriptToken.Substract: code.Add(script_op.substract); break; 
-                            case BlastScriptToken.Divide: code.Add(script_op.divide); break; 
-                            case BlastScriptToken.Multiply:code.Add(script_op.multiply); break;
-                            case BlastScriptToken.Equals: code.Add(script_op.equals); break;
-                            case BlastScriptToken.SmallerThen: code.Add(script_op.smaller); break;
-                            case BlastScriptToken.GreaterThen: code.Add(script_op.greater); break; 
-                            case BlastScriptToken.SmallerThenEquals: code.Add(script_op.smaller_equals); break;                                
-                            case BlastScriptToken.GreaterThenEquals: code.Add(script_op.greater_equals); break; 
-                            case BlastScriptToken.NotEquals: code.Add(script_op.not_equals); break; 
-                            case BlastScriptToken.And: code.Add(script_op.and); break;
-                            case BlastScriptToken.Or: code.Add(script_op.or); break;
-                            case BlastScriptToken.Xor: code.Add(script_op.xor); break;
-                            case BlastScriptToken.Not: code.Add(script_op.not); break; 
+                            case BlastScriptToken.Nop: code.Add(blast_operation.nop); break;  
+                            case BlastScriptToken.Add: code.Add(blast_operation.add); break; 
+                            case BlastScriptToken.Substract: code.Add(blast_operation.substract); break; 
+                            case BlastScriptToken.Divide: code.Add(blast_operation.divide); break; 
+                            case BlastScriptToken.Multiply:code.Add(blast_operation.multiply); break;
+                            case BlastScriptToken.Equals: code.Add(blast_operation.equals); break;
+                            case BlastScriptToken.SmallerThen: code.Add(blast_operation.smaller); break;
+                            case BlastScriptToken.GreaterThen: code.Add(blast_operation.greater); break; 
+                            case BlastScriptToken.SmallerThenEquals: code.Add(blast_operation.smaller_equals); break;                                
+                            case BlastScriptToken.GreaterThenEquals: code.Add(blast_operation.greater_equals); break; 
+                            case BlastScriptToken.NotEquals: code.Add(blast_operation.not_equals); break; 
+                            case BlastScriptToken.And: code.Add(blast_operation.and); break;
+                            case BlastScriptToken.Or: code.Add(blast_operation.or); break;
+                            case BlastScriptToken.Xor: code.Add(blast_operation.xor); break;
+                            case BlastScriptToken.Not: code.Add(blast_operation.not); break; 
                             default:
                                 data.LogError($"CompileNode: encountered an unsupported operation type, node: <{ast_node.parent}><{ast_node}>");
                                 return null; 
@@ -584,7 +584,7 @@ namespace NSS.Blast.Compiler.Stage
                 case nodetype.yield:
                     if (data.CompilerOptions.SupportYield)
                     {
-                        code.Add(script_op.yield);
+                        code.Add(blast_operation.yield);
                     }
                     else
                     {
@@ -642,7 +642,7 @@ namespace NSS.Blast.Compiler.Stage
                 // unconditional jump 
                 case nodetype.jump_to:
                     {
-                        code.Add(script_op.jump, IMJumpLabel.Jump(ast_node.identifier));
+                        code.Add(blast_operation.jump, IMJumpLabel.Jump(ast_node.identifier));
                         code.Add((byte)0, IMJumpLabel.Offset(ast_node.identifier));  
                         break;
                     }
@@ -666,7 +666,7 @@ namespace NSS.Blast.Compiler.Stage
 
                     // encode first part of assignment 
                     // [op:assign][var:id+128]
-                    code.Add(script_op.assign);
+                    code.Add(blast_operation.assign);
 
                     // Assingnee -> parameter must be offset in output 
 
@@ -703,7 +703,7 @@ namespace NSS.Blast.Compiler.Stage
                     // - signal interpretor that this statement is complete.
                     // - variable length vectors really need either this or a counter... 
                     //   better always have a nop, makes the assembly easier to read from bytes
-                    code.Add(script_op.nop);
+                    code.Add(blast_operation.nop);
                     break;
 
                 // groups of statements, for compilation they are all the same  
@@ -712,7 +712,7 @@ namespace NSS.Blast.Compiler.Stage
                 case nodetype.whilecompound:
                 case nodetype.condition:
                 case nodetype.compound:
-                    code.Add(script_op.begin);
+                    code.Add(blast_operation.begin);
                     foreach (node ast_child in ast_node.children)
                     {
                         if(CompileNode(data, ast_child, code) == null)
@@ -721,7 +721,7 @@ namespace NSS.Blast.Compiler.Stage
                             return null;  
                         }
                     }
-                    code.Add(script_op.end);
+                    code.Add(blast_operation.end);
                     break;
 
                 // a single parameter 
@@ -788,7 +788,7 @@ namespace NSS.Blast.Compiler.Stage
                         }
 
                         // start of while loop: jump over while compound when condition zero 
-                        code.Add((byte)script_op.jz, IMJumpLabel.Jump(n_while_compound.identifier));
+                        code.Add((byte)blast_operation.jz, IMJumpLabel.Jump(n_while_compound.identifier));
                         code.Add((byte)0, IMJumpLabel.Offset(n_while_compound.identifier));
 
                         // compile the condition 
@@ -806,7 +806,7 @@ namespace NSS.Blast.Compiler.Stage
                         }
                                                                    
                         // jump back to condition and re evaluate
-                        code.Add((byte)script_op.jump_back, IMJumpLabel.Jump(n_while_condition.identifier));
+                        code.Add((byte)blast_operation.jump_back, IMJumpLabel.Jump(n_while_condition.identifier));
                         code.Add((byte)0, IMJumpLabel.Offset(n_while_condition.identifier));
 
                         // provide a stub for the label to jump to when skipping the while 
@@ -854,42 +854,42 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             // both THEN and ELSE
                             // - eval statement, jump over then on JZ
-                            code.Add(script_op.jz, IMJumpLabel.Jump(if_condition.identifier)); // jump on false to else
-                            code.Add(script_op.nop, IMJumpLabel.Offset(if_condition.identifier));
+                            code.Add(blast_operation.jz, IMJumpLabel.Jump(if_condition.identifier)); // jump on false to else
+                            code.Add(blast_operation.nop, IMJumpLabel.Offset(if_condition.identifier));
 
                             CompileNode(data, if_condition, code);
                             CompileNode(data, if_then, code);
 
                             // insert an else and jump over it by default 
-                            code.Add(script_op.jump, IMJumpLabel.Jump(if_else.identifier));
-                            code.Add(script_op.nop, IMJumpLabel.Offset(if_else.identifier));
+                            code.Add(blast_operation.jump, IMJumpLabel.Jump(if_else.identifier));
+                            code.Add(blast_operation.nop, IMJumpLabel.Offset(if_else.identifier));
 
                             // provide a label to jump to on JZ
-                            code.Add(script_op.nop, IMJumpLabel.Label(if_condition.identifier));
+                            code.Add(blast_operation.nop, IMJumpLabel.Label(if_condition.identifier));
 
                             CompileNode(data, if_else, code);
 
                             // provide label to skip ELSE 
-                            code.Add(script_op.nop, IMJumpLabel.Label(if_else.identifier));
+                            code.Add(blast_operation.nop, IMJumpLabel.Label(if_else.identifier));
                         }
                         else
                         if (if_then != null)
                         {
                             // only THEN 
-                            code.Add(script_op.jz, IMJumpLabel.Jump(if_condition.identifier)); // jump on false over then
-                            code.Add(script_op.nop, IMJumpLabel.Offset(if_condition.identifier));
+                            code.Add(blast_operation.jz, IMJumpLabel.Jump(if_condition.identifier)); // jump on false over then
+                            code.Add(blast_operation.nop, IMJumpLabel.Offset(if_condition.identifier));
                             CompileNode(data, if_condition, code);
                             CompileNode(data, if_then, code);
-                            code.Add(script_op.nop, IMJumpLabel.Label(if_condition.identifier));
+                            code.Add(blast_operation.nop, IMJumpLabel.Label(if_condition.identifier));
                         }
                         else
                         {
                             // only ELSE
-                            code.Add(script_op.jnz, IMJumpLabel.Jump(if_condition.identifier)); // jump on true over else
-                            code.Add(script_op.nop, IMJumpLabel.Offset(if_condition.identifier));
+                            code.Add(blast_operation.jnz, IMJumpLabel.Jump(if_condition.identifier)); // jump on true over else
+                            code.Add(blast_operation.nop, IMJumpLabel.Offset(if_condition.identifier));
                             CompileNode(data, if_condition, code);
                             CompileNode(data, if_else, code);
-                            code.Add(script_op.nop, IMJumpLabel.Label(if_condition.identifier));
+                            code.Add(blast_operation.nop, IMJumpLabel.Label(if_condition.identifier));
                         }
                         if (!data.IsOK)
                         {
@@ -969,12 +969,12 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     // if segmented add the closing nop as a segment 
                     IMByteCodeList segment = new IMByteCodeList();
-                    segment.Add((byte)script_op.nop);
+                    segment.Add((byte)blast_operation.nop);
                     code.AddSegment(segment); 
                 }
                 else
                 {
-                    code.Add((byte)script_op.nop); // this signals end of script for interpretor \
+                    code.Add((byte)blast_operation.nop); // this signals end of script for interpretor \
                 }
             }
             return code; 

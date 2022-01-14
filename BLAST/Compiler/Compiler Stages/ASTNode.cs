@@ -56,7 +56,7 @@ namespace NSS.Blast.Compiler
         public List<node> depends_on = new List<node>();
         public List<node> indexers = new List<node>();
 
-        public script_op constant_op = script_op.nop;
+        public blast_operation constant_op = blast_operation.nop;
         public bool skip_compilation;
         public bool is_constant;
         public int vector_size;
@@ -628,7 +628,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         /// <param name="op">the op representing the function</param>
         /// <returns>true if used</returns>
-        internal bool CheckIfFunctionIsUsedInTree(script_op op)
+        internal bool CheckIfFunctionIsUsedInTree(blast_operation op)
         {
             if (this.function != null && this.function.ScriptOp == op)
             {
@@ -983,7 +983,7 @@ namespace NSS.Blast.Compiler
             if (is_constant)
             {
                 /// node should have op set on constant map
-                if (constant_op != script_op.nop)
+                if (constant_op != blast_operation.nop)
                 {
                     // maps to constant op 
                     return Blast.GetConstantValue(constant_op);

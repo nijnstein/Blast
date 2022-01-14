@@ -188,7 +188,7 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             float f = 1f / right.GetConstantFloatValue(data);
 
-                            if (right.constant_op == script_op.nop)
+                            if (right.constant_op == blast_operation.nop)
                             {
                                 // encoded in variable 
                                 BlastVariable existing_script_var = data.GetVariable(right.identifier);
@@ -204,20 +204,20 @@ namespace NSS.Blast.Compiler.Stage
                             else
                             {
                                 // encoded in operation, reset that 
-                                right.constant_op = script_op.nop;
+                                right.constant_op = blast_operation.nop;
                             }
 
                             // is the new variable already mapped ? 
                             string value = f.ToString("R");
-                            script_op op = data.Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
-                            if (op == script_op.nan)
+                            blast_operation op = data.Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
+                            if (op == blast_operation.nan)
                             {
                                 data.LogError($"analyse.refactor_divisions: failure converting constant value to its reciprocal and remapping it");
                                 return;
                             }
                             else
                             // get / create variable, reference count is updated accordingly 
-                            if (op != script_op.nop)
+                            if (op != blast_operation.nop)
                             {
                                 // dont create variables for constant ops 
                                 right.is_constant = true;
@@ -229,7 +229,7 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 // non op encoded constant, create a variable for it if needed 
                                 right.variable = ((CompilationData)data).GetOrCreateVariable(value);
-                                right.constant_op = script_op.nop;
+                                right.constant_op = blast_operation.nop;
                                 right.identifier = value;
                             }
 

@@ -27,9 +27,9 @@ namespace NSS.Blast.Compiler.Stage
             while (i < code.Count - 1)
             {
                 // +-/-+ becomes - 
-                if ((code[i].op == script_op.add && code[i + 1].op == script_op.substract)
+                if ((code[i].op == blast_operation.add && code[i + 1].op == blast_operation.substract)
                     ||
-                   (code[i].op == script_op.substract && code[i + 1].op == script_op.add)) // wierd order but replace it anyway
+                   (code[i].op == blast_operation.substract && code[i + 1].op == blast_operation.add)) // wierd order but replace it anyway
                 {
                     // keep the '-'
                     if (!data.code.RemoveAtAndMoveJumpLabels(data, i)) return false;
@@ -37,14 +37,14 @@ namespace NSS.Blast.Compiler.Stage
                 }
 
                 // ++ => +
-                if (code[i].op == script_op.add && code[i + 1].op == script_op.add)
+                if (code[i].op == blast_operation.add && code[i + 1].op == blast_operation.add)
                 {
                     if (!data.code.RemoveAtAndMoveJumpLabels(data, i)) return false;
                     continue;
                 }
 
                 // -- => +
-                if (code[i].op == script_op.substract && code[i + 1].op == script_op.substract)
+                if (code[i].op == blast_operation.substract && code[i + 1].op == blast_operation.substract)
                 {
                     if (!data.code.RemoveAtAndMoveJumpLabels(data, i)) return false;
                     continue;
@@ -118,7 +118,7 @@ namespace NSS.Blast.Compiler.Stage
             public unsafe void replace_match(CompilationData cdata, IMByteCodeList code, ref int i)
             {
                 // determine if replacing a variable function length 
-                var function = cdata.Blast.GetFunctionByScriptOp((script_op)replace[0]);
+                var function = cdata.Blast.GetFunctionByScriptOp((blast_operation)replace[0]);
                 bool variable_param_length = function == null ? false : function.MinParameterCount != function.MaxParameterCount;
 
                 byte var_param_count = 0;
@@ -150,7 +150,7 @@ namespace NSS.Blast.Compiler.Stage
                 }
 
                 // create array of operations to replace the matched pattern with
-                List<script_op> replacement = new List<script_op>(); 
+                List<blast_operation> replacement = new List<blast_operation>(); 
 
                 // then from the start of the section to replace 
                 // - keep replacing operations and copy variables for all j in pattern
@@ -166,7 +166,7 @@ namespace NSS.Blast.Compiler.Stage
                         // - vectorsize max 15
                         // if 255 then 2 bytes for supporting larger vectors and count?
                         byte data = (byte)((var_param_count << 2) | (byte)vector_size & 0b11);
-                        replacement.Add((script_op)data);
+                        replacement.Add((blast_operation)data);
 
                         // the byte in pattern must match with size calculated 
                         if (b != var_param_count)
@@ -181,7 +181,7 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             // direct constant or var
                             b = (byte)code[i + (b - BlastCompiler.opt_value)].code;
-                            replacement.Add((script_op)b);
+                            replacement.Add((blast_operation)b);
                         }
                         else
                         if (b >= BlastCompiler.opt_ident)
@@ -192,7 +192,7 @@ namespace NSS.Blast.Compiler.Stage
                         else
                         {
                             // replace operation 
-                            replacement.Add((script_op)b);
+                            replacement.Add((blast_operation)b);
                         }
                     }
                     j++;
@@ -259,12 +259,12 @@ namespace NSS.Blast.Compiler.Stage
                         byte b_data = (byte)ops[j + i].code;
 
                         // BUGFIX: MATCHES VALUE ON ASSIGNEE in test 'Minus 2.bs'
-                        if (j + i > 1 && ops[j+i-1].code == (byte)script_op.assign)
+                        if (j + i > 1 && ops[j+i-1].code == (byte)blast_operation.assign)
                         {
                             return false;
                         }
 
-                        if (b_data == (byte)script_op.ex_op)
+                        if (b_data == (byte)blast_operation.ex_op)
                         {
                             // just dont 
                             return false; 
@@ -363,327 +363,327 @@ namespace NSS.Blast.Compiler.Stage
         {
             name = "fma1", 
             // var + { var * var }
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.add, (byte)script_op.begin, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.end },
-            replace = new byte[] { (byte)script_op.fma, BlastCompiler.opt_value + 3, BlastCompiler.opt_value + 5, BlastCompiler.opt_value + 0 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.add, (byte)blast_operation.begin, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.end },
+            replace = new byte[] { (byte)blast_operation.fma, BlastCompiler.opt_value + 3, BlastCompiler.opt_value + 5, BlastCompiler.opt_value + 0 }
         };
         static optimizer_pattern fma2 = new optimizer_pattern()
         {
             name = "fma2",
             // { var * var } + var
-            pattern = new byte[] { (byte)script_op.begin, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.end, (byte)script_op.add, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.fma, BlastCompiler.opt_value + 1, BlastCompiler.opt_value + 3, BlastCompiler.opt_value + 6 }
+            pattern = new byte[] { (byte)blast_operation.begin, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.end, (byte)blast_operation.add, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.fma, BlastCompiler.opt_value + 1, BlastCompiler.opt_value + 3, BlastCompiler.opt_value + 6 }
         };
         static optimizer_pattern nested_mula_4 = new optimizer_pattern()
         {
             name = "nested_mula4",
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, (byte)script_op.begin, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.end, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 3, BlastCompiler.opt_value + 5, BlastCompiler.opt_value + 8 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, (byte)blast_operation.begin, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.end, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 3, BlastCompiler.opt_value + 5, BlastCompiler.opt_value + 8 }
         };
         static optimizer_pattern mula_3 = new optimizer_pattern()
         {
             name = "mula3",
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
         };
         static optimizer_pattern mula_4 = new optimizer_pattern()
         {
             name = "mula4",
             min_match_for_next = 1,
             next = mula_3,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
         };
         static optimizer_pattern mula_5 = new optimizer_pattern()
         {
             name = "mula5",
             min_match_for_next = 1,
             next = mula_4,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
         };
         static optimizer_pattern mula_6 = new optimizer_pattern()
         {
             name = "mula6",
             min_match_for_next = 1,
             next = mula_5,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
         };
         static optimizer_pattern mula_7 = new optimizer_pattern()
         {
             name = "mula7",
             min_match_for_next = 1,
             next = mula_6,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 7, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 7, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12 }
         };
         static optimizer_pattern mula_8 = new optimizer_pattern()
         {
             name = "mula8",
             min_match_for_next = 1,
             next = mula_7,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 8, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 8, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14 }
         };
         static optimizer_pattern mula_9 = new optimizer_pattern()
         {
             name = "mula9",
             min_match_for_next = 1,
             next = mula_8,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 9, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 9, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16 }
         };
         static optimizer_pattern mula_10 = new optimizer_pattern()
         {
             name = "mula10",
             min_match_for_next = 1,
             next = mula_9,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 10, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 10, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18 }
         };
         static optimizer_pattern mula_11 = new optimizer_pattern()
         {
             name = "mula11",
             min_match_for_next = 1,
             next = mula_10,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 11, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 11, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20 }
         };
         static optimizer_pattern mula_12 = new optimizer_pattern()
         {
             name = "mula12",
             min_match_for_next = 5,
             next = mula_11,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 12, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20, BlastCompiler.opt_value + 22 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 12, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20, BlastCompiler.opt_value + 22 }
         };
         static optimizer_pattern mula_13 = new optimizer_pattern()
         {
             name = "mula13",
             min_match_for_next = 5,
             next = mula_12,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 12, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20, BlastCompiler.opt_value + 22, BlastCompiler.opt_value + 24 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 12, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20, BlastCompiler.opt_value + 22, BlastCompiler.opt_value + 24 }
         };
         static optimizer_pattern mula_14 = new optimizer_pattern()
         {
             name = "mula14",
             min_match_for_next = 5,
             next = mula_13,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 12, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20, BlastCompiler.opt_value + 22, BlastCompiler.opt_value + 24, BlastCompiler.opt_value + 26 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 12, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20, BlastCompiler.opt_value + 22, BlastCompiler.opt_value + 24, BlastCompiler.opt_value + 26 }
         };
         static optimizer_pattern mula_15 = new optimizer_pattern()
         {
             name = "mula15",
             min_match_for_next = 5,
             next = mula_14,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 12, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20, BlastCompiler.opt_value + 22, BlastCompiler.opt_value + 24, BlastCompiler.opt_value + 26, BlastCompiler.opt_value + 28 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 12, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20, BlastCompiler.opt_value + 22, BlastCompiler.opt_value + 24, BlastCompiler.opt_value + 26, BlastCompiler.opt_value + 28 }
         };
         static optimizer_pattern mula_16 = new optimizer_pattern()
         {
             name = "mula16",
             min_match_for_next = 5,
             next = mula_15,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value, (byte)script_op.multiply, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.mula, 12, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20, BlastCompiler.opt_value + 22, BlastCompiler.opt_value + 24, BlastCompiler.opt_value + 26, BlastCompiler.opt_value + 28, BlastCompiler.opt_value + 30 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value, (byte)blast_operation.multiply, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.mula, 12, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14, BlastCompiler.opt_value + 16, BlastCompiler.opt_value + 18, BlastCompiler.opt_value + 20, BlastCompiler.opt_value + 22, BlastCompiler.opt_value + 24, BlastCompiler.opt_value + 26, BlastCompiler.opt_value + 28, BlastCompiler.opt_value + 30 }
         };
         static optimizer_pattern diva_3 = new optimizer_pattern()
         {
             name = "diva3",
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.diva, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.diva, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
         };
         static optimizer_pattern diva_4 = new optimizer_pattern()
         {
             name = "diva4",
             min_match_for_next = 1,
             next = diva_3,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.diva, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.diva, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
         };
         static optimizer_pattern diva_5 = new optimizer_pattern()
         {
             name = "diva5",
             min_match_for_next = 1,
             next = diva_4,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.diva, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.diva, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
         };
         static optimizer_pattern diva_6 = new optimizer_pattern()
         {
             name = "diva6",
             min_match_for_next = 1,
             next = diva_5,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value, (byte)script_op.divide, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.diva, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value, (byte)blast_operation.divide, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.diva, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
         };
         static optimizer_pattern adda_3 = new optimizer_pattern()
         {
             name = "adda3",
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.adda, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.adda, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
         };
         static optimizer_pattern adda_4 = new optimizer_pattern()
         {
             name = "adda4",
             min_match_for_next = 1,
             next = adda_3,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.adda, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.adda, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
         };
         static optimizer_pattern adda_5 = new optimizer_pattern()
         {
             name = "adda5",
             min_match_for_next = 1,
             next = adda_4,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.adda, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.adda, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
         };
         static optimizer_pattern adda_6 = new optimizer_pattern()
         {
             name = "adda6",
             min_match_for_next = 1,
             next = adda_5,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.adda, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.adda, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
         };
         static optimizer_pattern suba_3 = new optimizer_pattern()
         {
             name = "suba3",
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.suba, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.suba, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
         };
         static optimizer_pattern suba_4 = new optimizer_pattern()
         {
             name = "suba4",
             min_match_for_next = 1,
             next = suba_3,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.suba, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.suba, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
         };
         static optimizer_pattern suba_5 = new optimizer_pattern()
         {
             name = "suba5",
             min_match_for_next = 1,
             next = suba_4,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value, (byte)script_op.add, BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.suba, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value, (byte)blast_operation.add, BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.suba, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
         };
         static optimizer_pattern suba_6 = new optimizer_pattern()
         {
             name = "suba6",
             min_match_for_next = 1,
             next = suba_5,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value, (byte)script_op.substract, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.suba, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value, (byte)blast_operation.substract, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.suba, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
         };
         static optimizer_pattern all_3 = new optimizer_pattern()
         {
             name = "all3",
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.all, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.all, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
         };
         static optimizer_pattern all_4 = new optimizer_pattern()
         {
             name = "all4",
             min_match_for_next = 3,
             next = all_4,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.all, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.all, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
         };
         static optimizer_pattern all_5 = new optimizer_pattern()
         {
             name = "all5",
             min_match_for_next = 3,
             next = all_5,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.all, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.all, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
         };
         static optimizer_pattern all_6 = new optimizer_pattern()
         {
             name = "all6",
             min_match_for_next = 3,
             next = all_5,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.all, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.all, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
         };
         static optimizer_pattern all_7 = new optimizer_pattern()
         {
             name = "all7",
             min_match_for_next = 3,
             next = all_6,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.all, 7, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.all, 7, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12 }
         };
         static optimizer_pattern all_8 = new optimizer_pattern()
         {
             name = "all8",
             min_match_for_next = 3,
             next = all_7,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value, (byte)script_op.and, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.all, 8, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value, (byte)blast_operation.and, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.all, 8, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14 }
         };
         static optimizer_pattern any_3 = new optimizer_pattern()
         {
             name = "any3",
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.any, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.any, 3, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4 }
         };
         static optimizer_pattern any_4 = new optimizer_pattern()
         {
             name = "any4",
             min_match_for_next = 3,
             next = any_4,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.any, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.any, 4, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6 }
         };
         static optimizer_pattern any_5 = new optimizer_pattern()
         {
             name = "any5",
             min_match_for_next = 3,
             next = any_5,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.any, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.any, 5, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8 }
         };
         static optimizer_pattern any_6 = new optimizer_pattern()
         {
             name = "any6",
             min_match_for_next = 3,
             next = any_5,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.any, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.any, 6, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10 }
         };
         static optimizer_pattern any_7 = new optimizer_pattern()
         {
             name = "any7",
             min_match_for_next = 3,
             next = any_6,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.any, 7, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.any, 7, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12 }
         };
         static optimizer_pattern any_8 = new optimizer_pattern()
         {
             name = "any8",
             min_match_for_next = 3,
             next = any_7,
-            pattern = new byte[] { BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value, (byte)script_op.or, BlastCompiler.opt_value },
-            replace = new byte[] { (byte)script_op.any, 8, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14 }
+            pattern = new byte[] { BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value, (byte)blast_operation.or, BlastCompiler.opt_value },
+            replace = new byte[] { (byte)blast_operation.any, 8, BlastCompiler.opt_value + 0, BlastCompiler.opt_value + 2, BlastCompiler.opt_value + 4, BlastCompiler.opt_value + 6, BlastCompiler.opt_value + 8, BlastCompiler.opt_value + 10, BlastCompiler.opt_value + 12, BlastCompiler.opt_value + 14 }
         };
 
         static optimizer_pattern double_nop_assign = new optimizer_pattern()
         {
             name = "double_nop_assign",
-            pattern = new byte[] { 0, 0, (byte)script_op.assign },
-            replace = new byte[] { 0, (byte)script_op.assign } // could remove the other 0 too i think.. needs check changed in interpretor but will lose all 0
+            pattern = new byte[] { 0, 0, (byte)blast_operation.assign },
+            replace = new byte[] { 0, (byte)blast_operation.assign } // could remove the other 0 too i think.. needs check changed in interpretor but will lose all 0
         };
 
         static optimizer_pattern nop_end = new optimizer_pattern()
         {
             name = "nop_end",
-            pattern = new byte[] { 0, (byte)script_op.end },
-            replace = new byte[] { (byte)script_op.end }
+            pattern = new byte[] { 0, (byte)blast_operation.end },
+            replace = new byte[] { (byte)blast_operation.end }
         };
 
 #endregion
@@ -709,11 +709,11 @@ namespace NSS.Blast.Compiler.Stage
 
         static byte[] optimizer_skip_table = new byte[]
         {
-            (byte)script_op.fma, 4,
-            (byte)script_op.mula, 0,
-            (byte)script_op.adda, 0,
-            (byte)script_op.suba, 0,
-            (byte)script_op.diva, 0
+            (byte)blast_operation.fma, 4,
+            (byte)blast_operation.mula, 0,
+            (byte)blast_operation.adda, 0,
+            (byte)blast_operation.suba, 0,
+            (byte)blast_operation.diva, 0
         };
 
 #endregion
@@ -737,9 +737,9 @@ namespace NSS.Blast.Compiler.Stage
             while (i < code.Count - 1)
             {
                 bool matched = false;
-                if (code[i].code == (byte)script_op.ex_op)
+                if (code[i].code == (byte)blast_operation.ex_op)
                 {
-                    if (code[i + 1].code == (byte)extended_script_op.call)
+                    if (code[i + 1].code == (byte)extended_blast_operation.call)
                     {
                         i = i + 2 + 4;  // skip instructions and call id
                     }
@@ -772,7 +772,7 @@ namespace NSS.Blast.Compiler.Stage
                 if (i < code.Count)
                 {
                     // is still inside code, check if we need to skip part before matching again 
-                    script_op op = code[i].op;                        
+                    blast_operation op = code[i].op;                        
 
                     // if in skip table
                     for (int skip = 0; skip < optimizer_skip_table.Length / 2; skip++)
@@ -784,7 +784,7 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 // variable length instruction .. find the next nop 
                                 int k = i;
-                                while ( code[k + iskip].op != script_op.nop && (k + iskip < code.Count)) { iskip++; };
+                                while ( code[k + iskip].op != blast_operation.nop && (k + iskip < code.Count)) { iskip++; };
                             }
                             // jump and break
                             i += iskip;

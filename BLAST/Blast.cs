@@ -110,6 +110,7 @@ namespace NSS.Blast
         public bool IsCreated { get { return is_created; } }
         public IntPtr Engine => (IntPtr)data;
 
+        // lots of statics ahead
         static internal object mt_lock = new object();
 
         #region Create / Destroy
@@ -124,7 +125,7 @@ namespace NSS.Blast
 
             for (int b = 0; b < 256; b++)
             {
-                blast.data->constants[b] = Blast.GetConstantValue((script_op)b);
+                blast.data->constants[b] = Blast.GetConstantValue((blast_operation)b);
             }
 
             blast.data->functionpointer_count = FunctionCalls.Count;
@@ -139,7 +140,7 @@ namespace NSS.Blast
 #if !NOT_USING_UNITY
             blast._burst_hpc_once_job = default;
             blast._burst_once_job = default;
-            blast._burst_once_job.interpretor = new BlastInterpretor();       // ??????? TODO why? or always use it? 
+            blast._burst_once_job.interpretor = default; 
 #endif
             blast.is_created = true;
             return blast;
@@ -269,66 +270,66 @@ namespace NSS.Blast
         #region Constants 
 
         [BurstDiscard]
-        public IEnumerable<script_op> ValueOperations()
+        public IEnumerable<blast_operation> ValueOperations()
         {
             // we dont want this as static, but on a struct its also no good as field 
             // structs dont carry arround function tables so this seems ok... 
-            yield return script_op.pi;
-            yield return script_op.inv_pi;
-            yield return script_op.epsilon;
-            yield return script_op.infinity;
-            yield return script_op.negative_infinity;
-            yield return script_op.nan;
-            yield return script_op.min_value;
+            yield return blast_operation.pi;
+            yield return blast_operation.inv_pi;
+            yield return blast_operation.epsilon;
+            yield return blast_operation.infinity;
+            yield return blast_operation.negative_infinity;
+            yield return blast_operation.nan;
+            yield return blast_operation.min_value;
 
-            yield return script_op.value_0;
-            yield return script_op.value_1;
-            yield return script_op.value_2;
-            yield return script_op.value_3;
-            yield return script_op.value_4;
-            yield return script_op.value_8;
-            yield return script_op.value_10;
-            yield return script_op.value_16;
-            yield return script_op.value_24;
-            yield return script_op.value_32;
-            yield return script_op.value_64;
-            yield return script_op.value_100;
-            yield return script_op.value_128;
-            yield return script_op.value_256;
-            yield return script_op.value_512;
-            yield return script_op.value_1000;
-            yield return script_op.value_1024;
-            yield return script_op.value_30;
-            yield return script_op.value_45;
-            yield return script_op.value_90;
-            yield return script_op.value_180;
-            yield return script_op.value_270;
-            yield return script_op.value_360;
-            yield return script_op.inv_value_2;
-            yield return script_op.inv_value_3;
-            yield return script_op.inv_value_4;
-            yield return script_op.inv_value_8;
-            yield return script_op.inv_value_10;
-            yield return script_op.inv_value_16;
-            yield return script_op.inv_value_24;
-            yield return script_op.inv_value_32;
-            yield return script_op.inv_value_64;
-            yield return script_op.inv_value_100;
-            yield return script_op.inv_value_128;
-            yield return script_op.inv_value_256;
-            yield return script_op.inv_value_512;
-            yield return script_op.inv_value_1000;
-            yield return script_op.inv_value_1024;
-            yield return script_op.inv_value_30;
-            yield return script_op.inv_value_45;
-            yield return script_op.inv_value_90;
-            yield return script_op.inv_value_180;
-            yield return script_op.inv_value_270;
-            yield return script_op.inv_value_360;
+            yield return blast_operation.value_0;
+            yield return blast_operation.value_1;
+            yield return blast_operation.value_2;
+            yield return blast_operation.value_3;
+            yield return blast_operation.value_4;
+            yield return blast_operation.value_8;
+            yield return blast_operation.value_10;
+            yield return blast_operation.value_16;
+            yield return blast_operation.value_24;
+            yield return blast_operation.value_32;
+            yield return blast_operation.value_64;
+            yield return blast_operation.value_100;
+            yield return blast_operation.value_128;
+            yield return blast_operation.value_256;
+            yield return blast_operation.value_512;
+            yield return blast_operation.value_1000;
+            yield return blast_operation.value_1024;
+            yield return blast_operation.value_30;
+            yield return blast_operation.value_45;
+            yield return blast_operation.value_90;
+            yield return blast_operation.value_180;
+            yield return blast_operation.value_270;
+            yield return blast_operation.value_360;
+            yield return blast_operation.inv_value_2;
+            yield return blast_operation.inv_value_3;
+            yield return blast_operation.inv_value_4;
+            yield return blast_operation.inv_value_8;
+            yield return blast_operation.inv_value_10;
+            yield return blast_operation.inv_value_16;
+            yield return blast_operation.inv_value_24;
+            yield return blast_operation.inv_value_32;
+            yield return blast_operation.inv_value_64;
+            yield return blast_operation.inv_value_100;
+            yield return blast_operation.inv_value_128;
+            yield return blast_operation.inv_value_256;
+            yield return blast_operation.inv_value_512;
+            yield return blast_operation.inv_value_1000;
+            yield return blast_operation.inv_value_1024;
+            yield return blast_operation.inv_value_30;
+            yield return blast_operation.inv_value_45;
+            yield return blast_operation.inv_value_90;
+            yield return blast_operation.inv_value_180;
+            yield return blast_operation.inv_value_270;
+            yield return blast_operation.inv_value_360;
         }
 
         [BurstCompatible]
-        public static float GetConstantValue(script_op op)
+        public static float GetConstantValue(blast_operation op)
         {
             switch (op)
             {
@@ -337,57 +338,57 @@ namespace NSS.Blast
                 //case script_op.framecount: return Time.frameCount;
                 //case script_op.fixeddeltatime: return Time.fixedDeltaTime; 
                 // The difference between 1.0f and the next representable f32/single precision number.
-                case script_op.pi: return math.PI;
-                case script_op.inv_pi: return 1 / math.PI;
-                case script_op.epsilon: return math.EPSILON;
-                case script_op.infinity: return math.INFINITY;
-                case script_op.negative_infinity: return -math.INFINITY;
-                case script_op.nan: return math.NAN;
-                case script_op.min_value: return math.FLT_MIN_NORMAL;
-                case script_op.value_0: return 0f;
-                case script_op.value_1: return 1f;
-                case script_op.value_2: return 2f;
-                case script_op.value_3: return 3f;
-                case script_op.value_4: return 4f;
-                case script_op.value_8: return 8f;
-                case script_op.value_10: return 10f;
-                case script_op.value_16: return 16f;
-                case script_op.value_24: return 24f;
-                case script_op.value_32: return 32f;
-                case script_op.value_64: return 64f;
-                case script_op.value_100: return 100f;
-                case script_op.value_128: return 128f;
-                case script_op.value_256: return 256f;
-                case script_op.value_512: return 512f;
-                case script_op.value_1000: return 1000f;
-                case script_op.value_1024: return 1024f;
-                case script_op.value_30: return 30f;
-                case script_op.value_45: return 45f;
-                case script_op.value_90: return 90f;
-                case script_op.value_180: return 180f;
-                case script_op.value_270: return 270f;
-                case script_op.value_360: return 360f;
-                case script_op.inv_value_2: return 1f / 2f;
-                case script_op.inv_value_3: return 1f / 3f;
-                case script_op.inv_value_4: return 1f / 4f;
-                case script_op.inv_value_8: return 1f / 8f;
-                case script_op.inv_value_10: return 1f / 10f;
-                case script_op.inv_value_16: return 1f / 16f;
-                case script_op.inv_value_24: return 1f / 24f;
-                case script_op.inv_value_32: return 1f / 32f;
-                case script_op.inv_value_64: return 1f / 64f;
-                case script_op.inv_value_100: return 1f / 100f;
-                case script_op.inv_value_128: return 1f / 128f;
-                case script_op.inv_value_256: return 1f / 256f;
-                case script_op.inv_value_512: return 1f / 512f;
-                case script_op.inv_value_1000: return 1f / 1000f;
-                case script_op.inv_value_1024: return 1f / 1024f;
-                case script_op.inv_value_30: return 1f / 30f;
-                case script_op.inv_value_45: return 1f / 45f;
-                case script_op.inv_value_90: return 1f / 90f;
-                case script_op.inv_value_180: return 1f / 180f;
-                case script_op.inv_value_270: return 1f / 270f;
-                case script_op.inv_value_360: return 1f / 360f;
+                case blast_operation.pi: return math.PI;
+                case blast_operation.inv_pi: return 1 / math.PI;
+                case blast_operation.epsilon: return math.EPSILON;
+                case blast_operation.infinity: return math.INFINITY;
+                case blast_operation.negative_infinity: return -math.INFINITY;
+                case blast_operation.nan: return math.NAN;
+                case blast_operation.min_value: return math.FLT_MIN_NORMAL;
+                case blast_operation.value_0: return 0f;
+                case blast_operation.value_1: return 1f;
+                case blast_operation.value_2: return 2f;
+                case blast_operation.value_3: return 3f;
+                case blast_operation.value_4: return 4f;
+                case blast_operation.value_8: return 8f;
+                case blast_operation.value_10: return 10f;
+                case blast_operation.value_16: return 16f;
+                case blast_operation.value_24: return 24f;
+                case blast_operation.value_32: return 32f;
+                case blast_operation.value_64: return 64f;
+                case blast_operation.value_100: return 100f;
+                case blast_operation.value_128: return 128f;
+                case blast_operation.value_256: return 256f;
+                case blast_operation.value_512: return 512f;
+                case blast_operation.value_1000: return 1000f;
+                case blast_operation.value_1024: return 1024f;
+                case blast_operation.value_30: return 30f;
+                case blast_operation.value_45: return 45f;
+                case blast_operation.value_90: return 90f;
+                case blast_operation.value_180: return 180f;
+                case blast_operation.value_270: return 270f;
+                case blast_operation.value_360: return 360f;
+                case blast_operation.inv_value_2: return 1f / 2f;
+                case blast_operation.inv_value_3: return 1f / 3f;
+                case blast_operation.inv_value_4: return 1f / 4f;
+                case blast_operation.inv_value_8: return 1f / 8f;
+                case blast_operation.inv_value_10: return 1f / 10f;
+                case blast_operation.inv_value_16: return 1f / 16f;
+                case blast_operation.inv_value_24: return 1f / 24f;
+                case blast_operation.inv_value_32: return 1f / 32f;
+                case blast_operation.inv_value_64: return 1f / 64f;
+                case blast_operation.inv_value_100: return 1f / 100f;
+                case blast_operation.inv_value_128: return 1f / 128f;
+                case blast_operation.inv_value_256: return 1f / 256f;
+                case blast_operation.inv_value_512: return 1f / 512f;
+                case blast_operation.inv_value_1000: return 1f / 1000f;
+                case blast_operation.inv_value_1024: return 1f / 1024f;
+                case blast_operation.inv_value_30: return 1f / 30f;
+                case blast_operation.inv_value_45: return 1f / 45f;
+                case blast_operation.inv_value_90: return 1f / 90f;
+                case blast_operation.inv_value_180: return 1f / 180f;
+                case blast_operation.inv_value_270: return 1f / 270f;
+                case blast_operation.inv_value_360: return 1f / 360f;
 
                 // what to do? screw up intentionally? yeah :)
                 default:
@@ -411,14 +412,14 @@ namespace NSS.Blast
         /// <param name="value">the value to match</param>
         /// <param name="constant_epsilon">the epsilon to use matching constant values</param>
         /// <returns>nop on no match, nan of not a string match and no float, operation on match</returns>
-        public script_op GetConstantValueOperation(string value, float constant_epsilon = 0.0001f)
+        public blast_operation GetConstantValueOperation(string value, float constant_epsilon = 0.0001f)
         {
             // prevent matching to epsilon and/or min flt values (as they are very close to 0) 
-            if (value == "0") return script_op.value_0; 
+            if (value == "0") return blast_operation.value_0; 
 
             // constant names should have been done earlier. check anyway
-            script_op constant_op = IsSystemConstant(value);
-            if (constant_op != script_op.nop)
+            blast_operation constant_op = IsSystemConstant(value);
+            if (constant_op != blast_operation.nop)
             {
                 return constant_op;
             }
@@ -427,10 +428,10 @@ namespace NSS.Blast
             float f;
             if (float.IsNaN(f = node.AsFloat(value)))
             {
-                return script_op.nan;
+                return blast_operation.nan;
             }
 
-            foreach (script_op value_op in ValueOperations())
+            foreach (blast_operation value_op in ValueOperations())
             {
                 float f2 = Blast.GetConstantValue(value_op);
                 if (f2 > f - constant_epsilon && f2 < f + constant_epsilon)
@@ -439,7 +440,7 @@ namespace NSS.Blast
                 }
             }
 
-            return script_op.nop;
+            return blast_operation.nop;
         }
 
         /// <summary>
@@ -447,17 +448,17 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public script_op IsSystemConstant(string name)
+        public blast_operation IsSystemConstant(string name)
         {
             switch (name.Trim().ToLower())
             {
-                case "pi": return script_op.pi;
+                case "pi": return blast_operation.pi;
                 //case "deltatime": return script_op.deltatime;
-                case "epsilon": return script_op.epsilon;
-                case "infinity": return script_op.infinity;
-                case "nan": return script_op.nan;
-                case "flt_min": return script_op.min_value;
-                default: return script_op.nop;
+                case "epsilon": return blast_operation.epsilon;
+                case "infinity": return blast_operation.infinity;
+                case "nan": return blast_operation.nan;
+                case "flt_min": return blast_operation.min_value;
+                default: return blast_operation.nop;
             }
         }
 
@@ -481,47 +482,47 @@ namespace NSS.Blast
         #region Tokens 
 
         /// <summary>
-        /// tokens that can be used in script
+        /// defines tokens that can be used in script
         /// </summary>
         static public List<BlastScriptTokenDefinition> Tokens = new List<BlastScriptTokenDefinition>()
         {
-            new BlastScriptTokenDefinition(BlastScriptToken.Add, '+'),
-            new BlastScriptTokenDefinition(BlastScriptToken.Substract, '-'),
-            new BlastScriptTokenDefinition(BlastScriptToken.Divide, '/'),
-            new BlastScriptTokenDefinition(BlastScriptToken.Multiply, '*'),
-            new BlastScriptTokenDefinition(BlastScriptToken.Equals, '='),
+            new BlastScriptTokenDefinition(BlastScriptToken.Add, '+', "adds 2 operands together, supports all datatypes"),
+            new BlastScriptTokenDefinition(BlastScriptToken.Substract, '-', "substracts right operand from left, supports all datatypes"),
+            new BlastScriptTokenDefinition(BlastScriptToken.Divide, '/', "divides left operand by right, supports all datatypes"),
+            new BlastScriptTokenDefinition(BlastScriptToken.Multiply, '*', "multiplies operands, supports all datatypes"),
+            new BlastScriptTokenDefinition(BlastScriptToken.Equals, '=', "compares operands, supports all datatypes, vector compares return a scalar"),
+#if SUPPORT_TERNARY
             new BlastScriptTokenDefinition(BlastScriptToken.Ternary, '?'),
-            new BlastScriptTokenDefinition(BlastScriptToken.TernaryOption, ':'),
-            new BlastScriptTokenDefinition(BlastScriptToken.SmallerThen, '<'),
-            new BlastScriptTokenDefinition(BlastScriptToken.GreaterThen, '>'),
-            new BlastScriptTokenDefinition(BlastScriptToken.And, '&'),
-            new BlastScriptTokenDefinition(BlastScriptToken.Or, '|'),
-            new BlastScriptTokenDefinition(BlastScriptToken.Xor, '^'),
-            new BlastScriptTokenDefinition(BlastScriptToken.Not, '!'),
-            new BlastScriptTokenDefinition(BlastScriptToken.OpenParenthesis, '('),
-            new BlastScriptTokenDefinition(BlastScriptToken.CloseParenthesis, ')'),
+#endif
+            new BlastScriptTokenDefinition(BlastScriptToken.TernaryOption, ':', "ternary option and case seperation, ternary use not yet supported"),
+            new BlastScriptTokenDefinition(BlastScriptToken.SmallerThen, '<', "compare operands, supports all datatypes"),
+            new BlastScriptTokenDefinition(BlastScriptToken.GreaterThen, '>', "compare operands, supports all datatypes"),
+            new BlastScriptTokenDefinition(BlastScriptToken.And, '&', "logical and, anything != 0 == true, supports all datatypes"),
+            new BlastScriptTokenDefinition(BlastScriptToken.Or, '|', "logical or, anything != 0 == true, supports all datatypes"),
+            new BlastScriptTokenDefinition(BlastScriptToken.Xor, '^', "logical xor, anything != 0 == true, supports all datatypes"),
+            new BlastScriptTokenDefinition(BlastScriptToken.Not, '!', "logical not, anything != 0 == true, supports all datatypes"),
+            new BlastScriptTokenDefinition(BlastScriptToken.OpenParenthesis, '(', "open a compound"),
+            new BlastScriptTokenDefinition(BlastScriptToken.CloseParenthesis, ')', "close a compound"),
 
-            new BlastScriptTokenDefinition(BlastScriptToken.DotComma, ';'),
-            new BlastScriptTokenDefinition(BlastScriptToken.Comma, ','),
+            new BlastScriptTokenDefinition(BlastScriptToken.DotComma, ';', "statement terminator"),
+            new BlastScriptTokenDefinition(BlastScriptToken.Comma, ',', "statement seperator"),
                             
             // treat everything left as string literal for now
-            new BlastScriptTokenDefinition(BlastScriptToken.Identifier, (char)0),
-            new BlastScriptTokenDefinition(BlastScriptToken.Indexer, '.'),
-            new BlastScriptTokenDefinition(BlastScriptToken.IndexOpen, '['),
-            new BlastScriptTokenDefinition(BlastScriptToken.IndexClose, ']'),
+            new BlastScriptTokenDefinition(BlastScriptToken.Identifier, (char)0, "any identifier"),
+            new BlastScriptTokenDefinition(BlastScriptToken.Indexer, '.', "indexer - not supported"),
+            new BlastScriptTokenDefinition(BlastScriptToken.IndexOpen, '[', "indexer open - not supported"),
+            new BlastScriptTokenDefinition(BlastScriptToken.IndexClose, ']', "indexer close - not supported"),
         };
-
 
         /// <summary>
         /// check if the operation is a jump (jz, jnz, jump, jump_back)
         /// </summary>
         /// <param name="op">operation to check</param>
         /// <returns>true if a jump</returns>
-        public static bool IsJumpOperation(script_op op)
+        public static bool IsJumpOperation(blast_operation op)
         {
-            return op == script_op.jump || op == script_op.jump_back || op == script_op.jz || op == script_op.jnz;
+            return op == blast_operation.jump || op == blast_operation.jump_back || op == blast_operation.jz || op == blast_operation.jnz;
         }
-
 
         public static string VisualizeTokens(List<Tuple<BlastScriptToken, string>> tokens, int idx, int idx_max)
         {
@@ -543,98 +544,98 @@ namespace NSS.Blast
         }
 
 
-        #endregion
+#endregion
 
-        #region Functions 
+#region Functions 
 
         /// <summary>
         /// defined functions for script
         /// </summary>
         static public List<ScriptFunctionDefinition> Functions = new List<ScriptFunctionDefinition>()
         {
-            new ScriptFunctionDefinition(0, "abs", 1, 1, 0, 0, script_op.abs),
+            new ScriptFunctionDefinition(0, "abs", 1, 1, 0, 0, blast_operation.abs),
 
-            new ScriptFunctionDefinition(1, "min", 2, 63, 0, 0, script_op.min),
-            new ScriptFunctionDefinition(2, "max", 2, 63, 0, 0, script_op.max),
-            new ScriptFunctionDefinition(3, "mina", 1, 63, 1, 0, script_op.mina),
-            new ScriptFunctionDefinition(4, "maxa", 1, 63, 1, 0, script_op.maxa),
+            new ScriptFunctionDefinition(1, "min", 2, 63, 0, 0, blast_operation.min),
+            new ScriptFunctionDefinition(2, "max", 2, 63, 0, 0, blast_operation.max),
+            new ScriptFunctionDefinition(3, "mina", 1, 63, 1, 0, blast_operation.mina),
+            new ScriptFunctionDefinition(4, "maxa", 1, 63, 1, 0, blast_operation.maxa),
 
-            new ScriptFunctionDefinition(5, "select", 3, 3, 0, 0, script_op.select, "a", "b", "condition"),
+            new ScriptFunctionDefinition(5, "select", 3, 3, 0, 0, blast_operation.select, "a", "b", "condition"),
 
-            new ScriptFunctionDefinition(6, "random", 0, 2, 0, 0, script_op.random),  // random value from 0 to 1 (inclusive), 0 to max, or min to max depending on parameter count 1
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Seed, "seed", 1, 1, 0, 0, script_op.seed),
+            new ScriptFunctionDefinition(6, "random", 0, 2, 0, 0, blast_operation.random),  // random value from 0 to 1 (inclusive), 0 to max, or min to max depending on parameter count 1
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Seed, "seed", 1, 1, 0, 0, blast_operation.seed),
 
-            new ScriptFunctionDefinition(7, "sqrt", 1, 1, 0, 0, script_op.sqrt),
-            new ScriptFunctionDefinition(8, "rsqrt", 1, 1, 0, 0, extended_script_op.rsqrt),
+            new ScriptFunctionDefinition(7, "sqrt", 1, 1, 0, 0, blast_operation.sqrt),
+            new ScriptFunctionDefinition(8, "rsqrt", 1, 1, 0, 0, extended_blast_operation.rsqrt),
 
-            new ScriptFunctionDefinition(9, "lerp", 3, 3, 0, 0, script_op.lerp, "a", "b", "t"),
-            new ScriptFunctionDefinition(10, "slerp", 3, 3, 4, 4, script_op.slerp, "a", "b", "t"),
-            new ScriptFunctionDefinition(47, "nlerp", 3, 3, 4, 4, script_op.nlerp, "a", "b", "t"),
+            new ScriptFunctionDefinition(9, "lerp", 3, 3, 0, 0, blast_operation.lerp, "a", "b", "t"),
+            new ScriptFunctionDefinition(10, "slerp", 3, 3, 4, 4, blast_operation.slerp, "a", "b", "t"),
+            new ScriptFunctionDefinition(47, "nlerp", 3, 3, 4, 4, blast_operation.nlerp, "a", "b", "t"),
 
-            new ScriptFunctionDefinition(11, "any", 2, 63, 0, 0, script_op.any),
-            new ScriptFunctionDefinition(12, "all", 2, 63, 0, 0, script_op.all),
-            new ScriptFunctionDefinition(13, "adda", 2, 63, 0, 0, script_op.adda),
-            new ScriptFunctionDefinition(14, "suba", 2, 63, 0, 0, script_op.suba),
-            new ScriptFunctionDefinition(15, "diva", 2, 63, 0, 0, script_op.diva),
-            new ScriptFunctionDefinition(16, "mula", 2, 63, 0, 0, script_op.mula),
+            new ScriptFunctionDefinition(11, "any", 2, 63, 0, 0, blast_operation.any),
+            new ScriptFunctionDefinition(12, "all", 2, 63, 0, 0, blast_operation.all),
+            new ScriptFunctionDefinition(13, "adda", 2, 63, 0, 0, blast_operation.adda),
+            new ScriptFunctionDefinition(14, "suba", 2, 63, 0, 0, blast_operation.suba),
+            new ScriptFunctionDefinition(15, "diva", 2, 63, 0, 0, blast_operation.diva),
+            new ScriptFunctionDefinition(16, "mula", 2, 63, 0, 0, blast_operation.mula),
 
-            new ScriptFunctionDefinition(17, "ceil", 1, 1, 0, 0, script_op.ceil),
-            new ScriptFunctionDefinition(18, "floor", 1, 1, 0, 0, script_op.floor),
-            new ScriptFunctionDefinition(19, "frac", 1, 1, 0, 0, script_op.frac),
+            new ScriptFunctionDefinition(17, "ceil", 1, 1, 0, 0, blast_operation.ceil),
+            new ScriptFunctionDefinition(18, "floor", 1, 1, 0, 0, blast_operation.floor),
+            new ScriptFunctionDefinition(19, "frac", 1, 1, 0, 0, blast_operation.frac),
 
-            new ScriptFunctionDefinition(21, "sin", 1, 1, 0, 0, script_op.sin),
-            new ScriptFunctionDefinition(22, "cos", 1, 1, 0, 0, script_op.cos),
-            new ScriptFunctionDefinition(23, "tan", 1, 1, 0, 0, script_op.tan),
-            new ScriptFunctionDefinition(24, "atan", 1, 1, 0, 0, script_op.atan),
-            new ScriptFunctionDefinition(25, "cosh", 1, 1, 0, 0, script_op.cosh),
-            new ScriptFunctionDefinition(26, "sinh", 1, 1, 0, 0, script_op.sinh),
+            new ScriptFunctionDefinition(21, "sin", 1, 1, 0, 0, blast_operation.sin),
+            new ScriptFunctionDefinition(22, "cos", 1, 1, 0, 0, blast_operation.cos),
+            new ScriptFunctionDefinition(23, "tan", 1, 1, 0, 0, blast_operation.tan),
+            new ScriptFunctionDefinition(24, "atan", 1, 1, 0, 0, blast_operation.atan),
+            new ScriptFunctionDefinition(25, "cosh", 1, 1, 0, 0, blast_operation.cosh),
+            new ScriptFunctionDefinition(26, "sinh", 1, 1, 0, 0, blast_operation.sinh),
 
-            new ScriptFunctionDefinition(28, "degrees", 1, 1, 0, 0, script_op.degrees),
-            new ScriptFunctionDefinition(29, "rad", 1, 1, 0, 0, script_op.radians),
+            new ScriptFunctionDefinition(28, "degrees", 1, 1, 0, 0, blast_operation.degrees),
+            new ScriptFunctionDefinition(29, "rad", 1, 1, 0, 0, blast_operation.radians),
 
-            new ScriptFunctionDefinition(46, "fma", 3, 3, 0, 0, script_op.fma, "m1", "m2", "a1"),
+            new ScriptFunctionDefinition(46, "fma", 3, 3, 0, 0, blast_operation.fma, "m1", "m2", "a1"),
 
-            new ScriptFunctionDefinition(33, "pow", 2, 2, 0, 0, extended_script_op.pow, null, "a", "power"),
+            new ScriptFunctionDefinition(33, "pow", 2, 2, 0, 0, extended_blast_operation.pow, null, "a", "power"),
 
             // would be nice to have a parameter giving min and max vector size 
-            new ScriptFunctionDefinition(32, "normalize", 1, 1, 0, 0, script_op.normalize, "a"),
-            new ScriptFunctionDefinition(30, "saturate", 1, 1, 0, 0, script_op.saturate, "a"),
+            new ScriptFunctionDefinition(32, "normalize", 1, 1, 0, 0, blast_operation.normalize, "a"),
+            new ScriptFunctionDefinition(30, "saturate", 1, 1, 0, 0, blast_operation.saturate, "a"),
 
 
 
-            new ScriptFunctionDefinition(31, "clamp", 3, 3, 0, 0, script_op.clamp, "a", "min", "max"),
+            new ScriptFunctionDefinition(31, "clamp", 3, 3, 0, 0, blast_operation.clamp, "a", "min", "max"),
 
                            
 
 
 
-            new ScriptFunctionDefinition(41, "log2", 1, 1,  0, 0, extended_script_op.log2, null, "a", "b"),
-            new ScriptFunctionDefinition(42, "log10", 1, 1, 0, 0, extended_script_op.log10, null, "a"),
-            new ScriptFunctionDefinition(43, "log", 1, 1, 0, 0, extended_script_op.logn, null, "a"),
-            new ScriptFunctionDefinition(40, "exp", 1, 1,  0, 0, extended_script_op.exp, null, "exponent_of_e"),
-            new ScriptFunctionDefinition(44, "exp10", 1, 1, 0, 0, extended_script_op.exp10, null, "a", "b"),
-            new ScriptFunctionDefinition(38, "cross", 2, 2, 3, 3, extended_script_op.cross, null, "a", "b"),
-            new ScriptFunctionDefinition(39, "dot", 2, 2, 1, 0, extended_script_op.dot, null, "a", "b"),
+            new ScriptFunctionDefinition(41, "log2", 1, 1,  0, 0, extended_blast_operation.log2, null, "a", "b"),
+            new ScriptFunctionDefinition(42, "log10", 1, 1, 0, 0, extended_blast_operation.log10, null, "a"),
+            new ScriptFunctionDefinition(43, "log", 1, 1, 0, 0, extended_blast_operation.logn, null, "a"),
+            new ScriptFunctionDefinition(40, "exp", 1, 1,  0, 0, extended_blast_operation.exp, null, "exponent_of_e"),
+            new ScriptFunctionDefinition(44, "exp10", 1, 1, 0, 0, extended_blast_operation.exp10, null, "a", "b"),
+            new ScriptFunctionDefinition(38, "cross", 2, 2, 3, 3, extended_blast_operation.cross, null, "a", "b"),
+            new ScriptFunctionDefinition(39, "dot", 2, 2, 1, 0, extended_blast_operation.dot, null, "a", "b"),
 
-            new ScriptFunctionDefinition(45, "return", 0, 0,  0, 0,script_op.ret),
-
-
+            new ScriptFunctionDefinition(45, "return", 0, 0,  0, 0,blast_operation.ret),
 
 
 
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Push, "push", 1, 4, 0, 0,script_op.push, "n", "a"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushFunction, "pushf", 1, 1, 0, 0,script_op.pushf, "n", "a"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop, "pop", 0, 0, 0, 0,script_op.pop, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Peek, "peek", 0, 1, 0, 0, script_op.peek, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Yield, "yield", 0, 1, 0, 0,script_op.yield, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Input, "input", 3, 3, 0, 0,script_op.nop, "id", "offset", "length"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Output, "output", 3, 3, 0, 0,script_op.nop, "id", "offset", "length"),
 
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debug", 1, 1, 0, 0, extended_script_op.debug, null, "id"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debugstack",0, 0, 0, 0, extended_script_op.debugstack)
+
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Push, "push", 1, 4, 0, 0,blast_operation.push, "n", "a"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushFunction, "pushf", 1, 1, 0, 0,blast_operation.pushf, "n", "a"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop, "pop", 0, 0, 0, 0,blast_operation.pop, "n"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Peek, "peek", 0, 1, 0, 0, blast_operation.peek, "n"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Yield, "yield", 0, 1, 0, 0,blast_operation.yield, "n"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Input, "input", 3, 3, 0, 0,blast_operation.nop, "id", "offset", "length"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Output, "output", 3, 3, 0, 0,blast_operation.nop, "id", "offset", "length"),
+
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debug", 1, 1, 0, 0, extended_blast_operation.debug, null, "id"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debugstack",0, 0, 0, 0, extended_blast_operation.debugstack)
         };
 
-        public ScriptFunctionDefinition GetFunctionByScriptOp(script_op op)
+        public ScriptFunctionDefinition GetFunctionByScriptOp(blast_operation op)
         {
             foreach (var f in Blast.Functions)
                 if (f.ScriptOp == op)
@@ -674,9 +675,9 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="op">the operation mapping to a function</param>
         /// <returns>true if the function exists and has a variable parameter list</returns>
-        public bool IsVariableParamFunction(script_op op)
+        public bool IsVariableParamFunction(blast_operation op)
         {
-            if (op == script_op.nop)
+            if (op == blast_operation.nop)
             {
                 return false;
             }
@@ -691,7 +692,7 @@ namespace NSS.Blast
         }
 #endregion
 
-        #region Compiletime Function Pointers 
+#region Compiletime Function Pointers 
 
         static public List<ExternalFunctionCall> FunctionCalls = new List<ExternalFunctionCall>();
 
@@ -823,7 +824,7 @@ namespace NSS.Blast
                 id, name,
                 parameter_count, parameter_count,
                 0, 0,
-                extended_script_op.call,
+                extended_blast_operation.call,
                 call,
                 parameters
             );
@@ -838,7 +839,7 @@ namespace NSS.Blast
 
 #endregion
 
-        #region Designtime CompileRegistry
+#region Designtime CompileRegistry
 
         /// <summary>
         /// Enumerates all scripts known by blast 
@@ -879,7 +880,7 @@ namespace NSS.Blast
 #endif
 #endregion
 
-        #region Runtime compilation of configuration into compiletime script for use next compilation
+#region Runtime compilation of configuration into compiletime script for use next compilation
 
         static public bool CompileIntoRegistry(Blast blast, BlastScript script, string script_directory)
         {
@@ -915,7 +916,7 @@ namespace NSS.Blast
 
 #endregion
 
-        #region HPC Jobs 
+#region HPC Jobs 
         static Dictionary<int, IBlastHPCScriptJob> _hpc_jobs = null;
         public Dictionary<int, IBlastHPCScriptJob> HPCJobs
         {
@@ -951,9 +952,9 @@ namespace NSS.Blast
             }
             return null;
         }
-        #endregion
+#endregion
 
-        #region bytecode reading / tostring
+#region bytecode reading / tostring
         unsafe public static string GetByteCodeByteText(in byte* bytes, in int length, int column_count)
         {
             StringBuilder sb = new StringBuilder();
@@ -977,7 +978,7 @@ namespace NSS.Blast
 
             while (i < length)
             {
-                script_op op = (script_op)bytes[i];
+                blast_operation op = (blast_operation)bytes[i];
 
                 // generate a somewhat readable assembly view
                 //
@@ -991,172 +992,172 @@ namespace NSS.Blast
 
                 switch (op)
                 {
-                    case script_op.nop: sb.Append("\n"); break;
+                    case blast_operation.nop: sb.Append("\n"); break;
 
-                    case script_op.assign: sb.Append("assign "); break;
+                    case blast_operation.assign: sb.Append("assign "); break;
 
-                    case script_op.add: sb.Append("+ "); break;
-                    case script_op.substract: sb.Append("- "); break;
-                    case script_op.multiply: sb.Append("* "); break;
-                    case script_op.divide: sb.Append("/ "); break;
-                    case script_op.and: sb.Append("& "); break;
-                    case script_op.or: sb.Append("| "); break;
-                    case script_op.not: sb.Append("! "); break;
-                    case script_op.xor: sb.Append("^ "); break;
-                    case script_op.smaller: sb.Append("< "); break;
-                    case script_op.greater: sb.Append("> "); break;
-                    case script_op.smaller_equals: sb.Append("<= "); break;
-                    case script_op.greater_equals: sb.Append(">= "); break;
-                    case script_op.equals: sb.Append("= "); break;
-                    case script_op.not_equals: sb.Append("!= "); break;
+                    case blast_operation.add: sb.Append("+ "); break;
+                    case blast_operation.substract: sb.Append("- "); break;
+                    case blast_operation.multiply: sb.Append("* "); break;
+                    case blast_operation.divide: sb.Append("/ "); break;
+                    case blast_operation.and: sb.Append("& "); break;
+                    case blast_operation.or: sb.Append("| "); break;
+                    case blast_operation.not: sb.Append("! "); break;
+                    case blast_operation.xor: sb.Append("^ "); break;
+                    case blast_operation.smaller: sb.Append("< "); break;
+                    case blast_operation.greater: sb.Append("> "); break;
+                    case blast_operation.smaller_equals: sb.Append("<= "); break;
+                    case blast_operation.greater_equals: sb.Append(">= "); break;
+                    case blast_operation.equals: sb.Append("= "); break;
+                    case blast_operation.not_equals: sb.Append("!= "); break;
 
-                    case script_op.ret: sb.Append("return "); break;
-                    case script_op.yield: sb.Append("yield "); break;
+                    case blast_operation.ret: sb.Append("return "); break;
+                    case blast_operation.yield: sb.Append("yield "); break;
 
-                    case script_op.begin: sb.Append("("); break;
-                    case script_op.end: sb.Append(")"); break;
+                    case blast_operation.begin: sb.Append("("); break;
+                    case blast_operation.end: sb.Append(")"); break;
 
-                    case script_op.jz: sb.Append("jz "); break;
-                    case script_op.jnz: sb.Append("jnz "); break;
+                    case blast_operation.jz: sb.Append("jz "); break;
+                    case blast_operation.jnz: sb.Append("jnz "); break;
 
-                    case script_op.jump: sb.Append("jump "); break;
-                    case script_op.jump_back: sb.Append("jumpback "); break;
+                    case blast_operation.jump: sb.Append("jump "); break;
+                    case blast_operation.jump_back: sb.Append("jumpback "); break;
 
-                    case script_op.push: sb.Append("push "); break;
-                    case script_op.pop: sb.Append("pop "); break;
-                    case script_op.pushv: sb.Append("pushv "); break;
-                    case script_op.peek: sb.Append("peek "); break;
-                    case script_op.peekv: sb.Append("peekv "); break;
-                    case script_op.pushf: sb.Append("pushf "); break;
+                    case blast_operation.push: sb.Append("push "); break;
+                    case blast_operation.pop: sb.Append("pop "); break;
+                    case blast_operation.pushv: sb.Append("pushv "); break;
+                    case blast_operation.peek: sb.Append("peek "); break;
+                    case blast_operation.peekv: sb.Append("peekv "); break;
+                    case blast_operation.pushf: sb.Append("pushf "); break;
 
-                    case script_op.fma:
+                    case blast_operation.fma:
                         break;
-                    case script_op.adda:
+                    case blast_operation.adda:
                         break;
-                    case script_op.mula:
+                    case blast_operation.mula:
                         break;
-                    case script_op.diva:
+                    case blast_operation.diva:
                         break;
-                    case script_op.suba:
+                    case blast_operation.suba:
                         break;
-                    case script_op.all:
+                    case blast_operation.all:
                         break;
-                    case script_op.any:
+                    case blast_operation.any:
                         break;
-                    case script_op.abs:
+                    case blast_operation.abs:
                         break;
-                    case script_op.select:
+                    case blast_operation.select:
                         break;
-                    case script_op.random:
+                    case blast_operation.random:
                         break;
-                    case script_op.seed:
+                    case blast_operation.seed:
                         break;
-                    case script_op.max:
+                    case blast_operation.max:
                         break;
-                    case script_op.min:
+                    case blast_operation.min:
                         break;
-                    case script_op.maxa:
+                    case blast_operation.maxa:
                         break;
-                    case script_op.mina:
+                    case blast_operation.mina:
                         break;
-                    case script_op.lerp:
+                    case blast_operation.lerp:
                         break;
-                    case script_op.slerp:
+                    case blast_operation.slerp:
                         break;
-                    case script_op.saturate:
+                    case blast_operation.saturate:
                         break;
-                    case script_op.clamp:
+                    case blast_operation.clamp:
                         break;
-                    case script_op.normalize:
+                    case blast_operation.normalize:
                         break;
-                    case script_op.ceil:
+                    case blast_operation.ceil:
                         break;
-                    case script_op.floor:
+                    case blast_operation.floor:
                         break;
-                    case script_op.frac:
+                    case blast_operation.frac:
                         break;
-                    case script_op.sin:
+                    case blast_operation.sin:
                         break;
-                    case script_op.cos:
+                    case blast_operation.cos:
                         break;
-                    case script_op.tan:
+                    case blast_operation.tan:
                         break;
-                    case script_op.atan:
+                    case blast_operation.atan:
                         break;
-                    case script_op.cosh:
+                    case blast_operation.cosh:
                         break;
-                    case script_op.sinh:
+                    case blast_operation.sinh:
                         break;
-                    case script_op.degrees:
+                    case blast_operation.degrees:
                         break;
-                    case script_op.radians:
+                    case blast_operation.radians:
                         break;
-                    case script_op.sqrt:
+                    case blast_operation.sqrt:
                         break;
 
-                    case script_op.value_0: sb.Append("0 "); break;
-                    case script_op.value_1: sb.Append("1 "); break;
-                    case script_op.value_2: sb.Append("2 "); break;
-                    case script_op.value_3: sb.Append("3 "); break;
-                    case script_op.value_4: sb.Append("4 "); break;
-                    case script_op.value_8: sb.Append("8 "); break;
-                    case script_op.value_10: sb.Append("10 "); break;
-                    case script_op.value_16: sb.Append("16 "); break;
-                    case script_op.value_24: sb.Append("24 "); break;
-                    case script_op.value_30: sb.Append("30 "); break;
-                    case script_op.value_32: sb.Append("32 "); break;
-                    case script_op.value_45: sb.Append("45 "); break;
-                    case script_op.value_64: sb.Append("64 "); break;
-                    case script_op.value_90: sb.Append("90 "); break;
-                    case script_op.value_100: sb.Append("100 "); break;
-                    case script_op.value_128: sb.Append("128 "); break;
-                    case script_op.value_180: sb.Append("180 "); break;
-                    case script_op.value_256: sb.Append("256 "); break;
-                    case script_op.value_270: sb.Append("270 "); break;
-                    case script_op.value_360: sb.Append("360 "); break;
-                    case script_op.value_512: sb.Append("512 "); break;
-                    case script_op.value_1024: sb.Append("1024 "); break;
-                    case script_op.inv_value_2: sb.Append((1f / 2f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_3: sb.Append((1f / 3f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_4: sb.Append((1f / 4f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_8: sb.Append((1f / 8f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_10: sb.Append((1f / 10f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_16: sb.Append((1f / 16f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_24: sb.Append((1f / 24f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_30: sb.Append((1f / 30f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_32: sb.Append((1f / 32f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_45: sb.Append((1f / 45f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_64: sb.Append((1f / 64f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_90: sb.Append((1f / 90f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_100: sb.Append((1f / 100f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_128: sb.Append((1f / 128f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_180: sb.Append((1f / 180f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_256: sb.Append((1f / 256f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_270: sb.Append((1f / 270f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_360: sb.Append((1f / 360f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_512: sb.Append((1f / 512f).ToString("0.000") + " "); break;
-                    case script_op.inv_value_1024: sb.Append((1f / 1024f).ToString("0.000") + " "); break;
+                    case blast_operation.value_0: sb.Append("0 "); break;
+                    case blast_operation.value_1: sb.Append("1 "); break;
+                    case blast_operation.value_2: sb.Append("2 "); break;
+                    case blast_operation.value_3: sb.Append("3 "); break;
+                    case blast_operation.value_4: sb.Append("4 "); break;
+                    case blast_operation.value_8: sb.Append("8 "); break;
+                    case blast_operation.value_10: sb.Append("10 "); break;
+                    case blast_operation.value_16: sb.Append("16 "); break;
+                    case blast_operation.value_24: sb.Append("24 "); break;
+                    case blast_operation.value_30: sb.Append("30 "); break;
+                    case blast_operation.value_32: sb.Append("32 "); break;
+                    case blast_operation.value_45: sb.Append("45 "); break;
+                    case blast_operation.value_64: sb.Append("64 "); break;
+                    case blast_operation.value_90: sb.Append("90 "); break;
+                    case blast_operation.value_100: sb.Append("100 "); break;
+                    case blast_operation.value_128: sb.Append("128 "); break;
+                    case blast_operation.value_180: sb.Append("180 "); break;
+                    case blast_operation.value_256: sb.Append("256 "); break;
+                    case blast_operation.value_270: sb.Append("270 "); break;
+                    case blast_operation.value_360: sb.Append("360 "); break;
+                    case blast_operation.value_512: sb.Append("512 "); break;
+                    case blast_operation.value_1024: sb.Append("1024 "); break;
+                    case blast_operation.inv_value_2: sb.Append((1f / 2f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_3: sb.Append((1f / 3f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_4: sb.Append((1f / 4f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_8: sb.Append((1f / 8f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_10: sb.Append((1f / 10f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_16: sb.Append((1f / 16f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_24: sb.Append((1f / 24f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_30: sb.Append((1f / 30f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_32: sb.Append((1f / 32f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_45: sb.Append((1f / 45f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_64: sb.Append((1f / 64f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_90: sb.Append((1f / 90f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_100: sb.Append((1f / 100f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_128: sb.Append((1f / 128f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_180: sb.Append((1f / 180f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_256: sb.Append((1f / 256f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_270: sb.Append((1f / 270f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_360: sb.Append((1f / 360f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_512: sb.Append((1f / 512f).ToString("0.000") + " "); break;
+                    case blast_operation.inv_value_1024: sb.Append((1f / 1024f).ToString("0.000") + " "); break;
 
-                    case script_op.ex_op:
+                    case blast_operation.ex_op:
                         i++;
-                        extended_script_op ex = (extended_script_op)bytes[i];
+                        extended_blast_operation ex = (extended_blast_operation)bytes[i];
                         switch (ex)
                         {
-                            case extended_script_op.nop: break;
-                            case extended_script_op.exp:
-                            case extended_script_op.log2:
-                            case extended_script_op.exp10:
-                            case extended_script_op.log10:
-                            case extended_script_op.logn:
-                            case extended_script_op.cross:
-                            case extended_script_op.dot:
-                            case extended_script_op.ex:
-                            case extended_script_op.rsqrt:
-                            case extended_script_op.pow:
+                            case extended_blast_operation.nop: break;
+                            case extended_blast_operation.exp:
+                            case extended_blast_operation.log2:
+                            case extended_blast_operation.exp10:
+                            case extended_blast_operation.log10:
+                            case extended_blast_operation.logn:
+                            case extended_blast_operation.cross:
+                            case extended_blast_operation.dot:
+                            case extended_blast_operation.ex:
+                            case extended_blast_operation.rsqrt:
+                            case extended_blast_operation.pow:
                                 sb.Append($"{ex} ");
                                 break;
 
-                            case extended_script_op.call:
+                            case extended_blast_operation.call:
                                 break;
                         }
                         break;
@@ -1174,9 +1175,9 @@ namespace NSS.Blast
             return sb.ToString();
         }
 
-        #endregion 
+#endregion
 
-        #region Execute Scripts (UNITY)
+#region Execute Scripts (UNITY)
 #if !NOT_USING_UNITY
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
@@ -1261,9 +1262,9 @@ namespace NSS.Blast
             return 0; 
         }
 #endif
-        #endregion
+#endregion
 
-        #region Runners 
+#region Runners 
 
         static Dictionary<int, runner> runners;
 
@@ -1362,13 +1363,18 @@ namespace NSS.Blast
 
 #endregion
 
-        #region Bytecode Packages 
-        static Dictionary<int, BlastScriptPackage> _bytecode_packages = null;
-        public Dictionary<int, BlastScriptPackage> BytecodePackages
+#region Bytecode Packages 
+        static Dictionary<int, BlastScriptPackage> _bytecode_packages = new Dictionary<int, BlastScriptPackage>();
+        static public int BytecodePackageCount => _bytecode_packages == null ? 0 : _bytecode_packages.Count;
+
+        /// <summary>
+        /// Using this list is not thread safe 
+        /// </summary>
+        static public Dictionary<int, BlastScriptPackage> BytecodePackages
         {
             get
             {
-                if (is_created)
+                if (_bytecode_packages == null)
                 {
                     lock (mt_lock)
                     {
@@ -1376,21 +1382,21 @@ namespace NSS.Blast
                         {
                             _bytecode_packages = new Dictionary<int, BlastScriptPackage>();
                         }
-                        return _bytecode_packages;
                     }
                 }
-                return null;
+                return _bytecode_packages;
             }
         }
+
 
         /// <summary>
         /// add a package to the internal packages repo
         /// </summary>
         /// <param name="pkg">the package to add</param>
         /// <returns>the nr of packages in the repo after adding this one or 0 on failure</returns>
-        public int AddPackage(int script_id, BlastScriptPackage pkg)
+        static public int AddPackage(int script_id, BlastScriptPackage pkg)
         {
-            if (is_created && pkg != null)
+            if (pkg != null)
             {
                 lock (mt_lock)
                 {
@@ -1412,9 +1418,9 @@ namespace NSS.Blast
             return 0;
         }
 
-        public BlastScriptPackage GetPackage(int script_id)
+        static public BlastScriptPackage GetPackage(int script_id)
         {
-            if (!is_created || script_id <= 0) return null;
+            if (script_id <= 0) return null;
             lock (mt_lock)
             {
                 if (_bytecode_packages != null)
@@ -1429,9 +1435,9 @@ namespace NSS.Blast
             return null;
         }
 
-     #endregion
+#endregion
 
-        #region Runtime Registration/Compilation of scripts 
+#region Runtime Registration/Compilation of scripts 
 
         static public int RegisterAndCompile(Blast blast, BlastScript script)
         {
@@ -1444,9 +1450,14 @@ namespace NSS.Blast
             if (pkg == null) return 0;
 
             // store package 
-            blast.AddPackage(id, pkg);
+            Blast.AddPackage(id, pkg);
 
             return id;
+        }
+
+        public int RegisterAndCompile(string code, string name = null, int id = 0)
+        {
+            return RegisterAndCompile(this, code, name, id); 
         }
 
         static public int RegisterAndCompile(Blast blast, string code, string name = null, int id = 0)
@@ -1460,7 +1471,7 @@ namespace NSS.Blast
             BlastScriptPackage pkg = BlastCompiler.CompilePackage(blast, script);
             if (pkg == null) return 0;
 
-            blast.AddPackage(id, pkg);
+            Blast.AddPackage(id, pkg);
             return id;
         }
 
@@ -1481,7 +1492,7 @@ namespace NSS.Blast
         }
 #endif
 
-        #endregion
+#endregion
 
     }
 

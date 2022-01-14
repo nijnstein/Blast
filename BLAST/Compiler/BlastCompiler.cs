@@ -110,8 +110,8 @@ namespace NSS.Blast.Compiler
        //   (__)\       )\/\
        //       ||----w |
        //       ||     ||
-        public const byte opt_value = (byte)script_op.pi;
-        public const byte opt_ident = (byte)script_op.id;
+        public const byte opt_value = (byte)blast_operation.pi;
+        public const byte opt_ident = (byte)blast_operation.id;
 
         /// <summary>
         /// Default compilation setup 
@@ -285,7 +285,7 @@ namespace NSS.Blast.Compiler
             // should add 20 bytes / 5 floats if supporting yield 
             if(result.CompilerOptions.SupportYield)
             {
-                if (result.root != null && result.root.CheckIfFunctionIsUsedInTree(script_op.yield))
+                if (result.root != null && result.root.CheckIfFunctionIsUsedInTree(blast_operation.yield))
                 {
                     yield = 20;
                     result.LogTrace("Package.EstimateStackSize: reserving 20 bytes of stack for supporting Yield.");

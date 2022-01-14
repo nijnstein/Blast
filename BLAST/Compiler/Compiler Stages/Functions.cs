@@ -7,8 +7,8 @@
         public string[] Parameters { get; set; }
         public readonly bool IsReserved;
 
-        public readonly script_op ScriptOp;
-        public readonly extended_script_op ExtendedScriptOp;
+        public readonly blast_operation ScriptOp;
+        public readonly extended_blast_operation ExtendedScriptOp;
 
         public readonly ExternalFunctionCall ExternalFunction;
 
@@ -30,7 +30,7 @@
 
         public string CSName { get; set; }
         
-        public bool IsExternalCall => ExternalFunction != null && ExtendedScriptOp == extended_script_op.call;
+        public bool IsExternalCall => ExternalFunction != null && ExtendedScriptOp == extended_blast_operation.call;
         public int ParameterCount {  get { return Parameters != null ? Parameters.Length : 0; } }
 
         public override string ToString()
@@ -38,12 +38,12 @@
             return $"Function Definition: {FunctionId} {Match}, parameter count: {ParameterCount}"; 
         }
 
-        public ScriptFunctionDefinition(int id, string match, int min_parameter_count, int max_parameter_count, int return_vector_size = 0, int input_vector_size = 0, extended_script_op extended_op = extended_script_op.nop, ExternalFunctionCall external_call = null, params string[] parameters)
+        public ScriptFunctionDefinition(int id, string match, int min_parameter_count, int max_parameter_count, int return_vector_size = 0, int input_vector_size = 0, extended_blast_operation extended_op = extended_blast_operation.nop, ExternalFunctionCall external_call = null, params string[] parameters)
         {
             FunctionId = id;
             Match = match;
             Parameters = parameters;
-            ScriptOp = script_op.ex_op;
+            ScriptOp = blast_operation.ex_op;
             ExtendedScriptOp = extended_op;
 
             if (external_call != null)
@@ -75,13 +75,13 @@
             }
         }
 
-        public ScriptFunctionDefinition(int id, string match, int min_parameter_count, int max_parameter_count, int return_vector_size = 0, int input_vector_size = 0, script_op op = script_op.nop, params string[] parameters)
+        public ScriptFunctionDefinition(int id, string match, int min_parameter_count, int max_parameter_count, int return_vector_size = 0, int input_vector_size = 0, blast_operation op = blast_operation.nop, params string[] parameters)
         {
             FunctionId = id;
             Match = match;
             Parameters = parameters;
             ScriptOp = op;
-            ExtendedScriptOp = extended_script_op.nop;
+            ExtendedScriptOp = extended_blast_operation.nop;
 
             MinParameterCount = min_parameter_count;
             MaxParameterCount = max_parameter_count;

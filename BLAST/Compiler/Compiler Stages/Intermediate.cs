@@ -11,8 +11,8 @@ namespace NSS.Blast.Compiler
     /// </summary>
     unsafe public struct BlastIntermediate
     {
-        const byte opt_id = (byte)script_op.id;
-        const byte opt_value = (byte)script_op.pi;
+        const byte opt_id = (byte)blast_operation.id;
+        const byte opt_value = (byte)blast_operation.pi;
 
         // large max size 
         public const int data_capacity = 256; // in elements

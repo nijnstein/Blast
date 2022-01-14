@@ -4,7 +4,7 @@
     /// <summary>
     /// instruction set 
     /// </summary>
-    public enum script_op : byte
+    public enum blast_operation : byte
     {
         nop = 0,
         assign = 1,
@@ -185,7 +185,7 @@
         ex_op = 255           // extend into a multi token instruction  
     }
 
-    public enum extended_script_op : byte
+    public enum extended_blast_operation : byte
     {
         nop = 0,
 
@@ -216,10 +216,10 @@
         Divide,
         Multiply,
         Equals,
-
-        Ternary,        // ?           todo
-        TernaryOption,  // :           todo 
-
+#if SUPPORT_TERNARY
+        Ternary,        // ?          
+#endif
+        TernaryOption,  // besides being part of the ternary it also is part of the case statement
         SmallerThen,
         GreaterThen,
         SmallerThenEquals,
@@ -258,10 +258,13 @@
     {
         public BlastScriptToken Token { get; set; }
         public char Match { get; set; }
-        public BlastScriptTokenDefinition(BlastScriptToken token, char match)//, bool allow_leading_whitespace, bool allow_trailing_whitespace)
+
+        public string Description { get; set; }
+        public BlastScriptTokenDefinition(BlastScriptToken token, char match, string description)
         {
             Token = token;
             Match = match;
+            Description = description;
         }
     }
 

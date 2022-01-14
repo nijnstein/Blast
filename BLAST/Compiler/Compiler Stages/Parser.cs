@@ -1402,8 +1402,10 @@ namespace NSS.Blast.Compiler.Stage
                             case BlastScriptToken.Divide:
                             case BlastScriptToken.Multiply:
                             case BlastScriptToken.Equals:
+#if SUPPORT_TERNARY
                             case BlastScriptToken.Ternary:
                             case BlastScriptToken.TernaryOption:
+#endif
                             case BlastScriptToken.SmallerThen:
                             case BlastScriptToken.GreaterThen:
                             case BlastScriptToken.SmallerThenEquals:
@@ -1534,7 +1536,7 @@ namespace NSS.Blast.Compiler.Stage
                         // should we raise error ?  or just allow it TODO 
 #if DEBUG
                         data.LogTrace(", used in non parameter sequence");
-#endif 
+#endif
                     }
                 }
 
@@ -1604,8 +1606,10 @@ namespace NSS.Blast.Compiler.Stage
                     case BlastScriptToken.Divide:
                     case BlastScriptToken.Multiply:
                     case BlastScriptToken.Equals:
+#if SUPPORT_TERNARY
                     case BlastScriptToken.Ternary:
                     case BlastScriptToken.TernaryOption:
+#endif
                     case BlastScriptToken.SmallerThen:
                     case BlastScriptToken.GreaterThen:
                     case BlastScriptToken.SmallerThenEquals:
@@ -1969,14 +1973,14 @@ namespace NSS.Blast.Compiler.Stage
                         // its a constant, only lookup the positive part of values, if a match on negated we add back a minus op
                         string value = is_negated ? ast_node.identifier.Substring(1) : ast_node.identifier;
 
-                        script_op op = data.Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
-                        if (op == script_op.nan)
+                        blast_operation op = data.Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
+                        if (op == blast_operation.nan)
                         {
                             data.LogError($"parse.map_identifiers: ({ast_node.identifier}) could not convert to a float or use as mathematical constant (pi, epsilon, infinity, minflt, euler)");
                             return false;
                         }
                         // get / create variable, reference count is updated accordingly 
-                        if (is_constant && op != script_op.nop)
+                        if (is_constant && op != blast_operation.nop)
                         {
                             // dont create variables for constant ops 
                             ast_node.is_constant = true;

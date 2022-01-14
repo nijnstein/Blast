@@ -175,8 +175,8 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 switch (current.function.ScriptOp)
                                 {
-                                    case script_op.mina:
-                                    case script_op.maxa:
+                                    case blast_operation.mina:
+                                    case blast_operation.maxa:
                                         // these always return a single value 
                                         current.vector_size = 1;
                                         break;
