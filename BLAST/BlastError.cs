@@ -32,6 +32,10 @@
         error_vector_size_not_supported = -25,
         datasegment_size_larger_then_target = -26,
         compile_packaging_error = -27,
+        ssmd_invalid_packagemode = -28,
+        error_unsupported_operation_in_ssmd_root = -29,
+        ssmd_error_expecting_value = -30,
+        ssmd_error_unsupported_vector_size = -31,
     }
 
     public static class BlastErrorTranslator

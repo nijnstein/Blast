@@ -412,13 +412,14 @@ namespace NSS.Blast
         /// <param name="value">the value to match</param>
         /// <param name="constant_epsilon">the epsilon to use matching constant values</param>
         /// <returns>nop on no match, nan of not a string match and no float, operation on match</returns>
+        [BurstDiscard]
         public blast_operation GetConstantValueOperation(string value, float constant_epsilon = 0.0001f)
         {
             // prevent matching to epsilon and/or min flt values (as they are very close to 0) 
             if (value == "0") return blast_operation.value_0; 
 
             // constant names should have been done earlier. check anyway
-            blast_operation constant_op = IsSystemConstant(value);
+            blast_operation constant_op = IsNamedSystemConstant(value);
             if (constant_op != blast_operation.nop)
             {
                 return constant_op;
@@ -444,11 +445,10 @@ namespace NSS.Blast
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public blast_operation IsSystemConstant(string name)
+        /// check if name matches a named system constant like  'PI' or 'NaN'
+        /// </summary>                                                   
+        [BurstDiscard]
+        public blast_operation IsNamedSystemConstant(string name)
         {
             switch (name.Trim().ToLower())
             {
@@ -462,7 +462,11 @@ namespace NSS.Blast
             }
         }
 
-        public float GetSystemConstantFloatValue(string name)
+        /// <summary>
+        /// get the value of a named system constant 
+        /// </summary>
+        [BurstDiscard]
+        public float GetNamedSystemConstantValue(string name)
         {
             switch (name.Trim().ToLower())
             {
@@ -600,14 +604,7 @@ namespace NSS.Blast
             // would be nice to have a parameter giving min and max vector size 
             new ScriptFunctionDefinition(32, "normalize", 1, 1, 0, 0, blast_operation.normalize, "a"),
             new ScriptFunctionDefinition(30, "saturate", 1, 1, 0, 0, blast_operation.saturate, "a"),
-
-
-
             new ScriptFunctionDefinition(31, "clamp", 3, 3, 0, 0, blast_operation.clamp, "a", "min", "max"),
-
-                           
-
-
 
             new ScriptFunctionDefinition(41, "log2", 1, 1,  0, 0, extended_blast_operation.log2, null, "a", "b"),
             new ScriptFunctionDefinition(42, "log10", 1, 1, 0, 0, extended_blast_operation.log10, null, "a"),
@@ -618,10 +615,6 @@ namespace NSS.Blast
             new ScriptFunctionDefinition(39, "dot", 2, 2, 1, 0, extended_blast_operation.dot, null, "a", "b"),
 
             new ScriptFunctionDefinition(45, "return", 0, 0,  0, 0,blast_operation.ret),
-
-
-
-
 
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Push, "push", 1, 4, 0, 0,blast_operation.push, "n", "a"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushFunction, "pushf", 1, 1, 0, 0,blast_operation.pushf, "n", "a"),

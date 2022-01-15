@@ -990,7 +990,7 @@ namespace NSS.Blast.Compiler
                 }
 
                 // if it encodes to some system constant op then get its value 
-                float f = data.Blast.GetSystemConstantFloatValue(this.identifier);
+                float f = data.Blast.GetNamedSystemConstantValue(this.identifier);
                 if (float.IsNaN(f))
                 {
                     // not a system constant: we should be able to just parse it 

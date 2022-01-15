@@ -39,17 +39,17 @@ namespace NSS.Blast.Interpretor
         /// <summary>
         /// >= opt_value < opt_id is opcode for constant
         /// </summary>
-        const byte opt_value = (byte)blast_operation.pi;
+        public const byte opt_value = (byte)blast_operation.pi;
 
         /// <summary>
         /// >= opt_id is opcode for parameter
         /// </summary>
-        const byte opt_id = (byte)blast_operation.id;
+        public const byte opt_id = (byte)blast_operation.id;
 
         /// <summary>
         /// maxiumum iteration count, usefull to avoid endless loop bugs
         /// </summary>
-        const int max_iterations = 10000;
+        public const int max_iterations = 10000;
 
         /// <summary>
         /// pointer to engine data
@@ -4959,16 +4959,16 @@ namespace NSS.Blast.Interpretor
         /// <param name="register"></param>
         /// <param name="code_pointer"></param>
         /// <returns></returns>
-        unsafe int execute([NoAlias]BlastEngineData* blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller, in float4 register, ref int code_pointer)
+        unsafe int execute([NoAlias]BlastEngineData* blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller)
         {
-            int iterations = 0;
-            float4 f4_register = register;
+            int iterations = 0;                          
 
             engine_ptr = blast; 
             environment_ptr = environment;
             caller_ptr = caller; 
         
             float* fdata = (float*)data;
+            float4 f4_register = 0; 
 
             // main loop 
             while (code_pointer < package.CodeSize)

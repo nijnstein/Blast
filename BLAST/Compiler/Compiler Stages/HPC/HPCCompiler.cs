@@ -29,8 +29,8 @@ namespace NSS.Blast.Compiler.Stage
                 case BlastScriptToken.Equals: return "==";
 #if SUPPORT_TERNARY
                 case BlastScriptToken.Ternary: return "?";
-                case BlastScriptToken.TernaryOption: return ":"; 
 #endif
+                case BlastScriptToken.TernaryOption: return ":"; 
                 case BlastScriptToken.SmallerThen: return "<";
                 case BlastScriptToken.GreaterThen: return ">";
                 case BlastScriptToken.SmallerThenEquals: return "<="; 

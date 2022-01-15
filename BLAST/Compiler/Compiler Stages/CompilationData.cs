@@ -550,7 +550,6 @@ namespace NSS.Blast.Compiler
 #endregion
 
 
-        // -- data used internally while compiling ----------------------------------------------------
         public node root;
         public IMByteCodeList code; 
 
@@ -572,8 +571,6 @@ namespace NSS.Blast.Compiler
         public List<BlastVariableMapping> Outputs { get; set; }
         public Dictionary<string, string> Validations { get; set; }
         public List<Tuple<BlastScriptToken, string>> Tokens { get; set; }
-
-        // -- getter methods & props ------------------------------------------------------------------
 
         /// <summary>
         /// create a holder for variable data collected during compilation 

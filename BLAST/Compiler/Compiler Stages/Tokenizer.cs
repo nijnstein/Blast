@@ -302,7 +302,7 @@ namespace NSS.Blast.Compiler.Stage
                             else
                             {
                                 // it may also not be a constant name 
-                                if (data.Blast.IsSystemConstant(def_key) != blast_operation.nop)
+                                if (data.Blast.IsNamedSystemConstant(def_key) != blast_operation.nop)
                                 {
                                     data.LogError($"tokenize: #define identifier name: <{def_key}> is already mapped to a system constant");
                                 }

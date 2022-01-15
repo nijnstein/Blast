@@ -254,6 +254,9 @@
         Default
     }
 
+    /// <summary>
+    /// definition of a token used in blast script 
+    /// </summary>
     public class BlastScriptTokenDefinition
     {
         public BlastScriptToken Token { get; set; }

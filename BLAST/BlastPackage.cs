@@ -7,7 +7,6 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace NSS.Blast
 {
@@ -116,12 +115,32 @@ namespace NSS.Blast
 
 
     /// <summary>
+    /// a pointer to meta-data-stack memory
+    /// </summary>
+    [BurstCompile]
+    unsafe public struct BlastMetaDataStack
+    {
+    }
+
+    /// <summary>
+    /// data for ssmd operation modes: data-stack only
+    /// </summary>
+    [BurstCompile]
+    unsafe public struct BlastSSMDDataStack { }
+
+
+   
+
+    /// <summary>
     /// the bare minimum data to package a script for execution 
     /// </summary>
     [BurstCompile]
     unsafe public struct BlastPackageData
     {
+        [NoAlias]
         public IntPtr CodeSegmentPtr;
+
+        [NoAlias]
         public IntPtr P2;
         //-- 16 bytes
 
@@ -252,7 +271,7 @@ namespace NSS.Blast
         }
 
         /// <summary>
-        /// the size if stack would be included
+        /// the size if stack would be included, while on normal packaging mode there is no seperate buffer there is a size
         /// </summary>
         public readonly ushort DataSegmentSize
         {
@@ -266,12 +285,14 @@ namespace NSS.Blast
 #endif 
                         return 0;
 
-                    case BlastPackageMode.Normal: return 0;
+                    case BlastPackageMode.Normal: return (ushort)(O4 - O1);
                     case BlastPackageMode.SSMD: return O4;
                     case BlastPackageMode.Entity: return O4;
                 }
             }
         }
+
+        public readonly int SSMDDataSize => DataSegmentSize - MetadataSize; 
 
         /// <summary>
         /// the size with stack included depending on flags
@@ -433,6 +454,205 @@ namespace NSS.Blast
         public readonly bool IsAllocated => (Allocator)Allocator == Unity.Collections.Allocator.None && CodeSegmentPtr != IntPtr.Zero;
 
         #endregion
+
+        #region Cloning Util
+
+        public BlastPackageData Clone()
+        {
+            return Clone((Unity.Collections.Allocator)Allocator); 
+        }
+
+        public BlastPackageData Clone(Allocator allocator)
+        {
+            BlastPackageData clone = default;
+            clone.PackageMode = PackageMode;
+            clone.LanguageVersion = LanguageVersion;
+            clone.Flags = Flags;
+            clone.Allocator = (byte)allocator;
+            clone.O1 = O1;
+            clone.O2 = O2;
+            clone.O3 = O3;
+            clone.O4 = O4;
+
+            if(IsAllocated)
+            {
+                switch (PackageMode)
+                {
+                    case BlastPackageMode.Normal:
+                        clone.CodeSegmentPtr = new IntPtr(UnsafeUtils.Malloc(CodeSegmentSize, 8, allocator));
+                        UnsafeUtils.MemCpy(clone.Code, Code, CodeSegmentSize);
+
+                        clone.P2 = IntPtr.Zero;
+                        break;
+                    case BlastPackageMode.SSMD:
+                    case BlastPackageMode.Entity:
+                        clone.CodeSegmentPtr = new IntPtr(UnsafeUtils.Malloc(CodeSegmentSize, 8, allocator));
+                        UnsafeUtils.MemCpy(clone.Code, Code, CodeSegmentSize);
+
+                        clone.P2 = new IntPtr(UnsafeUtils.Malloc(clone.DataSegmentSize, 8, allocator));
+                        UnsafeUtils.MemCpy(clone.P2.ToPointer(), P2.ToPointer(), clone.DataSegmentSize); 
+                        break;
+
+                    default:
+                        Debug.LogError($"BlastPackageData.Clone: PackageMode {PackageMode} is not supported");
+                        break; 
+                }
+            }
+            return clone; 
+        }
+
+
+        /// <summary>
+        /// clone n data segments into 1 block and index it with pointers 
+        /// - the first block contains the root pointer which can be freed 
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        unsafe public BlastMetaDataStack* CloneData(int n = 1)
+        {
+            return CloneData(n, (Unity.Collections.Allocator)Allocator);
+        }
+
+        /// <summary>
+        /// clone n data segments into 1 block and index it with pointers 
+        /// - the first block contains the root pointer which can be freed 
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        unsafe public BlastSSMDDataStack* CloneDataStack(int n = 1)
+        {
+            return CloneDataStack(n, (Unity.Collections.Allocator)Allocator);
+        }
+
+        bool CheckPackageModeForDataCloning()
+        {
+            if (PackageMode == BlastPackageMode.Compiler)
+            {
+                Debug.LogError($"CloneData: packagemode {PackageMode} not supported");
+                return false;
+            }
+            return true; 
+        }
+
+        /// <summary>
+        /// clone n segments into 1 memory block and index it with pointers 
+        /// - the first block contains the root pointer to free later
+        /// </summary>
+        unsafe public BlastMetaDataStack* CloneData(int n, Allocator allocator)
+        {
+            if (!CheckPackageModeForDataCloning()) return null; 
+
+            int byte_size = DataSegmentSize;
+            int total_byte_size = byte_size * n;
+
+            BlastMetaDataStack* data = (BlastMetaDataStack*)UnsafeUtils.Malloc(total_byte_size, 8, (Unity.Collections.Allocator)Allocator);
+
+            return CloneData(n, data); 
+        }
+
+
+        /// <summary>
+        /// clone n segments into 1 memory block and index it with pointers 
+        /// - the first block contains the root pointer to free later
+        /// </summary>
+        unsafe public BlastSSMDDataStack* CloneDataStack(int n, Allocator allocator)
+        {
+            if (!CheckPackageModeForDataCloning()) return null;
+
+            int byte_size = DataSegmentSize - MetadataSize;
+            int total_byte_size = byte_size * n;
+
+            BlastSSMDDataStack* data = (BlastSSMDDataStack*)UnsafeUtils.Malloc(total_byte_size, 8, (Unity.Collections.Allocator)Allocator);
+
+            return CloneDataStack(n, data);
+        }
+        /// <summary>
+        /// clone n segments into 1 memory block and index it with pointers 
+        /// - the first block contains the root pointer to free later
+        /// </summary>
+        unsafe public BlastMetaDataStack* CloneData(int n, BlastMetaDataStack* data)
+        {
+            if (!CheckPackageModeForDataCloning()) return null;
+
+            int byte_size = DataSegmentSize;
+
+            // replicate memory 
+            switch (PackageMode)
+            {
+                case BlastPackageMode.Normal:
+                case BlastPackageMode.Entity:
+                    // normal: continues pointer from O1 -> O4 (which is start of metadata)
+                    // entity: continues pointer from 0 -> O4 (again from metadata start)
+                    UnsafeUtils.MemCpyReplicate(data, Metadata, byte_size, n);
+                    break;
+
+                case BlastPackageMode.SSMD:
+
+                    // copy 1st meta data & data/stack
+                    UnsafeUtils.MemCpy(data, Metadata, MetadataSize);
+                    UnsafeUtils.MemCpy(data, Data, DataSize);
+
+                    // replicate from there 
+                    if (n > 1)
+                    {
+                        UnsafeUtils.MemCpyReplicate(data + byte_size, data, byte_size, n - 1);
+                    }
+                    break;
+            }
+
+            return (BlastMetaDataStack*)data;
+        }
+
+        /// <summary>
+        /// clone n segments into 1 memory block and index it with pointers 
+        /// - the first block contains the root pointer to free later
+        /// </summary>
+        unsafe public BlastSSMDDataStack* CloneDataStack(int n, BlastSSMDDataStack* data)
+        {
+            if (!CheckPackageModeForDataCloning()) return null;
+
+            int byte_size = SSMDDataSize;
+
+            // replicate memory 
+            switch (PackageMode)
+            {
+                case BlastPackageMode.SSMD:
+                case BlastPackageMode.Normal:
+                case BlastPackageMode.Entity:
+                    // normal: continues pointer from O1 -> O4 (which is start of metadata)
+                    // entity: continues pointer from 0 -> O4 (again from metadata start)
+                    UnsafeUtils.MemCpyReplicate(data, DataSegmentPtr.ToPointer(), byte_size, n);
+                    break;
+            }
+
+            return data;
+        }
+
+
+        /// <summary>
+        /// free memory used by an ssmd data block
+        /// </summary>
+        unsafe public static void FreeData(BlastMetaDataStack* data, Allocator allocator)
+        {
+            if (data != null)
+            {
+                UnsafeUtils.Free(data, allocator);
+                data = null;
+            }
+        }
+        /// <summary>
+        /// free memory used by an ssmd data block
+        /// </summary>
+        unsafe public static void FreeData(BlastSSMDDataStack* data, Allocator allocator)
+        {
+            if (data != null)
+            {
+                UnsafeUtils.Free(data, allocator);
+                data = null;
+            }
+        }
+
+        #endregion 
 
         /// <summary>
         /// free any memory allocated 
