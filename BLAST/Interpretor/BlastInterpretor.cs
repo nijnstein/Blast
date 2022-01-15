@@ -202,8 +202,8 @@ namespace NSS.Blast.Interpretor
             }
 
             // killing yield.. 
-            int code_pointer = 0;
-            return execute(blast, environment, caller, register, ref code_pointer); // ref package->code_pointer);
+            /*int */ code_pointer = 0;
+            return execute(blast, environment, caller); // ref package->code_pointer);
         }
 
         /// <summary>

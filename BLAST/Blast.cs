@@ -14,6 +14,7 @@ using Unity.Mathematics;
 using System.Text;
 using Unity.Burst;
 using NSS.Blast.Interpretor;
+using NSS.Blast.SSMD;
 
 #if !NOT_USING_UNITY
 using Unity.Entities;
@@ -189,14 +190,20 @@ namespace NSS.Blast
         [BurstDiscard]
         public static int Execute(BlastScriptPackage package)
         {
+            return Execute(package.Package); 
+        }
+
+        [BurstDiscard]
+        public static int Execute(BlastPackageData package)
+        {
             unsafe
             {
                 Blast blast = Blast.Create(Allocator.Temp);
                 try
                 {
                     BlastInterpretor blaster = default;
-                    blaster.SetPackage(package.Package);
-                    return blaster.Execute(blast.Engine); 
+                    blaster.SetPackage(package);
+                    return blaster.Execute(blast.Engine);
                 }
                 finally
                 {
@@ -227,6 +234,18 @@ namespace NSS.Blast
             BlastInterpretor blaster = default;
             blaster.SetPackage(package.Package);
             return blaster.Execute(Engine, environment, caller);
+        }
+
+
+        [BurstDiscard]
+        public int Execute(BlastPackageData package, IntPtr environment, BlastSSMDDataStack* ssmd_data, int ssmd_datacount)
+        {
+            Assert.IsTrue(package.IsAllocated, "package not allocated"); 
+            Assert.IsTrue(package.PackageMode == BlastPackageMode.SSMD, "only ssmd packages are supported for this execute overload"); 
+
+            BlastSSMDInterpretor blaster = default;
+            blaster.SetPackage(package);
+            return blaster.Execute((BlastEngineData*)Engine, environment, ssmd_data, ssmd_datacount); 
         }
 
 

@@ -367,7 +367,7 @@ namespace NSS.Blast.Compiler
         /// <param name="stack_size">size of stacksegement in bytes</param>
         /// <param name="flags">flags: alignment, stack</param>
         /// <returns>blast package data</returns>
-        static BlastPackageData PackageNormal(CompilationData cdata, Allocator allocator, int code_size, int metadata_size, int data_size, int stack_size, BlastPackageFlags flags = BlastPackageFlags.None)
+        static BlastPackageData PackageNormal(CompilationData cdata, int code_size, int metadata_size, int data_size, int stack_size, BlastPackageFlags flags = BlastPackageFlags.None)
         {
             Assert.IsTrue(metadata_size == (data_size + stack_size) / 4, 
                 $"PackageNormal: metadata size misaligned with combined datastack size, there are {metadata_size} entries in metadata while there are {((data_size + stack_size) / 4)} combined data/stack entries.");
@@ -420,8 +420,8 @@ namespace NSS.Blast.Compiler
             // allocate 
             unsafe
             {
-                data.CodeSegmentPtr = new IntPtr(UnsafeUtils.Malloc(package_size, 8, allocator));
-                data.Allocator = (byte)allocator;
+                data.CodeSegmentPtr = new IntPtr(UnsafeUtils.Malloc(package_size, 8, cdata.CompilerOptions.PackageAllocator));
+                data.Allocator = (byte)cdata.CompilerOptions.PackageAllocator;
 
                 // copy code segment 
                 int i = 0;
@@ -470,6 +470,113 @@ namespace NSS.Blast.Compiler
         }
 
 
+        /// <summary>
+        /// package for ssmd use:  [code-metadata] [data-stack]
+        /// </summary>
+        /// <param name="cdata">compiler result data</param>
+        /// <param name="allocator"></param>
+        /// <param name="code_size"></param>
+        /// <param name="metadata_size"></param>
+        /// <param name="data_size"></param>
+        /// <param name="stack_size"></param>
+        /// <param name="flags"></param>
+        /// <returns></returns>
+        static BlastPackageData PackageSSMD(CompilationData cdata, int code_size, int metadata_size, int data_size, int stack_size, BlastPackageFlags flags = BlastPackageFlags.None)
+        {
+            Assert.IsTrue(metadata_size == (data_size + stack_size) / 4,
+                $"PackageSSMD: metadata size misaligned with combined datastack size, there are {metadata_size} entries in metadata while there are {((data_size + stack_size) / 4)} combined data/stack entries.");
+
+            bool a8 = (flags & BlastPackageFlags.Aligned8) == BlastPackageFlags.Aligned8;
+            bool has_stack = (flags & BlastPackageFlags.NoStack) == BlastPackageFlags.NoStack;
+
+            /// SSMD Package with code & metadata seperate from data&stack
+            /// 
+            /// - SSMD requirement: while data changes, its intent does not so metadata is shared
+            /// 
+            /// ? could allow branches and split from there? 
+            /// 
+            /// [----CODE----|----METADATA----]       [----DATA----|----STACK----]
+            ///              1                2                    3             4
+            /// 
+            /// 1 = metadata offset 
+            /// 2 = codesegment size 
+            /// 3 = stack offset 
+            /// 4 = datasegment size 
+            /// 
+            /// prop stacksize (in elements) => (datasegment size - stack_offset) / 4
+
+            int align_stack = 0;
+            if (a8 && has_stack)
+            {
+                // no use to align to 4 as stack and data are always a multiple of that 
+                while (((data_size + align_stack) % 8) != 0) align_stack++;
+            }
+
+            // init package data
+            BlastPackageData data = default;
+            data.PackageMode = BlastPackageMode.SSMD;
+            data.Flags = flags;
+            data.LanguageVersion = BlastLanguageVersion.BS1;
+            data.Allocator = (byte)cdata.CompilerOptions.PackageAllocator;
+
+            // setup code and segment data
+            data.O1 = (ushort)code_size;
+            data.O2 = (ushort)(code_size + metadata_size);
+            data.O3 = (ushort)(data_size + align_stack);
+            data.O4 = (ushort)(data_size + align_stack + stack_size);
+
+            unsafe 
+            { 
+                data.CodeSegmentPtr = new IntPtr(UnsafeUtils.Malloc(code_size + metadata_size, 8, cdata.CompilerOptions.PackageAllocator));
+
+                // copy code segment 
+                int i = 0;
+                while (i < code_size)
+                {
+                    data.Code[i] = cdata.Executable.code[i];
+                    i++;
+                }
+
+                // copy metadata for variables 
+                i = 0;
+                while (i < cdata.Executable.data_count)
+                {
+                    data.Metadata[i] = cdata.Executable.metadata[i];
+                    i++;
+                }
+                while (i < metadata_size)
+                {
+                    // fill stack metadata with 0's
+                    data.Metadata[i] = 0;
+                    i++;
+                }
+
+                data.P2 = new IntPtr(UnsafeUtils.Malloc(data_size + align_stack + stack_size, 8, cdata.CompilerOptions.PackageAllocator));
+
+                // copy initial variable data => datasegment 
+                i = 0;
+                while (i < cdata.Executable.data_count)
+                {
+                    data.Data[i] = cdata.Executable.data[i];
+                    i++;
+                }
+
+                // fill stack with NaNs
+                if (has_stack && stack_size > 0)
+                {
+                    i = 0;
+                    while (i < math.floor(stack_size / 4f)) // could be we have odd bits if not aligned 
+                    {
+                        data.Stack[i] = float.NaN;
+                        i++;
+                    }
+                }
+            }
+
+            return data; 
+        }
+
+
 
 
         /// <summary>
@@ -484,22 +591,29 @@ namespace NSS.Blast.Compiler
             int stack_size = EstimateStackSize(result);
             int code_size = result.Executable.code_size;
             int data_size = result.Executable.data_count * 4;
-            int metadata_size = result.Executable.data_count * 1; 
+            int metadata_size = result.Executable.data_count + stack_size / 4; 
 
             switch (package_mode)
             {
                 case BlastPackageMode.Normal:
 
-                    // code - meta - data - stack 
-                    return PackageNormal(result, Allocator.Persistent,
+                    // [code-meta-data-stack]
+                    return PackageNormal(result,
                                          code_size,
                                          metadata_size,
                                          data_size,
                                          stack_size);
 
-                case BlastPackageMode.Compiler:
-                case BlastPackageMode.Entity:
+
+                    // [code-meta] [data-stack]
                 case BlastPackageMode.SSMD:
+                    return PackageSSMD(result, code_size, metadata_size, data_size, stack_size);
+
+                case BlastPackageMode.Entity:
+                    // [code] [meta-data-stack]
+
+                // [undefined]
+                case BlastPackageMode.Compiler:
                     Debug.LogError($"BlastCompiler.Package: package mode {package_mode} not supported");
                     break;
             }

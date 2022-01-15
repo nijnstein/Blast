@@ -100,7 +100,17 @@ namespace NSS.Blast
         public BlastCompilerOptions(int stack_size)
         {
             DefaultStackSize = stack_size;
-            EstimateStackSize = false; 
+            EstimateStackSize = false;
+        }
+        public BlastCompilerOptions(BlastPackageMode packagemode)
+        {
+            PackageMode = packagemode; 
+        }
+        public BlastCompilerOptions(int stack_size, BlastPackageMode packagemode)
+        {
+            DefaultStackSize = stack_size;
+            EstimateStackSize = false;
+            PackageMode = packagemode; 
         }
 
         /// <summary>

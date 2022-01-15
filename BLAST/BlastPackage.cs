@@ -292,7 +292,10 @@ namespace NSS.Blast
             }
         }
 
-        public readonly int SSMDDataSize => DataSegmentSize - MetadataSize; 
+        /// <summary>
+        /// bytesize for needed BlastSSMDDataStack records
+        /// </summary>
+        public readonly int SSMDDataSize => DataSegmentSize; 
 
         /// <summary>
         /// the size with stack included depending on flags
@@ -395,8 +398,8 @@ namespace NSS.Blast
                         return IntPtr.Zero;
 
                     case BlastPackageMode.Normal: return CodeSegmentPtr + O2;
-                    case BlastPackageMode.Entity: return DataSegmentPtr + O2;
-                    case BlastPackageMode.SSMD: return DataSegmentPtr;
+                    case BlastPackageMode.Entity: return P2 + O2;
+                    case BlastPackageMode.SSMD: return P2;
                 }
             }
         }
@@ -451,7 +454,7 @@ namespace NSS.Blast
         /// <summary>
         /// true if memory has been allocated for this object
         /// </summary>
-        public readonly bool IsAllocated => (Allocator)Allocator == Unity.Collections.Allocator.None && CodeSegmentPtr != IntPtr.Zero;
+        public readonly bool IsAllocated => (Allocator)Allocator != Unity.Collections.Allocator.None && CodeSegmentPtr != IntPtr.Zero;
 
         #endregion
 
