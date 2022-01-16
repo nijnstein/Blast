@@ -126,10 +126,18 @@ namespace NSS.Blast
     /// data for ssmd operation modes: data-stack only
     /// </summary>
     [BurstCompile]
-    unsafe public struct BlastSSMDDataStack { }
+    unsafe public struct BlastSSMDDataStack {
+#if DEBUG
+        public float4 a;
+        public float4 b;
+        public float4 c;
+        public float4 d;
+#endif 
+
+    }
 
 
-   
+
 
     /// <summary>
     /// the bare minimum data to package a script for execution 
@@ -447,7 +455,11 @@ namespace NSS.Blast
         public readonly unsafe float* Stack => (float*)StackSegmentPtr.ToPointer();
 
         /// <summary>
-        /// true if memory for stack is allocated 
+        /// true if memory for stack is allocated, 
+        /// false if not: 
+        /// - yield not possible without persistant stack 
+        /// - we call it TLS, thread level stack/storage 
+        /// - Faster in small multithreaded bursts, benefit fades in very large bursts 
         /// </summary>
         public readonly bool HasStack => (Flags & BlastPackageFlags.NoStack) != BlastPackageFlags.NoStack;
 

@@ -146,9 +146,6 @@ namespace BlastTestConsole
         [InlineData("value = random(1, 2);")]
         public void Blast_Package(string code)
         {
-
-            ///  THE PACKEGER IS COMPLETELY BROKEN :=)
-
             BlastScriptPackage package = Blast.Package(code);
             Assert.True(Blast.Execute(package) == 0); 
         }

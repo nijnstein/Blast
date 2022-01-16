@@ -31,14 +31,15 @@ namespace NSS.Blast.Standalone
             byte* d = (byte*)destination;
             byte* s = (byte*)source;
 
-            int i = 0;
-            while (i <  count)
+            int i = 0, k = 0;
+            while (i < count)
             {
                 int j = 0;
                 while (j < size)
                 {
-                    d[i] = s[j]; 
-                    j++; 
+                    d[k] = s[j]; 
+                    j++;
+                    k++; 
                 }
                 i++; 
             }

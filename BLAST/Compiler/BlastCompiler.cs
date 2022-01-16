@@ -605,7 +605,7 @@ namespace NSS.Blast.Compiler
                                          stack_size);
 
 
-                    // [code-meta] [data-stack]
+                    // [code-meta] [data-stack] 
                 case BlastPackageMode.SSMD:
                     return PackageSSMD(result, code_size, metadata_size, data_size, stack_size);
 
@@ -776,11 +776,26 @@ namespace NSS.Blast.Compiler
             }
             else
             {
-                Standalone.Debug.LogError(result.LastErrorMessage);
+                result.LogError(result.LastErrorMessage);
                 return null;
             }
         }
 
+        unsafe static public BlastPackageData CompileDataPackage(Blast blast, BlastScript script, BlastCompilerOptions options = null)
+        {
+            if (options == null) options = new BlastCompilerOptions();
+
+            CompilationData result = Compile(blast, script, options);
+            if (result.Success)
+            {
+                return Package(result, options); 
+            }
+            else
+            {
+                result.LogError(result.LastErrorMessage);
+                return default;
+            }
+        }
         #endregion 
 
     }

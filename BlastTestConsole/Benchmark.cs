@@ -10,9 +10,9 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine("".PadLeft(180, '='));
-        Console.WriteLine("= Blast Test Console - Copyright © 2022 - Nijnstein Software".PadRight(179, ' ') + "=");
-        Console.WriteLine("".PadLeft(180, '='));
+        Console.WriteLine("".PadLeft(270, '='));
+        Console.WriteLine("= Blast Test Console - Copyright © 2022 - Nijnstein Software".PadRight(269, ' ') + "=");
+        Console.WriteLine("".PadLeft(270, '='));
 
         int n_runs;
 
@@ -23,11 +23,12 @@ public class Program
         Console.WriteLine($"> executing {n_runs} cycles");
         Console.WriteLine(">");
 #else
-        n_runs = 1000 * 1000;
+        n_runs = 1000 * 1000 * 100;
         Console.WriteLine(">");
         Console.WriteLine("> RELEASE BUILD: C#/.NET");
         Console.WriteLine("> ");
-        Console.WriteLine($"> Benchmarking {n_runs} cycles on Core i9 9900K (8 cores, 16 threads)");
+        Console.WriteLine($"> Benchmarking {n_runs} cycles (8 cores, 16 threads)");
+        Console.WriteLine($"> - using {n_runs / 40} runs for slower tests"); 
         Console.WriteLine(">");
         Console.WriteLine("> <ENTER> to start"); 
         Console.WriteLine(">");
@@ -36,17 +37,45 @@ public class Program
 
 
 
-        Console.WriteLine($"> Benchmark   Script".PadRight(113) + "Default".PadRight(14) + "Optimized".PadRight(14) + "Optimized-MT".PadRight(14) + "SSMD".PadRight(14) + "SSMD-MT".PadRight(14));
+        Console.WriteLine($"> Benchmark   Script".PadRight(121) + "Default".PadRight(23) + "Optimized".PadRight(14) + "Optimized-MT".PadRight(17) + "Opt-ST vs   " + "      SSMD".PadRight(21) + "      SSMD-MT".PadRight(16) + "     SSMD TLS".PadRight(15) + "   SSMD-TLS-MT".PadRight(15));
 
-        Benchmark1("0", "a = 1 * 2;", n_runs, true);
-        Benchmark1("0", "a = 4 * 22;", n_runs, true);
-        Benchmark1("0", "a = 4 * 222;", n_runs, true);
-        Benchmark1("0", "a = 422 * 2;", n_runs, true);
+        Benchmark1("01", "a = 8;", n_runs, true);
+        Benchmark1("02", "a = (2 2);", n_runs, true);
+        Benchmark1("03", "a = (2 2 2);", n_runs, true);
+        Benchmark1("04", "a = (2 2 2 2);", n_runs, true);
 
-        Benchmark1("1", "a = 34 * 55 * 555 * 2 + 10.2;", n_runs, true);
-        Benchmark1("2", "a = (23 34 33) * (55 555 2) + 10.2;", n_runs);
+        Benchmark1("05", "a = 1 * 2;", n_runs, true);
+        Benchmark1("06", "a = 4 * -22;", n_runs, true);
+        Benchmark1("07", "a = 4 / 2;", n_runs, true);
+        Benchmark1("08", "a = 4 / 2.2;", n_runs, true);
+
+        Benchmark1("09", "a = 1 * 2; a = a + 3", n_runs, true);
+        Benchmark1("10", "a = 1 * 2; a = a + 3; a = a / 8;", n_runs, true);
+        Benchmark1("11", "a = 1 * 2; a = a + 3; a = a / 8; a = a - 20;", n_runs, true);
+        Benchmark1("12", "a = 1 * 2; a = a + 3; a = a / 8; a = a - 20; a = a * 3.3;", n_runs, true);
+
+        Benchmark1("13", "a = 1 * 2; b = a + 3", n_runs, true);
+        Benchmark1("14", "a = 1 * 2; b = a + 3; c = b / 8;", n_runs, true);
+        Benchmark1("15", "a = 1 * 2; b = a + 3; c = b / 8; d = c - 20;", n_runs, true);
+        Benchmark1("16", "a = 1 * 2; b = a + 3; c = b / 8; d = c - 20; e = d * 3.3;", n_runs, true);
+
+        Benchmark1("17", "a = 34 * 555 * 2 + 10.2;", n_runs, true);
+        Benchmark1("18", "a = 34 * 55 * 0.33 * 555 * 2 + 10.2;", n_runs, true);
+        Benchmark1("19", "a = 34 * 55 * 44 * 555 * 2 * 8 + 10.2;", n_runs, true);
+        Benchmark1("20", "a = 34 * 55 * 44 * 555 * 2 * 8 * 9 + 10.2;", n_runs, true);
+
+
+        Benchmark1("21", "a = (23 34 33) * (55 555 2) + 10.2;", n_runs, true);
+        Benchmark1("22", "a = (66 34 33.6) * (333 34 3) * (55 555 2) + 10.2;", n_runs, true);
+        Benchmark1("23", "a = (23 4 3) * (3 3 33) *(2 3 3) * (5 55 2) + 10.2;", n_runs, true);
+        Benchmark1("24", "a = (23 4 3) * (3 3 33) *(2 3 3) * (5 55 2) * (5 55 2) + 10.2;", n_runs, true);
+        Benchmark1("25", "a = (23 1 4 3) * (3 1 3 33) *(2 1 3 3) * (5 1 55 2) + 10.2;", n_runs, true);
+        Benchmark1("26", "a = (1 4 3) * (1 3 33) * (1 3 3) * (5 155 2) + 10.2;", n_runs, true);
+        Benchmark1("27", "a = (1 3) * (1 33) * (1 33) * (5 2) + 10.2;", n_runs, true);
+        
+
         Benchmark1("fma", "a = 2 * 3 + 4;", n_runs, true);
-        Benchmark1("fma coded", "a = fma(2, 3, 4);", n_runs);
+        Benchmark1("fma coded", "a = fma(2, 3, 4);", n_runs, true);
         Benchmark1("vector", "a = (3 3 3) * (4 4 4) + (1.2 1.2 1.2);", n_runs, true);
         Benchmark1("vector fma", "a = fma((3 3 3), (4 4 4), (1.2 1.2 1.2));", n_runs);
 
@@ -90,42 +119,89 @@ public class Program
         non_optimizing_options.DefaultStackSize = 64;
         non_optimizing_options.EstimateStackSize = false;  // forces validations to run we dont want that while testing
         non_optimizing_options.Optimize = false; 
+        
        
         var optimizing_options = new BlastCompilerOptions();
         optimizing_options.AutoValidate = false;
         optimizing_options.DefaultStackSize = 64;
         optimizing_options.EstimateStackSize = false;  // forces validations to run we dont want that while testing
-        optimizing_options.Optimize = true; 
+        optimizing_options.Optimize = true;
 
         non_optimizing_options.AddDefine("TEST_COMPILER_DEFINE", "666,66");
+        
+        
+        ConsoleColor old = Console.ForegroundColor;
+        void writepp(double a, double b)
+        {
+            double pp = (a / (b / 100.0f)) - 100f; 
+            Console.ForegroundColor = pp >= 0 ? ConsoleColor.Green : ConsoleColor.Red;
+            Console.Write($"{pp.ToString("0")}%".PadLeft(5));
+            Console.ForegroundColor = old;
+        }
 
-        double ys;
+        void writemem(double m)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write($"{m.ToString("0")}byte".PadLeft(8));
+            Console.ForegroundColor = old;
+        }
 
-        if (!Benchmark(blast, script, non_optimizing_options, n_runs, false, out ys)) return; 
-        Console.Write($"{(ys.ToString("0.00").PadLeft(8) + "ns").PadRight(14)}");
 
-        if (!Benchmark(blast, script, optimizing_options, n_runs, false, out ys)) return;
-        Console.Write($"{(ys.ToString("0.00").PadLeft(8) + "ns").PadRight(14)}");
+        double ys_normal, ys_opt, ys_opt_mt, ys_ssmd, ys_ssmd_mt, ys_ssmd_tlc, ys_ssmd_tlc_mt;
+        double mem_normal, mem_opt, mem_opt_mt, mem_ssmd, mem_ssmd_mt, mem_ssmd_tlc, mem_ssmd_tlc_mt;
 
-        if (!Benchmark(blast, script, optimizing_options, n_runs, true, out ys)) return;
-        Console.Write($"{(ys.ToString("0.00").PadLeft(8) + "ns").PadRight(14)}");
+        if (!Benchmark(blast, script, non_optimizing_options, n_runs, false, out ys_normal, out mem_normal)) return;
+        writemem(mem_normal);
+        Console.Write($"{(ys_normal.ToString("0.00").PadLeft(8) + "ns").PadRight(12)}");
+
+        if (!Benchmark(blast, script, optimizing_options, n_runs, false, out ys_opt, out mem_opt)) return;
+        writepp(ys_normal, ys_opt);
+        writemem(mem_opt);
+        Console.Write($"{(ys_opt.ToString("0.00").PadLeft(8) + "ns").PadRight(12)}");
+
+        if (!Benchmark(blast, script, optimizing_options, n_runs, true, out ys_opt_mt, out mem_opt_mt)) return;
+        writepp(ys_opt, ys_opt_mt);
+        Console.Write($"{(ys_opt_mt.ToString("0.00").PadLeft(8) + "ns").PadRight(12)}");
 
         if (ssmd)
         {
             optimizing_options.PackageMode = BlastPackageMode.SSMD;
-            optimizing_options.DefaultStackSize = 24;
+            optimizing_options.DefaultStackSize = 64;
             optimizing_options.EstimateStackSize = true;  // forces validations to run we dont want that while testing
+            optimizing_options.PackageStack = false;
 
-            if (!Benchmark(blast, script, optimizing_options, n_runs, false, out ys)) return;
+            if (!Benchmark(blast, script, optimizing_options, n_runs, false, out ys_ssmd, out mem_ssmd)) return;
 
-            ConsoleColor old = Console.ForegroundColor; 
-            Console.ForegroundColor = ConsoleColor.Yellow; 
-            Console.Write($"{(ys.ToString("0.00").PadLeft(8) + "ns").PadRight(14)}");
-
-            if (!Benchmark(blast, script, optimizing_options, n_runs, true, out ys)) return;
-
+            Console.Write(" -  ");
+            writepp(ys_opt, ys_ssmd);
+            writemem(mem_ssmd);
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($"{(ys.ToString("0.00").PadLeft(8) + "ns").PadRight(14)}");
+            Console.Write($"{(ys_ssmd.ToString("0.00").PadLeft(6) + "ns").PadRight(6)}");
+
+            if (!Benchmark(blast, script, optimizing_options, n_runs, true, out ys_ssmd_mt, out mem_ssmd_mt)) return;
+
+            Console.Write("   ");
+            writepp(ys_ssmd, ys_ssmd_mt);
+            writemem(mem_ssmd_mt); 
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($"{(ys_ssmd_mt.ToString("0.00").PadLeft(6) + "ns").PadRight(6)}");
+            Console.ForegroundColor = old;
+
+            optimizing_options.PackageStack = true;
+
+            if (!Benchmark(blast, script, optimizing_options, n_runs, false, out ys_ssmd_tlc, out mem_ssmd_tlc)) return;
+
+            Console.Write("   ");
+            writepp(ys_ssmd, ys_ssmd_tlc);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($"{(ys_ssmd_tlc.ToString("0.00").PadLeft(6) + "ns").PadRight(6)}");
+
+            if (!Benchmark(blast, script, optimizing_options, n_runs, true, out ys_ssmd_tlc_mt, out mem_ssmd_tlc_mt)) return;
+
+            Console.Write("   ");
+            writepp(ys_ssmd_mt, ys_ssmd_tlc_mt);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($"{(ys_ssmd_tlc_mt.ToString("0.00").PadLeft(6) + "ns").PadRight(6)}");
             Console.ForegroundColor = old;
         }
 
@@ -138,9 +214,10 @@ public class Program
 
 
 
-    static bool Benchmark(Blast blast, BlastScript script, BlastCompilerOptions options, int n_runs, bool parallel, out double ns)
+    static bool Benchmark(Blast blast, BlastScript script, BlastCompilerOptions options, int n_runs, bool parallel, out double ns, out double mem)
     {
         ns = 0;
+        mem = 0; 
 
         var res = BlastCompiler.Compile(blast, script, options);
         if (!res.Success)
@@ -156,15 +233,15 @@ public class Program
         if (options.PackageMode == BlastPackageMode.SSMD)
         {
             // ssmd package: by n 
-
             BlastPackageData pkg = BlastCompiler.Package(res, options);
+            mem = pkg.DataSegmentSize; 
 
             BlastSSMDInterpretor blaster = default;
             
             blaster.SetPackage(pkg);
 
             unsafe {
-                int n_stacks = Math.Min(n_runs, 128);
+                int n_stacks = Math.Min(n_runs, 1024);
                 byte* stack = stackalloc byte[n_stacks * pkg.SSMDDataSize];
                 BlastSSMDDataStack* ssmd_data = (BlastSSMDDataStack*)stack;
 
@@ -178,9 +255,12 @@ public class Program
                 if (parallel)
                 {
                     int np = n_runs / n_stacks;
+                
                     Parallel.For(0, np, (x) =>
                     {
-                        blaster.Execute((BlastEngineData*)blast.Engine, IntPtr.Zero, ssmd_data, n_stacks);
+                        BlastSSMDInterpretor blaster2 = default;
+                        blaster2.SetPackage(pkg);
+                        blaster2.Execute((BlastEngineData*)blast.Engine, IntPtr.Zero, ssmd_data, n_stacks);
                     }); 
                 }
                 else
@@ -202,6 +282,8 @@ public class Program
         else
         {
             // normal package: 1 by 1 
+            // slow
+            n_runs = n_runs / 40; 
 
             // warmup run
             for (int i = 0; i < 10; i++)
@@ -243,7 +325,16 @@ public class Program
                 }
             }
             sw_execute.Stop();
+
+            mem = res.Executable.code_size;
+            mem += res.Executable.DataCount + res.Executable.max_stack_size;
+
+            while (mem % 8 != 0) mem++;
+
+            mem += res.Executable.DataCount * 4 + res.Executable.max_stack_size * 4;
         }
+
+
 
         var total_ms = sw_execute.Elapsed.TotalMilliseconds;
         ns = (total_ms / (float)n_runs) * 1000.0f * 1000f;

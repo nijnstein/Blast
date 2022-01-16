@@ -36,6 +36,7 @@
         error_unsupported_operation_in_ssmd_root = -29,
         ssmd_error_expecting_value = -30,
         ssmd_error_unsupported_vector_size = -31,
+        error_execute_package_not_correctly_set = -32,
     }
 
     public static class BlastErrorTranslator

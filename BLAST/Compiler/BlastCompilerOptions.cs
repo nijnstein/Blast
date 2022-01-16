@@ -38,6 +38,12 @@ namespace NSS.Blast
         public int DefaultStackSize = 16;
 
         /// <summary>
+        /// packages include stackdata 
+        /// </summary>
+        public bool PackageStack = true; 
+
+
+        /// <summary>
         /// estimate stack size using input, output and validation parameters 
         /// - overridden if the script defines a stack size
         /// </summary>

@@ -38,7 +38,10 @@ namespace NSS.Blast
         {
             if (Package.IsAllocated)
             {
-                Package.Free(); 
+                Package.Free();
+#if DEBUG
+                Package = default; 
+#endif
             }
 
             Inputs = null;
@@ -48,7 +51,7 @@ namespace NSS.Blast
             Package = default; 
         }
 
-        #region ToString + getxxxxText()
+#region ToString + getxxxxText()
 
         public override string ToString()
         {
@@ -79,14 +82,6 @@ namespace NSS.Blast
                     sb.Append("\n");
                     sb.Append(Blast.GetReadableByteCode(code, Package.CodeSize));
                     sb.Append("\n");
-
-                    //TextReader tr = new StringReader(Blast.GetHumanReadableCode(byte* code, int size));
-                    //sb.Append("\nTranslated Bytecode:\n\n"); 
-                    //string scode;
-                    //while ((scode = tr.ReadLine()) != null)
-                    //{
-                    //   sb.Append(scode + "\n");
-                    //}
                     return sb.ToString();
                 }
             }
@@ -181,7 +176,7 @@ namespace NSS.Blast
             }
         }
 
-        #endregion 
+#endregion
 
 
     }
