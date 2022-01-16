@@ -28,7 +28,7 @@ public class Program
         Console.WriteLine("> RELEASE BUILD: C#/.NET");
         Console.WriteLine("> ");
         Console.WriteLine($"> Benchmarking {n_runs} cycles (8 cores, 16 threads)");
-        Console.WriteLine($"> - using {n_runs / 40} runs for slower tests"); 
+        Console.WriteLine($"> - using {n_runs / 20} runs for slower tests"); 
         Console.WriteLine(">");
         Console.WriteLine("> <ENTER> to start"); 
         Console.WriteLine(">");
@@ -76,8 +76,15 @@ public class Program
 
         Benchmark1("fma", "a = 2 * 3 + 4;", n_runs, true);
         Benchmark1("fma coded", "a = fma(2, 3, 4);", n_runs, true);
-        Benchmark1("vector", "a = (3 3 3) * (4 4 4) + (1.2 1.2 1.2);", n_runs, true);
-        Benchmark1("vector fma", "a = fma((3 3 3), (4 4 4), (1.2 1.2 1.2));", n_runs);
+
+        Benchmark1("vector2", "a = (3 3) * (4 4) + (1.2 1.2);", n_runs, true);
+        Benchmark1("vector2 fma", "a = fma((3 3), (4 4), (1.2 1.2));", n_runs, true);
+
+        Benchmark1("vector3", "a = (3 3 3) * (4 4 3) + (1.2 1.2 2);", n_runs, true);
+        Benchmark1("vector3 fma", "a = fma((3 3 3), (4 4 3), (1.2 1.2 2));", n_runs, true);
+
+        Benchmark1("vector4", "a = (3 3 3 3) * (4 4 4 4) + (1.2 1.2 4 4);", n_runs, true);
+        Benchmark1("vector4 fma", "a = fma((3 3 3 3), (4 4 4 4), (1.2 1.2 1.2 1.2));", n_runs, true);
 
         Benchmark1("mul", "a = 1 * 2 * 3 * 4 * 5 * 6 * 7;", n_runs);
         Benchmark1("mula", "a = mula(1, 2, 3, 4, 5, 6, 7);", n_runs);
@@ -90,15 +97,15 @@ public class Program
 
         Benchmark1("lerp", "a = lerp((100 1 9 2), (200 1 99 32), (6.7 6.7 6.7 6.7));", n_runs);
 
-        Benchmark1("while", "a = 1000; b = 0; while(b < 100) ( a = a - 1; b = b + 1;);", n_runs);
+        Benchmark1("while", "a = 1000; b = 0; while(b < 10) ( a = a - 1; b = b + 1;);", n_runs);
 
         Benchmark1("switch", "a = 100; switch(a > b)( case 100: (b = 0.99;) default: (b = 1.22;) );", n_runs);
         Benchmark1("ifthen", "a = 1; if(a == 1) then (a = 12;) else (a = 44);", n_runs);
 
-        Benchmark1("for", "h = 3; for(i = 1; i < 100; i = i + 1)( h = h + 1; );", n_runs);
+        Benchmark1("for", "h = 3; for(i = 1; i < 10; i = i + 1)( h = h + 1; );", n_runs);
         Benchmark1("for_m", "h = 3; for(i = 1; i < 10; i = i + 1)( h = h + 1; h = sqrt(h); );", n_runs);
-        Benchmark1("for_vec", "h = (3 3 3); for(i = 1; i < 100; i = i + 1)( h = sqrt(h + 1); );", n_runs);
-        Benchmark1("while2", "a = 1; b = 100; c = 1; while(a <= b) (a = a + 1; c = c * 1 * 2 * 3 * 1/100 * 1;);", n_runs);
+        Benchmark1("for_vec", "h = (3 3 3); for(i = 1; i < 10; i = i + 1)( h = sqrt(h + 1); );", n_runs);
+        Benchmark1("while2", "a = 1; b = 10; c = 1; while(a <= b) (a = a + 1; c = c * 1 * 2 * 3 * 1/100 * 1;);", n_runs);
 
 
 
@@ -283,7 +290,7 @@ public class Program
         {
             // normal package: 1 by 1 
             // slow
-            n_runs = n_runs / 40; 
+            n_runs = n_runs / 20; 
 
             // warmup run
             for (int i = 0; i < 10; i++)

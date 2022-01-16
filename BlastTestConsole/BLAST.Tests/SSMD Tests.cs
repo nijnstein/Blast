@@ -39,6 +39,12 @@ namespace BlastTestConsole
         [InlineData("a = fma(2,4,3);", 32, 11)]     // the variants are for constant parameter testing
         [InlineData("a = fma(3,5,2);", 32, 17)]     /// looks like a constant data variable location in data is not counted, this variant should have 2 parameters, the second being the 5 which is no encoded constant
         [InlineData("a = fma(2,8,4);", 32, 20)]
+
+        [InlineData("a = fma((2 2), (8 3), (4 3));", 32, 20)]
+        [InlineData("a = fma((2 2 2), (8 3 1), (4 3 2));", 32, 20)]
+        [InlineData("a = fma((2 2 2 2), (8 3 1 1), (4 3 2 1));", 32, 20)]
+
+
         unsafe public void SSMD_Tests_Functions(string code, int nruns, float f1)
         {
             Blast blast = Blast.Create(Allocator.Temp);
