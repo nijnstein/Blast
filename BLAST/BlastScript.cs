@@ -75,7 +75,7 @@ namespace NSS.Blast
             TextAsset scriptcode_asset = Resources.Load<TextAsset>(resource_file_without_extension);
             if (scriptcode_asset == null)
             {
-                Standalone.Debug.LogError($"BlastScript.FromResource: could not load resource file: '{resource_file_without_extension}\n\n'");
+                Debug.LogError($"BlastScript.FromResource: could not load resource file: '{resource_file_without_extension}\n\n'");
                 return null;
             }
             else

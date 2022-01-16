@@ -1,4 +1,11 @@
-﻿using NSS.Blast.Standalone;
+﻿
+#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+    using Unity.Assertions; 
+#else
+using UnityEngine;
+#endif
+
 using Unity.Mathematics;
 
 namespace NSS.Blast.Compiler.Stage

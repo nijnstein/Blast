@@ -1,11 +1,15 @@
-﻿using System;
+﻿#if !NOT_USING_UNITY
+    using Unity.Collections.LowLevel.Unsafe; 
+#endif
+
+using System;
 using Unity.Collections;
 
-namespace NSS.Blast.Standalone
+namespace NSS.Blast
 {
     unsafe public struct UnsafeUtils
     {
-#if NOT_USING_UNITY
+#if NOT_USING_UNITY 
         unsafe public static void* Malloc(long size, int alignment, Allocator allocator)
         {
             return System.Runtime.InteropServices.Marshal.AllocHGlobal((int)size).ToPointer();
@@ -78,15 +82,15 @@ namespace NSS.Blast.Standalone
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        unsafe public void MemCpy(void* destination, void* source, long size)
+        unsafe public static void MemCpy(void* destination, void* source, long size)
         {
             UnsafeUtility.MemCpy(destination, source, size);
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        unsafe public void MemCpyReplicate(void* destination, void* source, int size, int count)
+        unsafe public static void MemCpyReplicate(void* destination, void* source, int size, int count)
         {
-            UnsafeUtility.MemCpyReplicate(desination, source,size, count); 
+            UnsafeUtility.MemCpyReplicate(destination, source,size, count); 
         } 
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]

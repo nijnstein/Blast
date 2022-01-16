@@ -2,23 +2,30 @@
 using System.Collections.Generic;
 using System.IO;
 
-using NSS.Blast.Standalone;
+#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+    using Unity.Assertions;
+#else
+    using UnityEngine;
+    using UnityEngine.Assertions; 
+#endif
+
 using NSS.Blast.Cache;
 using NSS.Blast.Compiler;
 using NSS.Blast.Register;
 
-using Unity.Assertions;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using System.Text;
+using System.Linq; 
 using Unity.Burst;
 using NSS.Blast.Interpretor;
 using NSS.Blast.SSMD;
 
 #if !NOT_USING_UNITY
-using Unity.Entities;
-using Unity.Jobs;
+    //using Unity.Entities;
+    using Unity.Jobs;
 #endif
 
 using Random = Unity.Mathematics.Random;
@@ -31,7 +38,7 @@ namespace NSS.Blast
     /// - used during execution of scripts
     /// - shared by all threads
     /// </summary>
-    [BurstCompatible]
+    [BurstCompile]
     unsafe public struct BlastEngineData
     {
         public float* constants;
@@ -88,7 +95,7 @@ namespace NSS.Blast
     /// Blast Engine
     /// - use seperate instances for threads
     /// </summary>
-    [BurstCompatible]
+    [BurstCompile]
     unsafe public struct Blast
     {
         public delegate int BlastExecute(int scriptid, float* p_stack, IntPtr data, IntPtr caller);
@@ -347,7 +354,7 @@ namespace NSS.Blast
             yield return blast_operation.inv_value_360;
         }
 
-        [BurstCompatible]
+        [BurstCompile]
         public static float GetConstantValue(blast_operation op)
         {
             switch (op)
@@ -882,7 +889,7 @@ namespace NSS.Blast
                     }
                     else
                     {
-                        Standalone.Debug.LogError("failed to compile script: " + script); 
+                        Debug.LogError("failed to compile script: " + script); 
                     }
                 }
 
@@ -910,7 +917,7 @@ namespace NSS.Blast
             if (!data.IsOK)
             {
 #if !NOT_USING_UNITY
-                Standalone.Debug.LogError("failed to compile script: " + script);
+                Debug.LogError("failed to compile script: " + script);
 #else
                 System.Diagnostics.Debug.WriteLine("ERROR: Failed to compile script: " + script); 
 #endif
@@ -1252,7 +1259,7 @@ namespace NSS.Blast
             switch (run.Type)
             {
                 case runner_type.bs:
-                    if (run.Package != null)
+                    if (run.Package.IsAllocated)
                     {
                         _burst_once_job.blast = Engine;
                         _burst_once_job.interpretor.SetPackage(run.Package);
@@ -1268,7 +1275,7 @@ namespace NSS.Blast
                     break;
 
                 default:
-                    Standalone.Debug.LogError($"runtype not supported: {run.Type}");
+                    Debug.LogError($"runtype not supported: {run.Type}");
                     break;            
             }
             return 0; 
@@ -1499,7 +1506,7 @@ namespace NSS.Blast
             BlastScriptPackage pkg = BlastCompiler.CompilePackage(blast, script);
             if (pkg == null) return 0;
 
-            blast.AddPackage(id, pkg);
+            Blast.AddPackage(id, pkg);
             return id;
         }
 #endif

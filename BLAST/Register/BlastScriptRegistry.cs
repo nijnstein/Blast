@@ -1,4 +1,12 @@
-﻿using System.Collections.Generic;
+﻿#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+    using Unity.Assertions; 
+#else
+using UnityEngine;
+#endif
+
+
+using System.Collections.Generic;
 using System.Linq;
 
 namespace NSS.Blast.Register
@@ -72,11 +80,13 @@ namespace NSS.Blast.Register
 
 #if UNITY_EDITOR
                 string smsg = $"BLAST Registry: {script.Id} {script.Name}";
-                Standalone.Debug.Log(smsg);
+                Debug.Log(smsg);
+#if NSSCONSOLE
                 if(NSS.Console.ConsoleLog.Instance != null)
                 {
                     NSS.Console.ConsoleLog.Instance.LogMessage(smsg); 
                 }
+#endif
 #endif
             }
             return script.Id;

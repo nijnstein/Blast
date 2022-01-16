@@ -1,7 +1,14 @@
-﻿using NSS.Blast.Standalone;
+﻿
+#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+    using Unity.Assertions; 
+#else
+using UnityEngine;
+using UnityEngine.Assertions;
+#endif
+
 using System;
 using System.Text;
-using Unity.Assertions;
 using Unity.Collections;
 
 namespace NSS.Blast
@@ -51,7 +58,7 @@ namespace NSS.Blast
             Package = default; 
         }
 
-#region ToString + getxxxxText()
+        #region ToString + getxxxxText()
 
         public override string ToString()
         {
@@ -136,6 +143,34 @@ namespace NSS.Blast
                 return "BlastScriptPackage.DataSegment [not allocated]";
             }
         }
+
+
+        /// <summary>
+        /// get code as 000| 000 000 000 000 
+        /// </summary>
+        /// <returns></returns>
+        public string GetPackageCodeBytesText(int column_count = 8, bool show_index = false)
+        {
+            if (IntPtr.Zero == Package.DataSegmentPtr) return string.Empty;
+            unsafe
+            {
+                return CodeUtils.GetBytesView((byte*)(void*)Package.Code, Package.DataSegmentSize, column_count, show_index);
+            }
+        }
+
+        /// <summary>
+        /// get data as 000| 000 000 000 000 
+        /// </summary>
+        /// <returns></returns>
+        public unsafe string GetPackageDataBytesText(int column_count = 8, bool show_index = false)
+        {
+            if (IntPtr.Zero == Package.DataSegmentPtr) return string.Empty;
+            unsafe
+            {
+                return CodeUtils.GetBytesView((byte*)(void*)Package.Data, Package.DataSegmentSize, column_count, show_index);
+            }
+        }
+
 
         public string GetPackageInfoText()
         {

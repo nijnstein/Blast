@@ -1,4 +1,11 @@
-﻿using System;
+﻿#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+    using Unity.Assertions; 
+#else
+using UnityEngine;
+#endif
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -290,8 +297,8 @@ namespace NSS.Blast.Compiler.Stage
                             if(v == null)
                             {
 #if DEBUG
-                                Standalone.Debug.Log(result.GetHumanReadableCode());
-                                Standalone.Debug.Log(result.GetHumanReadableBytes());
+                                Debug.Log(result.GetHumanReadableCode());
+                                Debug.Log(result.GetHumanReadableBytes());
 #endif
                                 result.LogError($"Optimizer: pattern: {matched_pattern.name}, could not find variable based on offset: {b_data - BlastCompiler.opt_ident}, this could be due to a packaging failure");
                             }

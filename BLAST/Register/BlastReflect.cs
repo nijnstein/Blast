@@ -44,7 +44,7 @@ namespace NSS.Blast.Register
                     {
                         if (!types[i].IsAbstract)
                         {
-                            Object obj = Activator.CreateInstance(types[i]);
+                            System.Object obj = Activator.CreateInstance(types[i]);
                             jobs.Add((CompileTimeBlastScript)obj);
                         }
                     }
@@ -74,7 +74,7 @@ namespace NSS.Blast.Register
                         Type type = types[i];
                         if (!type.IsInterface && !type.IsAbstract)
                         {
-                            Object obj = FormatterServices.GetUninitializedObject(type);
+                            System.Object obj = FormatterServices.GetUninitializedObject(type);
                             jobs.Add((IBlastHPCScriptJob)obj);
                         }
                     }
@@ -84,7 +84,7 @@ namespace NSS.Blast.Register
             }
             catch (Exception ex)
             {
-                Standalone.Debug.LogError("BlastReflect.FindHPCJobs: failed to enumerate pre-compiled blast jobs: " + ex.ToString());
+                Debug.LogError("BlastReflect.FindHPCJobs: failed to enumerate pre-compiled blast jobs: " + ex.ToString());
                 return new List<IBlastHPCScriptJob>(); 
             }
         }

@@ -1,10 +1,44 @@
 ﻿using System;
 using System.Reflection;
+using System.Text;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 
 namespace NSS.Blast
 {
+
+    public static class CodeUtils
+    {
+        /// <summary>
+        /// return bytes formatted as 000| 000 000 000 000 000 000 000 000 
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="length"></param>
+        /// <param name="column_count"></param>
+        /// <param name="use_index"></param>
+        /// <returns></returns>
+        unsafe public static string GetBytesView(byte* code, int length, int column_count = 8, bool use_index = false)
+        {
+            if (code == null) return string.Empty; 
+
+            StringBuilder sb = StringBuilderCache.Acquire();
+
+            for (int i = 0; i < length; i++)
+            {
+                if (i % 10 == 0)
+                {
+                    sb.Append($"{i.ToString().PadLeft(3, '0')}| ");
+                }
+                sb.Append($"{code[i].ToString().PadLeft(3, '0')} ");
+                if (i % 10 == 9)
+                {
+                    sb.AppendLine();
+                }
+            }
+
+            return StringBuilderCache.GetStringAndRelease(ref sb);
+        }
+    }
 
 
     public struct NonGenericFunctionPointer

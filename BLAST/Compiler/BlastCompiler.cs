@@ -1,18 +1,16 @@
-﻿#if UNITY_EDITOR
-#define LOG_ERRORS // this forces inclusion of burststring in script exe, disable in relaese
-#define CHECK_STACK
-#define SHOW_TODO  // show todo warnings 
-// #define MULTITHREADED
+﻿#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+    using Unity.Assertions; 
+#else
+    using UnityEngine;
+    using UnityEngine.Assertions;
 #endif
- 
-using NSS.Blast.Interpretor;
+
 using NSS.Blast.Compiler.Stage;
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Mathematics;
-using NSS.Blast.Standalone;
-using Unity.Assertions;
 
 namespace NSS.Blast.Compiler
 {
@@ -664,9 +662,9 @@ namespace NSS.Blast.Compiler
                     result.LogError($"Compilation Error, stage: {istage}, type {ByteCodeStages[istage].GetType().Name}, exitcode: {exitcode}");
                     if (options.Verbose || options.Trace)
                     {
-                        Standalone.Debug.Log(result.root.ToNodeTreeString());
-                        Standalone.Debug.Log(result.GetHumanReadableCode() + "\n");
-                        Standalone.Debug.Log(result.GetHumanReadableBytes() + "\n");
+                        Debug.Log(result.root.ToNodeTreeString());
+                        Debug.Log(result.GetHumanReadableCode() + "\n");
+                        Debug.Log(result.GetHumanReadableBytes() + "\n");
                     }
                     return result;
                 }
@@ -674,9 +672,9 @@ namespace NSS.Blast.Compiler
 
             if (options.Verbose || options.Trace)
             {
-                Standalone.Debug.Log(result.root.ToNodeTreeString());
-                Standalone.Debug.Log(result.GetHumanReadableCode() + "\n");
-                Standalone.Debug.Log(result.GetHumanReadableBytes() + "\n");
+                Debug.Log(result.root.ToNodeTreeString());
+                Debug.Log(result.GetHumanReadableCode() + "\n");
+                Debug.Log(result.GetHumanReadableBytes() + "\n");
 
            //     Debug.Log(Blast.GetReadableByteCode(result.Executable.code, result.Executable.code_size); 
             }
@@ -712,8 +710,8 @@ namespace NSS.Blast.Compiler
                     result.LogError($"Compilation Error, stage: {istage}, type {HPCStages[istage].GetType().Name}, exitcode: {exitcode}");
                     if (options.Verbose || options.Trace)
                     {
-                        Standalone.Debug.Log(result.root.ToNodeTreeString());
-                        Standalone.Debug.Log(result.GetHumanReadableCode());
+                        Debug.Log(result.root.ToNodeTreeString());
+                        Debug.Log(result.GetHumanReadableCode());
                     }
                     return result;
                 }
@@ -745,8 +743,8 @@ namespace NSS.Blast.Compiler
                     result.LogError($"Compilation Error, stage: {istage}, type {CSStages[istage].GetType().Name}, exitcode: {exitcode}");
                     if (options.Verbose || options.Trace)
                     {
-                        Standalone.Debug.Log(result.root.ToNodeTreeString());
-                        Standalone.Debug.Log(result.GetHumanReadableCode());
+                        Debug.Log(result.root.ToNodeTreeString());
+                        Debug.Log(result.GetHumanReadableCode());
                     }
                     return result;
                 }

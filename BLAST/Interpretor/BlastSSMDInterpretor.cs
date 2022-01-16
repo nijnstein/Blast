@@ -1,19 +1,24 @@
 ﻿using NSS.Blast.Interpretor;
-using NSS.Blast.Standalone;
+
+#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+    using Unity.Assertions; 
+#else
+    using UnityEngine; 
+#endif 
+
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+using Unity.Collections;
 
 namespace NSS.Blast.SSMD
 {
-    [BurstCompatible]
+    [BurstCompile]
     unsafe public struct BlastSSMDInterpretor
     {
-        #region Internal Data 
+#region Internal Data 
         internal BlastPackageData package;
 
         internal int code_pointer;
@@ -65,9 +70,9 @@ namespace NSS.Blast.SSMD
         [NativeDisableUnsafePtrRestriction]
         internal unsafe byte* metadata;
 
-        #endregion 
+#endregion
 
-        #region Public SetPackage & Execute 
+#region Public SetPackage & Execute 
         /// <summary>
         /// set ssmd package data 
         /// </summary>
@@ -113,9 +118,9 @@ namespace NSS.Blast.SSMD
             // execute 
             return Execute(datastack, ssmd_data_count, register);
         }
-        #endregion 
+#endregion
 
-        #region Stack Functions 
+#region Stack Functions 
         /// <summary>
         /// push register[n].x as float
         /// </summary>
@@ -218,9 +223,9 @@ namespace NSS.Blast.SSMD
 
             for (int i = 0; i < ssmd_datacount; i++)
             {
-                float2* f2p = &((float2*)(void*)&((float*)stack[i])[stack_offset])[0];
-                f2p->x = f1[i];
-                f2p->y = f2[i];
+                // Burst compiler crashed over previous abbomination
+                ((float*)stack[i])[stack_offset] = f1[i];
+                ((float*)stack[i])[stack_offset + 1] = f2[i];
             }
 
             // update metadata and stack offset 
@@ -247,10 +252,9 @@ namespace NSS.Blast.SSMD
 
             for (int i = 0; i < ssmd_datacount; i++)
             {
-                float3* f3p = &((float3*)(void*)&((float*)stack[i])[stack_offset])[0];
-                f3p->x = f1[i];
-                f3p->y = f2[i];
-                f3p->z = f3[i];
+                ((float*)stack[i])[stack_offset] = f1[i];
+                ((float*)stack[i])[stack_offset + 1] = f2[i];
+                ((float*)stack[i])[stack_offset + 2] = f3[i];
             }
 
             // update metadata and stack offset 
@@ -279,11 +283,10 @@ namespace NSS.Blast.SSMD
 
             for (int i = 0; i < ssmd_datacount; i++)
             {
-                float4* f4p = &((float4*)(void*)&((float*)stack[i])[stack_offset])[0];
-                f4p->x = f1[i];
-                f4p->y = f2[i];
-                f4p->z = f3[i];
-                f4p->w = f4[i];
+                ((float*)stack[i])[stack_offset] = f1[i];
+                ((float*)stack[i])[stack_offset + 1] = f2[i];
+                ((float*)stack[i])[stack_offset + 2] = f3[i];
+                ((float*)stack[i])[stack_offset + 3] = f4[i];
             }
 
             // update metadata and stack offset 
@@ -299,7 +302,7 @@ namespace NSS.Blast.SSMD
         {
             stack_offset = stack_offset - 1;
 
-#if DEBUG 
+#if DEBUG
             if (stack_offset < 0)
             {
                 Debug.LogError($"blast.ssmd.stack: attempting to pop too much data (1 float) from the stack, offset = {stack_offset}");
@@ -366,13 +369,13 @@ namespace NSS.Blast.SSMD
             {
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 vector_size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
-#if DEBUG 
+#if DEBUG
                 if (type != BlastVariableDataType.Numeric)
                 {
                     Debug.LogError($"blast.ssmd.stack, pop_fn_into -> data mismatch, expecting numeric of size n, found {type} of size {vector_size} at data offset {c - BlastInterpretor.opt_id}");
                     return;
                 }
-#endif 
+#endif
                 // variable acccess
                 switch (vector_size)
                 {
@@ -440,13 +443,13 @@ namespace NSS.Blast.SSMD
             {
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 vector_size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
-#if DEBUG 
+#if DEBUG
                 if (type != BlastVariableDataType.Numeric)
                 {
                     Debug.LogError($"blast.ssmd.stack, pop_fn_into -> stackdata mismatch, expecting numeric of size n, found {type} of size {vector_size} at stack offset {stack_offset}");
                     return;
                 }
-#endif         
+#endif
                 // stack pop 
                 switch (vector_size)
                 {
@@ -534,7 +537,7 @@ namespace NSS.Blast.SSMD
             }
         }
 
-        #region pop_f[1|2|3|4]_into 
+#region pop_f[1|2|3|4]_into 
 
         /// <summary>
         /// pop a float1 value form stack data or constant source and put it in destination 
@@ -546,7 +549,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG 
+#if DEBUG
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -554,7 +557,7 @@ namespace NSS.Blast.SSMD
                     Debug.LogError($"blast.ssmd.stack, pop_f1_into -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
                     return;
                 }
-#endif 
+#endif
                 // variable acccess
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
@@ -564,7 +567,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG 
+#if DEBUG
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -572,7 +575,7 @@ namespace NSS.Blast.SSMD
                     Debug.LogError($"blast.ssmd.stack, pop_f1_into -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
                     return;
                 }
-#endif         
+#endif
                 // stack pop 
                 stack_offset = stack_offset - 1;
                 for (int i = 0; i < ssmd_datacount; i++)
@@ -610,7 +613,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG 
+#if DEBUG
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != vector_size || type != BlastVariableDataType.Numeric)
@@ -618,7 +621,7 @@ namespace NSS.Blast.SSMD
                     Debug.LogError($"blast.ssmd.pop_fx_into<T> -> data mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
                     return;
                 }
-#endif 
+#endif
                 // variable acccess
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
@@ -628,7 +631,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG 
+#if DEBUG
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != vector_size || type != BlastVariableDataType.Numeric)
@@ -636,7 +639,7 @@ namespace NSS.Blast.SSMD
                     Debug.LogError($"blast.ssmd.pop_fx_into<T> -> stackdata mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at stack offset {stack_offset}");
                     return;
                 }
-#endif         
+#endif
                 // stack pop 
                 stack_offset = stack_offset - vector_size;
                 for (int i = 0; i < ssmd_datacount; i++)
@@ -667,9 +670,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
-        #endregion
+#endregion
 
-        #region pop_fx_with_op_into_fx
+#region pop_fx_with_op_into_fx
         
         /// <summary>
         /// pop a float1 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to m11
@@ -683,7 +686,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {op}, only + - * / are supported");
                 return; 
             }
-#endif 
+#endif
 
             // we get either a pop instruction or an instruction to get a value 
             byte c = code[code_pointer];
@@ -798,7 +801,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"blast.pop_f2_with_op_into_f2: -> unsupported operation supplied: {op}, only + - * / are supported");
                 return; 
             }
-#endif 
+#endif
 
             // we get either a pop instruction or an instruction to get a value 
             byte c = code[code_pointer];
@@ -902,9 +905,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
-        #endregion
+#endregion
 
-        #region pop_fx_with_op_into_f4
+#region pop_fx_with_op_into_f4
         /// <summary>
         /// pop a float1 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to m11
         /// </summary>
@@ -917,7 +920,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {op}, only + - * / are supported");
                 return;
             }
-#endif 
+#endif
 
             // we get either a pop instruction or an instruction to get a value 
             byte c = code[code_pointer];
@@ -1033,7 +1036,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {op}, only + - * / are supported");
                 return;
             }
-#endif 
+#endif
 
             // we get either a pop instruction or an instruction to get a value 
             byte c = code[code_pointer];
@@ -1137,9 +1140,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
-        #endregion
+#endregion
 
-        #region set_data_from_register_fx
+#region set_data_from_register_fx
 
         /// <summary>
         /// set a float1 data location from register location  
@@ -1196,7 +1199,7 @@ namespace NSS.Blast.SSMD
                 p[index + 3] = register[i].w; 
             }
         }
-        #endregion 
+#endregion
 
         /// <summary>
         /// read codebyte, determine data location, pop data and push it on the stack
@@ -1344,9 +1347,9 @@ namespace NSS.Blast.SSMD
             UnsafeUtils.MemCpy(register, f4, ssmd_datacount * sizeof(float4));
         }
 
-        #endregion
+#endregion
 
-        #region Operations Handlers 
+#region Operations Handlers 
 
         /// <summary>
         /// handle operation a.x and b.x
@@ -1638,13 +1641,13 @@ namespace NSS.Blast.SSMD
             code_pointer += 3;
         }
 
-        #endregion
+#endregion
 
 
-        #endregion
+#endregion
 
 
-        #region GetCompound and Execute (privates)
+#region GetCompound and Execute (privates)
 
         /// <summary>
         /// process a compound, on function exit write back data to register 
@@ -2205,7 +2208,7 @@ namespace NSS.Blast.SSMD
                                             default:
 #if DEBUG
                                                     // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                    Debug.LogWarning($"execute.ssmd: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+//                                                    Debug.LogWarning($"execute.ssmd: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                 break;
                                         }
@@ -2227,7 +2230,7 @@ namespace NSS.Blast.SSMD
                                             default:
 #if DEBUG
                                                     // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                    Debug.LogWarning($"execute.ssmd: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+//                                                    Debug.LogWarning($"execute.ssmd: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                 break;
                                         }
@@ -2257,7 +2260,7 @@ namespace NSS.Blast.SSMD
                                                 break;
                                             default:
 #if DEBUG
-                                                    Debug.LogWarning($"execute.ssmd: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+//                                                    Debug.LogWarning($"execute.ssmd: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                 break;
                                         }
@@ -2665,6 +2668,6 @@ namespace NSS.Blast.SSMD
             return (int)BlastError.success;
         }
 
-        #endregion 
+#endregion
     }
 }

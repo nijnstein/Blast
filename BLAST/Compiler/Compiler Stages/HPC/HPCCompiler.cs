@@ -1,4 +1,12 @@
-﻿using System;
+﻿#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+    using Unity.Assertions; 
+#else
+using UnityEngine;
+#endif
+
+
+using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
@@ -527,7 +535,7 @@ namespace NSS.Blast.Compiler.Stage
                 string result = string.Format(job, code_id, code, data.Script.Id);
 
 #if !NOT_USING_UNITY
-                Standalone.Debug.Log(result);
+                Debug.Log(result);
 #else
                 System.Diagnostics.Debug.WriteLine(result);
 #endif

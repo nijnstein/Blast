@@ -100,7 +100,7 @@ namespace NSS.Blast.Compiler
             if (CompilerOptions.Verbose)
             {
 #if !NOT_USING_UNITY
-                Standalone.Debug.Log(msg);
+                Debug.Log(msg);
 #else 
                 System.Diagnostics.Debug.WriteLine(msg);
 #endif
@@ -111,7 +111,7 @@ namespace NSS.Blast.Compiler
             if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
             if (CompilerOptions.Verbose && CompilerOptions.Trace)
             {
-                Standalone.Debug.Log(msg);
+                Debug.Log(msg);
             }
         }
 
@@ -119,13 +119,13 @@ namespace NSS.Blast.Compiler
         {
             LastErrorMessage = msg;
             CompilerMessages.Add(new Message() { Type = Message.MessageType.Error, Content = msg, Code = 0, LineNumber = linenr, CallerMember = member });
-            Standalone.Debug.LogError(msg);
+            Debug.LogError(msg);
         }
 
         public void LogWarning(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
             CompilerMessages.Add(new Message() { Type = Message.MessageType.Warning, Content = msg, LineNumber = linenr, CallerMember = member });
-            Standalone.Debug.LogWarning(msg);
+            Debug.LogWarning(msg);
         }
 
 #if !NOT_USING_UNITY
@@ -142,7 +142,7 @@ namespace NSS.Blast.Compiler
             if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Type = Message.MessageType.ToDo, Content = msg, LineNumber = linenr, CallerMember = member });
             if (CompilerOptions.Verbose || CompilerOptions.Trace)
             {
-                Standalone.Debug.LogWarning("TODO: " + msg);
+                Debug.LogWarning("TODO: " + msg);
             }
         }
 

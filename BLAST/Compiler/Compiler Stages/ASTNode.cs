@@ -1,6 +1,11 @@
-﻿#if NOT_USING_UNITY
-using NSS.Blast.Standalone;
-#endif 
+﻿
+#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+    using Unity.Assertions; 
+#else
+    using UnityEngine;
+    using UnityEngine.Assertions; 
+#endif
 
 using System;
 using System.Collections.Generic;
@@ -8,7 +13,6 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using Unity.Assertions;
 using Unity.Mathematics;
 
 namespace NSS.Blast.Compiler

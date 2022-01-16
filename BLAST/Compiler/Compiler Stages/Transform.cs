@@ -1,7 +1,14 @@
-﻿using System;
+﻿
+#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+    using Unity.Assertions; 
+#else
+using UnityEngine;
+using UnityEngine.Assertions;
+#endif
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using Unity.Assertions;
 
 namespace NSS.Blast.Compiler.Stage
 {

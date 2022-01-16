@@ -33,7 +33,7 @@ namespace NSS.Blast.Interpretor
     /// 
     /// </summary>
     //[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
-    [BurstCompatible]
+    [BurstCompile]
     unsafe public struct BlastInterpretor
     {
         /// <summary>
@@ -297,7 +297,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG || CHECK_STACK
             if (stack_offset + 1 > package.StackCapacity)
             {
-                Standalone.Debug.LogError($"blast.stack: attempting to push [{i}] onto a full stack, stack capacity = {package.StackCapacity}");
+                Debug.LogError($"blast.stack: attempting to push [{i}] onto a full stack, stack capacity = {package.StackCapacity}");
                 return;
             }
 #endif
@@ -746,7 +746,7 @@ namespace NSS.Blast.Interpretor
             {
                 // error or.. constant by operation value.... 
 #if DEBUG
-                Debug.LogError($"BlastInterpretor: pop_or_value -> select op by constant value is not supported, at codepointer: {code_pointer} => {code[code_pointer].ToString().PadLeft(3, '0')}  ");
+                Debug.LogError($"BlastInterpretor: pop_or_value -> select op by constant value is not supported, at codepointer: {code_pointer} => {code[code_pointer]}");
 #endif
                 type = BlastVariableDataType.Numeric;
                 vector_size = 1;
@@ -894,7 +894,7 @@ namespace NSS.Blast.Interpretor
             {
                 // error or.. constant by operation value.... 
 #if DEBUG
-                Standalone.Debug.LogError("BlastInterpretor: pop_or_value4 -> select op by constant value is not supported");
+                Debug.LogError("BlastInterpretor: pop_or_value4 -> select op by constant value is not supported");
 #endif
                 return float.NaN;
             }
@@ -998,7 +998,7 @@ namespace NSS.Blast.Interpretor
                     break;
                 case BlastVectorSizes.float4:
 #if DEBUG
-                    Standalone.Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
+                    Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
 #endif
                     return false;
             }
@@ -1046,8 +1046,8 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.equals: a = math.select(0f, 1f, a == b); return;
 
                 case blast_operation.not:
-#if UNITY_EDITOR || LOG_ERRORS
-                    Standalone.Debug.LogError("not");
+#if DEBUG
+                    Debug.LogError("not");
 #endif
                     return;
             }
@@ -1082,8 +1082,8 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.equals: a.xyz = math.select(0f, 1f, a.xyz == b); return;
 
                 case blast_operation.not:
-#if UNITY_EDITOR || LOG_ERRORS
-                    Standalone.Debug.LogError("not");
+#if DEBUG
+                    Debug.LogError("not");
 #endif
                     return;
             }
@@ -1118,8 +1118,8 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.equals: a.xy = math.select(0f, 1f, a.xy == b); return;
 
                 case blast_operation.not:
-#if LOG_ERRORS
-                    Standalone.Debug.LogError("not");
+#if DEBUG
+                    Debug.LogError("not");
 #endif
                     return;
             }
@@ -1154,8 +1154,8 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.equals: a = math.select(0f, 1f, a == b); return;
 
                 case blast_operation.not:
-#if UNITY_EDITOR || LOG_ERRORS
-                    Standalone.Debug.LogError("not");
+#if DEBUG
+                    Debug.LogError("not");
 #endif
                     return;
             }
@@ -1209,6 +1209,7 @@ namespace NSS.Blast.Interpretor
                         float* fdata = (float*)pdata;
                         switch (vector_size)
                         {
+#if NOT_USING_UNITY
                             case 1: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: {fdata[0].ToString("0.00")}, vectorsize: {vector_size}"); break;
                             case 2: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0].ToString("0.00")}, {fdata[1].ToString("0.00")}], vectorsize: {vector_size}"); break;
                             case 3: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0].ToString("0.00")}, {fdata[1].ToString("0.00")}, {fdata[2].ToString("0.00")}], vectorsize: {vector_size}"); break;
@@ -1225,6 +1226,25 @@ namespace NSS.Blast.Interpretor
                             case 14: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0].ToString("0.00")}, {fdata[1].ToString("0.00")}, {fdata[2].ToString("0.00")}, {fdata[3].ToString("0.00")}, {fdata[4].ToString("0.00")}, {fdata[5].ToString("0.00")}, {fdata[6].ToString("0.00")}, {fdata[7].ToString("0.00")}, {fdata[8].ToString("0.00")}, {fdata[9].ToString("0.00")}, {fdata[10].ToString("0.00")}, {fdata[11].ToString("0.00")}, {fdata[12].ToString("0.00")}, {fdata[13].ToString("0.00")}], vectorsize: {vector_size}"); break;
                             case 15: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0].ToString("0.00")}, {fdata[1].ToString("0.00")}, {fdata[2].ToString("0.00")}, {fdata[3].ToString("0.00")}, {fdata[4].ToString("0.00")}, {fdata[5].ToString("0.00")}, {fdata[6].ToString("0.00")}, {fdata[7].ToString("0.00")}, {fdata[8].ToString("0.00")}, {fdata[9].ToString("0.00")}, {fdata[10].ToString("0.00")}, {fdata[11].ToString("0.00")}, {fdata[12].ToString("0.00")}, {fdata[13].ToString("0.00")}, {fdata[14].ToString("0.00")}], vectorsize: {vector_size}"); break;
                             case 16: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0].ToString("0.00")}, {fdata[1].ToString("0.00")}, {fdata[2].ToString("0.00")}, {fdata[3].ToString("0.00")}, {fdata[4].ToString("0.00")}, {fdata[5].ToString("0.00")}, {fdata[6].ToString("0.00")}, {fdata[7].ToString("0.00")}, {fdata[8].ToString("0.00")}, {fdata[9].ToString("0.00")}, {fdata[10].ToString("0.00")}, {fdata[11].ToString("0.00")}, {fdata[12].ToString("0.00")}, {fdata[13].ToString("0.00")}, {fdata[14].ToString("0.00")}, {fdata[15].ToString("0.00")}], vectorsize: {vector_size}"); break;
+#else
+                            // BURST : not string functions 
+                            case 1: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: {fdata[0]}, vectorsize: {vector_size}"); break;
+                            case 2: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}], vectorsize: {vector_size}"); break;
+                            case 3: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}], vectorsize: {vector_size}"); break;
+                            case 4: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}], vectorsize: {vector_size}"); break;
+                            case 5: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}], vectorsize: {vector_size}"); break;
+                            case 6: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}], vectorsize: {vector_size}"); break;
+                            case 7: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}, {fdata[6]}], vectorsize: {vector_size}"); break;
+                            case 8: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}, {fdata[6]}, {fdata[7]}], vectorsize: {vector_size}"); break;
+                            case 9: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}, {fdata[6]}, {fdata[7]},  {fdata[8]}], vectorsize: {vector_size}"); break;
+                            case 10: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}, {fdata[6]}, {fdata[7]}, {fdata[8]}, {fdata[9]}], vectorsize: {vector_size}"); break;
+                            case 11: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}, {fdata[6]}, {fdata[7]}, {fdata[8]}, {fdata[9]}, {fdata[10]}], vectorsize: {vector_size}"); break;
+                            case 12: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}, {fdata[6]}, {fdata[7]}, {fdata[8]}, {fdata[9]}, {fdata[10]}, {fdata[11]}], vectorsize: {vector_size}"); break;
+                            case 13: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}, {fdata[6]}, {fdata[7]}, {fdata[8]}, {fdata[9]}, {fdata[10]}, {fdata[11]}, {fdata[12]}], vectorsize: {vector_size}"); break;
+                            case 14: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}, {fdata[6]}, {fdata[7]}, {fdata[8]}, {fdata[9]}, {fdata[10]}, {fdata[11]}, {fdata[12]}, {fdata[13]}], vectorsize: {vector_size}"); break;
+                            case 15: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}, {fdata[6]}, {fdata[7]}, {fdata[8]}, {fdata[9]}, {fdata[10]}, {fdata[11]}, {fdata[12]}, {fdata[13]}, {fdata[14]}], vectorsize: {vector_size}"); break;
+                            case 16: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0]}, {fdata[1]}, {fdata[2]}, {fdata[3]}, {fdata[4]}, {fdata[5]}, {fdata[6]}, {fdata[7]}, {fdata[8]}, {fdata[9]}, {fdata[10]}, {fdata[11]}, {fdata[12]}, {fdata[13]}, {fdata[14]}, {fdata[15]}], vectorsize: {vector_size}"); break;
+#endif
                             default:
                                 Debug.LogError($"Blast.Debug(data) - Vectorsize of {vector_size} is not supported in variable/operation with id {op_id} and datatype ID");
                                 break;
@@ -1237,7 +1257,7 @@ namespace NSS.Blast.Interpretor
                 }
             }
 #endif
-        }
+                        }
 
         /// <summary>
         /// printout an overview of the datasegment/stack (if shared)
@@ -1414,8 +1434,8 @@ namespace NSS.Blast.Interpretor
                     {
                         default:
                             {
-#if LOG_ERRORS
-                    Standalone.Debug.LogError($"random: range type '{c}' not supported ");
+#if DEBUG
+                                Debug.LogError($"random: range type '{c}' not supported ");
 #endif
                                 minus = false;
                                 return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -1437,8 +1457,8 @@ namespace NSS.Blast.Interpretor
                     {
                         default:
                             {
-#if LOG_ERRORS
-                    Standalone.Debug.LogError($"random: range type '{c}' not supported ");
+#if DEBUG
+                                Debug.LogError($"random: range type '{c}' not supported ");
 #endif
                                 minus = false;
                                 f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -1458,8 +1478,8 @@ namespace NSS.Blast.Interpretor
                 case BlastVectorSizes.float3:
                 default:
                     {
-#if LOG_ERRORS
-                    Standalone.Debug.LogError($"random: vector size '{vector_size}' not supported ");
+#if DEBUG
+                        Debug.LogError($"random: vector size '{vector_size}' not supported ");
 #endif
                         minus = false;
                         f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -1978,7 +1998,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"ceil: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"ceil: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2017,7 +2037,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"floor: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"floor: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2055,7 +2075,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"frac: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"frac: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2094,7 +2114,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"sqrt: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"sqrt: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2133,7 +2153,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"rsqrt: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"rsqrt: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2172,7 +2192,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"sin: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"sin: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2484,7 +2504,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"log2: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"log2: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2523,7 +2543,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"log: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"log: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2562,7 +2582,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"log10: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"log10: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2601,7 +2621,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"exp: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"exp: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2640,7 +2660,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"exp10: numeric vector size '{vector_size}' not supported ");
+                        Debug.LogError($"exp10: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2700,7 +2720,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"pow: {datatype} vector size '{vector_size}' not supported ");
+                        Debug.LogError($"pow: {datatype} vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2759,7 +2779,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"dot: {datatype} vector size '{vector_size}' not supported ");
+                        Debug.LogError($"dot: {datatype} vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2813,7 +2833,7 @@ namespace NSS.Blast.Interpretor
 #if DEBUG
                 default:
                     {
-                        Standalone.Debug.LogError($"cross: {datatype} vector size '{vector_size}' not supported ");
+                        Debug.LogError($"cross: {datatype} vector size '{vector_size}' not supported ");
                         break;
                     }
 #endif
@@ -2856,14 +2876,14 @@ namespace NSS.Blast.Interpretor
             void* pm2 = pop_with_info(code_pointer + 2, out popped_datatype, out popped_vector_size);
             if (datatype != popped_datatype || vector_size != popped_vector_size) 
             {
-                Debug.Log($"fma: [datatype|vectorsize] mismatch, codepointer {code_pointer}, all parameters must share the same datatype, m1 = {(datatype == 0 ? "NUMERIC" : "ID")}.{vector_size} while m2 = {(popped_datatype == 0 ? "NUMERIC" : "ID")}.{popped_vector_size}");
+                Debug.Log($"fma: [datatype|vectorsize] mismatch, codepointer {code_pointer}, all parameters must share the same datatype, m1 = {datatype}.{vector_size} while m2 = {popped_datatype}.{popped_vector_size}");
                 return; 
             }
 
             void* pa1 = pop_with_info(code_pointer + 3, out datatype, out vector_size);
             if (datatype != popped_datatype || vector_size != popped_vector_size)
             {
-                Debug.Log($"fma: [datatype|vectorsize] mismatch, codepointer {code_pointer}, all parameters must share the same datatype, m1 = {(datatype == 0 ? "NUMERIC" : "ID")}.{vector_size} while a1 = {(popped_datatype == 0 ? "NUMERIC" : "ID")}.{popped_vector_size}");
+                Debug.Log($"fma: [datatype|vectorsize] mismatch, codepointer {code_pointer}, all parameters must share the same datatype, m1 = {datatype}.{vector_size} while a1 = {popped_datatype}.{popped_vector_size}");
                 return;
             }
 
@@ -3803,8 +3823,8 @@ namespace NSS.Blast.Interpretor
                     }
                 default:
                     {
-#if UNITY_EDITOR || LOG_ERRORS
-                        Standalone.Debug.LogError($"get_adda_result: vector size '{vector_size}' not allowed");
+#if DEBUG
+                        Debug.LogError($"get_adda_result: vector size '{vector_size}' not allowed");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
 
@@ -3850,8 +3870,8 @@ namespace NSS.Blast.Interpretor
                     }
                 default:
                     {
-#if UNITY_EDITOR || LOG_ERRORS
-                        Standalone.Debug.LogError($"get_suba_result: vector size '{vector_size}' not allowed");
+#if DEBUG
+                        Debug.LogError($"get_suba_result: vector size '{vector_size}' not allowed");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
 
@@ -3897,8 +3917,8 @@ namespace NSS.Blast.Interpretor
                     }
                 default:
                     {
-#if UNITY_EDITOR || LOG_ERRORS
-                        Standalone.Debug.LogError($"get_diva_result: vector size '{vector_size}' not allowed");
+#if DEBUG
+                        Debug.LogError($"get_diva_result: vector size '{vector_size}' not allowed");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
 
@@ -3934,8 +3954,8 @@ namespace NSS.Blast.Interpretor
                         switch (c)
                         {
                             default:
-#if LOG_ERRORS
-                Standalone.Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+#if DEBUG
+                                Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return 0;
 
@@ -4014,8 +4034,8 @@ namespace NSS.Blast.Interpretor
                         switch (c)
                         {
                             default:
-#if LOG_ERRORS
-                Standalone.Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+#if DEBUG
+                                Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return 0;
 
@@ -4093,8 +4113,8 @@ namespace NSS.Blast.Interpretor
 
                 default:
                     {
-#if UNITY_EDITOR || LOG_ERRORS
-                        Standalone.Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
+#if DEBUG
+                        Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                     }
@@ -4125,8 +4145,8 @@ namespace NSS.Blast.Interpretor
                         switch (c)
                         {
                             default:
-#if LOG_ERRORS
-                Standalone.Debug.LogError($"get_all_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+#if DEBUG
+                                Debug.LogError($"get_all_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return 0;
 
@@ -4205,8 +4225,8 @@ namespace NSS.Blast.Interpretor
                         switch (c)
                         {
                             default:
-#if LOG_ERRORS
-                Standalone.Debug.LogError($"get_all_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+#if DEBUG
+                                Debug.LogError($"get_all_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 return 0;
 
@@ -4284,8 +4304,8 @@ namespace NSS.Blast.Interpretor
 
                 default:
                     {
-#if UNITY_EDITOR || LOG_ERRORS
-                        Standalone.Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
+#if DEBUG
+                        Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
 #endif
                         return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
                     }
@@ -4864,7 +4884,7 @@ namespace NSS.Blast.Interpretor
                                                 default:
 #if DEBUG
                                                     // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                    Debug.LogWarning($"execute: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+              //                                      Debug.LogWarning($"execute: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                     break;
                                             }
@@ -4886,7 +4906,7 @@ namespace NSS.Blast.Interpretor
                                                 default:
 #if DEBUG
                                                     // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                    Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+                                                   // Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                     break;
                                             }
@@ -4916,7 +4936,7 @@ namespace NSS.Blast.Interpretor
                                                     break;
                                                 default:
 #if DEBUG
-                                                    Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+                                  //                  Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                     break;
                                             }

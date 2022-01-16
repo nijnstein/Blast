@@ -1,8 +1,11 @@
-﻿using NSS.Blast.Standalone;
+﻿#if NOT_USING_UNITY
+    using NSS.Blast.Standalone;
+#else
+    using UnityEngine;
+    using Unity.Collections.LowLevel.Unsafe;
+#endif
+
 using System;
-using System.Text;
-using System.Threading;
-using Unity.Assertions;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -146,9 +149,11 @@ namespace NSS.Blast
     unsafe public struct BlastPackageData
     {
         [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
         public IntPtr CodeSegmentPtr;
 
         [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
         public IntPtr P2;
         //-- 16 bytes
 
@@ -187,7 +192,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-                        Standalone.Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"packagemode {PackageMode} not supported");
                         return 0;
 
                     case BlastPackageMode.Normal:
@@ -215,7 +220,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-                        Standalone.Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"packagemode {PackageMode} not supported");
                         return 0;
 
                     case BlastPackageMode.Normal:
@@ -241,7 +246,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-                        Standalone.Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"packagemode {PackageMode} not supported");
                         return 0;
 
                     case BlastPackageMode.Normal:
@@ -267,7 +272,7 @@ namespace NSS.Blast
                 {
                     default:
 #if DEBUG
-                        Standalone.Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"packagemode {PackageMode} not supported");
 #endif 
                         return 0;
 
@@ -289,7 +294,7 @@ namespace NSS.Blast
                 {
                     default:
 #if DEBUG
-                        Standalone.Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"packagemode {PackageMode} not supported");
 #endif 
                         return 0;
 
@@ -316,7 +321,7 @@ namespace NSS.Blast
                 {
                     default:
 #if DEBUG
-                        Standalone.Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"packagemode {PackageMode} not supported");
 #endif 
                         return 0;
 
@@ -378,7 +383,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-                        Standalone.Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"packagemode {PackageMode} not supported");
                         return IntPtr.Zero;
 
                     case BlastPackageMode.Normal: return CodeSegmentPtr + O1;
@@ -401,7 +406,7 @@ namespace NSS.Blast
                 {
                     default:
 #if DEBUG
-                        Standalone.Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"packagemode {PackageMode} not supported");
 #endif                        
                         return IntPtr.Zero;
 
@@ -423,7 +428,7 @@ namespace NSS.Blast
                 {
                     default:
 #if DEBUG
-                        Standalone.Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"packagemode {PackageMode} not supported");
 #endif 
                         return IntPtr.Zero;
 
