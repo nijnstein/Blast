@@ -1623,16 +1623,16 @@ namespace NSS.Blast.SSMD
                 case 3:
                     float3* m13 = (float3*)temp;
                     pop_fx_into(code_pointer + 1, m13);
-                    pop_f3_with_op_into_f3(code_pointer + 2, m13, m13, blast_operation.multiply);
-                    pop_f3_with_op_into_f4(code_pointer + 3, m13, f4, blast_operation.add);
+                   // pop_f3_with_op_into_f3(code_pointer + 2, m13, m13, blast_operation.multiply);
+                   // pop_f3_with_op_into_f4(code_pointer + 3, m13, f4, blast_operation.add);
                     break;
 
                 case 0:
                 case 4:
                     float4* m14 = (float4*)temp;
                     pop_fx_into(code_pointer + 1, f4); // with f4 we can avoid reading/writing to the same buffer by alternating as long as we end at f4
-                    pop_f4_with_op_into_f4(code_pointer + 2, f4, m14, blast_operation.multiply);
-                    pop_f4_with_op_into_f4(code_pointer + 3, m14, f4, blast_operation.add);
+                   // pop_f4_with_op_into_f4(code_pointer + 2, f4, m14, blast_operation.multiply);
+                   // pop_f4_with_op_into_f4(code_pointer + 3, m14, f4, blast_operation.add);
                     break; 
             }                                     
             code_pointer += 3;
