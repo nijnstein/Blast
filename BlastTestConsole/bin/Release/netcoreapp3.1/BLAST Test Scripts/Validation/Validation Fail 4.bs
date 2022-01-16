@@ -1,3 +1,0 @@
-﻿
-# float3 is not defined, syntax should be a = (1 2 3)
-a = float3(1 2 3);

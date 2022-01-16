@@ -1,7 +1,0 @@
-﻿#input a 0 4
-#output a 0 4
-
-a = 1000;
-
-#validate a 1000  
-

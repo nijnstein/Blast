@@ -1,7 +1,0 @@
-﻿#input a 0 4
-#output a 2 4		  # should fail on wrong byte offset  (BUT DOESNT - obsolete anyway)
-
-a = 1001;
-
-#validate a 1000  
-
