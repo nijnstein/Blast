@@ -25,12 +25,12 @@ namespace NSS.Blast
 
             for (int i = 0; i < length; i++)
             {
-                if (i % 10 == 0)
+                if (i % column_count == 0)
                 {
                     sb.Append($"{i.ToString().PadLeft(3, '0')}| ");
                 }
                 sb.Append($"{code[i].ToString().PadLeft(3, '0')} ");
-                if (i % 10 == 9)
+                if (i % column_count == column_count - 1)
                 {
                     sb.AppendLine();
                 }

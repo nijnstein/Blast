@@ -167,7 +167,8 @@ namespace NSS.Blast.SSMD
             BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)stack_offset);
             for (int i = 0; i < ssmd_datacount; i++)
             {
-                ((float2*)(void*)&((float*)stack[i])[stack_offset])[0] = register[i].xy;
+                ((float*)stack[i])[stack_offset] = register[i].x;
+                ((float*)stack[i])[stack_offset + 1] = register[i].y;
             }
             stack_offset += 2;
         }
@@ -180,7 +181,9 @@ namespace NSS.Blast.SSMD
             BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)stack_offset);
             for (int i = 0; i < ssmd_datacount; i++)
             {
-                ((float3*)(void*)&((float*)stack[i])[stack_offset])[0] = register[i].xyz;
+                ((float*)stack[i])[stack_offset] = register[i].x;
+                ((float*)stack[i])[stack_offset + 1] = register[i].y;
+                ((float*)stack[i])[stack_offset + 2] = register[i].z;
             }
             stack_offset += 3;  // size 3
         }
@@ -193,7 +196,10 @@ namespace NSS.Blast.SSMD
             BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)stack_offset);
             for (int i = 0; i < ssmd_datacount; i++)
             {
-                ((float4*)(void*)&((float*)stack)[stack_offset])[0] = register[i];
+                ((float*)stack[i])[stack_offset] = register[i].x;
+                ((float*)stack[i])[stack_offset + 1] = register[i].y;
+                ((float*)stack[i])[stack_offset + 2] = register[i].z;
+                ((float*)stack[i])[stack_offset + 3] = register[i].w;
             }
             stack_offset += 4;  // size 4
         }
@@ -396,12 +402,20 @@ namespace NSS.Blast.SSMD
                         if (minus)
                         {
                             for (int i = 0; i < ssmd_datacount; i++)
-                                destination[i].xy = -((float2*)(void*)&((float*)data[i])[c - BlastInterpretor.opt_id])[0];
+                            {
+                                destination[i].x = -((float*)data[i])[c - BlastInterpretor.opt_id];
+                                destination[i].y = -((float*)data[i])[c - BlastInterpretor.opt_id + 1];
+                            }
                         }
                         else
                         {
                             for (int i = 0; i < ssmd_datacount; i++)
-                                destination[i].xy = ((float2*)(void*)&((float*)data[i])[c - BlastInterpretor.opt_id])[0];
+                            {
+                                destination[i].x = ((float*)data[i])[c - BlastInterpretor.opt_id];
+                                destination[i].y = ((float*)data[i])[c - BlastInterpretor.opt_id + 1];
+                            }
+                            // no problem in visual studio but its in unity/burst ? 
+                            //  destination[i].xy = ((float2*)(void*)&((float*)data[i])[c - BlastInterpretor.opt_id])[0];
                         }
                         break;
                     case 3:
@@ -1228,7 +1242,10 @@ namespace NSS.Blast.SSMD
                         BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)stack_offset);
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
-                            ((float4*)stack[i])[stack_offset] = ((float4*)data[i])[c - BlastInterpretor.opt_id];
+                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
+                            float* fstack = &((float*)stack[i])[stack_offset]; 
+
+                            ((float4*)fstack)[0] = ((float4*)(void*)fdata)[0];
                         }
                         stack_offset += 4;
                         break;
@@ -1236,7 +1253,8 @@ namespace NSS.Blast.SSMD
                         BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 1, (byte)stack_offset);
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
-                            ((float*)stack[i])[stack_offset] = ((float*)data[i])[c - BlastInterpretor.opt_id];
+                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
+                            ((float*)stack[i])[stack_offset] = fdata[0];
                         }
                         stack_offset += 1;
                         break;
@@ -1244,7 +1262,10 @@ namespace NSS.Blast.SSMD
                         BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)stack_offset);
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
-                            ((float2*)stack[i])[stack_offset] = ((float2*)data[i])[c - BlastInterpretor.opt_id];
+                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
+                            float* fstack = &((float*)stack[i])[stack_offset];
+
+                            ((float2*)fstack)[0] = ((float2*)(void*)fdata)[0];
                         }
                         stack_offset += 2;
                         break;
@@ -1253,7 +1274,10 @@ namespace NSS.Blast.SSMD
                         BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)stack_offset);
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
-                            ((float3*)stack[i])[stack_offset] = ((float3*)data[i])[c - BlastInterpretor.opt_id];
+                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
+                            float* fstack = &((float*)stack[i])[stack_offset];
+
+                            ((float3*)fstack)[0] = ((float3*)(void*)fdata)[0];
                         }
                         stack_offset += 3;
                         break;
@@ -1288,7 +1312,10 @@ namespace NSS.Blast.SSMD
                         BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)stack_offset);
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
-                            ((float4*)stack[i])[stack_offset] = constant;
+                            ((float*)stack[i])[stack_offset] = constant;
+                            ((float*)stack[i])[stack_offset + 1] = constant;
+                            ((float*)stack[i])[stack_offset + 2] = constant;
+                            ((float*)stack[i])[stack_offset + 3] = constant;
                         }
                         stack_offset += 4;
                         break;
@@ -1304,7 +1331,8 @@ namespace NSS.Blast.SSMD
                         BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)stack_offset);
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
-                            ((float2*)stack[i])[stack_offset] = constant;
+                            ((float*)stack[i])[stack_offset] = constant;
+                            ((float*)stack[i])[stack_offset + 1] = constant;
                         }
                         stack_offset += 2;
                         break;
@@ -1313,7 +1341,9 @@ namespace NSS.Blast.SSMD
                         BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)stack_offset);
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
-                            ((float3*)stack[i])[stack_offset] = constant;
+                            ((float*)stack[i])[stack_offset] = constant;
+                            ((float*)stack[i])[stack_offset + 1] = constant;
+                            ((float*)stack[i])[stack_offset + 2] = constant;
                         }
                         stack_offset += 3;
                         break;

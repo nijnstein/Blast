@@ -5,7 +5,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
-using UnityEngine;
+
+#if NOT_USING_UNITY
+    using NSS.Blast.Standalone; 
+#else
+    using UnityEngine;
+#endif 
+
 
 namespace NSS.Blast.Compiler
 {
@@ -61,7 +67,7 @@ namespace NSS.Blast.Compiler
         protected Version version = new Version(0, 1, 0);
         public Version Version => version; 
 
-        #region Compiler Messages 
+#region Compiler Messages 
         public class Message
         {
             public enum MessageType { Normal, Warning, Error, ToDo, Trace };
@@ -101,7 +107,7 @@ namespace NSS.Blast.Compiler
             {
 #if !NOT_USING_UNITY
                 Debug.Log(msg);
-#else 
+#else
                 System.Diagnostics.Debug.WriteLine(msg);
 #endif
             }
@@ -764,7 +770,7 @@ namespace NSS.Blast.Compiler
 
 
 
-        #region exposed via interface, non reference counting 
+#region exposed via interface, non reference counting 
         public bool ExistsVariable(string name)
         {
             if (string.IsNullOrWhiteSpace(name) || Variables == null || Variables.Count == 0) return false;
@@ -865,7 +871,7 @@ namespace NSS.Blast.Compiler
 
             return offset;
         }
-        #endregion
+#endregion
     }
 
 
