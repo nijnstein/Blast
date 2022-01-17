@@ -8,6 +8,8 @@ using System.IO;
 #else
     using UnityEngine;
     using UnityEngine.Assertions; 
+    using Unity.Jobs;
+    using Unity.Collections.LowLevel.Unsafe;
 #endif
 
 using NSS.Blast.Cache;
@@ -15,7 +17,6 @@ using NSS.Blast.Compiler;
 using NSS.Blast.Register;
 
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using System.Text;
 using System.Linq; 
@@ -23,10 +24,6 @@ using Unity.Burst;
 using NSS.Blast.Interpretor;
 using NSS.Blast.SSMD;
 
-#if !NOT_USING_UNITY
-    //using Unity.Entities;
-    using Unity.Jobs;
-#endif
 
 using Random = Unity.Mathematics.Random;
 
@@ -1194,9 +1191,27 @@ namespace NSS.Blast
             return sb.ToString();
         }
 
-#endregion
+        /// <summary>
+        /// return if an error (!yield and !success)
+        /// </summary>
+        /// <param name="res"></param>
+        /// <returns></returns>
+        static public bool IsError(BlastError res)
+        {
+            return res != BlastError.success && res != BlastError.yield; 
+        }
 
-#region Execute Scripts (UNITY)
+        /// <summary>
+        /// return if an error code actually means success 
+        /// </summary>
+        static public bool IsSuccess(BlastError res)
+        {
+            return res == BlastError.success; 
+        }
+
+        #endregion
+
+        #region Execute Scripts (UNITY)
 #if !NOT_USING_UNITY
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
@@ -1281,9 +1296,9 @@ namespace NSS.Blast
             return 0; 
         }
 #endif
-#endregion
+        #endregion
 
-#region Runners 
+        #region Runners 
 
         static Dictionary<int, runner> runners;
 

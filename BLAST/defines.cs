@@ -26,7 +26,6 @@ namespace NSS.Blast
     }
 
 
-
     public enum BlastPackageCapacities : int
     {
         c32 = 32,

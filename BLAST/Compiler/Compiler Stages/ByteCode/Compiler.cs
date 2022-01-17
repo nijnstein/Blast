@@ -493,16 +493,20 @@ namespace NSS.Blast.Compiler.Stage
             // detect if current node is compound with 1 child only
             if(ast_node.IsCompound && ast_node.HasOneChild)
             {
+#if TRACE
+                data.LogTrace($"CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>");
+#endif 
+
                 // if so just skip it 
                 if (ast_node.HasDependencies)
                 {
                     // but keep dependencies 
                     ast_node.children[0].depends_on.InsertRange(0, ast_node.depends_on);
+#if TRACE
+                    data.LogTrace($"CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>, {ast_node.DependencyCount} dependencies moved to <{ast_node.children[0]}>");
+#endif 
                 }
                 ast_node = ast_node.children[0];
-#if TRACE
-                data.LogTrace($"CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>");
-#endif 
             }
 
 
@@ -511,6 +515,7 @@ namespace NSS.Blast.Compiler.Stage
             {
                 for (int i = ast_node.depends_on.Count - 1; i >= 0; i--)
                 {
+                    // insert each node at target parent 
                     node initializer = ast_node.depends_on[i];
                     if (CompileNode(data, initializer, code) == null)
                     {
@@ -906,6 +911,99 @@ namespace NSS.Blast.Compiler.Stage
         }
 
         /// <summary>
+        /// analyze node tree structure, find any nested compound that shouldnt be 
+        /// - fix simple cases
+        /// - error on others 
+        /// - this 'analysis' must always run independant of analyzer 
+        /// </summary>
+        /// <param name="data">compiler data</param>
+        /// <param name="root">root to start from</param>
+        /// <returns>success or error code</returns>
+        static BlastError AnalyzeCompoundNesting(CompilationData data, node root)
+        {
+            // CASE 1 => single compound below assignment 
+            //        => result of extra compounds in script or injected push;s 
+            // 
+            //            root of 1
+            //       vector[4]assignment of a
+            //          vector[4]compound statement of 3[depends on: vector[4]function push  vector[4]function push]
+            //             vector[4]function pop
+            //            operation Multiply
+            //             vector[4]function pop
+            //         /
+            //      /
+            //   /
+            // 
+            BlastError case1(node current)
+            {
+                bool changed = true;
+                while (changed)
+                {
+                    int i = 0;
+                    changed = false; 
+                    while (i < current.ChildCount)
+                    {
+                        node child = current.children[i];
+                        if (child.IsAssignment)
+                        {
+                            // check for case 1: assignment with useless compound in between 
+                            if (child.HasChildren && child.ChildCount == 1)
+                            {
+                                node grandchild = child.FirstChild;
+                                if (grandchild.IsCompound)
+                                {
+                                    // we have found a match to our case, reduce the node 
+                                    // - any vector / datatype information has already been passed up earlier
+                                    // - need to move dependencies 
+                                    if (grandchild.HasDependencies)
+                                    {
+                                        foreach (node d in grandchild.depends_on)
+                                        {
+                                            child.AppendDependency(d);
+                                        }
+                                    }
+                                    child.children.Clear();
+                                    child.children.AddRange(grandchild.children);
+                                    foreach (node c in child.children)
+                                    {
+                                        c.parent = child;
+                                    }
+                                    grandchild = null;
+                                    changed = true;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (child.HasChildNodes)
+                            {
+                                BlastError res = case1(child);
+                                if (res == BlastError.yield) changed = true;
+                                if (Blast.IsError(res)) return res; 
+                            }
+                        }
+                        // next 
+                        i++;
+                    }
+
+                    if(changed && !current.IsRoot)
+                    {
+                        // propagate up to root if something changed 
+                        return BlastError.yield; 
+                    }
+                }
+                return BlastError.success;     
+            }
+
+            BlastError result = case1(root);
+            if (result != BlastError.success) return result; 
+
+            return BlastError.success; 
+        }
+
+
+        /// <summary>
         /// compile all nodes in the given root node into intermediate bytecode
         /// - if allowed by options, all child nodes will be processed in parallel
         /// </summary>
@@ -915,6 +1013,12 @@ namespace NSS.Blast.Compiler.Stage
         static IMByteCodeList CompileNodes(CompilationData data, node ast_root)
         {
             IMByteCodeList code = new IMByteCodeList();
+
+            if(AnalyzeCompoundNesting(data, ast_root) != 0)
+            {
+                data.LogError("Failed to compile node list from <{ast_root}>, there are unresolved nested compounds");
+                return null; 
+            }
 
             if (data.CompilerOptions.ParallelCompilation)
             {

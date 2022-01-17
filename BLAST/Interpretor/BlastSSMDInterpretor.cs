@@ -1676,7 +1676,6 @@ namespace NSS.Blast.SSMD
 
 #endregion
 
-
 #region GetCompound and Execute (privates)
 
         /// <summary>

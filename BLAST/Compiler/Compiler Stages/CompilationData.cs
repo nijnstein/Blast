@@ -447,7 +447,10 @@ namespace NSS.Blast.Compiler
 
                                     break;
                                 default:
-                                    sb.Append($"\n\noperation {(blast_operation)op} {exop} not yet translated in source debug\n\n");
+                                    // just append byte value instead of raising big error making it unreadable mess
+                                    sb.Append(op.ToString().PadLeft(3, ' ') + " ");
+
+                                    // sb.Append($"\n\noperation {(blast_operation)op} {exop} not yet translated in source debug\n\n");
                                     break;
                             }
                             break;
@@ -497,7 +500,10 @@ namespace NSS.Blast.Compiler
                             }
                             else
                             {
-                                sb.Append($"\n\noperation {(blast_operation)op} not yet translated in source debug\n\n");
+                                // just append byte value instead of raising big error making it unreadable mess
+                                sb.Append(op.ToString().PadLeft(3, ' ') + " ");
+
+                                // sb.Append($"\n\noperation {(blast_operation)op} not yet translated in source debug\n\n");
                             }
                             break;
                     }

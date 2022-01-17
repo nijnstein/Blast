@@ -66,11 +66,13 @@ namespace NSS.Blast.Compiler
         public int vector_size;
         public bool is_vector;
 
+        public bool IsRoot => parent == null && type == nodetype.root; 
         public bool IsCompound => type == nodetype.compound;
-        public bool IsAssigment => type == nodetype.assignment;
+        public bool IsAssignment => type == nodetype.assignment;
         public bool IsFunction => type == nodetype.function;
         public bool IsScriptVariable => variable != null;
         public bool HasDependencies => depends_on != null && depends_on.Count > 0;
+        public int DependencyCount => depends_on != null ? depends_on.Count : 0; 
         public bool HasChildren => children != null && children.Count > 0;
         public bool HasOneChild => children != null && children.Count == 1;
         public bool HasIndexers => indexers != null && indexers.Count > 0;
@@ -415,9 +417,13 @@ namespace NSS.Blast.Compiler
                 ast_node.parent.children.Remove(ast_node);
             }
 
-            AddNodeToDependsOn(ast_node); 
+            AppendDependency(ast_node); 
         }
 
+        /// <summary>
+        /// insert a depenency, updateing parent and chldren list 
+        /// </summary>
+        /// <param name="ast_node"></param>
         public void InsertDependency(node ast_node)
         {
             Assert.IsNotNull(ast_node);
@@ -428,7 +434,7 @@ namespace NSS.Blast.Compiler
                 ast_node.parent.children.Remove(ast_node);
             }
 
-            AddNodeToDependsOn(ast_node);
+            AppendDependency(ast_node);
 
             if (depends_on == null)
             {
@@ -444,7 +450,7 @@ namespace NSS.Blast.Compiler
         /// this node during compilation, the parent of the node is updated to this
         /// </summary>
         /// <param name="n">the node to add</param>
-        internal void AddNodeToDependsOn(node n)
+        internal void AppendDependency(node n)
         {
             if(n == null)
             {
@@ -457,6 +463,12 @@ namespace NSS.Blast.Compiler
             n.parent = this;
             depends_on.Add(n); 
         }
+
+        public void AppendDependencies(IEnumerable<node> nodes)
+        {
+            foreach(node n in nodes) AppendDependency(n); 
+        }
+
 
         /// <summary>
         /// get the first child found of a given nodetype
@@ -815,6 +827,9 @@ namespace NSS.Blast.Compiler
         {
             get { return children == null ? 0 : children.Count; }
         }
+
+        public node FirstChild => ChildCount > 0 ? children[0] : null;
+        public node LastChild => ChildCount > 0 ? children[ChildCount - 1] : null;
 
         internal bool SetIsVector(int _vector_size, bool propagate_to_parents = true)
         {

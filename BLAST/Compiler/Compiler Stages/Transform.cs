@@ -202,7 +202,7 @@ namespace NSS.Blast.Compiler.Stage
             node n_iterator = n_for.children[2];
             node n_compound = n_for.children[3];
 
-            n_while.AddNodeToDependsOn(n_initialize);
+            n_while.AppendDependency(n_initialize);
             n_while.SetChild(n_condition);
 
             n_condition.type = nodetype.condition;
