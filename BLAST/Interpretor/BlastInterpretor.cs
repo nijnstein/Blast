@@ -985,12 +985,47 @@ namespace NSS.Blast.Interpretor
         #region Static Execution Helpers
 
         /// <summary>
+        /// return true if op is a value: 
+        /// - pop counts!!
+        /// - byte value between lowest constant and extended op id  (dont allow constants in extended op id's)
+        /// </summary>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool BlastOperationIsValue(in byte op)
+        {
+            return
+                // its a value if from stack 
+                op == (byte)blast_operation.pop
+                ||
+                // or between the lowest constant and the highest possible variable 
+                (op >= (byte)blast_operation.pi && op < 255);
+        }
+
+        /// <summary>
         /// WARNING checks if +-*/&| etc, uses value op enum!! => op >= blast_operation.add && op <= blast_operation.not_equals; 
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsMathematicalOrBooleanOperation(blast_operation op)
         {
             return op >= blast_operation.add && op <= blast_operation.not_equals; 
+        }
+
+        /// <summary>
+        /// WARNING checks if +-*/ uses value op enum!!  
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsMathematicalOperation(blast_operation op)
+        {
+            return op >= blast_operation.add && op < blast_operation.and;
+        }
+
+        /// <summary>
+        /// WARNING checks if &| etc etc, uses value op enum!! 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsBooleanOperation(blast_operation op)
+        {
+            return op >= blast_operation.and && op <= blast_operation.not_equals;
         }
 
 
@@ -1173,6 +1208,7 @@ namespace NSS.Blast.Interpretor
 
         #endregion
 
+        #region Debug Data
         /// <summary>
         /// handle command to show the given field in debug 
         /// </summary>
@@ -1289,6 +1325,9 @@ namespace NSS.Blast.Interpretor
 #endif 
         }
 
+        #endregion
+
+        #region Exeternal Functionpointer calls 
         /// <summary>
         /// call an external function pointer 
         /// </summary>
@@ -1418,7 +1457,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#region Function Handlers 
+        #endregion 
+
+        #region Function Handlers 
 
 
 
@@ -4328,26 +4369,9 @@ namespace NSS.Blast.Interpretor
 
 #endregion
 
-#region ByteCode Execution
+        #region ByteCode Execution
 
-
-        /// <summary>
-        /// return true if op is a value: 
-        /// - pop counts!!
-        /// - byte value between lowest constant and extended op id  (dont allow constants in extended op id's)
-        /// </summary>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool script_op_is_value(in byte op)
-        {
-            return
-                // its a value if from stack 
-                op == (byte)blast_operation.pop
-                ||
-                // or between the lowest constant and the highest possible variable 
-                (op >= (byte)blast_operation.pi && op < 255);
-        }
-
+                       
 
         /// <summary>
         /// recursively handle a compounded statement and return its value

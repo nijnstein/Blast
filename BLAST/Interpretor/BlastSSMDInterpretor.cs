@@ -1823,7 +1823,6 @@ namespace NSS.Blast.SSMD
                     case blast_operation.nop:
                         // assignments will end with nop and not with end as a compounded statement
                         // at this point vector_size is decisive for the returned value
-                        code_pointer++;
                         end_of_compound = true;
                         break;
 

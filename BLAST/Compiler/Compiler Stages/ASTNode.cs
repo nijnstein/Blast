@@ -208,9 +208,7 @@ namespace NSS.Blast.Compiler
             return true; 
         }
     
-
-
-        public bool is_float {
+        public bool IsFloat {
             get
             {
                 if (vector_size != 1 || string.IsNullOrWhiteSpace(identifier)) return false;
