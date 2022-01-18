@@ -86,7 +86,7 @@ namespace NSS.Blast.Compiler.Stage
                     if (v.IsConstant)
                     {
                         float f;
-                        if (!float.IsNaN(f = node.AsFloat(v.Name)))
+                        if (!float.IsNaN(f = v.Name.AsFloat()))
                         {
                             // constant numeric value
                             cdata.Executable.data[offset++] = f;

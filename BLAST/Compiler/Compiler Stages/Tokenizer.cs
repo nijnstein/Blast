@@ -51,7 +51,7 @@ namespace NSS.Blast.Compiler.Stage
 
         static bool is_comment_start(char ch)
         {
-            return ch == Blast.comment;
+            return ch == Blast.Comment;
         }
 
         /// <summary>

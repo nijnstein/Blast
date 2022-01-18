@@ -1792,6 +1792,31 @@ namespace NSS.Blast.SSMD
                 switch ((blast_operation)op)
                 {
                     case blast_operation.end:
+
+                        // when assigning this might not be the end, peek next instruction.
+                        //
+                        // - if not a nop or a new assign, then continue reading the compound 
+                        //
+                        if (code_pointer < package.CodeSize - 1)
+                        {
+                            blast_operation next_op = (blast_operation)code[code_pointer + 1];
+
+                            if (next_op != blast_operation.nop && next_op != blast_operation.assign)
+                            {
+                                // for now restrict ourselves to only accepting operations at this point 
+                                if (BlastInterpretor.IsMathematicalOrBooleanOperation(next_op))
+                                {
+                                    // break out of switch before returning, there is more to this operation then known at the moment 
+                                    break;
+                                }
+                                else
+                                {
+                                    // probably a bug
+                                    Debug.LogWarning($"Possible BUG: encountered non mathematical operation '{next_op}' after compound in statement at codepointer {code_pointer + 1}, expecting nop or assign");
+                                }
+                            }
+                        }
+
                         end_of_compound = true;
                         break;
 

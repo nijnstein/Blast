@@ -984,6 +984,16 @@ namespace NSS.Blast.Interpretor
 
         #region Static Execution Helpers
 
+        /// <summary>
+        /// WARNING checks if +-*/&| etc, uses value op enum!! => op >= blast_operation.add && op <= blast_operation.not_equals; 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsMathematicalOrBooleanOperation(blast_operation op)
+        {
+            return op >= blast_operation.add && op <= blast_operation.not_equals; 
+        }
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool UpdateCurrentVector(ref byte vector_size, float f1, ref float4 f4)
         {
@@ -4449,6 +4459,30 @@ namespace NSS.Blast.Interpretor
                 switch ((blast_operation)op)
                 {
                     case blast_operation.end:
+                        // when assigning this might not be the end, peek next instruction.
+                        //
+                        // - if not a nop or a new assign, then continue reading the compound 
+                        //
+                        if (code_pointer < package.CodeSize - 1)
+                        {
+                            blast_operation next_op = (blast_operation)code[code_pointer + 1];
+
+                            if (next_op != blast_operation.nop && next_op != blast_operation.assign)
+                            {
+                                // for now restrict ourselves to only accepting operations at this point 
+                                if (IsMathematicalOrBooleanOperation(next_op))
+                                {
+                                    // break out of switch before returning, there is more to this operation then known at the moment 
+                                    break; 
+                                }
+                                else
+                                {
+                                    // probably a bug
+                                    Debug.LogWarning($"Possible BUG: encountered non mathematical operation '{next_op}' after compound in statement at codepointer {code_pointer + 1}, expecting nop or assign");
+                                }
+                            }
+                        }                                  
+
                         vector_size = vector_size > max_vector_size ? vector_size : max_vector_size;
                         return vector_size > 1 ? f4 : new float4(f1, 0, 0, 0);
 

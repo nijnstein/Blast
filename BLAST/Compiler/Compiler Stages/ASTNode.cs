@@ -207,6 +207,7 @@ namespace NSS.Blast.Compiler
             }
             return true; 
         }
+    
 
 
         public bool is_float {
@@ -264,42 +265,11 @@ namespace NSS.Blast.Compiler
             }            
         }
 
-        public static float AsFloat(string s)
-        {
-            float f = float.NaN;
-
-            if (string.IsNullOrWhiteSpace(s))
-            {
-                return f;
-            }
-
-            if (CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator == ",")
-            {
-                /*if (s.Contains('.')) */
-                s = s.Replace('.', ',');
-            }
-            else
-            {
-                s = s.Replace(',', '.');
-            }
-
-
-            //if(
-            float.TryParse(s, out f);//)
-            {
-                return f;
-            }
-            //else
-            //{
-            // NaN
-            //  return f;
-            //}
-        }
-        public float as_float
+        public float AsFloat
         {
             get
             {
-                return AsFloat(identifier);
+                return identifier == null ? Blast.InvalidNumeric : identifier.AsFloat();
             }
         }
 
@@ -1013,7 +983,7 @@ namespace NSS.Blast.Compiler
                 if (float.IsNaN(f))
                 {
                     // not a system constant: we should be able to just parse it 
-                    if (!float.IsNaN(f = this.as_float))
+                    if (!float.IsNaN(f = this.AsFloat))
                     {
                         return f;
                     }

@@ -230,9 +230,8 @@ namespace NSS.Blast.Compiler
                 foreach (var validation in result.Validations)
                 {
                     string a = validation.Key;
-                    string b = validation.Value;
-
-                    float f_a = 0, f_b = 0;
+                    string b = validation.Value ?? "";
+                    float f_a, f_b;
 
                     // a must be a parameter
                     var v_a = result.GetVariable(a);
@@ -245,7 +244,7 @@ namespace NSS.Blast.Compiler
                     f_a = result.Executable.GetDataSegmentElement(result.Offsets[v_a.Id]);
 
                     // b can be a float or a parameter 
-                    if (float.IsNaN(f_b = node.AsFloat(b)))
+                    if (float.IsNaN(f_b = b.AsFloat()))
                     {
                         // try to get as parameter 
                         var v_b = result.GetVariable(b);

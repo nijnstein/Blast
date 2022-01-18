@@ -8,6 +8,7 @@
     {
         nop = 0,
         assign = 1,
+
         add = 2,
         substract = 3,
         divide = 4,

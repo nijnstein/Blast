@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 using Unity.Burst;
@@ -9,6 +10,33 @@ namespace NSS.Blast
 
     public static class CodeUtils
     {
+        public static float AsFloat(this string s)
+        {
+            float f = float.NaN;
+
+            if (string.IsNullOrWhiteSpace(s))
+            {
+                return f;
+            }
+
+            if (CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator == ",")
+            {
+                /*if (s.Contains('.')) */
+                s = s.Replace('.', ',');
+            }
+            else
+            {
+                s = s.Replace(',', '.');
+            }
+
+
+            //if(
+            float.TryParse(s, out f);//)
+            {
+                return f;
+            }
+        }
+
         /// <summary>
         /// return bytes formatted as 000| 000 000 000 000 000 000 000 000 
         /// </summary>

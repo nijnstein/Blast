@@ -107,7 +107,8 @@ namespace NSS.Blast
         public delegate float BlastDelegate_f7(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g);
         public delegate float BlastDelegate_f8(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h);
 
-        public const char comment = '#';
+        public const char Comment = '#';                      
+        public const float InvalidNumeric = float.NaN; 
 
         private BlastEngineData* data;
         private Allocator allocator;
@@ -450,7 +451,7 @@ namespace NSS.Blast
 
             // it should be a float in system interpretation if it starts with a digit (dont call function otherwise)
             float f;
-            if (float.IsNaN(f = node.AsFloat(value)))
+            if (float.IsNaN(f = value.AsFloat()))
             {
                 return blast_operation.nan;
             }
