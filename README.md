@@ -2,6 +2,8 @@
 #### See https://github.com/nijnstein/BLAST-Documentation for documentation
 
 - finish opcodes / refactor away pop_or_value remnants in interpretor 
+- analyser
+- optimizer
 - push variants in JZ/JNZ
 - update unity build 
 - error handling / messages
