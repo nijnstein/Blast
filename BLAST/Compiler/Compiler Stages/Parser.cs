@@ -1343,7 +1343,7 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             // identifier, possibly a nested function 
                             case BlastScriptToken.Identifier:
-                                current_nodes.Add(n_function.SetChild(scan_and_parse_identifier(data, ref idx, idx)));
+                                current_nodes.Add(n_function.SetChild(scan_and_parse_identifier(data, ref idx, idx_end)));
                                 break;
 
                             // seperator 
@@ -1452,8 +1452,15 @@ namespace NSS.Blast.Compiler.Stage
                     if (current_nodes.Count > 0)
                     {
                         // create a child node with the current nodes as children 
-                        ///foreach (node cnc in current_nodes) n_function.children.Remove(cnc);
-                        n_function.CreateChild(nodetype.compound, BlastScriptToken.Nop, "").SetChildren(current_nodes);
+                        // - create a compound if more then one child 
+                        if (current_nodes.Count > 1)
+                        {
+                            n_function.CreateChild(nodetype.compound, BlastScriptToken.Nop, "").SetChildren(current_nodes);
+                        }
+                        else
+                        {
+                            n_function.SetChild(current_nodes[0]); 
+                        }
                     }
 
 

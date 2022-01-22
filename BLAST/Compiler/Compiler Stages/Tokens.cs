@@ -46,6 +46,7 @@
         peekv,        // == 31   
 
         pushf,        // push a function's result 
+        pushc,        // push result of a compound 
 
         //------------------------
 
@@ -95,10 +96,10 @@
         sqrt,
 
 
-        undefined_rsqrt,
+        assigns, // assign single value 
+
         undefined_pow,
 
-        undefined_232,
         undefined3,
         undefined4,
         

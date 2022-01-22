@@ -44,7 +44,7 @@ namespace NSS.Blast.Compiler.Stage
                 case BlastScriptToken.SmallerThenEquals: return blast_operation.smaller_equals;
 
             }
-            data.LogError($"GetOperationOp: invalid token for mapping to operation opcode: {token}");
+            data.LogError($"GetOperationOpCode: invalid token for mapping to operation opcode: {token}");
             return blast_operation.nop;
         }
 
@@ -58,9 +58,16 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>false on failure</returns>
         static public bool CompileParameter(CompilationData data, node ast_param, IMByteCodeList code, bool allow_pop = true)
         {
-            if (ast_param == null || string.IsNullOrWhiteSpace(ast_param.identifier))
+            if (ast_param.IsOperation)
             {
-                data.LogError($"CompileParameter: can not compile parameter with unset identifiers, node: <{ast_param}>");
+                // this means we attempt to have an operation sequence in our parameter list 
+                data.LogError($"CompileParameter: can not compile an operation as a parameter, node: <{ast_param.parent}>.<{ast_param}>");
+                return false;
+            }
+
+            if (ast_param == null || (string.IsNullOrWhiteSpace(ast_param.identifier)))//&& !ast_param.IsOperation))
+            {
+                data.LogError($"CompileParameter: can not compile parameter with unset identifiers, node:  <{ast_param.parent}>.<{ast_param}>");
                 return false;
             }
 
@@ -110,7 +117,7 @@ namespace NSS.Blast.Compiler.Stage
                 else
                 {
                     // parameter (it must have been asssinged somewhere before comming here) 
-                    data.LogError($"CompileParameter: node: <{ast_param}>, identifier/variable not connected: '{ast_param.identifier}'");
+                    data.LogError($"CompileParameter: node: <{ast_param.parent}>.<{ast_param}>, identifier/variable not connected: '{ast_param.identifier}'");
                     return false;
                 }
             }
@@ -217,154 +224,256 @@ namespace NSS.Blast.Compiler.Stage
                 case blast_operation.push:
                 case blast_operation.pushv:
                     {
-                        // push each child 
-                        foreach (node ast_param in ast_function.children)
+                        // check for direct pushv with n childs 
+                        if (ast_function.IsNonNestedVectorDefinition())
                         {
-                            switch (ast_param.type)
+                            code.Add((byte)blast_operation.pushv);
+                            code.Add((byte)node.encode44(ast_function, (byte)ast_function.ChildCount));
+                            foreach (node ast_param in ast_function.children)
                             {
-                                case nodetype.compound:
-                                    {
-                                        // this grows into a vector via get_compound_result in the interpretor 
-                                        // - for vectors it would be much more performant to use pushv
-
-                                        if (node.IsNonNestedVectorDefinition(ast_param)
-                                           &&
-                                            ast_param.vector_size > 1)
+                                if (!CompileParameter(data, ast_param, code))
+                                {
+                                    data.LogError($"CompileFunction: failed to compile parameter <{ast_param}> of function <{ast_function}> as part of a vector push");
+                                    return false;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // push each child but first decide if vector or not based on what is pushed 
+                            foreach (node ast_param in ast_function.children)
+                            {
+                                switch (ast_param.type)
+                                {
+                                    case nodetype.compound:
                                         {
-                                            // insert using pushv, besides using 1 less opcode
-                                            // it is also more efficient executing 
-                                            code.Add(blast_operation.pushv);
+                                            // this grows into a vector via get_compound_result in the interpretor 
+                                            // - for vectors it would be much more performant to use pushv
 
-                                            byte vp = (byte)((ast_param.vector_size & 0b00001111) | ((ast_param.ChildCount & 0b00001111) << 4));
-
-                                            code.Add(vp);  // (byte)ast_param.vector_size);
-
-                                            if(ast_param.vector_size != 1 && ast_param.vector_size != ast_param.ChildCount)
+                                            if (node.IsNonNestedVectorDefinition(ast_param)
+                                               &&
+                                                ast_param.vector_size > 1)
                                             {
-                                                data.LogError($"CompileFunction: failed to compile {ast_param.type} child node: <{ast_param.parent}>.<{ast_param}>, cannot generate pushv: vectorsize = {ast_param.vector_size}, paramcount = {ast_param.ChildCount}");
-                                                return false;
-                                            }
+                                                // insert using pushv, besides using 1 less opcode
+                                                // it is also more efficient executing 
+                                                code.Add(blast_operation.pushv);
+                                                code.Add(node.encode44(ast_param));  // (byte)ast_param.vector_size);
 
-                                            for(int i_param_child = 0; i_param_child < ast_param.ChildCount; i_param_child++)
-                                            {
-                                                node ast_child = ast_param.children[i_param_child]; 
-                                                node parameter_to_compile = ast_child; 
-
-                                                // if the parameter is a compound, we should only compile its result
-                                                // - this only happens for negated values
-                                                if (ast_child.IsCompound
-                                                    && ast_child.ChildCount == 2
-                                                    && ast_child.children[0].token == BlastScriptToken.Substract)
+                                                if (ast_param.vector_size != 1 && ast_param.vector_size != ast_param.ChildCount)
                                                 {
-                                                    // we have an identifier, that should be mapped to a constant
-                                                    blast_operation constant = ast_child.children[1].constant_op;
+                                                    data.LogError($"CompileFunction: failed to compile {ast_param.type} child node: <{ast_param.parent}>.<{ast_param}>, cannot generate pushv: vectorsize = {ast_param.vector_size}, paramcount = {ast_param.ChildCount}");
+                                                    return false;
+                                                }
 
-                                                    // - error if not a constant operation value 
-                                                    if (constant  < blast_operation.pi || constant >= blast_operation.id)
+                                                for (int i_param_child = 0; i_param_child < ast_param.ChildCount; i_param_child++)
+                                                {
+                                                    node ast_child = ast_param.children[i_param_child];
+                                                    node parameter_to_compile = ast_child;
+
+                                                    // if the parameter is a compound, we should only compile its result
+                                                    // - this only happens for negated values
+                                                    if (ast_child.IsCompound
+                                                        && ast_child.ChildCount == 2
+                                                        && ast_child.children[0].token == BlastScriptToken.Substract)
                                                     {
-                                                        data.LogError($"CompileFunction: parameter mapping failure, element should map to a constant at: <{ast_param.parent}>.<{ast_param}>.<{ast_child}> but instead has token {constant}");
-                                                        return false; 
-                                                    }
+                                                        // we have an identifier, that should be mapped to a constant
+                                                        blast_operation constant = ast_child.children[1].constant_op;
 
-                                                    // get constant value and negate it 
-                                                    float f = -Blast.GetConstantValue(constant);
-
-                                                    BlastVariable negated_variable = null; 
-
-                                                    // check all constant variables 
-                                                    // - these variables are set by constant values in script
-                                                    foreach(BlastVariable variable in data.ConstantVariables)
-                                                    {
-                                                        // does one match our new value? 
-                                                        if(variable.VectorSize == 1)
+                                                        // - error if not a constant operation value 
+                                                        if (constant < blast_operation.pi || constant >= blast_operation.id)
                                                         {
-                                                            if(float.TryParse(variable.Name, out float fvar))
+                                                            data.LogError($"CompileFunction: parameter mapping failure, element should map to a constant at: <{ast_param.parent}>.<{ast_param}>.<{ast_child}> but instead has token {constant}");
+                                                            return false;
+                                                        }
+
+                                                        // get constant value and negate it 
+                                                        float f = -Blast.GetConstantValue(constant);
+
+                                                        BlastVariable negated_variable = null;
+
+                                                        // check all constant variables 
+                                                        // - these variables are set by constant values in script
+                                                        foreach (BlastVariable variable in data.ConstantVariables)
+                                                        {
+                                                            // does one match our new value? 
+                                                            if (variable.VectorSize == 1)
                                                             {
-                                                                if (f == fvar ||
-                                                                   (
-                                                                   f >= (fvar - data.CompilerOptions.ConstantEpsilon)
-                                                                   &&
-                                                                   f <= (fvar + data.CompilerOptions.ConstantEpsilon)
-                                                                   ))
+                                                                if (float.TryParse(variable.Name, out float fvar))
                                                                 {
-                                                                    // yes matched
-                                                                    negated_variable = variable; 
-                                                                }                                                                
+                                                                    if (f == fvar ||
+                                                                       (
+                                                                       f >= (fvar - data.CompilerOptions.ConstantEpsilon)
+                                                                       &&
+                                                                       f <= (fvar + data.CompilerOptions.ConstantEpsilon)
+                                                                       ))
+                                                                    {
+                                                                        // yes matched
+                                                                        negated_variable = variable;
+                                                                    }
+                                                                }
                                                             }
                                                         }
-                                                    } 
-                                                    
-                                                    if(negated_variable == null)
-                                                    {
-                                                        // we have to create one
-                                                        negated_variable = data.CreateVariable(f.ToString(), false, false);
 
-                                                        // recalculate data-offsets 
-                                                        data.CalculateVariableOffsets();
+                                                        if (negated_variable == null)
+                                                        {
+                                                            // we have to create one
+                                                            negated_variable = data.CreateVariable(f.ToString(), false, false);
+
+                                                            // recalculate data-offsets 
+                                                            data.CalculateVariableOffsets();
+                                                        }
+
+                                                        parameter_to_compile = ast_child.children[1];
+                                                        parameter_to_compile.variable = negated_variable;
+                                                        parameter_to_compile.identifier = negated_variable.Name;
+                                                        parameter_to_compile.constant_op = blast_operation.nop;
+
+                                                        // remove substract operation 
+                                                        ast_child.children.RemoveAt(0);
+
+                                                        // reduce compound 
+                                                        ast_param.children[i_param_child] = parameter_to_compile;
+                                                        parameter_to_compile.parent = ast_param;
                                                     }
 
-                                                    parameter_to_compile = ast_child.children[1];
-                                                    parameter_to_compile.variable = negated_variable;
-                                                    parameter_to_compile.identifier = negated_variable.Name;
-                                                    parameter_to_compile.constant_op = blast_operation.nop; 
-
-                                                    // remove substract operation 
-                                                    ast_child.children.RemoveAt(0);
-
-                                                    // reduce compound 
-                                                    ast_param.children[i_param_child] = parameter_to_compile;
-                                                    parameter_to_compile.parent = ast_param;
-                                                }                                                                                           
-
-                                                {
-                                                    // compile each child as a simple param (variable or constant or pop)
-                                                    if (!CompileParameter(data, parameter_to_compile, code, true))
                                                     {
-                                                        data.LogError($"CompileFunction: failed to compile {ast_child.type} child node: <{ast_child.parent}>.<{ast_child}> as a [simple] parameter (may only be constant, scriptvar or pop)");
+                                                        // compile each child as a simple param (variable or constant or pop)
+                                                        if (!CompileParameter(data, parameter_to_compile, code, true))
+                                                        {
+                                                            data.LogError($"CompileFunction: failed to compile {ast_child.type} child node: <{ast_child.parent}>.<{ast_child}> as a [simple] parameter (may only be constant, scriptvar or pop)");
+                                                            return false;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                // push result of compound on stack
+                                                code.Add(blast_operation.push);
+                                                code.Add(blast_operation.begin);
+
+                                                foreach (node ast_child in ast_param.children)
+                                                {
+                                                    if (CompileNode(data, ast_child, code) == null)
+                                                    {
+                                                        data.LogError($"CompileFunction: failed to compile {ast_child.type} child node: <{ast_child.parent}>.<{ast_child}>");
                                                         return false;
                                                     }
                                                 }
+
+                                                code.Add(blast_operation.end);
                                             }
                                         }
-                                        else
-                                        {
-                                            // push result of compound on stack
-                                            code.Add(blast_operation.push);
-                                            code.Add(blast_operation.begin);
+                                        break;
 
-                                            foreach (node ast_child in ast_param.children)
+                                    default:
+                                        {
+                                            if (ast_param.is_vector)
                                             {
-                                                if (CompileNode(data, ast_child, code) == null)
-                                                {
-                                                    data.LogError($"CompileFunction: failed to compile {ast_child.type} child node: <{ast_child.parent}>.<{ast_child}>");
-                                                    return false;
-                                                }
+                                                code.Add((byte)blast_operation.pushv);
+                                                code.Add((byte)node.encode44(ast_param, 1));
                                             }
+                                            else
+                                            {
+                                                code.Add((byte)blast_operation.push);
+                                            }
+                                            if (!CompileParameter(data, ast_param, code))
+                                            {
 
-                                            code.Add(blast_operation.end);
+                                                data.LogError($"CompileFunction: failed to compile parameter <{ast_param}> of function <{ast_function}>");
+                                                return false;
+                                            }
+                                        }
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                    return true;
+
+                case blast_operation.pushf:
+                case blast_operation.pushc:
+                    {
+                        // pushes either a function or an operation list
+                        if (ast_function.ChildCount == 1)
+                        {
+                            // must be function 
+                            if (ast_function.FirstChild.IsFunction)
+                            {
+                                code.Add(blast_operation.pushf);
+                                CompileFunction(data, ast_function.FirstChild, code); 
+                            }
+                            else
+                            {
+                                data.LogError($"compile: error compiling push[f|c] operation list: <{ast_function}>.<{ast_function.FirstChild}>, a single operation could have been left where it was and should not have been flattened out.");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            if (ast_function.IsOperationList())
+                            {
+                                // is operationlist, pushc expects compound ending on 0|end
+                                code.Add(blast_operation.pushc);
+
+                                // should we include resulting vectorsize for interpretor ?? 
+
+                                // should be flat at this point: todo : check this
+                                foreach(node n_op in ast_function.children)
+                                {
+                                    if (n_op.IsOperation)
+                                    {
+                                        switch (n_op.token)
+                                        {
+                                            case BlastScriptToken.Nop: code.Add(blast_operation.nop); break;
+                                            case BlastScriptToken.Add: code.Add(blast_operation.add); break;
+                                            case BlastScriptToken.Substract: code.Add(blast_operation.substract); break;
+                                            case BlastScriptToken.Divide: code.Add(blast_operation.divide); break;
+                                            case BlastScriptToken.Multiply: code.Add(blast_operation.multiply); break;
+                                            case BlastScriptToken.Equals: code.Add(blast_operation.equals); break;
+                                            case BlastScriptToken.SmallerThen: code.Add(blast_operation.smaller); break;
+                                            case BlastScriptToken.GreaterThen: code.Add(blast_operation.greater); break;
+                                            case BlastScriptToken.SmallerThenEquals: code.Add(blast_operation.smaller_equals); break;
+                                            case BlastScriptToken.GreaterThenEquals: code.Add(blast_operation.greater_equals); break;
+                                            case BlastScriptToken.NotEquals: code.Add(blast_operation.not_equals); break;
+                                            case BlastScriptToken.And: code.Add(blast_operation.and); break;
+                                            case BlastScriptToken.Or: code.Add(blast_operation.or); break;
+                                            case BlastScriptToken.Xor: code.Add(blast_operation.xor); break;
+                                            case BlastScriptToken.Not: code.Add(blast_operation.not); break;
+                                            default:
+                                                data.LogError($"compile: encountered an unsupported operation type, node: <{n_op.parent}><{n_op}>");
+                                                return false;
                                         }
                                     }
-                                    break;
-
-                                default:
+                                    else
                                     {
-                                        if (ast_param.is_vector)
+                                        if (n_op.IsFunction)
                                         {
-                                            code.Add((byte)blast_operation.pushv);
-                                            code.Add((byte)ast_param.vector_size);
+                                            if(!CompileFunction(data, n_op, code))
+                                            {
+                                                data.LogError($"compile: error compiling function in pushc operation list: <{n_op.parent.parent}>.<{n_op.parent}>, function: {n_op}");
+                                                return false;
+                                            }   
                                         }
                                         else
                                         {
-                                            code.Add((byte)blast_operation.push);
-                                        }
-                                        if (!CompileParameter(data, ast_param, code))
-                                        {
-
-                                            data.LogError($"CompileFunction: failed to compile parameter <{ast_param}> of function <{ast_function}>");
-                                            return false;
+                                            if (!CompileParameter(data, n_op, code, true))
+                                            {
+                                                data.LogError($"compile: error compiling parameter in pushc operation list: <{n_op.parent.parent}>.<{n_op.parent}>, operation: {n_op}");
+                                                return false;
+                                            }
                                         }
                                     }
-                                    break;
+                                }
+
+                                // close with a nop, signal to interpretor its done
+                                code.Add((byte)blast_operation.nop); 
+                            }
+                            else
+                            {
+                                // error 
+                                data.LogError($"compile: error compiling push[f|c] command: <{ast_function}>.<{ast_function.FirstChild}>, pushf can only push an operation list or a function");
+                                return false;
                             }
                         }
                     }
@@ -476,6 +585,7 @@ namespace NSS.Blast.Compiler.Stage
             return true;
         }
 
+
         /// <summary>
         /// Compile a node into bytecode 
         /// </summary>
@@ -491,20 +601,17 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // detect if current node is compound with 1 child only
-            if(ast_node.IsCompound && ast_node.HasOneChild)
+            // >> this should not happen if the flatten operation went ok, but its fixable be we should log warnings  
+            if (ast_node.IsCompound && ast_node.HasOneChild && ast_node.type != nodetype.whilecompound)
             {
-#if TRACE
-                data.LogTrace($"CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>");
-#endif 
+                data.LogWarning($"CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>");
 
                 // if so just skip it 
                 if (ast_node.HasDependencies)
                 {
                     // but keep dependencies 
                     ast_node.children[0].depends_on.InsertRange(0, ast_node.depends_on);
-#if TRACE
-                    data.LogTrace($"CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>, {ast_node.DependencyCount} dependencies moved to <{ast_node.children[0]}>");
-#endif 
+                    data.LogWarning($"CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>, {ast_node.DependencyCount} dependencies moved to <{ast_node.children[0]}>");
                 }
                 ast_node = ast_node.children[0];
             }
@@ -517,6 +624,13 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     // insert each node at target parent 
                     node initializer = ast_node.depends_on[i];
+                    if (initializer.skip_compilation) continue; 
+
+                    if(Blast.IsError(data.LastError = AnalyzeCompoundNesting(data, initializer)))                        
+                    {
+                        data.LogError($"CompileNode: failed to compile resolve compound nesting in dependencies for node: <{ast_node}>.<{initializer}>, failed with error {data.LastError}");
+                        return null;
+                    }
                     if (CompileNode(data, initializer, code) == null)
                     {
                         data.LogError($"CompileNode: failed to compile dependencies for node: <{ast_node}>.<{initializer}>");
@@ -525,6 +639,7 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
 
+            // further compilation steps depend on the node's type
             switch (ast_node.type)
             {
                 // something might inject nops, we dont need to keep them (should not .... todo) 
@@ -611,6 +726,9 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 // these procedures are allowed at the root, the rest is not 
                                 case ReservedScriptFunctionIds.Push:
+                                case ReservedScriptFunctionIds.PushFunction:
+                                case ReservedScriptFunctionIds.PushCompound:
+                                case ReservedScriptFunctionIds.PushVector:
                                 case ReservedScriptFunctionIds.Yield:
                                 case ReservedScriptFunctionIds.Pop:
                                 case ReservedScriptFunctionIds.Pop2:
@@ -665,50 +783,65 @@ namespace NSS.Blast.Compiler.Stage
                     BlastVariable assignee = ast_node.variable;
                     if (assignee == null)
                     {
-                        data.LogError($"CompileNode: node: <{ast_node}> could not get id for assignee identifier {ast_node.identifier}");
+                        data.LogError($"CompileNode: assignment node: <{ast_node}> could not get id for assignee identifier {ast_node.identifier}");
                         return null;
                     }
-
-                    // encode first part of assignment 
-                    // [op:assign][var:id+128]
-                    code.Add(blast_operation.assign);
-
-                    // Assingnee -> parameter must be offset in output 
-
                     // numeric/id value, add its variableId to output code
                     // it should add p_id.Id as its offset into data 
                     if (assignee.Id < 0 || assignee.Id >= data.OffsetCount)
                     {
-                        data.LogError($"CompileParameter: node: <{ast_node}>, assignment destination variable not correctly offset: '{assignee}'");
-                        break; 
+                        data.LogError($"CompileNode: assignment node: <{ast_node}>, assignment destination variable not correctly offset: '{assignee}'");
+                        break;
                     }
 
-                    code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
-
-                    // compile child nodes 
-                    foreach (node ast_child in ast_node.children)
+                    // assigning a single value or pop?  
+                    if ( ast_node.ChildCount == 1 &&  node.IsSingleValueOrPop(ast_node.FirstChild) )
                     {
-                        // make sure only valid node types are supplied 
-                        if (ast_child.ValidateType(data, new nodetype[] { 
+                        //
+                        // encode assigns instead of assing, this saves a trip through get_compound and 1 byte closing that compound
+                        //
+                        code.Add(blast_operation.assigns);
+                        code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
+
+                        // encode variable, constant value or pop instruction 
+                        if(!CompileParameter(data, ast_node.FirstChild, code, true))
+                        {
+                            data.LogError($"CompileNode: assignment node: <{ast_node.parent}>.<{ast_node}>, failed to compile single parameter <{ast_node.FirstChild}> into assigns operation");
+                            return null; 
+                        }
+                    }
+                    else
+                    {
+                        // encode first part of assignment 
+                        // [op:assign][var:id+128]
+                        code.Add(blast_operation.assign);
+                        code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
+
+                        // compile child nodes 
+                        foreach (node ast_child in ast_node.children)
+                        {
+                            // make sure only valid node types are supplied 
+                            if (ast_child.ValidateType(data, new nodetype[] {
                             nodetype.parameter,
                             nodetype.operation,
                             nodetype.compound,
                             nodetype.function
                         }))
-                        {
-                            CompileNode(data, ast_child, code);
-                            if(!data.IsOK)
                             {
-                                data.LogError($"CompileNode: failed to compile part of assignment: <{ast_node}>");
-                                return null; 
+                                CompileNode(data, ast_child, code);
+                                if (!data.IsOK)
+                                {
+                                    data.LogError($"CompileNode: failed to compile part of assignment: <{ast_node}>");
+                                    return null;
+                                }
                             }
                         }
-                    }                              
-                    // end with a nop operation
-                    // - signal interpretor that this statement is complete.
-                    // - variable length vectors really need either this or a counter... 
-                    //   better always have a nop, makes the assembly easier to read from bytes
-                    code.Add(blast_operation.nop);
+                        // end with a nop operation
+                        // - signal interpretor that this statement is complete.
+                        // - variable length vectors really need either this or a counter... 
+                        //   better always have a nop, makes the assembly easier to read from bytes
+                        code.Add(blast_operation.nop);
+                    }
                     break;
 
                 // groups of statements, for compilation they are all the same  
@@ -760,8 +893,6 @@ namespace NSS.Blast.Compiler.Stage
                         // while structure:
                         //
                         // [while_depends_on=initializer from for loops]  [condition_label][condition_depends_on] [jz_condition][offset_compound](condition)(compound)[jumpback condition_label][jump_back offset]
-
-
 
                         // THIS IS NOW DONE FOR EVERY NODE 
 
@@ -923,6 +1054,8 @@ namespace NSS.Blast.Compiler.Stage
         {
             // CASE 1 => single compound below assignment 
             //        => result of extra compounds in script or injected push;s 
+            //
+            //        => THE SAME HAPPENS IN EXTRaCTED PUSH  push ( ( 2 2 2 2 ) *(2 (-2) 2 2 ) )
             // 
             //            root of 1
             //       vector[4]assignment of a
@@ -934,20 +1067,20 @@ namespace NSS.Blast.Compiler.Stage
             //      /
             //   /
             // 
-            BlastError case1(node current)
+            BlastError case1(node current, bool is_disconnected)
             {
                 bool changed = true;
                 while (changed)
                 {
                     int i = 0;
                     changed = false; 
-                    while (i < current.ChildCount)
+                    while (i < current.ChildCount || (is_disconnected && i == 0))
                     {
-                        node child = current.children[i];
-                        if (child.IsAssignment)
+                        node child = is_disconnected ? current : current.children[i]; 
+                        if (child.IsAssignment || child.IsPushFunction)
                         {
                             // check for case 1: assignment with useless compound in between 
-                            if (child.HasChildren && child.ChildCount == 1)
+                            if (child.HasChildren && child.HasOneChild)
                             {
                                 node grandchild = child.FirstChild;
                                 if (grandchild.IsCompound)
@@ -978,26 +1111,45 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             if (child.HasChildNodes)
                             {
-                                BlastError res = case1(child);
+                                BlastError res = case1(child, false);
                                 if (res == BlastError.yield) changed = true;
                                 if (Blast.IsError(res)) return res; 
                             }
                         }
+
                         // next 
                         i++;
                     }
 
-                    if(changed && !current.IsRoot)
+                    if (changed && (current != root || is_disconnected))
                     {
-                        // propagate up to root if something changed 
-                        return BlastError.yield; 
+                        if (is_disconnected) continue;
+                        else// propagate up to root if something changed 
+                            return BlastError.yield;
+                    }
+                    if(is_disconnected)
+                    {
+                        break;
                     }
                 }
                 return BlastError.success;     
             }
 
-            BlastError result = case1(root);
-            if (result != BlastError.success) return result; 
+            if (root.IsRoot)
+            {
+                // run from root 
+                BlastError result = case1(root, false);
+                if (result != BlastError.success) return result;
+
+
+            }
+            else
+            {
+                // run from a disconnected node 
+                BlastError result = case1(root, true);
+                if (result != BlastError.success) return result;
+
+            }
 
             return BlastError.success; 
         }

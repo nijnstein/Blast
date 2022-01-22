@@ -187,7 +187,7 @@ namespace NSS.Blast.Compiler
         };
 
 
-        #region validation 
+        #region output validation 
 
         static bool validate(CompilationData result)
         {
@@ -265,7 +265,7 @@ namespace NSS.Blast.Compiler
 
         #endregion
 
-        #region packaging 
+        #region code and data packaging 
 
         /// <summary>
         /// estimate stack size by running script with a selection of parameters from

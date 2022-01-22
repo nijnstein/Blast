@@ -119,6 +119,20 @@
                 default: return false;
             }
         }
+
+        internal bool IsPushVariant()
+        {
+            switch ((ReservedScriptFunctionIds)FunctionId)
+            {
+                case ReservedScriptFunctionIds.Push:
+                case ReservedScriptFunctionIds.PushFunction:
+                case ReservedScriptFunctionIds.PushVector:
+                case ReservedScriptFunctionIds.PushCompound:
+                    return true;
+
+                default: return false;
+            }
+        }
     }
 
     public class ExternalFunctionCall
@@ -149,6 +163,8 @@
         Peek = 1009,
         Seed = 1010,
         PushFunction = 1011,
+        PushCompound = 1013,
+        PushVector = 1014,
         Debug = 1012
     }
 }

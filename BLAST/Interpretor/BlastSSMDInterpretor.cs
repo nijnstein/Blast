@@ -836,7 +836,13 @@ namespace NSS.Blast.SSMD
                 switch (op)
                 {
                     case blast_operation.multiply:
-                        for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] * ((float2*)(void*)&((float*)data[i])[c - BlastInterpretor.opt_id])[0];
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            //
+                            // whats faster? casting like this or nicely as float with 2 muls
+                            //
+                            output[i] = buffer[i] * ((float2*)(void*)&((float*)data[i])[c - BlastInterpretor.opt_id])[0];
+                        }
                         break;
 
                     case blast_operation.add:
@@ -1801,7 +1807,7 @@ namespace NSS.Blast.SSMD
                         {
                             blast_operation next_op = (blast_operation)code[code_pointer + 1];
 
-                            if (next_op != blast_operation.nop && next_op != blast_operation.assign)
+                            if (next_op != blast_operation.nop && next_op != blast_operation.assign && next_op != blast_operation.assigns)
                             {
                                 // for now restrict ourselves to only accepting operations at this point 
                                 if (BlastInterpretor.IsMathematicalOrBooleanOperation(next_op))

@@ -432,7 +432,7 @@ namespace NSS.Blast.Compiler.Stage
         public int Execute(IBlastCompilationData data)
         {
             // check each leaf for being a vector and propagate upward 
-            List<node> leafs = data.AST.GatherLeafNodes();
+            List<node> leafs = data.AST.GetLeafNodes();
             foreach (node leaf in leafs)
             {
                 check_if_vector(data, leaf);

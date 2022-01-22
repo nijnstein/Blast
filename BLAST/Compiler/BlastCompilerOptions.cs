@@ -94,6 +94,11 @@ namespace NSS.Blast
         public Dictionary<string, string> Defines = new Dictionary<string, string>();
 
         /// <summary>
+        /// dont touch
+        /// </summary>
+        public bool Experimental = false;
+
+        /// <summary>
         /// default compiler options 
         /// </summary>
         public static BlastCompilerOptions Default => new BlastCompilerOptions();

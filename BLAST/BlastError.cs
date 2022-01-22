@@ -37,6 +37,10 @@
         ssmd_error_expecting_value = -30,
         ssmd_error_unsupported_vector_size = -31,
         error_execute_package_not_correctly_set = -32,
+        error_invalid_nodetype_in_root = -33,
+        error_node_function_unknown = -34,
+        error_failed_to_flatten_function_parameters = -35,
+        error_pushv_vector_size_not_supported = -36,
     }
 
     public static class BlastErrorTranslator

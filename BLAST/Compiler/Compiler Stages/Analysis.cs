@@ -22,11 +22,13 @@ namespace NSS.Blast.Compiler.Stage
         public BlastCompilerStageType StageType => BlastCompilerStageType.Analysis;
 
         /// <summary>
-        /// all operations equal then move compound up, returns nr of moves made
+        /// simplify non-vector non-function compounds by removing nested compounds when operations allow it. 
+        /// 
+        /// -> all operations equal then move compound up, returns nr of moves made
         /// </summary>
         static int simplify_compound_arithmetic(IBlastCompilationData data, node n)
-        {
-            if (n.type == nodetype.function) return 0;
+        {   
+            if (n.type == nodetype.function || n.is_vector) return 0;
             
             // leave alone vectors
             if (n.is_vector) return 0; 
@@ -301,8 +303,6 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             windup(root);
-
-
             return;
         }
 
@@ -327,8 +327,13 @@ namespace NSS.Blast.Compiler.Stage
                     node child = n.children[i_child];
                     switch (child.type)
                     {
-                        case nodetype.compound: apply_multiplication_rules(data, child); last_was_op = false; continue;
+                        case nodetype.compound:                                        
+                            apply_multiplication_rules(data, child); 
+                            last_was_op = false; 
+                            continue;
+
                         case nodetype.parameter: last_was_op = false; continue;
+
                         case nodetype.function: apply_multiplication_rules(data, child); last_was_op = false; continue;
                         case nodetype.operation:
                             if (last_was_op)
@@ -456,7 +461,11 @@ namespace NSS.Blast.Compiler.Stage
 
                 foreach (node child in n.children)
                 {
+                    // reduces forms `(1 * 2) * 3` to `1 * 2 * 3`
                     n_changes += simplify_compound_arithmetic(data, child);
+
+
+                    // recursively call on each node
                     n_changes += simplify_node(data, child);
                 }
 
@@ -511,7 +520,7 @@ namespace NSS.Blast.Compiler.Stage
 
 
         /// <summary>
-        /// analyze a node and its children, can be run in parallel
+        /// analyze a node and its children, can be run in parallel on different node roots
         /// </summary>
         /// <param name="n"></param>
         static void analyze_node(IBlastCompilationData data, node n)

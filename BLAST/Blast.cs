@@ -642,6 +642,8 @@ namespace NSS.Blast
 
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Push, "push", 1, 4, 0, 0,blast_operation.push, "n", "a"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushFunction, "pushf", 1, 1, 0, 0,blast_operation.pushf, "n", "a"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushCompound, "pushc", 1, 1, 0, 0,blast_operation.pushc, "n", "a"),
+            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushVector, "pushv", 1, 1, 0, 0,blast_operation.pushv, "n", "a"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop, "pop", 0, 0, 0, 0,blast_operation.pop, "n"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Peek, "peek", 0, 1, 0, 0, blast_operation.peek, "n"),
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Yield, "yield", 0, 1, 0, 0,blast_operation.yield, "n"),
@@ -1012,6 +1014,7 @@ namespace NSS.Blast
                     case blast_operation.nop: sb.Append("\n"); break;
 
                     case blast_operation.assign: sb.Append("assign "); break;
+                    case blast_operation.assigns: sb.Append("assign single"); break;
 
                     case blast_operation.add: sb.Append("+ "); break;
                     case blast_operation.substract: sb.Append("- "); break;
@@ -1046,6 +1049,7 @@ namespace NSS.Blast
                     case blast_operation.peek: sb.Append("peek "); break;
                     case blast_operation.peekv: sb.Append("peekv "); break;
                     case blast_operation.pushf: sb.Append("pushf "); break;
+                    case blast_operation.pushc: sb.Append("pushc "); break;
 
                     case blast_operation.fma:
                         break;

@@ -637,7 +637,11 @@ namespace NSS.Blast.Interpretor
 #endif 
                 // variable acccess
                 // TODO   SHOULD TEST NOT SWITCHING VECTOR ELEMENT ORDER ON STACK OPERATIONS 
-                return ((float4*)data)[c - opt_id];
+                return new float4(
+                    ((float*)data)[c - opt_id], 
+                    ((float*)data)[c - opt_id + 1], 
+                    ((float*)data)[c - opt_id + 2], 
+                    ((float*)data)[c - opt_id + 3]);
             }
             else
             if (c == (byte)blast_operation.pop)
@@ -4367,11 +4371,11 @@ namespace NSS.Blast.Interpretor
 
 
 
-#endregion
+        #endregion
 
         #region ByteCode Execution
 
-                       
+
 
         /// <summary>
         /// recursively handle a compounded statement and return its value
@@ -4380,8 +4384,9 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         /// <param name="code_pointer"></param>
         /// <param name="vector_size"></param>
+        /// <param name="return_first_result">if true, it will return after getting the first result, used for non terminating groups (pushfunction)  </param>
         /// <returns></returns>
-        float4 get_compound_result(ref int code_pointer, ref byte vector_size)
+        float4 get_compound_result(ref int code_pointer, ref byte vector_size, bool return_first_result = false)
         {
             byte op = 0;
             byte prev_op = 0;
@@ -4491,7 +4496,8 @@ namespace NSS.Blast.Interpretor
                         {
                             blast_operation next_op = (blast_operation)code[code_pointer + 1];
 
-                            if (next_op != blast_operation.nop && next_op != blast_operation.assign)
+                            if (next_op != blast_operation.nop && (next_op != blast_operation.assign && next_op != blast_operation.assigns))
+                                
                             {
                                 // for now restrict ourselves to only accepting operations at this point 
                                 if (IsMathematicalOrBooleanOperation(next_op))
@@ -4877,10 +4883,11 @@ namespace NSS.Blast.Interpretor
                                                         minus = false;
                                                         break;
                                                     case BlastVectorSizes.float2:
+
                                                     case BlastVectorSizes.float3:
                                                     case BlastVectorSizes.float4:
                                                     default:
-                                                        Debug.LogError("codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector from other vectors not fully supported");
+                                                        Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector from other vectors not fully supported");
                                                         break;
                                                 }
                                             }
@@ -4904,9 +4911,17 @@ namespace NSS.Blast.Interpretor
                                     break;
                             }
                             {
+                                //
+                                // return now if only interested in the first result 
+                                //
+                                if(return_first_result)
+                                {
+                                    code_pointer++; // do advance to after the last token in that what was evaluated
+                                    return f4_result;                                
+                                }
+
 
                                 // after an operation with growvector we should stack value
-
                                 switch ((BlastVectorSizes)vector_size)
                                 {
                                     case BlastVectorSizes.float1:
@@ -5029,6 +5044,176 @@ namespace NSS.Blast.Interpretor
             return vector_size > 0 ? f4 : new float4(f1, 0, 0, 0);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void pushc(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
+        {
+            f4_register = get_compound_result(ref code_pointer, ref vector_size, false);
+
+            switch (vector_size)
+            {
+                case 1: push(f4_register.x); break;
+                case 2: push(f4_register.xy); break;
+                case 3: push(f4_register.xyz); break;
+                case 4: push(f4_register.xyzw); break;
+#if DEBUG
+                default:
+                    Debug.LogError("blastscript.interpretor.pushc error: variable vector size not yet supported on stack push");
+                    break;
+#endif
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void push(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
+        {
+            if (code[code_pointer] == (byte)blast_operation.begin)
+            {
+                code_pointer++;
+
+                // push the vector result of a compound 
+                f4_register = get_compound_result(ref code_pointer, ref vector_size);
+                switch (vector_size)
+                {
+                    case 1:
+                        push(f4_register.x);
+                        break;
+                    case 2:
+                        push(f4_register.xy);
+                        break;
+                    case 3:
+                        push(f4_register.xyz);
+                        break;
+                    case 4:
+                        push(f4_register);
+                        break;
+                    default:
+#if DEBUG
+                        Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push of compound");
+                        break;
+#endif
+                }
+                // code_pointer should index after compound now
+            }
+            else
+            {
+                // else push 1 float of data
+                float* fdata = (float*)data; 
+                push(fdata[code[code_pointer++] - opt_id]);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void pushv(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
+        {
+            byte param_count = code[code_pointer++];
+            vector_size = (byte)(param_count & 0b00001111); // vectorsize == lower 4 
+            param_count = (byte)((param_count & 0b11110000) >> 4);  // param_count == upper 4 
+
+            if (param_count == 1 && vector_size != param_count)
+            {
+                // push vector sourced from vector parameter (this is a wierd thing to do but ok.. i have a test with it so it should work)
+                switch (vector_size)
+                {
+                    case 1: push(pop_f1(code_pointer)); break;
+                    case 2: push(pop_f2(code_pointer)); break;
+                    case 3: push(pop_f3(code_pointer)); break;
+                    case 4:
+                    case 0: push(pop_f4(code_pointer)); break;
+#if DEBUG
+                    default:
+                        Debug.LogError($"blast.interpretor.pushv: unsupported vectorsize {vector_size} in parameter at codepointer {code_pointer}");
+//                        return (int)BlastError.error_pushv_vector_size_not_supported;
+                        break;
+#endif
+                }
+                code_pointer += 1;
+            }
+            else
+            {
+                if (param_count == 1)
+                {
+                    switch (vector_size)
+                    {
+                        case 1:
+                            push(pop_f1(code_pointer));
+                            code_pointer++;
+                            break;
+                        case 2:
+                            push(pop_f2(code_pointer));
+                            code_pointer++;
+                            break;
+                        case 3:
+                            push(pop_f3(code_pointer));
+                            code_pointer++;
+                            break;
+                        case 4:
+                            push(pop_f4(code_pointer));
+                            code_pointer++;
+                            break;
+#if DEBUG
+                        default:
+                            Debug.LogError($"burstscript.interpretor error: vectorsize {vector_size} not yet supported on stack push");
+                            break;
+#endif
+                           // return (int)BlastError.error_vector_size_not_supported;
+                    }
+                }
+                else
+                {
+#if DEBUG
+                    if (param_count != vector_size)
+                    {
+                        Debug.LogError($"burstscript.interpretor error: codepointer {code_pointer}  pushv => param_count > 1 && vector_size != param_count, this is not allowed. Vectorsize: {vector_size}, Paramcount: {param_count}");
+                        // return (int)BlastError.error_unsupported_operation;
+                    }
+#endif
+                    // param_count == vector_size and vector_size > 1, compiler enforces it so we should not check it in release 
+                    // this means that vector is build from multiple data points
+                    switch (vector_size)
+                    {
+                        case 1:
+                            push(pop_f1(code_pointer));
+                            code_pointer += 1;
+                            break;
+                        case 2:
+                            push(new float2(pop_f1(code_pointer), pop_f1(code_pointer + 1)));
+                            code_pointer += 2;
+                            break;
+                        case 3:
+                            push(new float3(pop_f1(code_pointer), pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)));
+                            code_pointer += 3;
+                            break;
+                        case 4:
+                            push(new float4(pop_f1(code_pointer), pop_f1(code_pointer + 1), pop_f1(code_pointer + 2), pop_f1(code_pointer + 3)));
+                            code_pointer += 4;
+                            break;
+                    }
+                    // we could handle the case of different sized vectors, pushing them into 1 of vectorsize...
+                    // - currently the compiler wont do this and we catch this as an error in debug builds some lines back
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void pushf(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
+        {
+            f4_register = get_compound_result(ref code_pointer, ref vector_size, true);
+
+            switch (vector_size)
+            {
+                case 1: push(f4_register.x); break;
+                case 2: push(f4_register.xy); break;
+                case 3: push(f4_register.xyz); break;
+                case 4: push(f4_register.xyzw); break;
+#if DEBUG
+                default:
+                    Debug.LogError("burstscript.interpretor pushf error: variable vector size not yet supported on stack push");
+                    //  return (int)BlastError.error_variable_vector_op_not_supported;
+                    break; 
+#endif
+            }
+        }
+
 
         /// <summary>
         /// 
@@ -5046,7 +5231,7 @@ namespace NSS.Blast.Interpretor
             caller_ptr = caller; 
         
             float* fdata = (float*)data;
-            float4 f4_register = 0; 
+            float4 f4_register = 0;
 
             // main loop 
             while (code_pointer < package.CodeSize)
@@ -5077,150 +5262,33 @@ namespace NSS.Blast.Interpretor
 
                 switch (op)
                 {
-                    case blast_operation.ret:
-                        {
-                            return 0;
-                        }
-
-                    case blast_operation.nop:
-                        break;
+                    case blast_operation.ret: return (int)BlastError.success;
+                    case blast_operation.nop: break;
 
                     case blast_operation.push:
-
-                        if (code[code_pointer] == (byte)blast_operation.begin)
-                        {
-                            code_pointer++;
-
-                            // push the vector result of a compound 
-                            f4_register = get_compound_result(ref code_pointer, ref vector_size);
-                            switch (vector_size)
-                            {
-                                case 1:
-                                    push(f4_register.x);
-                                    break;
-                                case 2:
-                                    push(f4_register.xy);
-                                    break;
-                                case 3:
-                                    push(f4_register.xyz);
-                                    break;
-                                case 4:
-                                    push(f4_register);
-                                    break;
-                                default:
-#if LOG_ERRORS
-                                    Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push of compound");
-#endif
-                                    return (int)BlastError.error_variable_vector_compound_not_supported;
-                            }
-                            // code_pointer should index after compound now
-                        }
-                        else
-                        {
-                            // else push 1 float of data
-                            push(fdata[code[code_pointer++] - opt_id]);
-                        }
-
+                        push(ref code_pointer, ref vector_size, ref f4_register);
                         break;
 
                     //
                     // pushv knows more about what it is pushing up the stack, it can do it without running the compound 
                     //
                     case blast_operation.pushv:
-                        byte param_count = code[code_pointer++];
-                        vector_size = (byte)(param_count & 0b00001111); // vectorsize == lower 4 
-                        param_count = (byte)((param_count & 0b11110000) >> 4);  // param_count == upper 4 
-
-                        // either: vector_size or paramcount but NOT both 
-                          
-                        if (param_count == 1)
-                        {
-                            switch (vector_size)
-                            {
-                                case 1:
-                                    push(pop_f1(code_pointer));
-                                    code_pointer++;
-                                    break;
-                                case 2:
-                                    push(pop_f2(code_pointer));
-                                    code_pointer++;
-                                    break;
-                                case 3:
-                                    push(pop_f3(code_pointer));
-                                    code_pointer++;
-                                    break;
-                                case 4:
-                                    push(pop_f4(code_pointer));
-                                    code_pointer++;
-                                    break;
-                                default:
-#if DEBUG
-                                    Debug.LogError($"burstscript.interpretor error: vectorsize {vector_size} not yet supported on stack push");
-#endif
-                                    return (int)BlastError.error_vector_size_not_supported;
-                            }
-                        }
-                        else
-                        {
-#if DEBUG
-                            if (param_count != vector_size)
-                            {
-                                Debug.LogError($"burstscript.interpretor error: pushv => param_count > 1 && vector_size != param_count, this is not allowed. Vectorsize: {vector_size}, Paramcount: {param_count}");
-                                return (int)BlastError.error_unsupported_operation; 
-                            }
-#endif
-                            // param_count == vector_size and vector_size > 1, compiler enforces it so we should not check it in release 
-                            // this means that vector is build from multiple data points
-                            switch(vector_size)
-                            {
-                                case 1:
-                                    push(pop_f1(code_pointer));
-                                    code_pointer += 1;
-                                    break;
-                                case 2:
-                                    push(new float2(pop_f1(code_pointer), pop_f1(code_pointer + 1)));
-                                    code_pointer += 2;
-                                    break;
-                                case 3:
-                                    push(new float3(pop_f1(code_pointer), pop_f1(code_pointer + 1), pop_f1(code_pointer + 2))); 
-                                    code_pointer += 3;
-                                    break;
-                                case 4:
-                                    push(new float4(pop_f1(code_pointer), pop_f1(code_pointer + 1), pop_f1(code_pointer + 2), pop_f1(code_pointer + 3)));
-                                    code_pointer += 4;
-                                    break; 
-                            }
-
-                            // we could handle the case of different sized vectors, pushing them into 1 of vectorsize...
-                            // - currently the compiler wont do this and we catch this as an error in debug builds some lines back
-                        }
+                        pushv(ref code_pointer, ref vector_size, ref f4_register); 
                         break;
 
                     //
-                    // push the result from a function directly onto the stack, saving a call to getcompound 
-                    //
+                    // push the result of a function directly onto the stack instead of assigning it first or something
+                    // 
                     case blast_operation.pushf:
-                        // push the result of a function directly onto the stack instead of assigning it first or something
+                        pushf(ref code_pointer, ref vector_size, ref f4_register); 
+                        break;
 
-                        //
-                        // get result of compound (although it should directly call the function) 
-                        // 
-                        f4_register = get_compound_result(ref code_pointer, ref vector_size);
-
-                        switch(vector_size)
-                        {
-                            case 1: push(f4_register.x); break;
-                            case 2: push(f4_register.xy); break;
-                            case 3: push(f4_register.xyz); break;
-                            case 4: push(f4_register.xyzw); break;
-                            default:
-#if DEBUG
-                                Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push");
-#endif
-                                return (int)BlastError.error_variable_vector_op_not_supported;
-                        }
-                        break; 
-
+                    //
+                    // push the result of a function directly onto the stack instead of assigning it first or something
+                    //          
+                    case blast_operation.pushc:
+                        pushc(ref code_pointer, ref vector_size, ref f4_register); 
+                        break;
 
                     case blast_operation.yield:
                         yield(f4_register);
@@ -5240,9 +5308,81 @@ namespace NSS.Blast.Interpretor
 
                     case blast_operation.end: break;
 
-                    /// if the compiler can detect:
-                    /// - simple assign (1 function call or 1 parameter set)
-                    /// then use an extra op:  assign1 that doesnt go into get_compound
+                    case blast_operation.assigns:
+                        {
+                            // assign 1 val;ue
+                            byte assignee_op = code[code_pointer];
+                            byte assignee = (byte)(assignee_op - opt_id);
+                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                            
+                            BlastVariableDataType dt_pop;
+
+                            void* pdata = pop_with_info(code_pointer + 1, out dt_pop, out vector_size); 
+
+                            switch ((byte)vector_size)
+                            {
+                                case (byte)BlastVectorSizes.float1:
+                                    //if(Unity.Burst.CompilerServices.Hint.Unlikely(s_assignee != 1))
+                                    if (s_assignee != 1)
+                                    {
+#if DEBUG
+                                        Debug.LogError($"blast.assignsingle: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
+#endif
+                                        return (int)BlastError.error_assign_vector_size_mismatch;
+                                    }
+                                    fdata[assignee] = ((float*)pdata)[0];
+                                    break;
+
+                                case (byte)BlastVectorSizes.float2:
+                                    if (s_assignee != 2)
+                                    {
+#if DEBUG
+                                        Debug.LogError($"blast.assignsingle: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
+#endif
+                                        return (int)BlastError.error_assign_vector_size_mismatch;
+                                    }
+                                    fdata[assignee] = ((float*)pdata)[0];
+                                    fdata[assignee + 1] = ((float*)pdata)[1];
+                                    break;
+
+                                case (byte)BlastVectorSizes.float3:
+                                    if (s_assignee != 3)
+                                    {
+#if DEBUG
+                                        Debug.LogError($"blast.assignsingle: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
+#endif
+                                        return (int)BlastError.error_assign_vector_size_mismatch;
+                                    }
+                                    fdata[assignee] = ((float*)pdata)[0];
+                                    fdata[assignee + 1] = ((float*)pdata)[1];
+                                    fdata[assignee + 2] = ((float*)pdata)[2];
+                                    break;
+
+                                case (byte)BlastVectorSizes.float4:
+                                    if (s_assignee != 4 || s_assignee == 0)
+                                    {
+#if DEBUG
+                                        Debug.LogError($"blast.assignsingle: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
+#endif
+                                        return (int)BlastError.error_assign_vector_size_mismatch;
+                                    }
+                                    fdata[assignee] = ((float*)pdata)[0];
+                                    fdata[assignee + 1] = ((float*)pdata)[1];
+                                    fdata[assignee + 2] = ((float*)pdata)[2];
+                                    fdata[assignee + 3] = ((float*)pdata)[3];
+                                    break;
+
+                                default:
+#if DEBUG
+                                    Debug.LogError($"blast.assignsingle: vector size {vector_size} not allowed at codepointer {code_pointer}");
+#endif
+                                    return (int)BlastError.error_unsupported_operation_in_root;
+                            }
+
+                            code_pointer += 2; 
+                        }
+                        break; 
+
                     case blast_operation.assign:
                         {
                             // advance 1 if on assign 
@@ -5279,7 +5419,11 @@ namespace NSS.Blast.Interpretor
                             //
 
 
-                            f4_register = get_compound_result(ref code_pointer, ref vector_size);
+
+                            ////   TODO : compiler should identify if assigning 1 simple value and use different instruction !!!!! 
+
+
+                            f4_register = get_compound_result(ref code_pointer, ref vector_size, false);
 
                             // set assigned data fields in stack 
                             switch ((byte)vector_size)
@@ -5341,9 +5485,16 @@ namespace NSS.Blast.Interpretor
 #endif
                                 return (int)BlastError.error_unsupported_operation_in_root; 
                             }
+
                         }
                         break;
 
+                        //
+                        // JZ: a condition may contain push commands that should run from the root
+                        // 
+                        //
+                      
+                     
                     case blast_operation.jz:
                         {
                             // calc endlocation of 
@@ -5352,6 +5503,30 @@ namespace NSS.Blast.Interpretor
 
                             // eval condition 
                             code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
+
+                            // eval all push commands before running the compound
+                            bool is_push = true;
+                            do
+                            {
+                                switch ((blast_operation)code[code_pointer])
+                                {
+                                    case blast_operation.pushc:
+                                        code_pointer++;
+                                        pushc(ref code_pointer, ref vector_size, ref f4_register);
+                                        code_pointer++;
+                                        break;
+                                    case blast_operation.push:
+                                    case blast_operation.pushf:
+                                    case blast_operation.pushv:
+                                        break;
+                                    default:
+                                        is_push = false;
+                                        break;
+                                }
+                            }
+                            while (is_push && code_pointer < package.CodeSize);
+                                                        
+                            // get result from condition
                             f4_register = get_compound_result(ref code_pointer, ref vector_size);
 
                             // jump if zero to else condition or after then when no else 
@@ -5367,6 +5542,30 @@ namespace NSS.Blast.Interpretor
 
                             // eval condition 
                             code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
+
+                            // eval all push commands before running the compound
+                            bool is_push = true;
+                            do
+                            {
+                                switch ((blast_operation)code[code_pointer])
+                                {
+                                    case blast_operation.pushc:
+                                        code_pointer++;
+                                        pushc(ref code_pointer, ref vector_size, ref f4_register);
+                                        code_pointer++;
+                                        break;
+                                    case blast_operation.push:
+                                    case blast_operation.pushf:
+                                    case blast_operation.pushv:
+                                        break;
+                                    default:
+                                        is_push = false;
+                                        break;
+                                }
+                            }
+                            while (is_push && code_pointer < package.CodeSize);
+
+                            // get result from condition 
                             f4_register = get_compound_result(ref code_pointer, ref vector_size);
 
                             // jump if NOT zero to else condition or after then when no else 

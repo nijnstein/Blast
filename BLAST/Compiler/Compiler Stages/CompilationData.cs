@@ -153,6 +153,8 @@ namespace NSS.Blast.Compiler
         }
 
         public string LastErrorMessage { get; private set; }
+        public BlastError LastError { get; internal set; }
+
         public int ErrorCount => CompilerMessages.Count(x => x.IsError);
         public bool HasErrors => CompilerMessages.Any(x => x.IsError);
         public int WarningCount => CompilerMessages.Count(x => x.IsWarning);
@@ -183,6 +185,9 @@ namespace NSS.Blast.Compiler
 
             // -- compiler 
             Jumps = new List<Tuple<int, int>>();
+
+            // enable experimental stuff 
+            use_new_stuff = options.Experimental; 
         }
 
         /// <summary>
@@ -299,6 +304,7 @@ namespace NSS.Blast.Compiler
                     {
                         case blast_operation.nop: sb.Append("nop "); break;
                         case blast_operation.assign: sb.Append("set "); break;
+                        case blast_operation.assigns: sb.Append("sets "); break;
                         case blast_operation.add: sb.Append("+ "); break;
                         case blast_operation.substract: sb.Append("- "); break;
                         case blast_operation.multiply: sb.Append("* "); break;
@@ -328,6 +334,7 @@ namespace NSS.Blast.Compiler
                         case blast_operation.peekv: sb.Append("peek "); break;
                         case blast_operation.push: sb.Append("push "); break;
                         case blast_operation.pushf: sb.Append("push function "); break;
+                        case blast_operation.pushc: sb.Append("push compound "); break;
                         case blast_operation.pushv: sb.Append("push vector "); break;
                         case blast_operation.pop: sb.Append("pop "); break;
 
@@ -563,7 +570,9 @@ namespace NSS.Blast.Compiler
 
 
         public node root;
-        public IMByteCodeList code; 
+        public IMByteCodeList code;
+
+        public bool use_new_stuff = false;
 
         public node AST => root;
 

@@ -66,10 +66,18 @@ namespace NSS.Blast.Compiler
         public int vector_size;
         public bool is_vector;
 
+        public node linked_push = null;
+        public node linked_pop = null; 
+
         public bool IsRoot => parent == null && type == nodetype.root; 
         public bool IsCompound => type == nodetype.compound;
         public bool IsAssignment => type == nodetype.assignment;
         public bool IsFunction => type == nodetype.function;
+        public bool IsPushFunction => type == nodetype.function && function != null && function.IsPushVariant();
+        public bool IsPopFunction => type == nodetype.function && function != null && function.IsPopVariant();
+        public bool IsOperation => type == nodetype.operation;
+        public bool IsLeaf => ChildCount == 0 && parent != null; 
+
         public bool IsScriptVariable => variable != null;
         public bool HasDependencies => depends_on != null && depends_on.Count > 0;
         public int DependencyCount => depends_on != null ? depends_on.Count : 0; 
@@ -142,12 +150,37 @@ namespace NSS.Blast.Compiler
             return true; 
         }
 
+
+        /// <summary>
+        /// check if this node is a definition of a vector that does not nest:
+        /// (1 1 1 1) 
+        /// (1 pop pop) 
+        /// (2 maxa(1) 2 3)
+        /// (3, -1 2 2) =>  (3 (-1) 2 2)
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool IsNonNestedVectorDefinition()
+        {
+            return IsNonNestedVectorDefinition(this); 
+        }
+
+
         public static bool IsNonNestedVectorDefinition(node n)
         {
             Assert.IsNotNull(n);
 
             // must be compound of n elements 
-            if (!n.IsCompound) return false;
+            // or a pusv instruction 
+            if (!n.IsCompound)
+            {
+                if (n.IsFunction && n.function.FunctionId == (int)ReservedScriptFunctionIds.PushVector)
+                {
+                }
+                else
+                { return false; }
+                    
+            }
 
             // a vector has more then 1 element 
             if (n.ChildCount <= 1) return false;
@@ -160,8 +193,8 @@ namespace NSS.Blast.Compiler
             {
                 node child = n.children[i];
 
-                if (child.HasChildNodes) continue; 
-                if (child.is_constant || child.IsScriptVariable) continue;
+                if (child.HasChildNodes) continue;  // may still be something resulting in 1 var 
+                if (child.is_constant || child.IsScriptVariable) continue; // these might be ok
 
                 // this does assume its a vectorsize 1 pop.... 
                 if (child.IsFunction)
@@ -281,6 +314,7 @@ namespace NSS.Blast.Compiler
             if (parent != null) parent.children.Add(this);
             if (_children != null) children.AddRange(_children);
         }
+
         public node(nodetype _type, BlastScriptToken _token)
         {
             parent = null;
@@ -292,7 +326,27 @@ namespace NSS.Blast.Compiler
         }
 
         public override string ToString()
-        {                                       
+        {
+            if (HasChildren)
+            {
+                StringBuilder sb = StringBuilderCache.Acquire();
+                sb.Append(GetNodeDescription()); 
+                sb.Append("[");
+                foreach (node child in children)
+                {
+                    sb.Append($"[{child}] ");
+                }
+                sb.Append("]");
+                return StringBuilderCache.GetStringAndRelease(ref sb); 
+            }
+            else
+            {
+                return GetNodeDescription(); 
+            }
+        }
+
+        public string GetNodeDescription()
+        {
             string sconstant = is_constant ? "constant " : "";
             string svector = is_vector ? $" vector[{vector_size}]" : "";
             switch (type)
@@ -354,7 +408,7 @@ namespace NSS.Blast.Compiler
                     dependencies = $"[depends on: {dependencies}]";
                 }
 
-                sb.AppendLine($"{"".PadLeft(indent, ' ')}{n.ToString()} {dependencies}");
+                sb.AppendLine($"{"".PadLeft(indent, ' ')}{n.GetNodeDescription()} {dependencies}");
                 if (n.children.Count > 0)
                 {
                     foreach (node c in n.children)
@@ -374,7 +428,115 @@ namespace NSS.Blast.Compiler
                 }
             }
         }
-                                  
+
+        public bool IsOperationList()
+        {
+            return node.IsOperationList(this);
+        }
+
+        /// <summary>
+        /// check if the node is an operation sequence in the form: 3 + a + 4 + 4 + max(3093) + (4 + 0) 
+        /// </summary>
+        /// <param name="child"></param>
+        /// <returns></returns>
+        public static bool IsOperationList(node node)
+        {
+            bool has_ops = false;
+
+            if(node.ChildCount == 2)
+            {
+                // only a negation should be possible to be 2 long 
+                return node.children[0].token == BlastScriptToken.Substract;
+            }
+
+            // it has to have more then 2 items in order to form a list of operations 
+            if (node.ChildCount > 2)
+            {
+                bool canbenegation = false;
+                int consecutive_params = 0;
+                bool lastwasparam = false;
+                bool lastwasop = false; 
+
+                foreach (node child in node.children)
+                {
+                    switch (child.type)
+                    {
+                        case nodetype.operation:
+                            lastwasparam = false;
+                            consecutive_params = 0;
+
+                            if (!canbenegation && lastwasop && child.token == BlastScriptToken.Substract)
+                            {
+                                canbenegation = true;
+                            }
+                            else
+                            {
+                                has_ops = true;
+                            }
+                            lastwasop = true;
+
+                            break;
+
+                        case nodetype.compound:
+                        case nodetype.parameter:
+                           
+                            if (!lastwasparam)
+                            {
+                                lastwasparam = true;
+                            }
+                            else
+                            {
+                                consecutive_params++;
+                                if (consecutive_params > 1) return false;
+                            }
+                            break;
+
+                        case nodetype.function:
+                            if(lastwasparam)
+                            {
+                                consecutive_params++;
+                                if (consecutive_params > 1) return false;
+                            }
+                            else
+                            {
+                                lastwasparam = true; 
+                            }
+                            break; 
+
+
+                        default:
+                            lastwasop = false;
+
+                            if (canbenegation) { has_ops = true; canbenegation = false; }
+                            if (child.HasChildren && node.IsOperationList(child)) has_ops = true;
+                            lastwasparam = false;
+                            consecutive_params = 0; 
+                            break;
+                    }
+                }
+            }
+            return has_ops;
+        }
+
+        /// <summary>
+        /// -encode vectorsize in lower nibble
+        /// -encode childcount == parametercount in high nibble 
+        /// </summary>
+        public static byte encode44(node node)
+        {
+            return (byte)((node.vector_size & 0b00001111) | ((node.ChildCount & 0b00001111) << 4));
+        }
+
+        /// <summary>
+        /// -encode vectorsize in lower nibble
+        /// -encode parametercount in high nibble 
+        /// </summary>
+        public static byte encode44(node node, byte parameter_count)
+        {
+            return (byte)((node.vector_size & 0b00001111) | ((parameter_count & 0b00001111) << 4));
+        }
+
+
         public void SetDependency(node ast_node)
         {
             Assert.IsNotNull(ast_node);
@@ -568,16 +730,16 @@ namespace NSS.Blast.Compiler
         /// get all leaf nodes from this node
         /// </summary>
         /// <returns></returns>
-        public List<node> GatherLeafNodes()
+        public List<node> GetLeafNodes()
         {
             List<node> leafs = new List<node>();
-            GatherLeafNodes(leafs, this);
+            GetLeafNodes(leafs, this);
             return leafs;
         }
 
-        static void GatherLeafNodes(List<node> leafs, node n)
+        static void GetLeafNodes(List<node> leafs, node n)
         {
-            if (n.children.Count == 0)
+            if (n.IsLeaf)
             {
                 leafs.Add(n);
             }
@@ -585,13 +747,13 @@ namespace NSS.Blast.Compiler
             {
                 foreach (node c in n.children)
                 {
-                    if (c.children.Count > 0)
+                    if (c.IsLeaf)
                     {
-                        GatherLeafNodes(leafs, c);
+                        leafs.Add(c);
                     }
                     else
                     {
-                        leafs.Add(c);
+                        GetLeafNodes(leafs, c);
                     }
                 }
             }
@@ -627,6 +789,130 @@ namespace NSS.Blast.Compiler
             }
             return false;
         }
+
+
+        /// <summary>
+        /// recursively reduces unneeded compound nesting 
+        /// <(((2 3)))> => <2 2>
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="children"></param>
+        static public node ReduceSingularCompounds(node node)
+        {
+            Assert.IsNotNull(node);
+            
+            // reduce root
+            while (node.ChildCount == 1 && (node.FirstChild.IsCompound || node.FirstChild.IsFunction))
+            {
+                node child = node.FirstChild;
+                if (child.IsCompound)
+                {
+                    // single compound as child, need to check these children and remove the comound
+                    node.children.Clear();
+                    node.SetChildren(child.children);
+                    child.parent = node;
+                }
+                else
+                {
+                    // single function as child, swap with this node if this node is merely a compound
+                    if(node.IsCompound)
+                    {
+                        child.parent = node.parent;
+                        node = child; 
+                    }
+                    else
+                    {
+                        // node is some other thing, leave it to be flattened below
+                        break; 
+                    }
+                }
+            }
+
+            // go through children 
+            foreach(node child in node.children)
+            {
+                if (child.ChildCount > 0)
+                {
+                    switch (child.type)
+                    {
+                        case nodetype.compound:
+                        case nodetype.assignment:
+                            ReduceSingularCompounds(child);
+                            break;
+                    }
+                }
+            }
+
+            return node; 
+        }
+
+
+        /// <summary>
+        /// create a pop node based on the information pushed, links the push and pop together 
+        /// </summary>
+        /// <param name="data">compiler data</param>
+        /// <param name="related_push">the earlier push op</param>
+        /// <returns></returns>
+        public static node CreatePopNode(IBlastCompilationData data, node related_push)
+        {
+            node pop = new node(null);
+
+            pop.identifier = "_gen_pop";
+            pop.type = nodetype.function;
+            pop.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.Pop);
+            pop.is_vector = related_push.is_vector;
+            pop.vector_size = related_push.vector_size;
+
+            pop.linked_push = related_push;
+            related_push.linked_pop = pop;
+
+            return pop;
+        }
+
+        /// <summary>
+        /// create a push node with the information from the given node, THIS DOES NOT ADD THAT NODE AS CHILD
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="topush"></param>
+        /// <returns></returns>
+        static public node CreatePushNode(IBlastCompilationData data, node topush)
+        {
+            node push = new node(null);
+            push.identifier = "_gen_push";
+            push.type = nodetype.function;
+
+            if (topush.IsFunction)
+            {
+
+                push.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.PushFunction);
+
+            }
+            else
+            {
+                if (topush.IsCompound)
+                {                            
+                    if (topush.IsNonNestedVectorDefinition())
+                    {
+                        push.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.PushVector); 
+                    } 
+                    else
+                    {
+                        push.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.PushCompound);
+                    }
+                }
+                else
+                {
+                    push.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.Push);
+                }
+            }
+
+            push.is_vector = topush.is_vector;
+            push.vector_size = topush.vector_size;
+
+            return push;
+        }
+
+
 
         /// <summary>
         /// check if the list of given nodes is flat 
@@ -681,6 +967,43 @@ namespace NSS.Blast.Compiler
                 }
             }
             return true;
+        }
+
+        /// <summary>
+        /// check if the node is a flat node                       
+        /// - contains NO compounds 
+        /// - contains no object with children other then a function
+        /// </summary>
+        /// <returns></returns>
+        public bool IsFlat(bool allow_vector_root_compound = false)
+        {
+            if (ChildCount == 0) return true; 
+            foreach(node child in children)
+            {
+                switch (child.type)
+                {
+                    case nodetype.root:
+                    case nodetype.function:
+                    case nodetype.parameter:
+                    case nodetype.operation:
+                        break;
+
+                    case nodetype.compound:
+                        if (!allow_vector_root_compound) return false;
+                        // only allowed if vector root is allowed 
+
+                        foreach(node vc in child.children)
+                        {
+                            // eiter pops or parameters
+                            if (!vc.IsSingleValueOrPop()) return false;
+                        }
+                        return child.ChildCount > 0; 
+
+                    default: return false;       
+                }
+                if (!child.IsFunction && child.HasChildren) return false; 
+            }
+            return true; 
         }
 
 
@@ -1039,5 +1362,28 @@ namespace NSS.Blast.Compiler
             }
         }
 
+        /// <summary>
+        /// determine if the node is a single value or a pop operation
+        /// </summary>
+        public bool IsSingleValueOrPop()
+        {
+            return IsSingleValueOrPop(this);
+        }
+
+        /// <summary>
+        /// determine if the node is a single value or a pop operation
+        /// </summary>
+        static public bool IsSingleValueOrPop(node node)
+        {
+            Assert.IsNotNull(node);
+
+            if (node.HasChildren) return false;
+
+            if (node.IsPopFunction) return true;
+            if (node.IsScriptVariable) return true;
+            if (node.constant_op != blast_operation.nop) return true;
+
+            return false; 
+        }
     }
 }
