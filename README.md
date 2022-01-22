@@ -12,7 +12,7 @@
 - update repository
 
 - ssmd interpretor
-- hpc transpiler
+
 
 - refactor Blast engine 
 
@@ -23,3 +23,4 @@
 
 - ID datatypes
 - SSMD control flow support
+- HPC transpiler
