@@ -61,6 +61,38 @@
             - use seperate instances for threads
             </summary>
         </member>
+        <member name="T:NSS.Blast.Blast.BlastExecute">
+            <summary>
+            delegate used to execute scripts
+            </summary>
+            <param name="scriptid">the id of the script</param>
+            <param name="p_stack">the stack pointer</param>
+            <param name="data">environment data</param>
+            <param name="caller">caller data</param>
+            <returns></returns>
+        </member>
+        <member name="F:NSS.Blast.Blast.Comment">
+            <summary>
+            the comment character 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Blast.InvalidNumeric">
+            <summary>
+            the value used for invalid numerics 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Blast.StackFillPattern">
+            <summary>
+            The fill pattern for stack on initialize, easier to spot bugs if stack is filled with a pattern instead of zeros or random which might have different causes, something bugged setting all bytes to 101 should be very suspicious
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Blast.data">
+            <summary>
+            Pointer to native memory holding data used during interpretation:
+            - function pointers
+            - constant data 
+            </summary>
+        </member>
         <member name="P:NSS.Blast.Blast.IsCreated">
             <summary>
             true if the structure is initialized and memory is allocated 
@@ -72,7 +104,9 @@
             </summary>
         </member>
         <member name="F:NSS.Blast.Blast.mt_lock">
-            lots of statics ahead
+            <summary>
+            simple object/lock method for some threadsafety
+            </summary>
         </member>
         <member name="M:NSS.Blast.Blast.Destroy">
             <summary>
@@ -621,15 +655,85 @@
             get the string representation of a blast script as ID:Name
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "T:NSS.Blast.BlastScriptPackage" -->
+        <member name="T:NSS.Blast.BlastScriptPackage">
+            <summary>
+            BlastScriptPackage contains all data needed to use and execute scriptcode, it consists of: 
+            
+            - BlastPackage -> contains the native bytecode 
+            - Variable information 
+            - IO mapping 
+            - Bursted functionpointer mapping 
+            
+            </summary>
+        </member>
         <member name="F:NSS.Blast.BlastScriptPackage.Package">
             <summary>
-            the actual native package 
+            the bytecode package 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptPackage.Bursted">
+            <summary>
+            A functionpointer to burst transpiled bytecode, possible if the package was known at compile time. 
+            SSMD mode will still use the bytecode package.  
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptPackage.IsBurstCompiled">
+            <summary>
+            True if this package has also been burstcompiled and can be executed with a native function pointer 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptPackage.Inputs">
+            <summary>
+            defined inputs 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptPackage.Outputs">
+            <summary>
+            defined outputs, obsolete as we view the in and outputs as 1 segment, the input will be renamed   
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptPackage.Variables">
+            <summary>
+            Variable information
             </summary>
         </member>
         <member name="F:NSS.Blast.BlastScriptPackage.VariableOffsets">
             <summary>
-            offset in float count into datasegment
+            Offsets for variables in element count into datasegment, an elements is 4 bytes large == 1 float
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptPackage.IsAllocated">
+            <summary>
+            Returns true if native memory is allocated for the package 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.Destroy">
+            <summary>
+            Destroy any allocated native memory 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.ToString">
+            <summary>
+            ToString overload for more information during debugging
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.GetCodeSegmentText(System.Int32,System.Boolean)">
+             <summary>
+             Get a string representation of the bytecode, example output: 
+            
+             000| push compound 1 + 2 nop push function max ^ pop 2 
+             010| debug pop nop 
+             
+             000| 030 085 002 086 000 029 042 009 025 086 
+             010| 255 253 025 000 
+            
+             </summary>
+             <param name="width">number of columns to render</param>
+             <returns>A formatted string</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.GetDataSegmentText">
+            <summary>
+            Get a string representation of the datasegement
             </summary>
         </member>
         <member name="M:NSS.Blast.BlastScriptPackage.GetPackageCodeBytesText(System.Int32,System.Boolean)">
@@ -640,11 +744,27 @@
         </member>
         <member name="M:NSS.Blast.BlastScriptPackage.GetPackageDataBytesText(System.Int32,System.Boolean)">
             <summary>
-            get data as 000| 000 000 000 000 
+            get datasegment as 000| 000 000 000 000 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.GetPackageInfoText">
+            <summary>
+            return overview of package information 
             </summary>
             <returns></returns>
         </member>
         <!-- Badly formed XML comment ignored for member "T:NSS.Blast.Compiler.BlastCompiler" -->
+        <member name="F:NSS.Blast.Compiler.BlastCompiler.opt_value">
+            <summary>
+            from this opcode until opt_ident constant values are encoded
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastCompiler.opt_ident">
+            <summary>
+            form this opcode until 255 variables are encoded
+            </summary>
+        </member>
         <member name="F:NSS.Blast.Compiler.BlastCompiler.ByteCodeStages">
             <summary>
             Default compilation setup 
@@ -772,6 +892,16 @@
             <summary>
             Blast Compiler Stage 
             - compiles the ast into bytecode
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.Version">
+            <summary>
+            Version 0.1.0 - Initial 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.StageType">
+            <summary>
+            Compilation Stage
             </summary>
         </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.GetOperationOpCode(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastScriptToken)">
@@ -2298,17 +2428,6 @@
             print(q.w); // 123
             </summary>
         </member>
-        <member name="T:NSS.Blast.CompileTimeBlastScript">
-            <summary>
-            any script derived from this will be compiled during compilation/design 
-            
-            public class BS1_compiletime : CompileTimeBlastScript
-            {
-                   public override string Code => @"a = a + 1;";
-            }
-            
-            </summary>
-        </member>
         <member name="T:NSS.Blast.StringBuilderCache">
             <summary>
             copied with minor changes from ms cli reference source  
@@ -3087,25 +3206,214 @@
             provides utilities for finding and loading compile-time blast scripts and hpc jobs
             </summary>
         </member>
+        <member name="M:NSS.Blast.Register.BlastReflect.FindCompileTimeBlastScripts">
+            <summary>
+            get a list of scripts to compile during compilation of the unity project 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Register.BlastReflect.FindHPCJobs">
+            <summary>
+            find all hpc jobs compiled into the assemblies loaded 
+            </summary>
+        </member>
         <member name="T:NSS.Blast.Register.BlastScriptRegistry">
             <summary>
             Here we maintain all scripts registered, either by manually calling Register(script)
-            or by finding it in the binary through reflection  
+            or by finding it in the binary through reflection. 
+            
+            -> the registry is a static singleton
+            -> this registry only stores script, not package data
+            -> access is threadsafe                                 s
+            
             </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:NSS.Blast.Register.BlastScriptRegistry.Register(NSS.Blast.BlastScript)" -->
+        <member name="M:NSS.Blast.Register.BlastScriptRegistry.Register(System.String,System.String,System.Int32)">
+            <summary>
+            register code with given name and id with registry
+            </summary>
+            <param name="code">the script code to register</param>
+            <param name="name">the name to attach, should be unique and is case insensitive</param>
+            <param name="id">the script id to use, 0 to generate one, should be > 0 and unique</param>
+            <returns>the script id</returns>
+        </member>
+        <member name="M:NSS.Blast.Register.BlastScriptRegistry.All">
+            <summary>
+            Enumerate all registred blast scripts 
+            </summary>
+            <returns>a blastscript ienumerator</returns>
+        </member>
+        <member name="M:NSS.Blast.Register.BlastScriptRegistry.Get(System.Int32)">
+            <summary>
+            lookup a script with a given script id 
+            </summary>
+            <param name="id">integer id, must be positive</param>
+            <returns>a script, or null if not found</returns>
+        </member>
+        <member name="M:NSS.Blast.Register.BlastScriptRegistry.Get(System.String)">
+            <summary>
+            perform a linear scan for a script with the given name and return iot if found. Case Insensitive
+            </summary>
+            <param name="name">the name to lookup</param>
+            <returns>the script if found or null if nothing was found with the given name</returns>
+        </member>
+        <member name="M:NSS.Blast.Register.BlastScriptRegistry.Exists(System.String)">
+            <summary>
+            scan the registry for a script with the given name
+            </summary>
+            <param name="name">the case insensitive name to search for</param>
+            <returns>true if found, false otherwise</returns>
+        </member>
+        <member name="M:NSS.Blast.Register.BlastScriptRegistry.Exists(System.Int32)">
+            <summary>
+            lookup the id and check if it exists
+            </summary>
+            <param name="id">the unique scriptid to search for</param>
+            <returns>true if found, false otherwise</returns>
+        </member>
+        <member name="M:NSS.Blast.Register.BlastScriptRegistry.TryGetReferenceId(System.String,System.Int32@)">
+            <summary>
+            try to find the id of a script with a given name, performs a linear search
+            </summary>
+            <param name="name">the case insensitive name to lookup</param>
+            <param name="reference_id">the script id</param>
+            <returns>true if a script with the given name was found</returns>
         </member>
         <member name="T:NSS.Blast.BlastVariableMapping">
             <summary>
             description mapping a variable to an input or output
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastVariableMapping.Variable">
+            <summary>
+            the variable that is mapped 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastVariableMapping.VariableId">
+            <summary>
+            Id of variable 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastVariableMapping.DataType">
+            <summary>
+            Datatype of variable 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariableMapping.Offset">
+            <summary>
+            Offset of variable into datasegment, in bytes 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariableMapping.ByteSize">
+            <summary>
+            Bytesize of variable  
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastVariableMapping.ToString">
+            <summary>
+            ToString override providing a more usefull description while debugging 
+            </summary>
+            <returns>a formatted string</returns>
+        </member>
         <member name="T:NSS.Blast.BlastVariableDataType">
             <summary>
             supported variable data types 
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastVariableDataType.Numeric">
+            <summary>
+            float datatype
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariableDataType.Numeric64">
+            <summary>
+            double datatype 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariableDataType.ID">
+            <summary>
+            integer datatype 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariableDataType.ID64">
+            <summary>
+            long datatype 
+            </summary>
+        </member>
         <member name="T:NSS.Blast.BlastVariable">
             <summary>
-            description of a variable as determined during compilation 
+            Description of a variable as determined during compilation of script. It is not needed for execution
+            and is thus not available through the native BlastPackageData. Native code can query metadata.
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariable.Id">
+            <summary>
+            the unique id of the variable as used within the script
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariable.Name">
+            <summary>
+            The name of the variable as it was used in the script 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariable.ReferenceCount">
+            <summary>
+            Number of times blast references the variable
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariable.DataType">
+            <summary>
+            The datatype of the variable:
+            - V1: only numeric datatypes are supported
+            - V2: support for ID types 
+            - V3: ID64, NUMERIC64 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariable.IsConstant">
+            <summary>
+            is this variable constant? 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariable.IsVector">
+            <summary>
+            true if this is a vector of size > 1
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariable.VectorSize">
+            <summary>
+            vectorsize of the variable
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariable.IsInput">
+            <summary>
+            true if specified in inputs 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVariable.IsOutput">
+            <summary>
+            true if specified in outputs 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastVariable.ToString">
+            <summary>
+            ToString override for a more detailed view during debugging 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastVariable.AddReference">
+            <summary>
+            Add a reference to this variable 
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.CompileTimeBlastScript">
+            <summary>
+            any script derived from this will be compiled during compilation/design 
+            
+            public class BS1_compiletime : CompileTimeBlastScript
+            {
+                   public override string Code => @"a = a + 1;";
+            }
+            
             </summary>
         </member>
     </members>

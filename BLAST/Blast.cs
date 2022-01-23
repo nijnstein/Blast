@@ -124,6 +124,14 @@ namespace NSS.Blast
     [BurstCompile]
     unsafe public struct Blast
     {
+        /// <summary>
+        /// delegate used to execute scripts
+        /// </summary>
+        /// <param name="scriptid">the id of the script</param>
+        /// <param name="p_stack">the stack pointer</param>
+        /// <param name="data">environment data</param>
+        /// <param name="caller">caller data</param>
+        /// <returns></returns>
         public delegate int BlastExecute(int scriptid, float* p_stack, IntPtr data, IntPtr caller);
 
         public delegate float BlastDelegate_f0(IntPtr engine, IntPtr data, IntPtr caller);
@@ -136,10 +144,28 @@ namespace NSS.Blast
         public delegate float BlastDelegate_f7(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g);
         public delegate float BlastDelegate_f8(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h);
 
+        /// <summary>
+        /// the comment character 
+        /// </summary>
         public const char Comment = '#';                      
-        public const float InvalidNumeric = float.NaN; 
 
+        /// <summary>
+        /// the value used for invalid numerics 
+        /// </summary>
+        public const float InvalidNumeric = float.NaN;
+
+        /// <summary>
+        /// The fill pattern for stack on initialize, easier to spot bugs if stack is filled with a pattern instead of zeros or random which might have different causes, something bugged setting all bytes to 101 should be very suspicious
+        /// </summary>
+        public const byte StackFillPattern = 101; 
+
+        /// <summary>
+        /// Pointer to native memory holding data used during interpretation:
+        /// - function pointers
+        /// - constant data 
+        /// </summary>
         private BlastEngineData* data;
+
         private Allocator allocator;
         private bool is_created;
 
@@ -153,7 +179,9 @@ namespace NSS.Blast
         /// </summary>
         public IntPtr Engine => (IntPtr)data;
 
-        /// lots of statics ahead
+        /// <summary>
+        /// simple object/lock method for some threadsafety
+        /// </summary>
         static internal object mt_lock = new object();
 
         #region Create / Destroy
