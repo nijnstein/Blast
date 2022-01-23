@@ -108,9 +108,17 @@ namespace NSS.Blast.Compiler
        //   (__)\       )\/\
        //       ||----w |
        //       ||     ||
+       /// <summary>
+       /// from this opcode until opt_ident constant values are encoded
+       /// </summary>
         public const byte opt_value = (byte)blast_operation.pi;
+       
+        /// <summary>
+        /// form this opcode until 255 variables are encoded
+        /// </summary>
         public const byte opt_ident = (byte)blast_operation.id;
 
+ 
         /// <summary>
         /// Default compilation setup 
         /// </summary>
