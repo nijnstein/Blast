@@ -1,4 +1,0 @@
-F:\Repo\Nijnstein\Blast\BLAST\obj\Debug\netstandard2.0\BLAST.csprojAssemblyReference.cache
-F:\Repo\Nijnstein\Blast\BLAST\obj\Debug\netstandard2.0\BLAST.csproj.CoreCompileInputs.cache
-F:\Repo\Nijnstein\Blast\BLAST\obj\Debug\netstandard2.0\BLAST.AssemblyInfoInputs.cache
-F:\Repo\Nijnstein\Blast\BLAST\obj\Debug\netstandard2.0\BLAST.AssemblyInfo.cs

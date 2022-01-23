@@ -1,7 +1,10 @@
-
+bin/
+obj/
+.vs/
 BlastTestConsole/obj/Debug/netcoreapp3.1/BlastTestConsole.csprojAssemblyReference.cache
 *.cache
 *.pdb
 *.dll
 *.dll
 *.exe
+*.meta
