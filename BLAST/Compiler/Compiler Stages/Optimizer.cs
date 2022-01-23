@@ -1,12 +1,13 @@
 ﻿
 #if NOT_USING_UNITY
     using NSS.Blast.Standalone;
-using System.Collections.Generic;
-using Unity.Assertions; 
+    using Unity.Assertions; 
 #else
     using UnityEngine;
+    using UnityEngine.Assertions; 
 #endif
 
+using System.Collections.Generic;
 using Unity.Mathematics;
 
 namespace NSS.Blast.Compiler.Stage

@@ -1,5 +1,7 @@
 bin/
 obj/
+BLAST/bin/
+BLAST/obj/
 Blast Documentation Project/
 .vs/
 BlastTestConsole/obj/Debug/netcoreapp3.1/BlastTestConsole.csprojAssemblyReference.cache
