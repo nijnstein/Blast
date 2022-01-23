@@ -30,6 +30,7 @@ namespace NSS.Blast
         ParameterAnalysis,
         /// <summary>
         /// analyze ast structure
+        /// - basic removal of some useless structures
         /// - rules of multiplication
         /// </summary>
         Analysis,
@@ -37,6 +38,12 @@ namespace NSS.Blast
         /// flatten execution path 
         /// </summary>
         Flatten,
+        /// <summary>
+        /// optimize ast structure
+        /// - transform expensive constructs into less expensive ones
+        /// - this should be done after flattening the tree, any optimization that reduces compounds should happen in analysis
+        /// </summary>
+        Optimization,
         /// <summary>
         /// pre compile cleanup 
         /// </summary>

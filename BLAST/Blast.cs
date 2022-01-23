@@ -15,14 +15,13 @@ using System.IO;
 using NSS.Blast.Cache;
 using NSS.Blast.Compiler;
 using NSS.Blast.Register;
+using NSS.Blast.Interpretor;
+using NSS.Blast.SSMD;
 
 using Unity.Collections;
 using Unity.Mathematics;
 using System.Text;
-using System.Linq; 
 using Unity.Burst;
-using NSS.Blast.Interpretor;
-using NSS.Blast.SSMD;
 
 
 using Random = Unity.Mathematics.Random;
@@ -45,8 +44,6 @@ namespace NSS.Blast
 
         public Random random;
 
-        #region Helper Functions / Get-Set
-
         public void Seed(uint i)
         {
             if (i == 0)
@@ -58,6 +55,7 @@ namespace NSS.Blast
                 random.InitState(i);
             }
         }
+        #region [try]get function pointer 
 
         unsafe public NonGenericFunctionPointer GetFunctionPointer(int id)
         {
@@ -113,10 +111,18 @@ namespace NSS.Blast
         private BlastEngineData* data;
         private Allocator allocator;
         private bool is_created;
+
+        /// <summary>
+        /// true if the structure is initialized and memory is allocated 
+        /// </summary>
         public bool IsCreated { get { return is_created; } }
+        
+        /// <summary>
+        /// IntPtr to global data object used by interpretor, it holds references to constant values and function pointers 
+        /// </summary>
         public IntPtr Engine => (IntPtr)data;
 
-        // lots of statics ahead
+        /// lots of statics ahead
         static internal object mt_lock = new object();
 
         #region Create / Destroy
@@ -552,6 +558,14 @@ namespace NSS.Blast
             return op == blast_operation.jump || op == blast_operation.jump_back || op == blast_operation.jz || op == blast_operation.jnz;
         }
 
+
+        /// <summary>
+        /// visualize a list of tokens and identifiers into a somewhat readable string
+        /// </summary>
+        /// <param name="tokens">the tuples with token and identifier</param>
+        /// <param name="idx">start of range to view</param>
+        /// <param name="idx_max">end of range to view</param>
+        /// <returns>a single line string with token descriptions</returns>
         public static string VisualizeTokens(List<Tuple<BlastScriptToken, string>> tokens, int idx, int idx_max)
         {
             StringBuilder sb = StringBuilderCache.Acquire();
@@ -568,18 +582,44 @@ namespace NSS.Blast
                     sb.Append(" ");
                 }
             }
-            return StringBuilderCache.GetStringAndRelease(ref sb); 
+            return StringBuilderCache.GetStringAndRelease(ref sb);
         }
 
-
-#endregion
-
-#region Functions 
-
         /// <summary>
-        /// defined functions for script
+        /// get the corresponding operation opcode from a given script token 
         /// </summary>
-        static public List<ScriptFunctionDefinition> Functions = new List<ScriptFunctionDefinition>()
+        /// <param name="token">the script token</param>
+        /// <returns>corresponding opcode</returns>
+        public static blast_operation GetBlastOperationFromToken(BlastScriptToken token)
+        {
+            switch (token)
+            {
+                case BlastScriptToken.Add: return blast_operation.add;
+                case BlastScriptToken.Substract: return blast_operation.substract;
+                case BlastScriptToken.Divide: return blast_operation.divide;
+                case BlastScriptToken.Multiply: return blast_operation.multiply;
+                case BlastScriptToken.And: return blast_operation.and;
+                case BlastScriptToken.Or: return blast_operation.or;
+                case BlastScriptToken.Not: return blast_operation.not;
+                case BlastScriptToken.Xor: return blast_operation.xor;
+                case BlastScriptToken.Equals: return blast_operation.equals;
+                case BlastScriptToken.NotEquals: return blast_operation.not_equals;
+                case BlastScriptToken.GreaterThen: return blast_operation.greater;
+                case BlastScriptToken.SmallerThen: return blast_operation.smaller;
+                case BlastScriptToken.GreaterThenEquals: return blast_operation.greater_equals;
+                case BlastScriptToken.SmallerThenEquals: return blast_operation.smaller_equals;
+                default: return blast_operation.nop; 
+            }
+        }
+
+    #endregion
+
+    #region Functions 
+
+    /// <summary>
+    /// defined functions for script
+    /// </summary>
+    static public List<ScriptFunctionDefinition> Functions = new List<ScriptFunctionDefinition>()
         {
             new ScriptFunctionDefinition(0, "abs", 1, 1, 0, 0, blast_operation.abs),
 
@@ -625,7 +665,6 @@ namespace NSS.Blast
 
             new ScriptFunctionDefinition(33, "pow", 2, 2, 0, 0, extended_blast_operation.pow, null, "a", "power"),
 
-            // would be nice to have a parameter giving min and max vector size 
             new ScriptFunctionDefinition(32, "normalize", 1, 1, 0, 0, blast_operation.normalize, "a"),
             new ScriptFunctionDefinition(30, "saturate", 1, 1, 0, 0, blast_operation.saturate, "a"),
             new ScriptFunctionDefinition(31, "clamp", 3, 3, 0, 0, blast_operation.clamp, "a", "min", "max"),
@@ -654,7 +693,52 @@ namespace NSS.Blast
             new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debugstack",0, 0, 0, 0, extended_blast_operation.debugstack)
         };
 
-        public ScriptFunctionDefinition GetFunctionByScriptOp(blast_operation op)
+        /// <summary>
+        /// get the function for a sequence of op, add -> adda
+        /// </summary>
+        static internal blast_operation GetSequenceFunction(blast_operation op)
+        {
+            // transform the sequence into a function call matching the operation 
+            switch (op)
+            {
+                case blast_operation.add: return blast_operation.adda;
+                case blast_operation.substract: return blast_operation.suba;
+                case blast_operation.divide: return blast_operation.diva;
+                case blast_operation.multiply: return blast_operation.mula;
+                case blast_operation.and: return blast_operation.all;
+                case blast_operation.or: return blast_operation.any;
+            }
+            return blast_operation.nop;
+        }
+
+
+        /// <summary>
+        /// return if there is a sequence function for the operation
+        /// </summary>
+        static internal bool HasSequenceFunction(blast_operation op)
+        {
+            // transform the sequence into a function call matching the operation 
+            switch (op)
+            {
+                case blast_operation.add:
+                case blast_operation.substract:
+                case blast_operation.divide:
+                case blast_operation.multiply:
+                case blast_operation.and: 
+                case blast_operation.or: return true; 
+            }
+            return false; 
+        }
+
+
+
+
+        /// <summary>
+        /// lookup a function definition that is directly linked to an interpretor operation 
+        /// </summary>
+        /// <param name="op">the operation that should translate to a function used during interpretation</param>
+        /// <returns>a function definition</returns>
+        static public ScriptFunctionDefinition GetFunctionByOpCode(blast_operation op)
         {
             foreach (var f in Blast.Functions)
                 if (f.ScriptOp == op)
@@ -664,7 +748,13 @@ namespace NSS.Blast
             return null;
         }
 
-        public ScriptFunctionDefinition GetFunctionByName(string name)
+
+        /// <summary>
+        /// lookup a function definition that is directly linked to an interpretor operation 
+        /// </summary>
+        /// <param name="name">the name of the function to lookup</param>
+        /// <returns>a function definition</returns>
+        static public ScriptFunctionDefinition GetFunctionByName(string name)
         {
             foreach (var f in Blast.Functions)
                 if (string.Compare(name, f.Match, true) == 0)
@@ -674,12 +764,26 @@ namespace NSS.Blast
             return null;
         }
 
-        public ScriptFunctionDefinition GetFunctionById(ReservedScriptFunctionIds function_id)
+
+        /// <summary>
+        /// lookup a function definition that is directly linked to an interpretor operation 
+        /// </summary>
+        /// <param name="function_id">the reserved id of the function to lookup</param>
+        /// <returns>a function definition</returns>
+        static public ScriptFunctionDefinition GetFunctionById(ReservedScriptFunctionIds function_id)
         {
             return GetFunctionById((int)function_id);
         }
 
-        public ScriptFunctionDefinition GetFunctionById(int function_id)
+
+
+        /// <summary>
+        /// lookup a function definition that is directly linked to an interpretor operation 
+        /// </summary>
+        /// <param name="function_id">the unique id of the function to lookup</param>
+        /// <returns>a function definition</returns>
+
+        static public ScriptFunctionDefinition GetFunctionById(int function_id)
         {
             foreach (var f in Blast.Functions)
                 if (f.FunctionId == function_id)
@@ -694,14 +798,14 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="op">the operation mapping to a function</param>
         /// <returns>true if the function exists and has a variable parameter list</returns>
-        public bool IsVariableParamFunction(blast_operation op)
-        {
+        static public bool IsVariableParamFunction(blast_operation op)
+        { 
             if (op == blast_operation.nop)
             {
                 return false;
             }
 
-            ScriptFunctionDefinition function = GetFunctionByScriptOp(op);
+            ScriptFunctionDefinition function = GetFunctionByOpCode(op);
             if (function == null)
             {
                 return false;

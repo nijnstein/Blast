@@ -111,9 +111,6 @@ namespace NSS.Blast
         /// align data offsets on a 4 byte boundary
         /// </summary>
         Aligned8 = 4
-
-
-
     }
 
 
@@ -127,6 +124,7 @@ namespace NSS.Blast
 
     /// <summary>
     /// data for ssmd operation modes: data-stack only
+    /// - only used as pointer, fields handy in debugger
     /// </summary>
     [BurstCompile]
     unsafe public struct BlastSSMDDataStack {
@@ -136,11 +134,7 @@ namespace NSS.Blast
         public float4 c;
         public float4 d;
 #endif 
-
     }
-
-
-
 
     /// <summary>
     /// the bare minimum data to package a script for execution 

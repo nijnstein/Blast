@@ -12,7 +12,15 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastParameterAnalysis : IBlastCompilerStage
     {
+
+        /// <summary>
+        /// v0.1.0 - initial version
+        /// </summary>
         public System.Version Version => new System.Version(0, 1, 0);
+
+        /// <summary>
+        /// compiler stage: parameter analysis
+        /// </summary>
         public BlastCompilerStageType StageType => BlastCompilerStageType.ParameterAnalysis;
 
         bool check_input_output(IBlastCompilationData data)

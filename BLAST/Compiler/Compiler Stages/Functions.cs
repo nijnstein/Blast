@@ -150,21 +150,79 @@
         }
     }
 
+    /// <summary>
+    /// IDs reserved for functions used in blast, these get registered to blast with a name (that doesnt need to be equal) 
+    /// </summary>
     public enum ReservedScriptFunctionIds : int
     {
+        /// <summary>
+        /// input mapping function - reserved for internal use
+        /// </summary>
         Input = 1001,
+
+        /// <summary>
+        /// output mapping function - reserved for internal use
+        /// </summary>
         Output = 1002,
+
+        /// <summary>
+        /// Yield execution 
+        /// </summary>
         Yield = 1003,
-        Push = 1004,
+
+        /// <summary>
+        /// Pop something from the stack 
+        /// </summary>
         Pop = 1005,
+
+        /// <summary>
+        /// Pop a vector of size 2 from the stack 
+        /// </summary>
         Pop2 = 1006,
+
+        /// <summary>
+        /// Pop a vector of size 3 from the stack 
+        /// </summary>
         Pop3 = 1007,
+
+        /// <summary>
+        /// Pop a vector of size 4 from the stack 
+        /// </summary>
         Pop4 = 1008,
+
+        /// <summary>
+        /// Peek stack top 
+        /// </summary>
         Peek = 1009,
+
+        /// <summary>
+        /// Seed the random number generator 
+        /// </summary>
         Seed = 1010,
+
+        /// <summary>
+        /// Push something to the stack 
+        /// </summary>
+        Push = 1004,
+
+        /// <summary>
+        /// Push a function's return value to the stack 
+        /// </summary>
         PushFunction = 1011,
+
+        /// <summary>
+        /// Push the result from executing a compound onto the stack 
+        /// </summary>
         PushCompound = 1013,
+
+        /// <summary>
+        /// Push a vector directly onto the stack 
+        /// </summary>
         PushVector = 1014,
+
+        /// <summary>
+        /// Output debuginformation to the debug stream about given parameter 
+        /// </summary>
         Debug = 1012
     }
 }

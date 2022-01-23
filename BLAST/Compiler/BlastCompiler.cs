@@ -133,6 +133,9 @@ namespace NSS.Blast.Compiler
             
             // flatten node structure into a linear path 
             new BlastFlatten(),
+
+            // try to optimize common sequences 
+            new BlastOptimizer(),
             
             // cleanup unreference parameters, some might not be used anymore
             new BlastPreCompileCleanup(),
@@ -162,6 +165,7 @@ namespace NSS.Blast.Compiler
             new BlastParameterAnalysis(),
             new BlastAnalysis(),
             new BlastFlatten(),
+            new BlastOptimizer(), 
             new BlastPreCompileCleanup(),
             // transform stack operation like push/pop into stack-variables 
             // new BlastHPCStackResolver(), // or just use stack ops... this was we kill yields 

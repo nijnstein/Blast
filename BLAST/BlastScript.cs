@@ -17,6 +17,9 @@ namespace NSS.Blast
     /// </summary>
     public enum BlastLanguageVersion : int
     {
+        /// <summary>
+        /// unknown language version
+        /// </summary>
         None = 0,
 
         /// <summary>
@@ -40,14 +43,30 @@ namespace NSS.Blast
     /// </summary>
     public class BlastScript
     {
+        /// <summary>
+        /// Target language vesion, depending on compilation settings it might change in the package
+        /// but the user should ensure that the code is compatible; 
+        /// </summary>
         public BlastLanguageVersion LanguageVersion { get; internal set; } = BlastLanguageVersion.BS1; 
+
+        /// <summary>
+        /// Blast scriptid, used to uniquely identify the script. It is used throughout blast to id the packaged script
+        /// </summary>
         public int Id { get; internal set; }
+
+        /// <summary>
+        /// The name of the script as used in messages 
+        /// </summary>
         public string Name { get; internal set; }
+        
+        /// <summary>
+        /// the actual scriptcode conforming to the languageversion set
+        /// </summary>
         public string Code { get; internal set; }
 
  
         /// <summary>
-        /// create script from code 
+        /// create script object from code 
         /// </summary>
         /// <param name="code">the code</param>
         /// <param name="name">name for the script</param>

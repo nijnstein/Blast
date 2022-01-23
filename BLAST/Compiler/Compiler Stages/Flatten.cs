@@ -55,7 +55,7 @@ namespace NSS.Blast.Compiler.Stage
                         flattened_output.Insert(0, push);
 
                         // replace function parameter with the newly created pop node linked to the push
-                        node pop = node.CreatePopNode(data, push);
+                        node pop = node.CreatePopNode(push);
                         compound.children[i] = pop;
                         pop.parent = compound;
                         break;
@@ -110,7 +110,7 @@ namespace NSS.Blast.Compiler.Stage
                         }
                         else
                         {
-                            push = node.CreatePushNode(data, child);
+                            push = node.CreatePushNode(child);
                             if (child.IsCompound)
                             {
                                 // add children of compound 
@@ -126,7 +126,7 @@ namespace NSS.Blast.Compiler.Stage
                         flattened_output.Insert(0, push);
 
                         // need to replace function param with pop op  
-                        node pop = node.CreatePopNode(data, push);
+                        node pop = node.CreatePopNode(push);
                         pop.parent = function;
                         function.children[i] = pop;
                     }
@@ -162,7 +162,7 @@ namespace NSS.Blast.Compiler.Stage
 
                                     flattened_output.InsertRange(0, flatten_inner_function);
 
-                                    node pop = node.CreatePopNode(data, pusher_for_function);
+                                    node pop = node.CreatePopNode(pusher_for_function);
                                     function.children[i] = pop;
                                     pop.parent = function;
                                     break;
@@ -198,7 +198,7 @@ namespace NSS.Blast.Compiler.Stage
                                     }
 
                                     // replace function parameter with the newly created pop node linked to the push
-                                    node pop = node.CreatePopNode(data, push);
+                                    node pop = node.CreatePopNode(push);
                                     function.children[i] = pop;
                                     pop.parent = function;
 
@@ -283,13 +283,13 @@ namespace NSS.Blast.Compiler.Stage
                     flattened_output.AddRange(flat_compound_nodes);
 
                     // push remaining child list as operation push 
-                    node push_ol  = node.CreatePushNode(data, function);
+                    node push_ol  = node.CreatePushNode(function);
                     push_ol.children.AddRange(function.children);
                     foreach (node c_ol in push_ol.children) c_ol.parent = push_ol;
                     
                     function.children.Clear();
 
-                    node pop_ol = node.CreatePopNode(data, push_ol);
+                    node pop_ol = node.CreatePopNode(push_ol);
                     pop_ol.parent = function;
                     function.children.Add(pop_ol); 
                     flattened_output.Add(push_ol);                 
@@ -323,7 +323,7 @@ namespace NSS.Blast.Compiler.Stage
 
         private static node CreatePushNodeAndAddChild(IBlastCompilationData data, node child)
         {
-            node push = node.CreatePushNode(data, child);
+            node push = node.CreatePushNode(child);
 
             child.parent = push;
             push.children.Add(child);
@@ -333,7 +333,7 @@ namespace NSS.Blast.Compiler.Stage
 
         private static node CreatePushNodeAndAddChildsChildren(IBlastCompilationData data, node child)
         {
-            node push = node.CreatePushNode(data, child);
+            node push = node.CreatePushNode(child);
             
             push.children.AddRange(child.children);
             foreach (node pch in push.children) pch.parent = push;
@@ -396,7 +396,7 @@ namespace NSS.Blast.Compiler.Stage
                                     flat.Insert(0, push);
 
                                     // and pop back its result in child
-                                    node pop = node.CreatePopNode(data, push);
+                                    node pop = node.CreatePopNode(push);
 
                                     assignment.children[i] = pop;
                                     pop.parent = assignment;
@@ -440,7 +440,7 @@ namespace NSS.Blast.Compiler.Stage
                                     flat.Add(push);
                                     
                                     // replace children with pop
-                                    node pop = node.CreatePopNode(data, push);
+                                    node pop = node.CreatePopNode(push);
                                     child.children.Clear();
                                     child.SetChild(pop);
                                 }
@@ -508,7 +508,6 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     if(child.linked_push != null)
                     {
-                        //flattened_output.Insert(0, child.linked_push);
                         flattened_output.Insert(flattened_output.IndexOf(current) - nthpop, child.linked_push);
                         flat.Remove(child.linked_push);
                         
@@ -519,7 +518,6 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         if (gchild.linked_push != null)
                         {
-//                            flattened_output.Insert(0, gchild.linked_push);
                             flattened_output.Insert(flattened_output.IndexOf(current) - nthpop, gchild.linked_push);
                             flat.Remove(gchild.linked_push);
 
@@ -533,12 +531,12 @@ namespace NSS.Blast.Compiler.Stage
                 else current = null; 
             }
             
+            // check if all nodes were used. if not that would be a big error
             if (flat.Count != 0)
             {
                 data.LogError("flatten.assignment: failed to resolve push-pop heirarchy");
                 return BlastError.error; 
             }
-
 
             return BlastError.success;
         }

@@ -9,7 +9,10 @@
         nop = 0,
         assign = 1,
 
-        add = 2,
+/// <summary>
+/// Operatations from add until not_equals MUST be in sequence for quick matches
+/// </summary>
+        add = 2,  
         substract = 3,
         divide = 4,
         multiply = 5,

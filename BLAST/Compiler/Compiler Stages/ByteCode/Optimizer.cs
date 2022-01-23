@@ -125,7 +125,7 @@ namespace NSS.Blast.Compiler.Stage
             public unsafe void replace_match(CompilationData cdata, IMByteCodeList code, ref int i)
             {
                 // determine if replacing a variable function length 
-                var function = cdata.Blast.GetFunctionByScriptOp((blast_operation)replace[0]);
+                var function = Blast.GetFunctionByOpCode((blast_operation)replace[0]);
                 bool variable_param_length = function == null ? false : function.MinParameterCount != function.MaxParameterCount;
 
                 byte var_param_count = 0;
@@ -920,7 +920,9 @@ namespace NSS.Blast.Compiler.Stage
             }
             else
             {
+#if TRACE
                 data.LogTrace("BlastBytecodeOptimizer.Execute: optimizations skipped dueue to compiler options");
+#endif
             }
             return (int)(data.IsOK ? BlastError.success : BlastError.error);
         }

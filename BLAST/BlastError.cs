@@ -41,6 +41,9 @@
         error_node_function_unknown = -34,
         error_failed_to_flatten_function_parameters = -35,
         error_pushv_vector_size_not_supported = -36,
+        error_optimizer_operation_mismatch = -37,
+        error_optimizer_parameter_mismatch = -38,
+        error_optimizer_failed_to_replace_sequence = -39,
     }
 
     public static class BlastErrorTranslator

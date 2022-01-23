@@ -64,7 +64,7 @@ namespace NSS.Blast.Compiler
         public bool skip_compilation;
         public bool is_constant;
         public int vector_size;
-        public bool is_vector;
+        internal bool is_vector;
 
         public node linked_push = null;
         public node linked_pop = null; 
@@ -76,7 +76,8 @@ namespace NSS.Blast.Compiler
         public bool IsPushFunction => type == nodetype.function && function != null && function.IsPushVariant();
         public bool IsPopFunction => type == nodetype.function && function != null && function.IsPopVariant();
         public bool IsOperation => type == nodetype.operation;
-        public bool IsLeaf => ChildCount == 0 && parent != null; 
+        public bool IsLeaf => ChildCount == 0 && parent != null;
+        public bool IsVector => is_vector && vector_size > 1;
 
         public bool IsScriptVariable => variable != null;
         public bool HasDependencies => depends_on != null && depends_on.Count > 0;
@@ -148,6 +149,22 @@ namespace NSS.Blast.Compiler
             }
 
             return true; 
+        }
+
+
+        /// <summary>
+        /// create a constant value parameter from operation 
+        /// </summary>
+        /// <param name="value_0">the value to insert</param>
+        /// <returns>the newly created paramater node with a constant value set</returns>
+        public static node CreateConstantParameter(blast_operation value_0)
+        {
+            node n = new node(nodetype.parameter, BlastScriptToken.Identifier);
+            n.EnsureIdentifierIsUniquelySet();
+            n.constant_op = value_0;
+            n.vector_size = 1;
+            n.is_vector = false; 
+            return n; 
         }
 
 
@@ -240,7 +257,98 @@ namespace NSS.Blast.Compiler
             }
             return true; 
         }
-    
+
+        /// <summary>
+        /// get the largest group of operations of the same type 
+        /// </summary>
+        /// <param name="node">the parent node of the operation list</param>
+        /// <param name="min_group_size">minimal group size</param>
+        /// <param name="from">start check from this node</param>
+        /// <param name="op">outputs operation of largest group or nop</param>
+        /// <param name="op_count">nr of operations in group</param>
+        /// <param name="first_op_in_sequence"></param>
+        /// <returns></returns>
+
+        static public bool FirstConsecutiveOperationSequence(node node, int min_group_size, int from, out blast_operation op, out int op_count, out node first_op_in_sequence)
+        {
+            Assert.IsNotNull(node);
+            Assert.IsTrue(min_group_size > 0);
+
+            op = blast_operation.nop;
+            op_count = 0;
+            first_op_in_sequence = null;
+
+            // childcount must be larger otherwise we can bail out early
+            if ((node.ChildCount - from) < min_group_size * 2 /* + 1*/ )
+                // one exception: - group can be shorter if starting on 1
+                return false;
+
+            // scan trough children maintain operation list
+            for(int i = from; i < node.ChildCount; i++)
+            {
+                node child = node.children[i]; 
+
+                switch(child.type)
+                {
+                    case nodetype.operation:
+                        {
+                            blast_operation node_op = Blast.GetBlastOperationFromToken(child.token);
+                            if (op == blast_operation.nop)
+                            {
+                                op = node_op;
+                                op_count = 1;
+                                first_op_in_sequence = child;
+                            }
+                            else
+                            {
+                                if (op == node_op)
+                                {
+                                    op_count++;
+                                }
+                                else
+                                {
+                                    // different node typ 
+                                    if(op_count >= min_group_size)
+                                    {
+                                        // sequence long enough
+                                        return true; 
+                                    }
+                                    else
+                                    {
+                                        // reset to different op
+                                        op_count = 1;
+                                        first_op_in_sequence = child;
+                                        op = node_op; 
+                                    }
+
+                                }                               
+                            }
+                        }
+                        break; 
+                }
+            }
+
+            // we have a group of some size 
+            return op_count >= min_group_size;
+        }
+
+        /// <summary>
+        /// scan children of node for the first group of operations of a given minimal size 
+        /// </summary>
+        /// <param name="min_groupsize">the minimal group size</param>
+        /// <param name="from">start check from this node</param>
+        /// <param name="op">operation to scan for</param>
+        /// <param name="op_count">the operation count in the group found</param>
+        /// <param name="first_op_in_sequence">first operation found in sequence</param>
+        /// <returns></returns>
+        public bool FirstConsecutiveOperationSequence(int min_groupsize, int from, out blast_operation op, out int op_count, out node first_op_in_sequence)
+        {
+            return node.FirstConsecutiveOperationSequence(this, min_groupsize, from, out op, out op_count, out first_op_in_sequence); 
+        }
+
+        /// <summary>
+        /// interpret this node as a float value and return that
+        /// </summary>
         public bool IsFloat {
             get
             {
@@ -428,25 +536,93 @@ namespace NSS.Blast.Compiler
                 }
             }
         }
-
+        /// <summary>
+        /// check if the node is an operation sequence in the form: 3 + a + 4 + 4 + max(3093) + (4 + 0) 
+        /// </summary>
         public bool IsOperationList()
         {
             return node.IsOperationList(this);
         }
 
+
+        /// <summary>
+        /// check if this node contains an operation sequence with only 1 different operator:
+        /// a = 1 * 3 * 3 * 4; 
+        /// </summary>
+        /// <returns>true if an operation list and all operations used are the same</returns>
+        public bool IsSingleOperationList(out blast_operation op)
+        {
+            if(node.IsOperationList(this, out op))
+            {
+                return op != blast_operation.nop && op != blast_operation.ex_op; 
+            }
+            return false; 
+        }
+
+
+        /// <summary>
+        /// check if the node IS:
+        /// [compound][-][param|pop_or_val][/compound]
+        /// </summary>
+        public bool IsCompoundWithSingleNegationOfValue()
+        {
+            return IsCompoundWithSingleNegationOfValue(this); 
+        }
+
+
+        /// <summary>
+        /// check if the node IS:
+        /// [compound][-][param|pop_or_val][/compound]
+        /// </summary>
+        /// <param name="node">the node that should be the compound in the check</param>
+        public static bool IsCompoundWithSingleNegationOfValue(node node)
+        {
+            return 
+                (node.IsCompound || node.IsPushFunction)
+                &&
+                node.ChildCount == 2 
+                &&
+                node.FirstChild.token == BlastScriptToken.Substract
+                &&
+                node.LastChild.IsSingleValueOrPop();
+        }
+
+
+
         /// <summary>
         /// check if the node is an operation sequence in the form: 3 + a + 4 + 4 + max(3093) + (4 + 0) 
         /// </summary>
-        /// <param name="child"></param>
+        /// <param name="node">the node to check</param>
         /// <returns></returns>
         public static bool IsOperationList(node node)
         {
+            return IsOperationList(node, out blast_operation op);
+        }
+
+        /// <summary>
+        /// check if the node is an operation sequence in the form: 3 + a + 4 + 4 + max(3093) + (4 + 0) 
+        /// </summary>
+        /// <param name="node">the node to check</param>
+        /// <param name="singleop">the operation found, if single it maps to the operation, if none its nop, on many different it will be op.ex</param>
+        /// <returns>true if a list of operations</returns>
+        public static bool IsOperationList(node node, out blast_operation singleop)
+        {
+            singleop = blast_operation.nop;
             bool has_ops = false;
+
 
             if(node.ChildCount == 2)
             {
                 // only a negation should be possible to be 2 long 
-                return node.children[0].token == BlastScriptToken.Substract;
+                if(IsCompoundWithSingleNegationOfValue(node))
+                {
+                    singleop = blast_operation.substract; 
+                    return true;
+                }
+                else
+                {
+                    return false; 
+                }
             }
 
             // it has to have more then 2 items in order to form a list of operations 
@@ -457,8 +633,9 @@ namespace NSS.Blast.Compiler
                 bool lastwasparam = false;
                 bool lastwasop = false; 
 
-                foreach (node child in node.children)
+                for (int i = 0; i < node.ChildCount; i++)
                 {
+                    node child = node.children[i];
                     switch (child.type)
                     {
                         case nodetype.operation:
@@ -474,6 +651,11 @@ namespace NSS.Blast.Compiler
                                 has_ops = true;
                             }
                             lastwasop = true;
+
+                            blast_operation child_operation = Blast.GetBlastOperationFromToken(child.token); 
+
+                            if (singleop == blast_operation.nop) singleop = child_operation;
+                            else if (singleop != child_operation) singleop = blast_operation.ex_op;
 
                             break;
 
@@ -517,6 +699,8 @@ namespace NSS.Blast.Compiler
             }
             return has_ops;
         }
+
+        
 
         /// <summary>
         /// -encode vectorsize in lower nibble
@@ -853,13 +1037,13 @@ namespace NSS.Blast.Compiler
         /// <param name="data">compiler data</param>
         /// <param name="related_push">the earlier push op</param>
         /// <returns></returns>
-        public static node CreatePopNode(IBlastCompilationData data, node related_push)
+        public static node CreatePopNode(node related_push)
         {
             node pop = new node(null);
 
             pop.identifier = "_gen_pop";
             pop.type = nodetype.function;
-            pop.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.Pop);
+            pop.function = Blast.GetFunctionById(ReservedScriptFunctionIds.Pop);
             pop.is_vector = related_push.is_vector;
             pop.vector_size = related_push.vector_size;
 
@@ -872,10 +1056,9 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// create a push node with the information from the given node, THIS DOES NOT ADD THAT NODE AS CHILD
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="topush"></param>
-        /// <returns></returns>
-        static public node CreatePushNode(IBlastCompilationData data, node topush)
+        /// <param name="topush">node to push</param>
+        /// <returns>returns the pushing node</returns>
+        static public node CreatePushNode(node topush)
         {
             node push = new node(null);
             push.identifier = "_gen_push";
@@ -884,7 +1067,7 @@ namespace NSS.Blast.Compiler
             if (topush.IsFunction)
             {
 
-                push.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.PushFunction);
+                push.function = Blast.GetFunctionById(ReservedScriptFunctionIds.PushFunction);
 
             }
             else
@@ -893,16 +1076,16 @@ namespace NSS.Blast.Compiler
                 {                            
                     if (topush.IsNonNestedVectorDefinition())
                     {
-                        push.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.PushVector); 
+                        push.function = Blast.GetFunctionById(ReservedScriptFunctionIds.PushVector); 
                     } 
                     else
                     {
-                        push.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.PushCompound);
+                        push.function = Blast.GetFunctionById(ReservedScriptFunctionIds.PushCompound);
                     }
                 }
                 else
                 {
-                    push.function = data.Blast.GetFunctionById(ReservedScriptFunctionIds.Push);
+                    push.function = Blast.GetFunctionById(ReservedScriptFunctionIds.Push);
                 }
             }
 
@@ -1007,20 +1190,35 @@ namespace NSS.Blast.Compiler
         }
 
 
-
-
         /// <summary>
-        /// get maximum depth of node tree 
+        /// get maximum depth of node tree starting from this node 
         /// </summary>
-        /// <param name="depth"></param>
-        /// <returns></returns>
-        internal int GetMaximumTreeDepth(int depth = 0)
+        /// <param name="depth">depth from this node until deepest leaf</param>
+        /// <returns>depth from this node until deepest leaf</returns>
+        internal int GetMaximumTreeDepth(int depth)
         {
             int t = depth;
 
             foreach (node n in children)
             {
                 t = math.max(t, n.GetMaximumTreeDepth(depth + 1));
+            }
+
+            return t;
+        }
+
+
+        /// <summary>
+        /// get maximum depth of node tree starting from this node 
+        /// </summary>
+        /// <returns>depth from this node until deepest leaf</returns>
+        public int GetMaximumTreeDepth()
+        {
+            int t = 0;
+
+            foreach (node n in children)
+            {
+                t = math.max(t, n.GetMaximumTreeDepth(1));
             }
 
             return t;
@@ -1033,7 +1231,7 @@ namespace NSS.Blast.Compiler
         /// <param name="ast_node">the node to set as child is returned</param>
         internal node SetChild(node ast_node)
         {
-            Assert.IsNotNull(ast_node); 
+            Assert.IsNotNull(ast_node);
 
             // remove it from current parent if any
             if (ast_node.parent != null)
@@ -1044,6 +1242,29 @@ namespace NSS.Blast.Compiler
             // set node to this parent 
             ast_node.parent = this;
             children.Add(ast_node);
+
+            return ast_node;
+        }
+
+        /// <summary>
+        /// set a node to be a child of this node (appends to end of child list),
+        /// updates the parent of the node and removes it from its possible previous parent
+        /// </summary>
+        /// <param name="ast_node">the node to set as child is returned</param>
+        /// <param name="index">index to insert at at parent</param>
+        internal node SetChild(node ast_node, int index)
+        {
+            Assert.IsNotNull(ast_node); 
+
+            // remove it from current parent if any
+            if (ast_node.parent != null)
+            {
+                ast_node.parent.children.Remove(ast_node);
+            }
+
+            // set node to this parent 
+            ast_node.parent = this;
+            children.Insert(index, ast_node);
 
             return ast_node;
         }
@@ -1074,7 +1295,23 @@ namespace NSS.Blast.Compiler
         {
             node child_node = new node(null) { type = type, token = token, identifier = identifier };
             children.Add(child_node);
-            child_node.parent = this; 
+            child_node.parent = this;
+            return child_node;
+        }
+
+        /// <summary>
+        /// create a new node as a child of this node and returns the newly created node 
+        /// </summary>
+        /// <param name="type">nodetype to create</param>
+        /// <param name="token">token to set</param>
+        /// <param name="identifier">identifier used</param>
+        /// <param name="index">index at which to insert node</param>
+        /// <returns>the newly created node </returns>
+        internal node CreateChild(nodetype type, BlastScriptToken token, string identifier, int index)
+        {
+            node child_node = new node(null) { type = type, token = token, identifier = identifier };
+            children.Insert(index, child_node);
+            child_node.parent = this;
             return child_node;
         }
 

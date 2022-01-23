@@ -302,7 +302,7 @@ namespace NSS.Blast.Compiler.Stage
                             string def_key = a[1].Trim().ToLowerInvariant();
 
                             // check it does not map to a function name
-                            if (data.Blast.GetFunctionByName(def_key) != null)
+                            if (Blast.GetFunctionByName(def_key) != null)
                             {
                                 data.LogError($"tokenize: #define identifier name: <{def_key}> is already mapped to a function");
                             }

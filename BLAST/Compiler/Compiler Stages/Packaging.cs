@@ -150,7 +150,7 @@ namespace NSS.Blast.Compiler.Stage
                         // !!!!!
                         // from this it is hardcoded that any extended op function may never have variable parameter length
                         // !! IMPORTANT !!
-                        cdata.Blast.IsVariableParamFunction(op))
+                        Blast.IsVariableParamFunction(op))
                     {
                         next_is_hardcoded_value += 1; 
                     }

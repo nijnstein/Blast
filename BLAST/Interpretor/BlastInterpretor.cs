@@ -449,7 +449,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="vector_size"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        byte decode62(in byte c, ref byte vector_size)
+        static public byte decode62(in byte c, ref byte vector_size)
         {
             vector_size = (byte)(c & 0b11);
             return (byte)((c & 0b1111_1100) >> 2);
@@ -3845,6 +3845,7 @@ namespace NSS.Blast.Interpretor
             code_pointer = code_pointer + 1;
             byte c = code[code_pointer];
 
+            // decode 62
             vector_size = (byte)(c & 0b11);
             c = (byte)((c & 0b1111_1100) >> 2);
 
@@ -5086,8 +5087,8 @@ namespace NSS.Blast.Interpretor
                     case 4:
                         push(f4_register);
                         break;
-                    default:
 #if DEBUG
+                    default:
                         Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push of compound");
                         break;
 #endif
@@ -5540,7 +5541,7 @@ namespace NSS.Blast.Interpretor
                             int offset = code[code_pointer];
                             int jump_to = code_pointer + offset;
 
-                            // eval condition 
+                            // eval condition => TODO -> check if we still write the begin... 
                             code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
 
                             // eval all push commands before running the compound

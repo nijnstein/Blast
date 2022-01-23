@@ -26,26 +26,12 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>script opcode</returns>
         static public blast_operation GetOperationOpCode(IBlastCompilationData data, BlastScriptToken token)
         {
-            switch (token)
+            blast_operation op = Blast.GetBlastOperationFromToken(token);
+            if (op == blast_operation.nop)
             {
-                case BlastScriptToken.Add: return blast_operation.add;
-                case BlastScriptToken.Substract: return blast_operation.substract;
-                case BlastScriptToken.Divide: return blast_operation.divide;
-                case BlastScriptToken.Multiply: return blast_operation.multiply;
-                case BlastScriptToken.And: return blast_operation.and;
-                case BlastScriptToken.Or: return blast_operation.or;
-                case BlastScriptToken.Not: return blast_operation.not;
-                case BlastScriptToken.Xor: return blast_operation.xor;
-                case BlastScriptToken.Equals: return blast_operation.equals;
-                case BlastScriptToken.NotEquals: return blast_operation.not_equals;
-                case BlastScriptToken.GreaterThen: return blast_operation.greater;
-                case BlastScriptToken.SmallerThen: return blast_operation.smaller;
-                case BlastScriptToken.GreaterThenEquals: return blast_operation.greater_equals;
-                case BlastScriptToken.SmallerThenEquals: return blast_operation.smaller_equals;
-
+                data.LogError($"GetOperationOpCode: invalid token for mapping to operation opcode: {token}");
             }
-            data.LogError($"GetOperationOpCode: invalid token for mapping to operation opcode: {token}");
-            return blast_operation.nop;
+            return op;
         }
 
         /// <summary>

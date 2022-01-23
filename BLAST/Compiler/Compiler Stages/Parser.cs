@@ -1201,7 +1201,7 @@ namespace NSS.Blast.Compiler.Stage
 
 
             // step 2> create identifier from tokens 
-            ScriptFunctionDefinition function = data.Blast.GetFunctionByName(data.Tokens[idx].Item2);
+            ScriptFunctionDefinition function = Blast.GetFunctionByName(data.Tokens[idx].Item2);
             if (function != null)
             {
                 // parse out function

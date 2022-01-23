@@ -12,3 +12,4 @@ F:\Repo\Nijnstein\Blast\BLAST\obj\Release\netstandard2.1\BLAST.csproj.CopyComple
 F:\Repo\Nijnstein\Blast\BLAST\obj\Release\netstandard2.1\BLAST.dll
 F:\Repo\Nijnstein\Blast\BLAST\obj\Release\netstandard2.1\BLAST.pdb
 F:\Repo\Nijnstein\Blast\BLAST\obj\Release\netstandard2.1\BLAST.csprojAssemblyReference.cache
+F:\Repo\Nijnstein\Blast\BLAST\bin\Release\netstandard2.1\BLAST.xml

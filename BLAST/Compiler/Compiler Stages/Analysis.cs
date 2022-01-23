@@ -261,51 +261,6 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
-        static void remove_unneeded_compounds(IBlastCompilationData data, node root)
-        {
-            void windup(node n)
-            {
-                switch (n.type)
-                {
-                    default:
-                    case nodetype.root:
-                        break;
-
-                    case nodetype.function:
-                        if (n.children.Count == 1 && n.children[0].type == nodetype.compound)
-                        {
-                            // remove node
-                            n.children = n.children[0].children;
-
-                            if (n.children.Count > 0)
-                            {
-                                n.is_vector = n.children[0].is_vector;
-                                n.vector_size = n.children[0].vector_size;
-                            }
-                            foreach (node c in n.children)
-                            {
-                                n.is_vector &= c.is_vector;
-                                n.vector_size = math.max(n.vector_size, c.vector_size);
-                                if (!n.is_vector)
-                                {
-                                    n.vector_size = 1;
-                                }
-                                c.parent = n;
-                            }
-                        }
-                        break;
-                }
-
-                foreach (node c in n.children)
-                {
-                    windup(c);
-                }
-            }
-
-            windup(root);
-            return;
-        }
-
         /// <summary>
         /// apply rules of multiplication if needed to children of this node 
         /// </summary>
