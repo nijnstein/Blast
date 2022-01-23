@@ -998,11 +998,6 @@
             <param name="operation_count">the number of operations to replace if > 0</param>
             <returns></returns>
         </member>
-        <member name="F:NSS.Blast.Compiler.Stage.BlastOptimizer.sequence_ops">
-            <summary>
-            operation that when in sequence get converted into a function 
-            </summary>
-        </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastOptimizer.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
             <summary>
             Optimize operations expressed by the ast if optimization is enabled through compiler settings 
@@ -1580,6 +1575,14 @@
             updates the parent of the node and removes it from its possible previous parent
             </summary>
             <param name="ast_node">the node to set as child is returned</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.SetChild(NSS.Blast.Compiler.node,System.Int32)">
+            <summary>
+            set a node to be a child of this node (appends to end of child list),
+            updates the parent of the node and removes it from its possible previous parent
+            </summary>
+            <param name="ast_node">the node to set as child is returned</param>
+            <param name="index">index to insert at at parent</param>
         </member>
         <member name="M:NSS.Blast.Compiler.node.SetChildren(System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.node})">
             <summary>

@@ -1,6 +1,9 @@
 ﻿namespace NSS.Blast
 {
     
+    /// <summary>
+    /// Errorcodes that can be returned by blast 
+    /// </summary>
     public enum BlastError : int
     {
         yield = 1,

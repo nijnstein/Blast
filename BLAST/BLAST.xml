@@ -201,6 +201,11 @@
             <param name="pkg">the package to add</param>
             <returns>the nr of packages in the repo after adding this one or 0 on failure</returns>
         </member>
+        <member name="T:NSS.Blast.BlastError">
+            <summary>
+            Errorcodes that can be returned by blast 
+            </summary>
+        </member>
         <member name="T:NSS.Blast.BlastPackageMode">
             <summary>
             Blast script packaging types 
@@ -997,6 +1002,19 @@
             <param name="from">only use childnodes starting from this index</param>
             <param name="operation_count">the number of operations to replace if > 0</param>
             <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastOptimizer.OptimizeAssignFunction(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+             <summary>
+             
+             analyze the assignment and optimize 2 statement types: 
+            
+             1> a = function(parameters);   => assignf a parameters
+             2> b = - function(paramaters); => assignf - a parameters
+             
+             </summary>
+             <param name="data"></param>
+             <param name="node"></param>
+             <returns></returns>
         </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastOptimizer.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
             <summary>

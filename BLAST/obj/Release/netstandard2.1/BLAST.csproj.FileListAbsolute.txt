@@ -1,6 +1,5 @@
 F:\Repo\Nijnstein\Blast\BLAST\bin\Release\netstandard2.1\BLAST.deps.json
 F:\Repo\Nijnstein\Blast\BLAST\bin\Release\netstandard2.1\BLAST.dll
-F:\Repo\Nijnstein\Blast\BLAST\bin\Release\netstandard2.1\BLAST.pdb
 F:\Repo\Nijnstein\Blast\BLAST\bin\Release\netstandard2.1\Unity.Mathematics.dll
 F:\Repo\Nijnstein\Blast\BLAST\bin\Release\netstandard2.1\UnityEngine.dll
 F:\Repo\Nijnstein\Blast\BLAST\bin\Release\netstandard2.1\Unity.Mathematics.pdb
@@ -10,6 +9,4 @@ F:\Repo\Nijnstein\Blast\BLAST\obj\Release\netstandard2.1\BLAST.AssemblyInfoInput
 F:\Repo\Nijnstein\Blast\BLAST\obj\Release\netstandard2.1\BLAST.AssemblyInfo.cs
 F:\Repo\Nijnstein\Blast\BLAST\obj\Release\netstandard2.1\BLAST.csproj.CopyComplete
 F:\Repo\Nijnstein\Blast\BLAST\obj\Release\netstandard2.1\BLAST.dll
-F:\Repo\Nijnstein\Blast\BLAST\obj\Release\netstandard2.1\BLAST.pdb
-F:\Repo\Nijnstein\Blast\BLAST\obj\Release\netstandard2.1\BLAST.csprojAssemblyReference.cache
 F:\Repo\Nijnstein\Blast\BLAST\bin\Release\netstandard2.1\BLAST.xml

@@ -149,12 +149,19 @@ namespace NSS.Blast.Compiler.Stage
         }
 
 
+        /// <summary>
+        /// 
+        /// analyze the assignment and optimize 2 statement types: 
+        ///
+        /// 1> a = function(parameters);   => assignf a parameters
+        /// 2> b = - function(paramaters); => assignf - a parameters
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="node"></param>
+        /// <returns></returns>
         BlastError OptimizeAssignFunction(IBlastCompilationData data, node node)
         {
-            // analyze the assignment and optimize 2 statement types: 
-
-            // 1> a = function(parameters);   => assignf a parameters
-            // 2> b = - function(paramaters); => assignf - a parameters
 
 
 
@@ -176,7 +183,7 @@ namespace NSS.Blast.Compiler.Stage
 
             //
             // 1> replace operation sequences into functions:  1 + 2 + 3 => adda(1, 2, 3)
-            // - saves a huge amount of controlflow processing (too much to leave hanging until a next release)
+            // - saves on controlflow processing (too much to leave hanging until a next release)
             // - this runs after flatten and should also apply to inline vectors
             // - (should we check type or assume analyser did its job?)
             //                            
