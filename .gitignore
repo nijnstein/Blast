@@ -7,3 +7,7 @@ BlastTestConsole/obj/Debug/netcoreapp3.1/BlastTestConsole.csprojAssemblyReferenc
 *.dll
 *.dll
 *.exe
+*.meta
+BLAST/bin/Debug/netstandard2.1/BLAST.dll
+BLAST/bin/Debug/netstandard2.1/BLAST.pdb
+BLAST/bin/Debug/netstandard2.1/BLAST.xml
