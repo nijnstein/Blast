@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using System.Linq;
 
 #if NOT_USING_UNITY
     using NSS.Blast.Standalone;
     using Unity.Assertions;
 #else
-    using UnityEngine;
+using UnityEngine;
     using UnityEngine.Assertions; 
     using Unity.Jobs;
     using Unity.Collections.LowLevel.Unsafe;
@@ -20,12 +22,9 @@ using NSS.Blast.SSMD;
 
 using Unity.Collections;
 using Unity.Mathematics;
-using System.Text;
 using Unity.Burst;
 
-
 using Random = Unity.Mathematics.Random;
-
 
 namespace NSS.Blast
 {
