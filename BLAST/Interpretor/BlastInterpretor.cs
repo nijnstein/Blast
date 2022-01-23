@@ -1,11 +1,9 @@
-﻿#if DEBUG
-#define LOG_ERRORS
-#define HANDLE_DEBUG_OP    // forces inclusion of BurstString.h
-#endif
-
-#if NOT_USING_UNITY
-// for debug functions 
-using NSS.Blast.Standalone;
+﻿#if NOT_USING_UNITY
+    #if DEBUG
+        #define HANDLE_DEBUG_OP  
+    #endif
+    // for debug functions 
+    using NSS.Blast.Standalone;
 #else 
 // burst wont compile strings in debug functions other then unityengine.debug.log
 using UnityEngine;

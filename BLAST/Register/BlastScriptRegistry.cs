@@ -13,7 +13,12 @@ namespace NSS.Blast.Register
 {
     /// <summary>
     /// Here we maintain all scripts registered, either by manually calling Register(script)
-    /// or by finding it in the binary through reflection  
+    /// or by finding it in the binary through reflection. 
+    /// 
+    /// -> the registry is a static singleton
+    /// -> this registry only stores script, not package data
+    /// -> access is threadsafe                                 s
+    /// 
     /// </summary>
 #if UNITY_EDITOR
     [UnityEditor.InitializeOnLoad]
@@ -47,6 +52,12 @@ namespace NSS.Blast.Register
 
         #region Register
 
+        /// <summary>
+        /// Register a given script with the registry. If the given script id < 1 then a new id is generated that is 1 higher then the max known id. 
+        /// If the name already exists then the given scripts name is appended '_1'. 
+        /// </summary>
+        /// <param name="script">a reference to the script to register</param>
+        /// <returns>the script id</returns>
         static public int Register(BlastScript script)
         {
             if (script == null)
@@ -92,12 +103,28 @@ namespace NSS.Blast.Register
             return script.Id;
         }
 
+
+        /// <summary>
+        /// register code with given name and id with registry
+        /// </summary>
+        /// <param name="code">the script code to register</param>
+        /// <param name="name">the name to attach, should be unique and is case insensitive</param>
+        /// <param name="id">the script id to use, 0 to generate one, should be > 0 and unique</param>
+        /// <returns>the script id</returns>
         static public int Register(string code, string name = null, int id = 0)
         {
             return Register(BlastScript.FromText(code, name, id));
         }
 
 #if !NOT_USING_UNITY
+
+        /// <summary>
+        /// Register a resource file as a blast script with the registry
+        /// </summary>
+        /// <param name="resource_filename_without_extension">the resource name</param>
+        /// <param name="name">the unique case insensive script name to use</param>
+        /// <param name="id">the unique id to assign or 0 to generate one</param>
+        /// <returns>the script id</returns>
         static public int RegisterScriptResource(string resource_filename_without_extension, string name = null, int id = 0)
         {
             BlastScript script = BlastScript.FromResource(resource_filename_without_extension);
@@ -119,6 +146,10 @@ namespace NSS.Blast.Register
 
         #region Registration Information 
 
+        /// <summary>
+        /// Enumerate all registred blast scripts 
+        /// </summary>
+        /// <returns>a blastscript ienumerator</returns>
         static public IEnumerable<BlastScript> All()
         {
             if (scripts != null)
@@ -131,6 +162,11 @@ namespace NSS.Blast.Register
             yield break; 
         }
 
+        /// <summary>
+        /// lookup a script with a given script id 
+        /// </summary>
+        /// <param name="id">integer id, must be positive</param>
+        /// <returns>a script, or null if not found</returns>
         static public BlastScript Get(int id)
         {
             BlastScript bs;
@@ -144,6 +180,11 @@ namespace NSS.Blast.Register
             return null;
         }
 
+        /// <summary>
+        /// perform a linear scan for a script with the given name and return iot if found. Case Insensitive
+        /// </summary>
+        /// <param name="name">the name to lookup</param>
+        /// <returns>the script if found or null if nothing was found with the given name</returns>
         static public BlastScript Get(string name)
         {
             BlastScript bs = null; 
@@ -158,6 +199,11 @@ namespace NSS.Blast.Register
             return bs; 
         }
 
+        /// <summary>
+        /// scan the registry for a script with the given name
+        /// </summary>
+        /// <param name="name">the case insensitive name to search for</param>
+        /// <returns>true if found, false otherwise</returns>
         static public bool Exists(string name)
         {
             if (scripts != null && !string.IsNullOrWhiteSpace(name))
@@ -171,6 +217,11 @@ namespace NSS.Blast.Register
             return false; 
         }
 
+        /// <summary>
+        /// lookup the id and check if it exists
+        /// </summary>
+        /// <param name="id">the unique scriptid to search for</param>
+        /// <returns>true if found, false otherwise</returns>
         static public bool Exists(int id)
         {
             if (scripts != null)
@@ -180,6 +231,12 @@ namespace NSS.Blast.Register
             return false; 
         }
 
+        /// <summary>
+        /// try to find the id of a script with a given name, performs a linear search
+        /// </summary>
+        /// <param name="name">the case insensitive name to lookup</param>
+        /// <param name="reference_id">the script id</param>
+        /// <returns>true if a script with the given name was found</returns>
         static public bool TryGetReferenceId(string name, out int reference_id)
         {
             if(scripts != null)

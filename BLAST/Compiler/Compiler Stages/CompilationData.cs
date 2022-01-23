@@ -759,7 +759,7 @@ namespace NSS.Blast.Compiler
         {
             foreach (var i in Inputs)
             {
-                if (i.id == v.Id)
+                if (i.VariableId == v.Id)
                 {
                     mapping = i; 
                     return true;
@@ -773,7 +773,7 @@ namespace NSS.Blast.Compiler
         {
             foreach (var i in Outputs)
             {
-                if (i.id == v.Id)
+                if (i.VariableId == v.Id)
                 {
                     mapping = i;
                     return true;
@@ -839,7 +839,7 @@ namespace NSS.Blast.Compiler
         {
             foreach (var v in Inputs)
             {
-                if (v.id == id)
+                if (v.VariableId == id)
                 {
                     return true;
                 }
@@ -850,9 +850,9 @@ namespace NSS.Blast.Compiler
         {
             foreach (var v in Inputs)
             {
-                if (v.variable != null)
+                if (v.Variable != null)
                 {
-                    if (string.Compare(name, v.variable.Name, true) == 0)
+                    if (string.Compare(name, v.Variable.Name, true) == 0)
                     {
                         return true;
                     }

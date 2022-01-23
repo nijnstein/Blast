@@ -14,8 +14,14 @@ namespace NSS.Blast.Compiler.Stage
     {
         const bool compile_nops = true; 
 
-
+        /// <summary>
+        /// Version 0.1.0 - Initial 
+        /// </summary>
         public Version Version => new Version(0, 1, 0);
+        
+        /// <summary>
+        /// Compilation Stage
+        /// </summary>
         public BlastCompilerStageType StageType => BlastCompilerStageType.Compile;
 
         /// <summary>

@@ -15,32 +15,61 @@ namespace NSS.Blast
 {
 
     /// <summary>
-    /// Blast Package returned from compiler 
-    /// - contains BlastPackage
-    /// - contains information about input and outputs (if defined) 
-    /// - contains additional variable information (names & offsets)
+    /// BlastScriptPackage contains all data needed to use and execute scriptcode, it consists of: 
+    /// 
+    /// - BlastPackage -> contains the native bytecode 
+    /// - Variable information 
+    /// - IO mapping 
+    /// - Bursted functionpointer mapping 
+    /// 
     /// </summary>
     public class BlastScriptPackage
     {
         /// <summary>
-        /// the actual native package 
+        /// the bytecode package 
         /// </summary>
         public BlastPackageData Package;
 
-        // -- input / output mapping -------------------------------------
+        /// <summary>
+        /// A functionpointer to burst transpiled bytecode, possible if the package was known at compile time. 
+        /// SSMD mode will still use the bytecode package.  
+        /// </summary>
+        public NonGenericFunctionPointer Bursted;
+
+        /// <summary>
+        /// True if this package has also been burstcompiled and can be executed with a native function pointer 
+        /// </summary>
+        public bool IsBurstCompiled { get; private set; } = false; 
+        
+        /// <summary>
+        /// defined inputs 
+        /// </summary>
         public BlastVariableMapping[] Inputs;
+
+        /// <summary>
+        /// defined outputs, obsolete as we view the in and outputs as 1 segment, the input will be renamed   
+        /// </summary>
+        [Obsolete]
         public BlastVariableMapping[] Outputs;
 
-        // -- managed information about execution, mainly for debugging -- 
+        /// <summary>
+        /// Variable information
+        /// </summary>
         public BlastVariable[] Variables;
 
         /// <summary>
-        /// offset in float count into datasegment
+        /// Offsets for variables in element count into datasegment, an elements is 4 bytes large == 1 float
         /// </summary>
         public byte[] VariableOffsets;
 
-        // -- methods & properties ---------------------------------------
+        /// <summary>
+        /// Returns true if native memory is allocated for the package 
+        /// </summary>
         public bool IsAllocated => Package.IsAllocated; 
+
+        /// <summary>
+        /// Destroy any allocated native memory 
+        /// </summary>
         public void Destroy()
         {
             if (Package.IsAllocated)
@@ -50,16 +79,19 @@ namespace NSS.Blast
                 Package = default; 
 #endif
             }
-
             Inputs = null;
             Outputs = null;
             Variables = null;
             VariableOffsets = null;
-            Package = default; 
+            Package = default;
+            IsBurstCompiled = false; 
         }
 
         #region ToString + getxxxxText()
 
+        /// <summary>
+        /// ToString overload for more information during debugging
+        /// </summary>
         public override string ToString()
         {
             if (IsAllocated)
@@ -75,7 +107,19 @@ namespace NSS.Blast
             }
         }
 
-        public string GetCodeSegmentText(int width = 16)
+        /// <summary>
+        /// Get a string representation of the bytecode, example output: 
+        ///
+        /// 000| push compound 1 + 2 nop push function max ^ pop 2 
+        /// 010| debug pop nop 
+        /// 
+        /// 000| 030 085 002 086 000 029 042 009 025 086 
+        /// 010| 255 253 025 000 
+        ///
+        /// </summary>
+        /// <param name="width">number of columns to render</param>
+        /// <returns>A formatted string</returns>
+        public string GetCodeSegmentText(int width = 16, bool show_index = true)
         {
             if (IsAllocated)
             {
@@ -85,7 +129,7 @@ namespace NSS.Blast
 
                     StringBuilder sb = new StringBuilder();
                     sb.Append($"Code Segment: { Package.CodeSize} bytes\n\n");
-                    sb.Append(Blast.GetByteCodeByteText(code, Package.CodeSize, width));
+                    sb.Append(GetPackageCodeBytesText(width, show_index) );
                     sb.Append("\n");
                     sb.Append(Blast.GetReadableByteCode(code, Package.CodeSize));
                     sb.Append("\n");
@@ -98,6 +142,10 @@ namespace NSS.Blast
             }
         }
 
+
+        /// <summary>
+        /// Get a string representation of the datasegement
+        /// </summary>
         public string GetDataSegmentText()
         {
             if (IsAllocated)
@@ -159,7 +207,7 @@ namespace NSS.Blast
         }
 
         /// <summary>
-        /// get data as 000| 000 000 000 000 
+        /// get datasegment as 000| 000 000 000 000 
         /// </summary>
         /// <returns></returns>
         public unsafe string GetPackageDataBytesText(int column_count = 8, bool show_index = false)
@@ -171,7 +219,10 @@ namespace NSS.Blast
             }
         }
 
-
+        /// <summary>
+        /// return overview of package information 
+        /// </summary>
+        /// <returns></returns>
         public string GetPackageInfoText()
         {
             if (IsAllocated)

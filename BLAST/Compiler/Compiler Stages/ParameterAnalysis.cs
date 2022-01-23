@@ -32,28 +32,28 @@ namespace NSS.Blast.Compiler.Stage
             for (int i = 0; i < data.Inputs.Count; i++)
             {
                 // count and check byte offset 
-                if (data.Inputs[i].offset != o)
+                if (data.Inputs[i].Offset != o)
                 {
                     data.LogError($"analyze.parameters: input variables not aligned, ensure alignment to make block copies possible on script initialization.");
                     return false;
                 }
-                o += data.Inputs[i].bytesize;
+                o += data.Inputs[i].ByteSize;
 
                 // check for double mapped ids... 
                 for (int j = 0; j < data.Inputs.Count; j++)
                 {
-                    if (j != i && data.Inputs[i].id == data.Inputs[j].id)
+                    if (j != i && data.Inputs[i].VariableId == data.Inputs[j].VariableId)
                     {
-                        data.LogError($"analyze.parameters: input variable {data.Inputs[i].variable.Name} mapped more then once");
+                        data.LogError($"analyze.parameters: input variable {data.Inputs[i].Variable.Name} mapped more then once");
                         return false;
                     }
                 }
 
                 // warn if not used in script
-                if (data.Inputs[i].variable.ReferenceCount == 0)
+                if (data.Inputs[i].Variable.ReferenceCount == 0)
                 {
                     // input only used in input. 
-                    data.LogWarning($"analyze.parameters: input variable {data.Inputs[i].variable.Name} is only used in its definition");
+                    data.LogWarning($"analyze.parameters: input variable {data.Inputs[i].Variable.Name} is only used in its definition");
                 }
             }
 
@@ -62,7 +62,7 @@ namespace NSS.Blast.Compiler.Stage
             // - an id should also not be the second reference if its also an input (that would mean the script is wasting time) 
             for (int i = 0; i < data.Outputs.Count; i++)
             {
-                int out_id = data.Outputs[i].id;
+                int out_id = data.Outputs[i].VariableId;
 
                 // if not set as an input; 
                 if (!data.HasInput(out_id))

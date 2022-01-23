@@ -30,6 +30,10 @@ namespace NSS.Blast.Register
             }
         }
 
+
+        /// <summary>
+        /// get a list of scripts to compile during compilation of the unity project 
+        /// </summary>
         static public List<CompileTimeBlastScript> FindCompileTimeBlastScripts()
         {
             try
@@ -59,6 +63,9 @@ namespace NSS.Blast.Register
             }
         }
 
+        /// <summary>
+        /// find all hpc jobs compiled into the assemblies loaded 
+        /// </summary>
         static public List<IBlastHPCScriptJob> FindHPCJobs()
         {
             try

@@ -227,9 +227,9 @@ namespace NSS.Blast.Compiler.Stage
                     // validate bytesize from mappings 
                     if(cdata.TryGetInput(v, out BlastVariableMapping vmap))
                     {
-                        if(vmap.bytesize != bytesize)
+                        if(vmap.ByteSize != bytesize)
                         {
-                            data.LogError($"tokenizer.read_input_output_mapping: failed to validate input&output variable with name {a[1]}, datasize mismatch, input specifies '{vmap.bytesize}', output says: '{bytesize}'");
+                            data.LogError($"tokenizer.read_input_output_mapping: failed to validate input&output variable with name {a[1]}, datasize mismatch, input specifies '{vmap.ByteSize}', output says: '{bytesize}'");
                             return null;
                         }                           
                     }
@@ -250,9 +250,9 @@ namespace NSS.Blast.Compiler.Stage
             // setup mapping
             BlastVariableMapping mapping = new BlastVariableMapping()
             {
-                variable = v,
-                bytesize = bytesize,
-                offset = offset
+                Variable = v,
+                ByteSize = bytesize,
+                Offset = offset
             };
 
             return mapping;
