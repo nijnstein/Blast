@@ -12,31 +12,6 @@ using UnityEngine;
 namespace NSS.Blast
 {
 
-    /// <summary>
-    /// the different compiler outputs / language targets 
-    /// </summary>
-    public enum BlastLanguageVersion : int
-    {
-        /// <summary>
-        /// unknown language version
-        /// </summary>
-        None = 0,
-
-        /// <summary>
-        /// BLAST Script, default script / bytecode 
-        /// </summary>
-        BS1 = 1,
-
-        /// <summary>
-        /// BLAST Single Script Multiple Data
-        /// </summary>
-        BSSMD1 = 2,
-
-        /// <summary>
-        /// Burstable C# code packed in functions for burst to compile at designtime
-        /// </summary>
-        HPC = 3
-    }
 
     /// <summary>
     /// A BLAST Script

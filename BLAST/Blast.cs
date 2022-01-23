@@ -37,13 +37,32 @@ namespace NSS.Blast
     [BurstCompile]
     unsafe public struct BlastEngineData
     {
+        /// <summary>
+        /// constant values selected by opcodes and shared among threads 
+        /// - these are set by the constant value operations and they can be replaced with other values... if you are mad
+        /// </summary>
         public float* constants;
 
+        /// <summary>
+        /// external function pointer array. these provide api access to the script  
+        /// </summary>
         public NonGenericFunctionPointer* functionpointers;
+
+        /// <summary>
+        /// number of function pointers in the fp array. function id's dont match indices.....  
+        /// - TODO   this means each function call needs a lookup...
+        /// </summary>
         public int functionpointer_count;
 
+        /// <summary>
+        /// base random number generator, all random actions have their origin in this random number generator
+        /// </summary>
         public Random random;
 
+        /// <summary>
+        /// seed the base random number generator, altering the origen for all random actions in blast 
+        /// </summary>
+        /// <param name="i">the new seed value</param>
         public void Seed(uint i)
         {
             if (i == 0)
@@ -55,8 +74,14 @@ namespace NSS.Blast
                 random.InitState(i);
             }
         }
+        
         #region [try]get function pointer 
 
+        /// <summary>
+        /// get a function pointer with a given id 
+        /// </summary>
+        /// <param name="id">id of function</param>
+        /// <returns>the function pointer</returns>
         unsafe public NonGenericFunctionPointer GetFunctionPointer(int id)
         {
             NonGenericFunctionPointer p;
@@ -67,6 +92,13 @@ namespace NSS.Blast
             return default(NonGenericFunctionPointer);
         }
 
+        /// <summary>
+        /// linear scan for a function pointer with a given id
+        /// -> should not use TODO 
+        /// </summary>
+        /// <param name="id">id of function</param>
+        /// <param name="p">the functionpointer</param>
+        /// <returns>true if found</returns>
         unsafe public bool TryGetFunctionPointer(int id, out NonGenericFunctionPointer p)
         {
             for (int i = 0; i < functionpointer_count; i++)

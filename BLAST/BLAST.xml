@@ -11,6 +11,50 @@
             - shared by all threads
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastEngineData.constants">
+            <summary>
+            constant values selected by opcodes and shared among threads 
+            - these are set by the constant value operations and they can be replaced with other values... if you are mad
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastEngineData.functionpointers">
+            <summary>
+            external function pointer array. these provide api access to the script  
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastEngineData.functionpointer_count">
+            <summary>
+            number of function pointers in the fp array. function id's dont match indices.....  
+            - TODO   this means each function call needs a lookup...
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastEngineData.random">
+            <summary>
+            base random number generator, all random actions have their origin in this random number generator
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastEngineData.Seed(System.UInt32)">
+            <summary>
+            seed the base random number generator, altering the origen for all random actions in blast 
+            </summary>
+            <param name="i">the new seed value</param>
+        </member>
+        <member name="M:NSS.Blast.BlastEngineData.GetFunctionPointer(System.Int32)">
+            <summary>
+            get a function pointer with a given id 
+            </summary>
+            <param name="id">id of function</param>
+            <returns>the function pointer</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastEngineData.TryGetFunctionPointer(System.Int32,NSS.Blast.NonGenericFunctionPointer@)">
+            <summary>
+            linear scan for a function pointer with a given id
+            -> should not use TODO 
+            </summary>
+            <param name="id">id of function</param>
+            <param name="p">the functionpointer</param>
+            <returns>true if found</returns>
+        </member>
         <member name="T:NSS.Blast.Blast">
             <summary>
             Blast Engine
@@ -200,6 +244,91 @@
             </summary>
             <param name="pkg">the package to add</param>
             <returns>the nr of packages in the repo after adding this one or 0 on failure</returns>
+        </member>
+        <member name="T:NSS.Blast.BlastRuntimeVersions">
+            <summary>
+            Versions of blast present in build
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastRuntimeVersions.Final1">
+            <summary>
+            the final version 1 = release 1
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.BlastLanguageVersion">
+            <summary>
+            the different compiler outputs / language targets 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastLanguageVersion.None">
+            <summary>
+            unknown language version
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastLanguageVersion.BS1">
+            <summary>
+            BLAST Script, default script / bytecode 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastLanguageVersion.BSSMD1">
+            <summary>
+            BLAST Single Script Multiple Data
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastLanguageVersion.HPC">
+            <summary>
+            Burstable C# code packed in functions for burst to compile at designtime
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.BlastVectorSizes">
+            <summary>
+            supported vectorsizes 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVectorSizes.float1">
+            <summary>
+            size 1: 4 bytes
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVectorSizes.float2">
+            <summary>
+            size 2: 8 bytes
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVectorSizes.float3">
+            <summary>
+            size 3: 12 bytes
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVectorSizes.float4">
+            <summary>
+            size 4: 16 bytes
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.BlastVectorTypes">
+            <summary>
+            supported vectortypes 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVectorTypes.v1">
+            <summary>
+            size 1 vector
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVectorTypes.v2">
+            <summary>
+            size 2 vector
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVectorTypes.v3">
+            <summary>
+            size 3 vector
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastVectorTypes.v4">
+            <summary>
+            size 4 vector
+            </summary>
         </member>
         <member name="T:NSS.Blast.BlastError">
             <summary>
@@ -450,31 +579,6 @@
         <member name="M:NSS.Blast.BlastPackageData.Free">
             <summary>
             free any memory allocated 
-            </summary>
-        </member>
-        <member name="T:NSS.Blast.BlastLanguageVersion">
-            <summary>
-            the different compiler outputs / language targets 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastLanguageVersion.None">
-            <summary>
-            unknown language version
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastLanguageVersion.BS1">
-            <summary>
-            BLAST Script, default script / bytecode 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastLanguageVersion.BSSMD1">
-            <summary>
-            BLAST Single Script Multiple Data
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastLanguageVersion.HPC">
-            <summary>
-            Burstable C# code packed in functions for burst to compile at designtime
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastScript">
