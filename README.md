@@ -4,6 +4,8 @@
 
 - test handling of ++|+-|-+|--
 
+- seamless execution of scriptpackage be it bytecode or burst pointers
+
 - finish opcodes / refactor away pop_or_value remnants in interpretor 
 - push variants in JZ/JNZ for while/switch conditions which run in compounds
 - update unity build 

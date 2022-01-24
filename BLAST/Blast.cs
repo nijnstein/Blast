@@ -243,6 +243,7 @@ namespace NSS.Blast
         #region Execute 
 
         [BurstDiscard]
+        [Obsolete]//doesnt use burst
         public static int Execute(string code, int stack_size = 64)
         {
             Blast blast = Blast.Create(Allocator.Temp);
@@ -271,9 +272,7 @@ namespace NSS.Blast
                 Blast blast = Blast.Create(Allocator.Temp);
                 try
                 {
-                    BlastInterpretor blaster = default;
-                    blaster.SetPackage(package);
-                    return blaster.Execute(blast.Engine);
+                    return blast.Execute(package, IntPtr.Zero, IntPtr.Zero); 
                 }
                 finally
                 {
@@ -282,7 +281,8 @@ namespace NSS.Blast
             }
         }
 
-        [BurstDiscard]
+        [BurstCompatible]
+        [Obsolete] /// doesnt use burst + antipattern
         public int Execute(string code)
         {
             return BlastCompiler
@@ -298,24 +298,131 @@ namespace NSS.Blast
         /// <param name="environment">optional environment data [global-data]</param>
         /// <param name="caller">optional callerdata [threadonly]</param>
         /// <returns>exitcode 0 on success</returns>
-        [BurstDiscard]
+        [BurstCompatible]
         public int Execute(BlastScriptPackage package, IntPtr environment, IntPtr caller)
         {
+#if NOT_USING_UNITY
             BlastInterpretor blaster = default;
             blaster.SetPackage(package.Package);
             return blaster.Execute(Engine, environment, caller);
+#else
+            execute_package_burst job = default;
+            job.engine = Engine;
+            job.package = package.Package;
+            job.environment = environment;
+            job.caller = caller;
+            job.Run();
+
+            return job.exitcode; 
+#endif 
+        }
+        /// <summary>
+        /// execute package in given environment with attached caller data
+        /// </summary>
+        /// <param name="package">the package to execute</param>
+        /// <param name="environment">optional environment data [global-data]</param>
+        /// <param name="caller">optional callerdata [threadonly]</param>
+        /// <returns>exitcode 0 on success</returns>
+        [BurstCompatible]
+        public int Execute(BlastPackageData package, IntPtr environment, IntPtr caller)
+        {
+#if NOT_USING_UNITY
+            BlastInterpretor blaster = default;
+            blaster.SetPackage(package.Package);
+            return blaster.Execute(Engine, environment, caller);
+#else
+            execute_package_burst job = default;
+            job.engine = Engine;
+            job.package = package;
+            job.environment = environment;
+            job.caller = caller;
+            job.Run();
+
+            return job.exitcode;
+#endif
         }
 
+        [BurstCompatible]
+        public int Execute(BlastPackageData package, IntPtr environment, IntPtr ssmd_data, int ssmd_datacount)
+        {
+            return Execute(package, environment, (BlastSSMDDataStack*)ssmd_data.ToPointer(), ssmd_datacount); 
+        }
 
-        [BurstDiscard]
+        [BurstCompatible]
         public int Execute(BlastPackageData package, IntPtr environment, BlastSSMDDataStack* ssmd_data, int ssmd_datacount)
         {
             Assert.IsTrue(package.IsAllocated, "package not allocated"); 
-            Assert.IsTrue(package.PackageMode == BlastPackageMode.SSMD, "only ssmd packages are supported for this execute overload"); 
+            Assert.IsTrue(package.PackageMode == BlastPackageMode.SSMD, "only ssmd packages are supported for this execute overload");
 
+#if NOT_USING_UNITY
             BlastSSMDInterpretor blaster = default;
             blaster.SetPackage(package);
             return blaster.Execute((BlastEngineData*)Engine, environment, ssmd_data, ssmd_datacount); 
+#else
+
+            execute_package_ssmd_burst job = default;
+            job.engine = Engine;
+            job.package = package;
+            job.ssmd_datacount = ssmd_datacount;
+            job.data_buffer = new IntPtr(ssmd_data);
+            job.environment = environment; 
+
+            job.Schedule().Complete();
+            return job.exitcode; 
+#endif
+
+    }
+
+
+        [BurstCompile]
+        unsafe struct execute_package_ssmd_burst : IJob
+        {
+            public BlastSSMDInterpretor blaster;
+            public BlastPackageData package;
+
+            [NativeDisableUnsafePtrRestriction]
+            public IntPtr engine;
+            public int ssmd_datacount;
+
+            [NoAlias]
+            [NativeDisableUnsafePtrRestriction]
+            public IntPtr data_buffer;
+
+            [NoAlias]
+            [NativeDisableUnsafePtrRestriction]
+            public IntPtr environment;
+            
+            public int exitcode;
+
+            public void Execute()
+            {
+                exitcode = blaster.Execute(package, (BlastEngineData*)engine, environment, (BlastSSMDDataStack*)data_buffer, ssmd_datacount);
+            }
+        }
+        [BurstCompile]
+        unsafe struct execute_package_burst : IJob
+        {
+            public BlastInterpretor blaster;
+            public BlastPackageData package;
+
+            [NativeDisableUnsafePtrRestriction]
+            public IntPtr engine;
+
+            [NoAlias]
+            [NativeDisableUnsafePtrRestriction]
+            public IntPtr environment;
+
+            [NoAlias]
+            [NativeDisableUnsafePtrRestriction]
+            public IntPtr caller;
+
+            public int exitcode;
+
+            public void Execute()
+            {
+                blaster.SetPackage(package); 
+                exitcode = blaster.Execute(engine, environment, caller);
+            }
         }
 
 
@@ -354,9 +461,9 @@ namespace NSS.Blast
             return BlastCompiler.CompilePackage(this, script, options);
         }
 
-        #endregion
+#endregion
 
-        #region Constants 
+#region Constants 
 
         [BurstDiscard]
         public IEnumerable<blast_operation> ValueOperations()
@@ -572,7 +679,7 @@ namespace NSS.Blast
 
 #endregion
 
-        #region Tokens 
+#region Tokens 
 
         /// <summary>
         /// defines tokens that can be used in script
@@ -671,9 +778,9 @@ namespace NSS.Blast
             }
         }
 
-    #endregion
+#endregion
 
-    #region Functions 
+#region Functions 
 
     /// <summary>
     /// defined functions for script
@@ -1377,9 +1484,9 @@ namespace NSS.Blast
             return res == BlastError.success; 
         }
 
-        #endregion
+#endregion
 
-        #region Execute Scripts (UNITY)
+#region Execute Scripts (UNITY)
 #if !NOT_USING_UNITY
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
@@ -1464,9 +1571,9 @@ namespace NSS.Blast
             return 0; 
         }
 #endif
-        #endregion
+#endregion
 
-        #region Runners 
+#region Runners 
 
         static Dictionary<int, runner> runners;
 
