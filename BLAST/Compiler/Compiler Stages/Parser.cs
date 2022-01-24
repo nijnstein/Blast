@@ -1541,7 +1541,7 @@ namespace NSS.Blast.Compiler.Stage
                     if(token != BlastScriptToken.Substract)
                     {
                         // should we raise error ?  or just allow it TODO 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         data.LogTrace(", used in non parameter sequence");
 #endif
                     }

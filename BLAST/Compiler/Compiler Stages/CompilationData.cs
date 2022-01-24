@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 
-#if NOT_USING_UNITY
+#if STANDALONE
     using NSS.Blast.Standalone; 
 #else
     using UnityEngine;
@@ -105,7 +105,7 @@ namespace NSS.Blast.Compiler
             if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
             if (CompilerOptions.Verbose)
             {
-#if !NOT_USING_UNITY
+#if !STANDALONE
                 Debug.Log(msg);
 #else
                 System.Diagnostics.Debug.WriteLine(msg);
@@ -134,7 +134,7 @@ namespace NSS.Blast.Compiler
             Debug.LogWarning(msg);
         }
 
-#if !NOT_USING_UNITY
+#if !STANDALONE
         string FormatWithColor(string msg, Color rgb)
         {
             return string.Format(

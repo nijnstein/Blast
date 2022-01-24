@@ -1,4 +1,4 @@
-﻿#if NOT_USING_UNITY
+﻿#if STANDALONE
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else
@@ -116,7 +116,7 @@ namespace NSS.Blast.Register
             return Register(BlastScript.FromText(code, name, id));
         }
 
-#if !NOT_USING_UNITY
+#if !STANDALONE
 
         /// <summary>
         /// Register a resource file as a blast script with the registry

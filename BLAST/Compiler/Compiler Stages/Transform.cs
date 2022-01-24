@@ -1,5 +1,5 @@
 ﻿
-#if NOT_USING_UNITY
+#if STANDALONE
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else

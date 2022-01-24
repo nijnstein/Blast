@@ -1,4 +1,4 @@
-﻿#if NOT_USING_UNITY
+﻿#if STANDALONE
 
 using System;
 

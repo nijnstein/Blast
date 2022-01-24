@@ -1,5 +1,5 @@
 ﻿
-#if NOT_USING_UNITY
+#if STANDALONE
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else
@@ -88,7 +88,7 @@ namespace NSS.Blast
             if (Package.IsAllocated)
             {
                 Package.Free();
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Package = default; 
 #endif
             }

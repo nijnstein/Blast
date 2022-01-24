@@ -6,13 +6,13 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>TRACE;DEBUG;NOT_USING_UNITY</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;STANDALONE</DefineConstants>
     <DocumentationFile>F:\Repo\Nijnstein\Blast\BLAST\BLAST.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>NOT_USING_UNITY</DefineConstants>
+    <DefineConstants>STANDALONE</DefineConstants>
     <DocumentationFile>F:\Repo\Nijnstein\Blast\BLAST\BLAST.xml</DocumentationFile>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>

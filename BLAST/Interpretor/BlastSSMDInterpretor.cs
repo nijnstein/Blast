@@ -1,6 +1,6 @@
 ﻿using NSS.Blast.Interpretor;
 
-#if NOT_USING_UNITY
+#if STANDALONE
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else
@@ -309,7 +309,7 @@ namespace NSS.Blast.SSMD
         {
             stack_offset = stack_offset - 1;
 
-#if DEBUG
+#if DEVELOPMENT_BUILD
             if (stack_offset < 0)
             {
                 Debug.LogError($"blast.ssmd.stack: attempting to pop too much data (1 float) from the stack, offset = {stack_offset}");
@@ -359,7 +359,7 @@ namespace NSS.Blast.SSMD
             }
             else
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError($"pop_op_meta -> select op by constant value is not supported, called with opcode: {operation}");
 #endif
                 datatype = BlastVariableDataType.Numeric;
@@ -376,7 +376,7 @@ namespace NSS.Blast.SSMD
             {
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 vector_size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 if (type != BlastVariableDataType.Numeric)
                 {
                     Debug.LogError($"blast.ssmd.stack, pop_fn_into -> data mismatch, expecting numeric of size n, found {type} of size {vector_size} at data offset {c - BlastInterpretor.opt_id}");
@@ -445,7 +445,7 @@ namespace NSS.Blast.SSMD
                                 destination[i].xyzw = ((float4*)(void*)&((float*)data[i])[c - BlastInterpretor.opt_id])[0];
                         }
                         break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                    default:
                         Debug.LogError($"blast.ssmd.stack, pop_fn_into -> vectorsize not supported, found {type} of size {vector_size} at data offset {c - BlastInterpretor.opt_id}");
                         break;
@@ -458,7 +458,7 @@ namespace NSS.Blast.SSMD
             {
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 vector_size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 if (type != BlastVariableDataType.Numeric)
                 {
                     Debug.LogError($"blast.ssmd.stack, pop_fn_into -> stackdata mismatch, expecting numeric of size n, found {type} of size {vector_size} at stack offset {stack_offset}");
@@ -523,7 +523,7 @@ namespace NSS.Blast.SSMD
                                 destination[i].xyzw = ((float4*)(void*)&((float*)stack[i])[stack_offset])[0];
                         }
                         break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         Debug.LogError($"blast.ssmd.stack, pop_fn_into -> vectorsize not supported, found numeric of size {vector_size}, found {type} of size {vector_size} at data offset {c - BlastInterpretor.opt_id}");
                         break;
@@ -546,7 +546,7 @@ namespace NSS.Blast.SSMD
             else
             {
                 // error or.. constant by operation value.... 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("pop_fn_into -> select op by constant value is not supported");
 #endif
             }
@@ -564,7 +564,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -582,7 +582,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -610,7 +610,7 @@ namespace NSS.Blast.SSMD
             else
             {
                 // error or.. constant by operation value.... 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("pop_f1_into -> select op by constant value is not supported");
 #endif
             }
@@ -631,7 +631,7 @@ namespace NSS.Blast.SSMD
             BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, dataindex);
             int datasize = BlastInterpretor.GetMetaDataSize(metadata, dataindex);
 
-#if DEBUG
+#if DEVELOPMENT_BUILD
             if (datatype != BlastVariableDataType.Numeric)
             {
                 Debug.LogError($"blast.ssmd.pop_fx_into -> datatype of data at index {dataindex} is not numeric but {datatype}");
@@ -652,7 +652,7 @@ namespace NSS.Blast.SSMD
 
                     stack_offset = stack_offset - vector_size;
 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     // validate the stack
                     BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset));
                     int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset));
@@ -669,7 +669,7 @@ namespace NSS.Blast.SSMD
                     }
                     break;
 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 default:
                     {
                         Debug.LogError($"blast.ssmd.pop_fx_into<T>(assignee = {dataindex}) -> vectorsize {vector_size} not supported");
@@ -693,7 +693,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != vector_size || type != BlastVariableDataType.Numeric)
@@ -711,7 +711,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != vector_size || type != BlastVariableDataType.Numeric)
@@ -744,7 +744,7 @@ namespace NSS.Blast.SSMD
             else
             {
                 // error or.. constant by operation value.... 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("blast.ssmd.pop_fx_into<T> -> select op by constant value is not supported");
 #endif
             }
@@ -791,7 +791,7 @@ namespace NSS.Blast.SSMD
         /// <param name="op">the operation to perform</param>
         void pop_f1_with_op_into_f1(in int code_pointer, [NoAlias]float* buffer, [NoAlias]float* output, blast_operation op)
         {
-#if DEBUG
+#if DEVELOPMENT_BUILD
             if (!OperationIsSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {op}, only + - * / are supported");
@@ -804,7 +804,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -837,7 +837,7 @@ namespace NSS.Blast.SSMD
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = math.select(0, 1f, buffer[i] != 0 && ((float*)data[i])[c - BlastInterpretor.opt_id] != 0); 
                         break;
 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f1_with_op_into: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -851,7 +851,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -885,7 +885,7 @@ namespace NSS.Blast.SSMD
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = math.select(0, 1f, buffer[i] != 0 && ((float*)stack[i])[stack_offset] != 0);
                         break;
 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f1_with_op_into: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -922,7 +922,7 @@ namespace NSS.Blast.SSMD
                         break;
 
 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f1_with_op_into: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -935,7 +935,7 @@ namespace NSS.Blast.SSMD
             else
             {
                 // error or.. constant by operation value.... 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("blast.pop_f1_op: select op by constant value is not supported at codepointer {code_pointer} with operation: {op}");
 #endif
             }
@@ -946,7 +946,7 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void pop_f2_with_op_into_f2(in int code_pointer, float2* buffer, float2* output, blast_operation op)
         {
-#if DEBUG
+#if DEVELOPMENT_BUILD
             if (!OperationIsSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f2_with_op_into_f2: -> unsupported operation supplied: {op}, only + - * / are supported");
@@ -959,7 +959,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != 2 || type != BlastVariableDataType.Numeric)
@@ -994,7 +994,7 @@ namespace NSS.Blast.SSMD
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] / ((float2*)(void*)&((float*)data[i])[c - BlastInterpretor.opt_id])[0];
                         break;
 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f2_with_op_into_f2: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -1008,7 +1008,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 2 || type != BlastVariableDataType.Numeric)
@@ -1037,7 +1037,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.divide:
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] / new float2(((float*)stack[i])[stack_offset], ((float*)stack[i])[stack_offset + 1]);
                         break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f2_with_op_into_f2: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -1068,7 +1068,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.divide:
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] / constant;
                         break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f2_with_op_into_f2: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -1081,7 +1081,7 @@ namespace NSS.Blast.SSMD
             else
             {
                 // error or.. constant by operation value.... 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("blast.pop_f2_with_op_into_f2: select op by constant value is not supported at codepointer {code_pointer} with operation: {op}");
 #endif
             }
@@ -1093,7 +1093,7 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void pop_f3_with_op_into_f3(in int code_pointer, float3* buffer, float3* output, blast_operation op)
         {
-#if DEBUG
+#if DEVELOPMENT_BUILD
             if (!OperationIsSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f3_with_op_into_f3: -> unsupported operation supplied: {op}, only + - * / are supported");
@@ -1106,7 +1106,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != 3 || type != BlastVariableDataType.Numeric)
@@ -1140,7 +1140,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.divide:
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] / ((float3*)(void*)&((float*)data[i])[c - BlastInterpretor.opt_id])[0];
                         break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f3_with_op_into_f3: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -1154,7 +1154,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 3 || type != BlastVariableDataType.Numeric)
@@ -1183,7 +1183,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.divide:
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] / new float3(((float*)stack[i])[stack_offset], ((float*)stack[i])[stack_offset + 1], ((float*)stack[i])[stack_offset + 2]);
                         break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f3_with_op_into_f3: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -1214,7 +1214,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.divide:
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] / constant;
                         break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f3_with_op_into_f3: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -1227,7 +1227,7 @@ namespace NSS.Blast.SSMD
             else
             {
                 // error or.. constant by operation value.... 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("blast.pop_f3_with_op_into_f3: select op by constant value is not supported at codepointer {code_pointer} with operation: {op}");
 #endif
             }
@@ -1240,7 +1240,7 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void pop_f4_with_op_into_f4(in int code_pointer, float4* buffer, float4* output, blast_operation op)
         {
-#if DEBUG
+#if DEVELOPMENT_BUILD
             if (!OperationIsSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f4_with_op_into_f4: -> unsupported operation supplied: {op}, only + - * / are supported");
@@ -1253,7 +1253,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if ((size != 4 && size != 0)  || type != BlastVariableDataType.Numeric)
@@ -1287,7 +1287,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.divide:
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] / ((float4*)(void*)&((float*)data[i])[c - BlastInterpretor.opt_id])[0];
                         break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f4_with_op_into_f4: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -1301,7 +1301,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 4 || type != BlastVariableDataType.Numeric)
@@ -1330,7 +1330,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.divide:
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] / new float4(((float*)stack[i])[stack_offset], ((float*)stack[i])[stack_offset + 1], ((float*)stack[i])[stack_offset + 2], ((float*)stack[i])[stack_offset + 3]);
                         break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f4_with_op_into_f4: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -1361,7 +1361,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.divide:
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] / constant;
                         break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     default:
                         {
                             Debug.LogError($"blast.pop_f4_with_op_into_f4: -> codepointer {code_pointer} unsupported operation supplied: {op}");
@@ -1374,7 +1374,7 @@ namespace NSS.Blast.SSMD
             else
             {
                 // error or.. constant by operation value.... 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("blast.pop_f3_with_op_into_f3: select op by constant value is not supported at codepointer {code_pointer} with operation: {op}");
 #endif
             }
@@ -1395,7 +1395,7 @@ namespace NSS.Blast.SSMD
         /// <param name="op">operation to handle</param>
         void pop_f1_with_op_into_f4(in int code_pointer, float* buffer, float4* output, blast_operation op)
         {
-#if DEBUG
+#if DEVELOPMENT_BUILD
             if (op != blast_operation.add && op != blast_operation.multiply && op != blast_operation.substract && op != blast_operation.divide)
             {
                 Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {op}, only + - * / are supported");
@@ -1408,7 +1408,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -1442,7 +1442,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -1499,7 +1499,7 @@ namespace NSS.Blast.SSMD
             else
             {
                 // error or.. constant by operation value.... 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("blast.pop_f1_op: select op by constant value is not supported at codepointer {code_pointer} with operation: {op}");
 #endif
             }
@@ -1514,7 +1514,7 @@ namespace NSS.Blast.SSMD
         /// <param name="op">operation to execute on value </param>
         void pop_f2_with_op_into_f4(in int code_pointer, float2* buffer, float4* output, blast_operation op)
         {
-#if DEBUG
+#if DEVELOPMENT_BUILD
             if (op != blast_operation.add && op != blast_operation.multiply && op != blast_operation.substract && op != blast_operation.divide)
             {
                 Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {op}, only + - * / are supported");
@@ -1527,7 +1527,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != 2 || type != BlastVariableDataType.Numeric)
@@ -1561,7 +1561,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 2 || type != BlastVariableDataType.Numeric)
@@ -1618,7 +1618,7 @@ namespace NSS.Blast.SSMD
             else
             {
                 // error or.. constant by operation value.... 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("blast.pop_f2_with_op_into_f4: select op by constant value is not supported at codepointer {code_pointer} with operation: {op}");
 #endif
             }
@@ -1633,7 +1633,7 @@ namespace NSS.Blast.SSMD
         /// <param name="op"></param>
         void pop_f3_with_op_into_f4(in int code_pointer, float3* buffer, float4* output, blast_operation op)
         {
-#if DEBUG
+#if DEVELOPMENT_BUILD
             if (!OperationIsSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f3_with_op_into_f4: -> unsupported operation supplied: {op}, only + - * / are supported");
@@ -1646,7 +1646,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != 3 || type != BlastVariableDataType.Numeric)
@@ -1679,7 +1679,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 3 || type != BlastVariableDataType.Numeric)
@@ -1737,7 +1737,7 @@ namespace NSS.Blast.SSMD
             else
             {
                 // error or.. constant by operation value.... 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("blast.pop_f3_with_op_into_f4: select op by constant value is not supported at codepointer {code_pointer} with operation: {op}");
 #endif
             }
@@ -1822,7 +1822,7 @@ namespace NSS.Blast.SSMD
 
             if (c >= BlastInterpretor.opt_id)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != vector_size || type != BlastVariableDataType.Numeric)
@@ -1883,7 +1883,7 @@ namespace NSS.Blast.SSMD
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -1948,7 +1948,7 @@ namespace NSS.Blast.SSMD
             }
             else
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError("push_pop_f -> select op by constant value is not supported");
 #endif
             }
@@ -2005,7 +2005,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.equals: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0f, 1f, a[i] == b[i].x); return;
 
                 case blast_operation.not:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError("not");
 #endif
                     return;
@@ -2039,7 +2039,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.equals: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0f, 1f, a[i].xy == b[i].xx); return;
 
                 case blast_operation.not:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError("not");
 #endif
                     return;
@@ -2073,7 +2073,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.equals: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0f, 1f, a[i].xyz == b[i].xxx); return;
 
                 case blast_operation.not:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError("not");
 #endif
                     return;
@@ -2107,7 +2107,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.equals: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0f, 1f, a[i] == b[i].xxxx); return;
                                                                                           
                 case blast_operation.not:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError("not");
 #endif
                     return;
@@ -2141,7 +2141,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.equals: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0f, 1f, a[i].xy == b[i].xy); return;
 
                 case blast_operation.not:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError("not");
 #endif
                     return;
@@ -2175,7 +2175,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.equals: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0f, 1f, a[i].xyz == b[i].xyz); return;
 
                 case blast_operation.not:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError("not");
 #endif
                     return;
@@ -2209,7 +2209,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.equals: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0f, 1f, a[i] == b[i]); return;
 
                 case blast_operation.not:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError("not");
 #endif
                     return;
@@ -2517,7 +2517,7 @@ namespace NSS.Blast.SSMD
                         {
                             if (last_is_op_or_first)
                             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                 if (not)
                                 {
                                     Debug.LogError("double token: ! !, this will be become nothing, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
@@ -2537,7 +2537,7 @@ namespace NSS.Blast.SSMD
                         {
                             if (last_is_op_or_first)
                             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                 if (minus)
                                 {
                                     Debug.LogError("double token: - -, this will be become +, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
@@ -2561,7 +2561,7 @@ namespace NSS.Blast.SSMD
                                 case blast_operation.begin:
                                     ++code_pointer;
                                     // should not reach here
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                     Debug.LogWarning("should not be nesting compounds... compiler did not do its job wel");
 #endif
 
@@ -2671,7 +2671,7 @@ namespace NSS.Blast.SSMD
                                                                             case extended_blast_operation.log2: get_log2_result(ref code_pointer, ref vector_size, out f4_result); break;
                                                                             case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
                                                                             case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4_result); break;
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                                                             default:
                                                                                 Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
                                                                                 break;
@@ -2763,7 +2763,7 @@ namespace NSS.Blast.SSMD
                                                 case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = constant; break;
                                                 case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyzw = constant; break;
                                                 default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                                     Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector beyond size 4 from constant");
 #endif
                                                     break;
@@ -2779,7 +2779,7 @@ namespace NSS.Blast.SSMD
                                                 case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].z = constant; break;
                                                 case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].w = constant; break;
                                                 default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                                     Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector beyond size 4 from constant");
 #endif
                                                     break;
@@ -2874,7 +2874,7 @@ namespace NSS.Blast.SSMD
                                             //
                                             // if we predict this at the compiler we could use the opcodes value as value constant
                                             //
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                             Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(blast_operation)op}");
 #endif
 
@@ -2926,7 +2926,7 @@ namespace NSS.Blast.SSMD
                                             case BlastVectorSizes.float3:
                                             case BlastVectorSizes.float4:
                                             default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                                     // these will be in log because of growing a vector from a compound of unknown sizes  
 //                                                    Debug.LogWarning($"execute.ssmd: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
@@ -2948,7 +2948,7 @@ namespace NSS.Blast.SSMD
                                             case BlastVectorSizes.float3:
                                             case BlastVectorSizes.float4:
                                             default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                                     // these will be in log because of growing a vector from a compound of unknown sizes  
 //                                                    Debug.LogWarning($"execute.ssmd: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
@@ -2979,7 +2979,7 @@ namespace NSS.Blast.SSMD
                                                 // have a float 4 and one from earlier.
                                                 break;
                                             default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
 //                                                    Debug.LogWarning($"execute.ssmd: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                 break;
@@ -2991,7 +2991,7 @@ namespace NSS.Blast.SSMD
 
                                 default:
                                     {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                             Debug.LogError($"execute.ssmd: codepointer: {code_pointer} => {code[code_pointer]}, encountered unsupported vector size of {vector_size}");
 #endif
                                         return (int)BlastError.ssmd_error_unsupported_vector_size;
@@ -3040,7 +3040,7 @@ namespace NSS.Blast.SSMD
                 BlastError res = (BlastError)GetCompoundResult(temp, ref code_pointer, ref vector_size);
                 if (res < 0)
                 {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError($"blast.ssmd.execute.push: failed to read compound data for push operation at codepointer {code_pointer}");
 #endif
                     return res;
@@ -3061,7 +3061,7 @@ namespace NSS.Blast.SSMD
                         push_register_f4();
                         break;
                     default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError("blast.ssmd push error: variable vector size not yet supported on stack push of compound");
 #endif
                         return BlastError.error_variable_vector_compound_not_supported;
@@ -3095,7 +3095,7 @@ namespace NSS.Blast.SSMD
                         break;
 
                     default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError($"blast.ssmd.interpretor.pushv error: vectorsize {vector_size} not yet supported on stack push");
 #endif
                         return BlastError.error_vector_size_not_supported;
@@ -3103,7 +3103,7 @@ namespace NSS.Blast.SSMD
             }
             else
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 if (param_count != vector_size)
                 {
                     Debug.LogError($"blast.ssmd.interpretor.pushv error: pushv => param_count > 1 && vector_size != param_count, this is not allowed. Vectorsize: {vector_size}, Paramcount: {param_count}");
@@ -3142,7 +3142,7 @@ namespace NSS.Blast.SSMD
             BlastError res = (BlastError)GetCompoundResult(temp, ref code_pointer, ref vector_size);
             if (res < 0)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError($"blast.ssmd.execute.pushc : failed to read compound data for pushc operation at codepointer {code_pointer}");
 #endif
                 return res;
@@ -3162,7 +3162,7 @@ namespace NSS.Blast.SSMD
                     push_register_f4();
                     break;
                 default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError("blast.ssmd push error: variable vector size not yet supported on stack push of compound");
 #endif
                     return BlastError.error_variable_vector_compound_not_supported;
@@ -3179,7 +3179,7 @@ namespace NSS.Blast.SSMD
             BlastError res = (BlastError)GetCompoundResult(temp, ref code_pointer, ref vector_size);
             if (res < 0)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError($"blast.ssmd.execute.pushf: failed to read compound data for pushf operation at codepointer {code_pointer}");
 #endif
                 return res;
@@ -3191,7 +3191,7 @@ namespace NSS.Blast.SSMD
                 case 3: push_register_f3(); break;
                 case 4: push_register_f4(); break;
                 default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError("blast.ssmd.interpretor.pushf error: variable vector size not yet supported on stack push");
 #endif
                     return BlastError.error_variable_vector_op_not_supported;
@@ -3248,7 +3248,7 @@ namespace NSS.Blast.SSMD
             BlastError res = (BlastError)GetCompoundResult(temp, ref code_pointer, ref vector_size);
             if (res != BlastError.success)
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 Debug.LogError($"blast.ssmd.assign: failed to read compound data for assign operation at codepointer {code_pointer}");
 #endif
                 return res;
@@ -3261,7 +3261,7 @@ namespace NSS.Blast.SSMD
                     //if(Unity.Burst.CompilerServices.Hint.Unlikely(s_assignee != 1))
                     if (s_assignee != 1)
                     {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
 #endif
                         return BlastError.error_assign_vector_size_mismatch;
@@ -3272,7 +3272,7 @@ namespace NSS.Blast.SSMD
                 case (byte)BlastVectorSizes.float2:
                     if (s_assignee != 2)
                     {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
 #endif
                         return BlastError.error_assign_vector_size_mismatch;
@@ -3283,7 +3283,7 @@ namespace NSS.Blast.SSMD
                 case (byte)BlastVectorSizes.float3:
                     if (s_assignee != 3)
                     {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
 #endif
                         return BlastError.error_assign_vector_size_mismatch;
@@ -3295,7 +3295,7 @@ namespace NSS.Blast.SSMD
                 case (byte)BlastVectorSizes.float4:
                     if (s_assignee != 4)
                     {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
 #endif
                         return BlastError.error_assign_vector_size_mismatch;
@@ -3304,7 +3304,7 @@ namespace NSS.Blast.SSMD
                     break;
 
                 default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                     Debug.LogError($"blast.ssmd.assign: vector size {vector_size} not allowed at codepointer {code_pointer}");
 #endif
                     return BlastError.error_unsupported_operation_in_root;
@@ -3440,7 +3440,7 @@ namespace NSS.Blast.SSMD
                                                                         // write contents of stack to the debug stream as a detailed report; 
                                                                         // write contents of a data element to the debug stream 
                                                                         code_pointer++;
-                                #if DEBUG
+                                #if DEVELOPMENT_BUILD
                                                                         Handle_DebugStack();
                                 #endif
                                                                     }
@@ -3457,7 +3457,7 @@ namespace NSS.Blast.SSMD
                                                                         // even if not in debug, if the command is encoded any stack op needs to be popped 
                                                                         void* pdata = pop_with_info(code_pointer, out datatype, out vector_size);
 
-                                #if DEBUG
+                                #if DEVELOPMENT_BUILD
                                                                         Handle_DebugData(code_pointer, vector_size, op_id, datatype, pdata);
                                 #endif
                                                                         code_pointer++;
@@ -3466,7 +3466,7 @@ namespace NSS.Blast.SSMD
                                                                 */
                                 default:
                                     {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                         Debug.LogError($"blast.ssmd.extended op: only call and debug operation is supported from root, not {exop} ");
 #endif
                                         return (int)BlastError.error_unsupported_operation_in_ssmd_root;
@@ -3477,7 +3477,7 @@ namespace NSS.Blast.SSMD
 
                     default:
                         {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                             Debug.LogError($"blast.ssmd: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
 #endif
                             return (int)BlastError.error_unsupported_operation_in_root;

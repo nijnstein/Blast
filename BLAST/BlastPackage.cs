@@ -1,4 +1,4 @@
-﻿#if NOT_USING_UNITY
+﻿#if STANDALONE
     using NSS.Blast.Standalone;
 #else
     using UnityEngine;
@@ -36,7 +36,7 @@ namespace NSS.Blast
         Normal,
 
         /// <summary>
-        /// SSMD Package with code & metadata seperate from data&stack
+        /// SSMD Package with code and metadata seperate from datastack
         /// 
         /// - SSMD requirement: while data changes, its intent does not so metadata is shared
         /// 
@@ -128,7 +128,7 @@ namespace NSS.Blast
     /// </summary>
     [BurstCompile]
     unsafe public struct BlastSSMDDataStack {
-#if DEBUG
+#if DEVELOPMENT_BUILD
         public float4 a;
         public float4 b;
         public float4 c;
@@ -182,7 +182,7 @@ namespace NSS.Blast
             get
             {
 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 switch (PackageMode)
                 {
                     default:
@@ -210,7 +210,7 @@ namespace NSS.Blast
         {
             get
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 switch (PackageMode)
                 {
                     default:
@@ -236,7 +236,7 @@ namespace NSS.Blast
         {
             get
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 switch (PackageMode)
                 {
                     default:
@@ -265,7 +265,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError($"packagemode {PackageMode} not supported");
 #endif 
                         return 0;
@@ -287,7 +287,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError($"packagemode {PackageMode} not supported");
 #endif 
                         return 0;
@@ -314,7 +314,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError($"packagemode {PackageMode} not supported");
 #endif 
                         return 0;
@@ -340,7 +340,7 @@ namespace NSS.Blast
                 //                switch (PackageMode)
                 //                {
                 //                    default:
-                //#if DEBUG
+                //#if DEVELOPMENT_BUILD
                 //                        Standalone.Debug.LogError($"packagemode {PackageMode} not supported");
                 //#endif 
                 //                        return 0;
@@ -373,7 +373,7 @@ namespace NSS.Blast
         {
             get
             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                 switch (PackageMode)
                 {
                     default:
@@ -399,7 +399,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError($"packagemode {PackageMode} not supported");
 #endif                        
                         return IntPtr.Zero;
@@ -421,7 +421,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-#if DEBUG
+#if DEVELOPMENT_BUILD
                         Debug.LogError($"packagemode {PackageMode} not supported");
 #endif 
                         return IntPtr.Zero;
@@ -683,7 +683,7 @@ namespace NSS.Blast
                         UnsafeUtils.Free(P2.ToPointer(), (Unity.Collections.Allocator)Allocator);
                     }
                 }
-#if DEBUG 
+#if DEVELOPMENT_BUILD 
                 CodeSegmentPtr = IntPtr.Zero;
                 P2 = IntPtr.Zero;
                 Allocator = (byte)Unity.Collections.Allocator.None;

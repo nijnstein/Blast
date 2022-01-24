@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using System.Linq;
 
-#if NOT_USING_UNITY
+#if STANDALONE
     using NSS.Blast.Standalone;
     using Unity.Assertions;
 #else
@@ -118,7 +118,7 @@ namespace NSS.Blast
 
     }
 
-#if NOT_USING_UNITY
+#if STANDALONE
 #else
 
     [BurstCompile]
@@ -268,7 +268,7 @@ namespace NSS.Blast
                 blast.data->functionpointers[i] = call.FunctionPointer;
             }
 
-#if !NOT_USING_UNITY
+#if !STANDALONE
             blast._burst_hpc_once_job = default;
             blast._burst_once_job = default;
             blast._burst_once_job.interpretor = default; 
@@ -361,7 +361,7 @@ namespace NSS.Blast
         [BurstCompatible]
         public int Execute(BlastScriptPackage package, IntPtr environment, IntPtr caller)
         {
-#if NOT_USING_UNITY
+#if STANDALONE
             BlastInterpretor blaster = default;
             blaster.SetPackage(package.Package);
             return blaster.Execute(Engine, environment, caller);
@@ -386,7 +386,7 @@ namespace NSS.Blast
         [BurstCompatible]
         public int Execute(BlastPackageData package, IntPtr environment, IntPtr caller)
         {
-#if NOT_USING_UNITY
+#if STANDALONE
             BlastInterpretor blaster = default;
             blaster.SetPackage(package);
             return blaster.Execute(Engine, environment, caller);
@@ -414,7 +414,7 @@ namespace NSS.Blast
             Assert.IsTrue(package.IsAllocated, "package not allocated"); 
             Assert.IsTrue(package.PackageMode == BlastPackageMode.SSMD, "only ssmd packages are supported for this execute overload");
 
-#if NOT_USING_UNITY
+#if STANDALONE
             BlastSSMDInterpretor blaster = default;
             blaster.SetPackage(package);
             return blaster.Execute((BlastEngineData*)Engine, environment, ssmd_data, ssmd_datacount); 
@@ -599,7 +599,7 @@ namespace NSS.Blast
                 default:
 
 #if CHECK_STACK
-#if !NOT_USING_UNITY
+#if !STANDALONE
                     Standalone.Debug.LogError($"blast.get_constant_value({op}) -> not a value -> NaN returned to caller");
 #else
                     System.Diagnostics.Debug.WriteLine($"blast.get_constant_value({op}) -> not a value -> NaN returned to caller");
@@ -1195,7 +1195,7 @@ namespace NSS.Blast
             HPCCompilationData data = BlastCompiler.CompileHPC(blast, script, options);
             if (!data.IsOK)
             {
-#if !NOT_USING_UNITY
+#if !STANDALONE
                 Debug.LogError("failed to compile script: " + script);
 #else
                 System.Diagnostics.Debug.WriteLine("ERROR: Failed to compile script: " + script); 
@@ -1496,7 +1496,7 @@ namespace NSS.Blast
 #endregion
 
 #region Execute Scripts (UNITY)
-#if !NOT_USING_UNITY
+#if !STANDALONE
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
         {
@@ -1611,7 +1611,7 @@ namespace NSS.Blast
             }
 
             // to create a runner iterate fastest method first
-#if !NOT_USING_UNITY
+#if !STANDALONE
             IBlastHPCScriptJob job = GetHPCJob(script_id);
             if (job != null)
             {
@@ -1663,7 +1663,7 @@ namespace NSS.Blast
             // option 1
             public BlastPackageData Package;
 
-#if !NOT_USING_UNITY
+#if !STANDALONE
             // option 2
             public FunctionPointer<BSExecuteDelegate> HPCJobBSD;
             public NativeArray<float> HPCVariables;
@@ -1793,7 +1793,7 @@ namespace NSS.Blast
             return id;
         }
 
-#if !NOT_USING_UNITY
+#if !STANDALONE
         static public int RegisterAndCompile(Blast blast, string resource_filename_without_extension, int id = 0)
         {
             id = BlastScriptRegistry.RegisterScriptResource(resource_filename_without_extension, resource_filename_without_extension, id);

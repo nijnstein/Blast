@@ -1,5 +1,5 @@
 ﻿
-#if NOT_USING_UNITY
+#if STANDALONE
 using System;
 using Unity.Collections;
 using System.Runtime.InteropServices;

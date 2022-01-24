@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#if NOT_USING_UNITY
+#if STANDALONE
 using NSS.Blast.Standalone;
 #else
 using UnityEngine;
@@ -181,7 +181,7 @@ namespace NSS.Blast.Compiler.Stage
                                     //  FLATTEN ANY COMPOUND !!!   TEST TILL DEATH
                                     // 
 
-                                    /// this should allow for nested stuf: (1 2 3 (-1))
+                                    // this should allow for nested stuf: (1 2 3 (-1))
 
                                     List<node> flattened_compound; 
                                     BlastError res = FlattenCompound(data, child, out flattened_compound);
@@ -591,7 +591,7 @@ namespace NSS.Blast.Compiler.Stage
                 return BlastError.error; 
             }
 
-            /// handle returned 
+            // handle returned 
             while_root.children.Clear();
             if (flattened_condition.Count == 1)
             {

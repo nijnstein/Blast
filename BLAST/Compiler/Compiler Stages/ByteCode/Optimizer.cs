@@ -1,4 +1,4 @@
-﻿#if NOT_USING_UNITY
+﻿#if STANDALONE
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else
@@ -296,7 +296,7 @@ namespace NSS.Blast.Compiler.Stage
 
                             if(v == null)
                             {
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                 Debug.Log(result.GetHumanReadableCode());
                                 Debug.Log(result.GetHumanReadableBytes());
 #endif

@@ -131,26 +131,6 @@
             <param name="caller">optional callerdata [threadonly]</param>
             <returns>exitcode 0 on success</returns>
         </member>
-        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage,System.IntPtr,System.IntPtr,System.Int32)">
-            <summary>
-            Execute PackageData in SSMD mode
-            </summary>
-            <param name="package">the package data</param>
-            <param name="environment">pointer to environment data</param>
-            <param name="ssmd_data">pointer to ssmd data</param>
-            <param name="ssmd_datacount">number of records in ssmd data</param>
-            <returns>exitcode (blasterror)</returns>
-        </member>
-        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)">
-            <summary>
-            Execute PackageData in SSMD mode
-            </summary>
-            <param name="package">the package data</param>
-            <param name="environment">pointer to environment data</param>
-            <param name="ssmd_data">pointer to ssmd data</param>
-            <param name="ssmd_datacount">number of records in ssmd data</param>
-            <returns>exitcode (blasterror)</returns>
-        </member>
         <member name="M:NSS.Blast.Blast.GetConstantValueOperation(System.String,System.Single)">
             <summary>
             get the script_op belonging to a constant value, eiter by name or value 
@@ -419,7 +399,26 @@
             
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "F:NSS.Blast.BlastPackageMode.SSMD" -->
+        <member name="F:NSS.Blast.BlastPackageMode.SSMD">
+            <summary>
+            SSMD Package with code and metadata seperate from datastack
+            
+            - SSMD requirement: while data changes, its intent does not so metadata is shared
+            
+            ? could allow branches and split from there? 
+            
+            [----CODE----|----METADATA----]       [----DATA----|----STACK----]
+                         1                2                    3             4
+            
+            1 = metadata offset 
+            2 = codesegment size 
+            3 = stack offset 
+            4 = datasegment size 
+            
+            prop stacksize (in elements) => (datasegment size - stack_offset) / 4
+            
+            </summary>
+        </member>
         <member name="F:NSS.Blast.BlastPackageMode.Entity">
             <summary>
             Entity Package: the script's code is seperated from all data
@@ -2481,10 +2480,14 @@
             
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "F:NSS.Blast.Interpretor.BlastInterpretor.opt_value" -->
+        <member name="F:NSS.Blast.Interpretor.BlastInterpretor.opt_value">
+            <summary>
+            >= if the opcode between opt_value and (including) opt_id then its an opcode for a constant
+            </summary>
+        </member>
         <member name="F:NSS.Blast.Interpretor.BlastInterpretor.opt_id">
             <summary>
-            >= opt_id is opcode for parameter
+            >= opt_id is starting opcode for parameters, everything until 255|ExOp is considered a datasegment index
             </summary>
         </member>
         <member name="F:NSS.Blast.Interpretor.BlastInterpretor.max_iterations">
@@ -2546,25 +2549,37 @@
             we might need to know if we need to copy back data  (or we use a dummy)
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:NSS.Blast.Interpretor.BlastInterpretor.SetPackage(NSS.Blast.BlastPackageData,System.Byte*,System.Single*,System.Byte*,System.Int32)" -->
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.SetPackage(NSS.Blast.BlastPackageData,System.Byte*,System.Single*,System.Byte*,System.Int32)">
+            <summary>
+            set package data from package and seperate buffers 
+            </summary>
+            <param name="pkg">the package data</param>
+            <param name="_code">code pointer</param>
+            <param name="_data">datastack pointer</param>
+            <param name="_metadata">metadata</param>
+        </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.execute(NSS.Blast.BlastEngineData*,System.IntPtr,System.IntPtr,System.Boolean)">
             <summary>
             execute bytecode
             </summary>
             <param name="blast">engine data</param>
+            <param name="environment">pointer to environment data in native memory</param>
+            <param name="caller">pointer to caller data in native memory</param>
             <param name="resume_state">resume state from yield or reset state to initial</param>
-            <returns>success of coarse</returns>
+            <returns>success</returns>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.Execute(System.IntPtr,System.IntPtr,System.IntPtr)">
             <summary>
             execute bytecode
             </summary>
             <param name="blast">engine data</param>
+            <param name="environment">pointer to environment data in native memory</param>
+            <param name="caller">pointer to caller data in native memory</param>
             <returns>exit code</returns>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.Execute(System.IntPtr)">
             <summary>
-            execute bytecode
+            execute bytecode set to the interpretor 
             </summary>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.ResumeYield(System.IntPtr,System.IntPtr,System.IntPtr)">
@@ -2572,6 +2587,8 @@
             resume executing bytecode after yielding
             </summary>
             <param name="blast">engine data</param>
+            <param name="environment">pointer to environment data in native memory</param>
+            <param name="caller">pointer to caller data in native memory</param>
             <returns>exit code</returns>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.ResumeYield(System.IntPtr)">
@@ -2626,13 +2643,21 @@
             </summary>
             <returns></returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:NSS.Blast.Interpretor.BlastInterpretor.IsMathematicalOrBooleanOperation(NSS.Blast.blast_operation)" -->
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.IsMathematicalOrBooleanOperation(NSS.Blast.blast_operation)">
+            <summary>
+            WARNING checks if is operation, uses value op enum blast_operation.add until blast_operation.not_equals 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.IsMathematicalOperation(NSS.Blast.blast_operation)">
             <summary>
             WARNING checks if +-*/ uses value op enum!!  
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:NSS.Blast.Interpretor.BlastInterpretor.IsBooleanOperation(NSS.Blast.blast_operation)" -->
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.IsBooleanOperation(NSS.Blast.blast_operation)">
+            <summary>
+            WARNING checks if boolean operaion, uses value op enum!! 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.Handle_DebugData(System.Int32,System.Byte,System.Int32,NSS.Blast.BlastVariableDataType,System.Void*)">
             <summary>
             handle command to show the given field in debug 
@@ -2944,8 +2969,8 @@
             
             </summary>
             <param name="blast"></param>
-            <param name="register"></param>
-            <param name="code_pointer"></param>
+            <param name="environment"></param>
+            <param name="caller"></param>
             <returns></returns>
         </member>
         <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.engine_ptr">

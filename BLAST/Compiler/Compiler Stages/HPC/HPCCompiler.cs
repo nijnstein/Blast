@@ -1,4 +1,4 @@
-﻿#if NOT_USING_UNITY
+﻿#if STANDALONE
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else
@@ -534,7 +534,7 @@ namespace NSS.Blast.Compiler.Stage
     }} ";
                 string result = string.Format(job, code_id, code, data.Script.Id);
 
-#if !NOT_USING_UNITY
+#if !STANDALONE
                 Debug.Log(result);
 #else
                 System.Diagnostics.Debug.WriteLine(result);

@@ -1,5 +1,5 @@
 ﻿
-#if NOT_USING_UNITY
+#if STANDALONE
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else
@@ -123,7 +123,7 @@ namespace NSS.Blast.Compiler.Stage
                                 if (cc.type == nodetype.compound)
                                 {
                                     b_again = true; // this should not happen if leaf 
-#if DEBUG
+#if DEVELOPMENT_BUILD
                                     Debug.LogWarning("nested compound.. should not happen here");
 #endif
                                 }
