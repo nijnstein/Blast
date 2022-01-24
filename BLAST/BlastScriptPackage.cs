@@ -65,7 +65,20 @@ namespace NSS.Blast
         /// <summary>
         /// Returns true if native memory is allocated for the package 
         /// </summary>
-        public bool IsAllocated => Package.IsAllocated; 
+        public bool IsAllocated => Package.IsAllocated;
+
+
+        /// <summary>
+        /// size of package data 
+        /// </summary>
+        public int PackageSize 
+        {
+            get
+            {
+                if (!IsAllocated) return 0; 
+                return Package.CodeSize + Package.MetadataSize + Package.AllocatedDataSegmentSize; 
+            }
+        }
 
         /// <summary>
         /// Destroy any allocated native memory 
