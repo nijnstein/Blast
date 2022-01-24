@@ -977,10 +977,9 @@ namespace NSS.Blast.Compiler
 
         /// <summary>
         /// recursively reduces unneeded compound nesting 
-        /// <(((2 3)))> => <2 2>
+        /// (((2 3))) => (2 2)
         /// </summary>
-        /// <param name="node"></param>
-        /// <param name="children"></param>
+        /// <param name="node">the root node of the nested compound</param>
         static public node ReduceSingularCompounds(node node)
         {
             Assert.IsNotNull(node);

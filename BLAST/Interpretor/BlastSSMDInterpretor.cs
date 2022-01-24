@@ -794,7 +794,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD
             if (!OperationIsSSMDHandled(op))
             {
-                Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {op}, only + - * / are supported");
+                Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {(byte)op}, only + - * / are supported");
                 return; 
             }
 #endif
@@ -840,7 +840,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD
                     default:
                         {
-                            Debug.LogError($"blast.pop_f1_with_op_into: -> codepointer {code_pointer} unsupported operation supplied: {op}");
+                            Debug.LogError($"blast.pop_f1_with_op_into: -> codepointer {code_pointer} unsupported operation supplied: {(byte)op}");
                             return;
                         }
 
@@ -925,7 +925,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD
                     default:
                         {
-                            Debug.LogError($"blast.pop_f1_with_op_into: -> codepointer {code_pointer} unsupported operation supplied: {op}");
+                            Debug.LogError($"blast.pop_f1_with_op_into: -> codepointer {code_pointer} unsupported operation supplied: {(byte)op}");
                             return;
                         }
 
@@ -936,7 +936,7 @@ namespace NSS.Blast.SSMD
             {
                 // error or.. constant by operation value.... 
 #if DEVELOPMENT_BUILD
-                Debug.LogError("blast.pop_f1_op: select op by constant value is not supported at codepointer {code_pointer} with operation: {op}");
+                Debug.LogError("blast.pop_f1_op: select op by constant value is not supported at codepointer {code_pointer} with operation: {(byte)op}");
 #endif
             }
         }
@@ -949,7 +949,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD
             if (!OperationIsSSMDHandled(op))
             {
-                Debug.LogError($"blast.pop_f2_with_op_into_f2: -> unsupported operation supplied: {op}, only + - * / are supported");
+                Debug.LogError($"blast.pop_f2_with_op_into_f2: -> unsupported operation supplied: {(byte)op}, only + - * / are supported");
                 return; 
             }
 #endif

@@ -3990,8 +3990,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="code_pointer"></param>
         /// <param name="minus"></param>
         /// <param name="not"></param>
-        /// <param name="code"></param>
-        /// <param name="data"></param>
+        /// <param name="vector_size"></param>
         /// <returns></returns>
         float4 get_any_result(ref int code_pointer, ref bool minus, ref bool not, ref byte vector_size)
         {

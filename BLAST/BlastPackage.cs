@@ -40,7 +40,9 @@ namespace NSS.Blast
         /// 
         /// - SSMD requirement: while data changes, its intent does not so metadata is shared
         /// 
-        /// ? could allow branches and split from there? 
+        /// - SSDM in V2/BS2 allows for (nested) branching by setting sync points on non constant jumps: 
+        /// -- loop ends
+        /// -- if then else jumps 
         /// 
         /// [----CODE----|----METADATA----]       [----DATA----|----STACK----]
         ///              1                2                    3             4
@@ -137,30 +139,78 @@ namespace NSS.Blast
     }
 
     /// <summary>
-    /// the bare minimum data to package a script for execution 
+    /// the bare minimum data (28 bytes) to package a script for execution 
     /// </summary>
     [BurstCompile]
     unsafe public struct BlastPackageData
     {
+        /// <summary>
+        /// points to codesegment, may be shared with other segments, see packagemode
+        /// </summary>
         [NoAlias]
         [NativeDisableUnsafePtrRestriction]
         public IntPtr CodeSegmentPtr;
 
+        /// <summary>
+        /// points to the other segment, see packagemode
+        /// </summary>
         [NoAlias]
         [NativeDisableUnsafePtrRestriction]
         public IntPtr P2;
         //-- 16 bytes
 
+        /// <summary>
+        /// Packaging mode 
+        /// 
+        /// NORMAL: 
+        ///         [----CODE----|----METADATA----|----DATA----|----STACK----]
+        ///                      1                2            3             4  
+        /// 
+        /// SSMD:
+        ///         [----CODE----|----METADATA----]       [----DATA----|----STACK----]
+        ///                      1                2                    3             4
+        /// 
+        /// ENTITY:
+        ///         [----CODE----]      [----METADATA----]     [----DATA----|----STACK----]
+        ///                      1                       2                  3             4
+        /// </summary>
         public BlastPackageMode PackageMode;
+
+        /// <summary>
+        /// Package languageversion, determines feature support 
+        /// </summary>
         public BlastLanguageVersion LanguageVersion;
+
+        /// <summary>
+        /// Package flags, see flags enumeration  
+        /// </summary>
         public BlastPackageFlags Flags;
+
+        /// <summary>
+        /// Package memory allocator 
+        /// </summary>
         public byte Allocator;
         //-- 20 bytes
 
-        public ushort O1;   // 1
-        public ushort O2;   // 2
-        public ushort O3;   // 3
-        public ushort O4;   // 4
+        /// <summary>
+        /// Offset 1, intent depends on packagemode
+        /// </summary>
+        public ushort O1;
+
+        /// <summary>
+        /// Offset 2, intent depends on packagemode
+        /// </summary>
+        public ushort O2;
+
+        /// <summary>
+        /// Offset 3, intent depends on packagemode
+        /// </summary>
+        public ushort O3;
+
+        /// <summary>
+        /// Offset 4, intent depends on packagemode
+        /// </summary>
+        public ushort O4;
                             //-- 28 bytes
 
         #region Properties deduced from fields 

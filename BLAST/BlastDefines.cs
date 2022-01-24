@@ -104,24 +104,5 @@ namespace NSS.Blast
     }
 
 
-    public enum BlastPackageCapacities : int
-    {
-        c32 = 32,
-        c48 = 48,
-        c64 = 64,
-        c96 = 96,
-        c128 = 128,
-        c192 = 192,
-        c256 = 256,
-        c320 = 320,
-        c384 = 384,
-        c448 = 448,
-        c512 = 512,
-        c640 = 640,
-        c768 = 768,
-        c896 = 896,
-        c960 = 960
-    }
-
 
 }

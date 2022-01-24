@@ -68,46 +68,20 @@ namespace NSS.Blast.Compiler
     /// 4.1 - analyse parameters:  determine parameter types and check inputs and outputs
     /// 4.2 - analyse:             analyse nodes, reorder were needed, optimize for execution
     /// 5   - flatten:             flatten execution path
-    /// 6   - compile:             generate bytecode from the internal representation 
-    /// 7   - optimize:            optimize bytecode patterns 
-    /// 8   - package:             package bytecode and set it up for execution 
-    ///  
-    /// Grammer: 
+    /// 6   - node optimizer:      optimize nodes 
+    /// 7   - compile:             generate bytecode from the internal representation 
+    /// 8   - optimize bytecode:   optimize bytecode patterns 
+    /// 9   - package:             package bytecode and set it up for execution 
     /// 
-    /// - identifiers seperated by operations, control characters (); and whitespace
-    /// - variables and functions are identifiers, functions must be known during compiling
-    /// - numerics are . seperated identifiers with 2 elements and no whitespace [whitespace is not maintained..]
-    /// - operators: - + / * & | ^ < > = != !     todo: %
-    /// - identifier: [a..z]([a..z|0..9])*
-    /// - statement: sequence terminated with ; 
-    /// 
-    /// Flow:  
-    /// 
-    /// >> a sequence is a list of functions, operations and variables terminated with a ; 
-    /// >> a statement is a function call or assigment
-    /// >> a compound is a collection of statements contained within ( .. ) 
-    /// 
-    /// - sequence = [function/op/var]* ;
-    /// - statement = [function(sequence)] / [assignment(sequence)] / [controlflow(condition, compound)]
-    /// - compound = ([statement]*)
-    /// 
-    /// - nesting in: functions, conditions, ifthenelse while and switch is supported
-    /// - assignment: var = sequence = var op var op func( [sequence] );
-    /// - condition: var = var | func( compound );
-    /// - if (condition) then ( compound ) else ( compound ); 
-    /// - while(condition) ( compound )
-    /// 
-    /// 
-    /// 
-    /// </summary>
+    ///</summary>
     static public class BlastCompiler
     {
-       // do not change! without this cow code wont compile
        //   ^__^
        //   (oo)\_______
        //   (__)\       )\/\
        //       ||----w |
        //       ||     ||
+
        /// <summary>
        /// from this opcode until opt_ident constant values are encoded
        /// </summary>
