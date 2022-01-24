@@ -328,7 +328,7 @@ namespace NSS.Blast
         {
 #if NOT_USING_UNITY
             BlastInterpretor blaster = default;
-            blaster.SetPackage(package.Package);
+            blaster.SetPackage(package);
             return blaster.Execute(Engine, environment, caller);
 #else
             execute_package_burst job = default;
@@ -342,14 +342,29 @@ namespace NSS.Blast
 #endif
         }
 
-        [BurstCompatible]
-        public int Execute(BlastPackageData package, IntPtr environment, IntPtr ssmd_data, int ssmd_datacount)
+        /// <summary>
+        /// Execute PackageData in SSMD mode
+        /// </summary>
+        /// <param name="package">the package data</param>
+        /// <param name="environment">pointer to environment data</param>
+        /// <param name="ssmd_data">pointer to ssmd data</param>
+        /// <param name="ssmd_datacount">number of records in ssmd data</param>
+        /// <returns>exitcode (blasterror)</returns>
+        public int Execute(BlastScriptPackage package, IntPtr environment, IntPtr ssmd_data, int ssmd_datacount)
         {
-            return Execute(package, environment, (BlastSSMDDataStack*)ssmd_data.ToPointer(), ssmd_datacount); 
+            return Execute(package.Package, environment, (BlastSSMDDataStack*)ssmd_data.ToPointer(), ssmd_datacount); 
         }
 
+        /// <summary>
+        /// Execute PackageData in SSMD mode
+        /// </summary>
+        /// <param name="package">the package data</param>
+        /// <param name="environment">pointer to environment data</param>
+        /// <param name="ssmd_data">pointer to ssmd data</param>
+        /// <param name="ssmd_datacount">number of records in ssmd data</param>
+        /// <returns>exitcode (blasterror)</returns>
         [BurstCompatible]
-        public int Execute(BlastPackageData package, IntPtr environment, BlastSSMDDataStack* ssmd_data, int ssmd_datacount)
+        public int Execute(BlastPackageData package, IntPtr environment, [NoAlias] BlastSSMDDataStack* ssmd_data, int ssmd_datacount)
         {
             Assert.IsTrue(package.IsAllocated, "package not allocated"); 
             Assert.IsTrue(package.PackageMode == BlastPackageMode.SSMD, "only ssmd packages are supported for this execute overload");
@@ -373,6 +388,7 @@ namespace NSS.Blast
 
     }
 
+#if !NOT_USING_UNITY
 
         [BurstCompile]
         unsafe struct execute_package_ssmd_burst : IJob
@@ -425,10 +441,10 @@ namespace NSS.Blast
             }
         }
 
+#endif
+#endregion
 
-        #endregion
-
-        #region Package
+#region Package
 
         [BurstDiscard]
         public static BlastScriptPackage Package(BlastScript script)

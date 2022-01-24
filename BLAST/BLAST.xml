@@ -122,6 +122,35 @@
             <param name="caller">optional callerdata [threadonly]</param>
             <returns>exitcode 0 on success</returns>
         </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData,System.IntPtr,System.IntPtr)">
+            <summary>
+            execute package in given environment with attached caller data
+            </summary>
+            <param name="package">the package to execute</param>
+            <param name="environment">optional environment data [global-data]</param>
+            <param name="caller">optional callerdata [threadonly]</param>
+            <returns>exitcode 0 on success</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage,System.IntPtr,System.IntPtr,System.Int32)">
+            <summary>
+            Execute PackageData in SSMD mode
+            </summary>
+            <param name="package">the package data</param>
+            <param name="environment">pointer to environment data</param>
+            <param name="ssmd_data">pointer to ssmd data</param>
+            <param name="ssmd_datacount">number of records in ssmd data</param>
+            <returns>exitcode (blasterror)</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)">
+            <summary>
+            Execute PackageData in SSMD mode
+            </summary>
+            <param name="package">the package data</param>
+            <param name="environment">pointer to environment data</param>
+            <param name="ssmd_data">pointer to ssmd data</param>
+            <param name="ssmd_datacount">number of records in ssmd data</param>
+            <returns>exitcode (blasterror)</returns>
+        </member>
         <member name="M:NSS.Blast.Blast.GetConstantValueOperation(System.String,System.Single)">
             <summary>
             get the script_op belonging to a constant value, eiter by name or value 
@@ -705,6 +734,11 @@
         <member name="P:NSS.Blast.BlastScriptPackage.IsAllocated">
             <summary>
             Returns true if native memory is allocated for the package 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptPackage.PackageSize">
+            <summary>
+            size of package data 
             </summary>
         </member>
         <member name="M:NSS.Blast.BlastScriptPackage.Destroy">
