@@ -118,6 +118,8 @@ namespace NSS.Blast
 
     }
 
+#if NOT_USING_UNITY
+#else
 
     [BurstCompile]
     unsafe public struct blast_execute_package_ssmd_burst_job : IJob
@@ -173,7 +175,7 @@ namespace NSS.Blast
             exitcode = blaster.Execute(engine, environment, caller);
         }
     }
-
+#endif
 
     /// <summary>
     /// Blast Engine
@@ -242,7 +244,7 @@ namespace NSS.Blast
         /// </summary>
         static internal object mt_lock = new object();
 
-        #region Create / Destroy
+#region Create / Destroy
         public unsafe static Blast Create(Allocator allocator)
         {
             Blast blast;
@@ -296,9 +298,9 @@ namespace NSS.Blast
             is_created = false;
         }
 
-        #endregion
+#endregion
 
-        #region Execute 
+#region Execute 
 
         [BurstDiscard]
         [Obsolete]//doesnt use burst
@@ -372,7 +374,7 @@ namespace NSS.Blast
             job.Run();
 
             return job.exitcode; 
-#endif 
+#endif
         }
         /// <summary>
         /// execute package in given environment with attached caller data
@@ -386,7 +388,7 @@ namespace NSS.Blast
         {
 #if NOT_USING_UNITY
             BlastInterpretor blaster = default;
-            blaster.SetPackage(package.Package);
+            blaster.SetPackage(package);
             return blaster.Execute(Engine, environment, caller);
 #else
             blast_execute_package_burst_job job = default;
@@ -433,9 +435,9 @@ namespace NSS.Blast
 
 
 
-        #endregion
+#endregion
 
-        #region Package
+#region Package
 
         [BurstDiscard]
         public static BlastScriptPackage Package(BlastScript script)
