@@ -114,6 +114,64 @@ namespace NSS.Blast
 
         #endregion
 
+
+
+    }
+
+
+    [BurstCompile]
+    unsafe public struct blast_execute_package_ssmd_burst_job : IJob
+    {
+        public BlastSSMDInterpretor blaster;
+        public BlastPackageData package;
+
+        [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
+        public IntPtr engine;
+
+        [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
+        public IntPtr data_buffer;
+
+        public int ssmd_datacount;
+
+        [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
+        public IntPtr environment;
+
+        public int exitcode;
+
+        public void Execute()
+        {
+            exitcode = blaster.Execute(package, (BlastEngineData*)engine, environment, (BlastSSMDDataStack*)data_buffer, ssmd_datacount);
+        }
+    }
+
+    [BurstCompile]
+    unsafe public struct blast_execute_package_burst_job : IJob
+    {
+        public BlastInterpretor blaster;
+        public BlastPackageData package;
+
+        [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
+        public IntPtr engine;
+
+        [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
+        public IntPtr environment;
+
+        [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
+        public IntPtr caller;
+
+        public int exitcode;
+
+        public void Execute()
+        {
+            blaster.SetPackage(package);
+            exitcode = blaster.Execute(engine, environment, caller);
+        }
     }
 
 
@@ -306,7 +364,7 @@ namespace NSS.Blast
             blaster.SetPackage(package.Package);
             return blaster.Execute(Engine, environment, caller);
 #else
-            execute_package_burst job = default;
+            blast_execute_package_burst_job job = default;
             job.engine = Engine;
             job.package = package.Package;
             job.environment = environment;
@@ -331,7 +389,7 @@ namespace NSS.Blast
             blaster.SetPackage(package.Package);
             return blaster.Execute(Engine, environment, caller);
 #else
-            execute_package_burst job = default;
+            blast_execute_package_burst_job job = default;
             job.engine = Engine;
             job.package = package;
             job.environment = environment;
@@ -360,7 +418,7 @@ namespace NSS.Blast
             return blaster.Execute((BlastEngineData*)Engine, environment, ssmd_data, ssmd_datacount); 
 #else
 
-            execute_package_ssmd_burst job = default;
+            blast_execute_package_ssmd_burst_job job = default;
             job.engine = Engine;
             job.package = package;
             job.ssmd_datacount = ssmd_datacount;
@@ -373,57 +431,6 @@ namespace NSS.Blast
 
     }
 
-
-        [BurstCompile]
-        unsafe struct execute_package_ssmd_burst : IJob
-        {
-            public BlastSSMDInterpretor blaster;
-            public BlastPackageData package;
-
-            [NativeDisableUnsafePtrRestriction]
-            public IntPtr engine;
-            public int ssmd_datacount;
-
-            [NoAlias]
-            [NativeDisableUnsafePtrRestriction]
-            public IntPtr data_buffer;
-
-            [NoAlias]
-            [NativeDisableUnsafePtrRestriction]
-            public IntPtr environment;
-            
-            public int exitcode;
-
-            public void Execute()
-            {
-                exitcode = blaster.Execute(package, (BlastEngineData*)engine, environment, (BlastSSMDDataStack*)data_buffer, ssmd_datacount);
-            }
-        }
-        [BurstCompile]
-        unsafe struct execute_package_burst : IJob
-        {
-            public BlastInterpretor blaster;
-            public BlastPackageData package;
-
-            [NativeDisableUnsafePtrRestriction]
-            public IntPtr engine;
-
-            [NoAlias]
-            [NativeDisableUnsafePtrRestriction]
-            public IntPtr environment;
-
-            [NoAlias]
-            [NativeDisableUnsafePtrRestriction]
-            public IntPtr caller;
-
-            public int exitcode;
-
-            public void Execute()
-            {
-                blaster.SetPackage(package); 
-                exitcode = blaster.Execute(engine, environment, caller);
-            }
-        }
 
 
         #endregion

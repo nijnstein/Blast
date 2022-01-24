@@ -5,6 +5,7 @@
     // for debug functions 
     using NSS.Blast.Standalone;
 #else 
+
 // burst wont compile strings in debug functions other then unityengine.debug.log
 using UnityEngine;
 #endif 
