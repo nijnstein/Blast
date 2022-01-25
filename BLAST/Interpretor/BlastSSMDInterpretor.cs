@@ -1,6 +1,6 @@
 ﻿using NSS.Blast.Interpretor;
 
-#if STANDALONE
+#if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else

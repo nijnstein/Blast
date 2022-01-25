@@ -1,5 +1,5 @@
 ﻿
-#if STANDALONE
+#if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else
@@ -85,7 +85,36 @@ namespace NSS.Blast.Compiler
         public bool HasChildren => children != null && children.Count > 0;
         public bool HasOneChild => children != null && children.Count == 1;
         public bool HasIndexers => indexers != null && indexers.Count > 0;
-        public bool HasIdentifier => !string.IsNullOrWhiteSpace(identifier); 
+        public bool HasIdentifier => !string.IsNullOrWhiteSpace(identifier);
+
+        /// <summary>
+        /// get the total number of nodes in the tree as seen from current node
+        /// </summary>
+        public int CountNodes()
+        {
+            return CountChildNodes(this); 
+        }
+
+        /// <summary>
+        /// get the total number of nodes in the children of n
+        /// </summary>
+        /// <param name="n">the node to count all child nodes of</param>
+        /// <returns></returns>
+        static public int CountChildNodes(node n)
+        {
+            if (n == null || !n.HasChildren)
+            {
+                return 0;
+            }
+           
+            int c = n.ChildCount; 
+            
+            for(int i = 0; i < n.ChildCount;i++)
+            {
+                c += CountChildNodes(n.children[i]);                    
+            }
+            return c; 
+        }
 
         /// <summary>
         /// check if a node equals a vector definition: 

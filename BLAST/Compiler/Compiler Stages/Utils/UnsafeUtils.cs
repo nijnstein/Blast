@@ -1,4 +1,4 @@
-﻿#if !STANDALONE
+﻿#if !STANDALONE_VSBUILD
     using Unity.Collections.LowLevel.Unsafe; 
 #endif
 
@@ -9,7 +9,7 @@ namespace NSS.Blast
 {
     unsafe public struct UnsafeUtils
     {
-#if STANDALONE 
+#if STANDALONE_VSBUILD 
         unsafe public static void* Malloc(long size, int alignment, Allocator allocator)
         {
             return System.Runtime.InteropServices.Marshal.AllocHGlobal((int)size).ToPointer();

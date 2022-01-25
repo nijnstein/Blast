@@ -1,6 +1,11 @@
-﻿#if NET_4_6 && (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN)	
-    #define CSC
+﻿#if NET_4_6 && (UNITY_STANDALONE_VSBUILD_WIN || UNITY_EDITOR_WIN)
+#define CSC
 #endif
+#if STANDALONE_VSBUILD
+    using NSS.Blast.Standalone; 
+#else
+    using UnityEngine;    
+#endif 
 using Microsoft.CSharp;
 using NSS.Blast.Compiler.Stage;
 using System;
@@ -33,7 +38,7 @@ namespace NSS.Blast.Compiler.Stage
               }
             }");
             results.Errors.Cast<CompilerError>().ToList().ForEach(error =>
-                Standalone.Debug.LogError(error.ErrorText)
+                Debug.LogError(error.ErrorText)
             );
         }
     }

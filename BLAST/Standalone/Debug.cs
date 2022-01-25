@@ -1,5 +1,5 @@
 ﻿
-#if STANDALONE
+#if STANDALONE_VSBUILD
 using System;
 using Unity.Collections;
 using System.Runtime.InteropServices;

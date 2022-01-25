@@ -1,4 +1,4 @@
-﻿#if STANDALONE
+﻿#if STANDALONE_VSBUILD
 
 using System;
 

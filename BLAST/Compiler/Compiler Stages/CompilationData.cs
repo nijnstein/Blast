@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 
-#if STANDALONE
+#if STANDALONE_VSBUILD
     using NSS.Blast.Standalone; 
 #else
     using UnityEngine;
@@ -105,7 +105,7 @@ namespace NSS.Blast.Compiler
             if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
             if (CompilerOptions.Verbose)
             {
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
                 Debug.Log(msg);
 #else
                 System.Diagnostics.Debug.WriteLine(msg);
@@ -134,7 +134,7 @@ namespace NSS.Blast.Compiler
             Debug.LogWarning(msg);
         }
 
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
         string FormatWithColor(string msg, Color rgb)
         {
             return string.Format(
@@ -215,14 +215,14 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public BlastCompilerOptions CompilerOptions { get; set; }
 
-#region Code Display 
+        #region Code Display 
 
 
         /// <summary>
         /// this version has a little more information than the generic bytecode reader in blast due to having access to all compilation data
         /// </summary>
         /// <returns></returns>
-        public unsafe string GetHumanReadableCode()
+        public unsafe string GetHumanReadableCode(int columns = 10, bool index = false)
         {
             StringBuilder sb = StringBuilderCache.Acquire();
 
@@ -230,7 +230,7 @@ namespace NSS.Blast.Compiler
             {
                 List<byte> bytes = new List<byte>(Executable.code_size);
                 for (int i = 0; i < Executable.code_size; i++) bytes.Add(Executable.code[i]);
-                WriteHumanReadableCode(sb, bytes);
+                WriteHumanReadableCode(sb, bytes, columns, index);
 
                 // ending a jump after program end?
                 foreach (var jump in Jumps.Where(x => x.Item1 + x.Item2 >= bytes.Count))
@@ -247,7 +247,7 @@ namespace NSS.Blast.Compiler
                 {
                     List<byte> bytes = new List<byte>(code.list.Count);
                     for (int i = 0; i < code.list.Count; i++) bytes.Add(code.list[i].code); 
-                    WriteHumanReadableCode(sb, bytes);
+                    WriteHumanReadableCode(sb, bytes, columns, index);
                 }
                 else
                 {
@@ -259,7 +259,7 @@ namespace NSS.Blast.Compiler
 
 
         }
-        public unsafe void WriteHumanReadableCode(StringBuilder sb, List<byte> code)
+        public unsafe void WriteHumanReadableCode(StringBuilder sb, List<byte> code, int columns = 10, bool index = true)
         {
             int i = 0;
             blast_operation prev = blast_operation.nop;
@@ -268,7 +268,7 @@ namespace NSS.Blast.Compiler
             {
                 byte op = code[i];
 
-                if (i % 10 == 0)
+                if (index && i % columns == 0)
                 {
                     if (i != 0) sb.Append("\n");
                     sb.Append("" + i.ToString().PadLeft(3, '0') + "| ");
@@ -520,7 +520,7 @@ namespace NSS.Blast.Compiler
 
             }
         }
-        public unsafe string GetHumanReadableBytes()
+        public unsafe string GetHumanReadableBytes(int columns = 10, bool index = true)
         {
             StringBuilder sb = StringBuilderCache.Acquire();
 
@@ -528,12 +528,12 @@ namespace NSS.Blast.Compiler
             {
                 for (int i = 0; i < Executable.code_size; i++)
                 {
-                    if (i % 10 == 0)
+                    if (index && i % columns == 0)
                     {
                         sb.Append($"{i.ToString().PadLeft(3, '0')}| ");
                     }
                     sb.Append($"{Executable.code[i].ToString().PadLeft(3, '0')} ");
-                    if (i % 10 == 9)
+                    if (i % columns == columns - 1)
                     {
                         sb.AppendLine();
                     }
@@ -543,15 +543,15 @@ namespace NSS.Blast.Compiler
             {
                 if (code != null && code.list != null && code.list.Count > 0)
                 {
-                    sb.AppendLine("INTERMEDIATE CODE BYTES: ");
+                    sb.AppendLine("IM: ");
                     for (int i = 0; i < code.list.Count; i++)
                     {
-                        if (i % 10 == 0)
+                        if (index && i % columns == 0)
                         {
                             sb.Append($"{i.ToString().PadLeft(3, '0')}| ");
                         }
                         sb.Append($"{code.list[i].ToString().PadLeft(3, '0')} ");
-                        if (i % 10 == 9)
+                        if (i % columns == columns - 1)
                         {
                             sb.AppendLine();
                         }

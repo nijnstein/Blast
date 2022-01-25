@@ -1,4 +1,4 @@
-﻿#if STANDALONE
+﻿#if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else
@@ -116,7 +116,7 @@ namespace NSS.Blast.Register
             return Register(BlastScript.FromText(code, name, id));
         }
 
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
 
         /// <summary>
         /// Register a resource file as a blast script with the registry

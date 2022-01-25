@@ -4,14 +4,14 @@ using System.IO;
 using System.Text;
 using System.Linq;
 
-#if STANDALONE
+#if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
     using Unity.Assertions;
 #else
 using UnityEngine;
-    using UnityEngine.Assertions; 
-    using Unity.Jobs;
-    using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine.Assertions;
+using Unity.Jobs;
+using Unity.Collections.LowLevel.Unsafe;
 #endif
 
 using NSS.Blast.Cache;
@@ -25,6 +25,12 @@ using Unity.Mathematics;
 using Unity.Burst;
 
 using Random = Unity.Mathematics.Random;
+using System.Runtime.CompilerServices;
+
+
+
+
+
 
 namespace NSS.Blast
 {
@@ -73,7 +79,7 @@ namespace NSS.Blast
                 random.InitState(i);
             }
         }
-        
+
         #region [try]get function pointer 
 
         /// <summary>
@@ -118,70 +124,10 @@ namespace NSS.Blast
 
     }
 
-#if STANDALONE
-#else
-
-    [BurstCompile]
-    unsafe public struct blast_execute_package_ssmd_burst_job : IJob
-    {
-        public BlastSSMDInterpretor blaster;
-        public BlastPackageData package;
-
-        [NoAlias]
-        [NativeDisableUnsafePtrRestriction]
-        public IntPtr engine;
-
-        [NoAlias]
-        [NativeDisableUnsafePtrRestriction]
-        public IntPtr data_buffer;
-
-        public int ssmd_datacount;
-
-        [NoAlias]
-        [NativeDisableUnsafePtrRestriction]
-        public IntPtr environment;
-
-        public int exitcode;
-
-        public void Execute()
-        {
-            exitcode = blaster.Execute(package, (BlastEngineData*)engine, environment, (BlastSSMDDataStack*)data_buffer, ssmd_datacount);
-        }
-    }
-
-    [BurstCompile]
-    unsafe public struct blast_execute_package_burst_job : IJob
-    {
-        public BlastInterpretor blaster;
-        public BlastPackageData package;
-
-        [NoAlias]
-        [NativeDisableUnsafePtrRestriction]
-        public IntPtr engine;
-
-        [NoAlias]
-        [NativeDisableUnsafePtrRestriction]
-        public IntPtr environment;
-
-        [NoAlias]
-        [NativeDisableUnsafePtrRestriction]
-        public IntPtr caller;
-
-        public int exitcode;
-
-        public void Execute()
-        {
-            blaster.SetPackage(package);
-            exitcode = blaster.Execute(engine, environment, caller);
-        }
-    }
-#endif
-
     /// <summary>
     /// Blast Engine
     /// - use seperate instances for threads
     /// </summary>
-    [BurstCompile]
     unsafe public struct Blast
     {
         /// <summary>
@@ -207,7 +153,7 @@ namespace NSS.Blast
         /// <summary>
         /// the comment character 
         /// </summary>
-        public const char Comment = '#';                      
+        public const char Comment = '#';
 
         /// <summary>
         /// the value used for invalid numerics 
@@ -217,7 +163,7 @@ namespace NSS.Blast
         /// <summary>
         /// The fill pattern for stack on initialize, easier to spot bugs if stack is filled with a pattern instead of zeros or random which might have different causes, something bugged setting all bytes to 101 should be very suspicious
         /// </summary>
-        public const byte StackFillPattern = 101; 
+        public const byte StackFillPattern = 101;
 
         /// <summary>
         /// Pointer to native memory holding data used during interpretation:
@@ -233,7 +179,7 @@ namespace NSS.Blast
         /// true if the structure is initialized and memory is allocated 
         /// </summary>
         public bool IsCreated { get { return is_created; } }
-        
+
         /// <summary>
         /// IntPtr to global data object used by interpretor, it holds references to constant values and function pointers 
         /// </summary>
@@ -244,7 +190,7 @@ namespace NSS.Blast
         /// </summary>
         static internal object mt_lock = new object();
 
-#region Create / Destroy
+        #region Create / Destroy
         public unsafe static Blast Create(Allocator allocator)
         {
             Blast blast;
@@ -268,10 +214,10 @@ namespace NSS.Blast
                 blast.data->functionpointers[i] = call.FunctionPointer;
             }
 
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
             blast._burst_hpc_once_job = default;
             blast._burst_once_job = default;
-            blast._burst_once_job.interpretor = default; 
+            blast._burst_once_job.interpretor = default;
 #endif
             blast.is_created = true;
             return blast;
@@ -298,146 +244,58 @@ namespace NSS.Blast
             is_created = false;
         }
 
+        #endregion
+
+        #region Execute 
+
+#if !STANDALONE_VSBUILD
+
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public NSS.Blast.Jobs.blast_execute_package_burst_job CreateExecuteJob(BlastPackageData package)
+        {
+            return CreateExecuteJob(package, IntPtr.Zero, IntPtr.Zero); 
+        }
+
+
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public NSS.Blast.Jobs.blast_execute_package_burst_job CreateExecuteJob(BlastPackageData package, IntPtr environment, IntPtr caller)
+        {
+            return new Jobs.blast_execute_package_burst_job()
+            {
+                engine = Engine,
+                package = package,
+                environment = environment,
+                caller = caller
+            };
+        }
+
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public NSS.Blast.Jobs.blast_execute_package_ssmd_burst_job CreateSSMDJob(BlastPackageData package, IntPtr ssmd_data, int ssmd_count)
+        {
+            return CreateSSMDJob(package, ssmd_data, IntPtr.Zero, ssmd_count); 
+        }
+
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public NSS.Blast.Jobs.blast_execute_package_ssmd_burst_job CreateSSMDJob(BlastPackageData package, IntPtr environment, IntPtr ssmd_data, int ssmd_count)
+        {
+            return new Jobs.blast_execute_package_ssmd_burst_job()
+            {
+                engine = Engine,
+                package = package,
+                environment = environment,
+                data_buffer = ssmd_data,
+                ssmd_datacount = ssmd_count
+            };
+        }
+
+#endif 
 #endregion
 
-#region Execute 
-
-        [BurstDiscard]
-        [Obsolete]//doesnt use burst
-        public static int Execute(string code, int stack_size = 64)
-        {
-            Blast blast = Blast.Create(Allocator.Temp);
-            try
-            {
-                BlastIntermediate blast_im = BlastCompiler.Compile(blast, code, new BlastCompilerOptions(stack_size)).Executable;
-                return blast_im.Execute(blast.Engine);
-            }
-            finally
-            {
-                blast.Destroy(); 
-            }
-        }
-
-        [BurstDiscard]
-        public static int Execute(BlastScriptPackage package)
-        {
-            return Execute(package.Package); 
-        }
-
-        [BurstDiscard]
-        public static int Execute(BlastPackageData package)
-        {
-            unsafe
-            {
-                Blast blast = Blast.Create(Allocator.Temp);
-                try
-                {
-                    return blast.Execute(package, IntPtr.Zero, IntPtr.Zero); 
-                }
-                finally
-                {
-                    blast.Destroy();
-                }
-            }
-        }
-
-        [BurstCompatible]
-        [Obsolete] /// doesnt use burst + antipattern
-        public int Execute(string code)
-        {
-            return BlastCompiler
-                .Compile(this, code, new BlastCompilerOptions(64))
-                .Executable
-                .Execute(Engine); 
-        }
-
-        /// <summary>
-        /// execute package in given environment with attached caller data
-        /// </summary>
-        /// <param name="package">the package to execute</param>
-        /// <param name="environment">optional environment data [global-data]</param>
-        /// <param name="caller">optional callerdata [threadonly]</param>
-        /// <returns>exitcode 0 on success</returns>
-        [BurstCompatible]
-        public int Execute(BlastScriptPackage package, IntPtr environment, IntPtr caller)
-        {
-#if STANDALONE
-            BlastInterpretor blaster = default;
-            blaster.SetPackage(package.Package);
-            return blaster.Execute(Engine, environment, caller);
-#else
-            blast_execute_package_burst_job job = default;
-            job.engine = Engine;
-            job.package = package.Package;
-            job.environment = environment;
-            job.caller = caller;
-            job.Run();
-
-            return job.exitcode; 
-#endif
-        }
-        /// <summary>
-        /// execute package in given environment with attached caller data
-        /// </summary>
-        /// <param name="package">the package to execute</param>
-        /// <param name="environment">optional environment data [global-data]</param>
-        /// <param name="caller">optional callerdata [threadonly]</param>
-        /// <returns>exitcode 0 on success</returns>
-        [BurstCompatible]
-        public int Execute(BlastPackageData package, IntPtr environment, IntPtr caller)
-        {
-#if STANDALONE
-            BlastInterpretor blaster = default;
-            blaster.SetPackage(package);
-            return blaster.Execute(Engine, environment, caller);
-#else
-            blast_execute_package_burst_job job = default;
-            job.engine = Engine;
-            job.package = package;
-            job.environment = environment;
-            job.caller = caller;
-            job.Run();
-
-            return job.exitcode;
-#endif
-        }
-
-        [BurstCompatible]
-        public int Execute(BlastPackageData package, IntPtr environment, IntPtr ssmd_data, int ssmd_datacount)
-        {
-            return Execute(package, environment, (BlastSSMDDataStack*)ssmd_data.ToPointer(), ssmd_datacount); 
-        }
-
-        [BurstCompatible]
-        public int Execute(BlastPackageData package, IntPtr environment, BlastSSMDDataStack* ssmd_data, int ssmd_datacount)
-        {
-            Assert.IsTrue(package.IsAllocated, "package not allocated"); 
-            Assert.IsTrue(package.PackageMode == BlastPackageMode.SSMD, "only ssmd packages are supported for this execute overload");
-
-#if STANDALONE
-            BlastSSMDInterpretor blaster = default;
-            blaster.SetPackage(package);
-            return blaster.Execute((BlastEngineData*)Engine, environment, ssmd_data, ssmd_datacount); 
-#else
-
-            blast_execute_package_ssmd_burst_job job = default;
-            job.engine = Engine;
-            job.package = package;
-            job.ssmd_datacount = ssmd_datacount;
-            job.data_buffer = new IntPtr(ssmd_data);
-            job.environment = environment; 
-
-            job.Schedule().Complete();
-            return job.exitcode; 
-#endif
-
-    }
-
-
-
-#endregion
-
-#region Package
+        #region Package
 
         [BurstDiscard]
         public static BlastScriptPackage Package(BlastScript script)
@@ -455,7 +313,7 @@ namespace NSS.Blast
         [BurstDiscard]
         public static BlastScriptPackage Package(string code)
         {
-            return Blast.Package(BlastScript.FromText(code)); 
+            return Blast.Package(BlastScript.FromText(code));
         }
 
         [BurstDiscard]
@@ -470,9 +328,19 @@ namespace NSS.Blast
             return BlastCompiler.CompilePackage(this, script, options);
         }
 
-#endregion
+        #endregion
 
-#region Constants 
+        #region GetNodeTree
+
+        [BurstDiscard]
+        static public CompilationData Intermediate(Blast blast, BlastScript script, BlastCompilerOptions options = null)
+        {
+            return BlastCompiler.Compile(blast, script, options); 
+        }
+
+        #endregion 
+
+        #region Constants 
 
         [BurstDiscard]
         public IEnumerable<blast_operation> ValueOperations()
@@ -599,7 +467,7 @@ namespace NSS.Blast
                 default:
 
 #if CHECK_STACK
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
                     Standalone.Debug.LogError($"blast.get_constant_value({op}) -> not a value -> NaN returned to caller");
 #else
                     System.Diagnostics.Debug.WriteLine($"blast.get_constant_value({op}) -> not a value -> NaN returned to caller");
@@ -621,7 +489,7 @@ namespace NSS.Blast
         public blast_operation GetConstantValueOperation(string value, float constant_epsilon = 0.0001f)
         {
             // prevent matching to epsilon and/or min flt values (as they are very close to 0) 
-            if (value == "0") return blast_operation.value_0; 
+            if (value == "0") return blast_operation.value_0;
 
             // constant names should have been done earlier. check anyway
             blast_operation constant_op = IsNamedSystemConstant(value);
@@ -686,9 +554,9 @@ namespace NSS.Blast
         }
 
 
-#endregion
+        #endregion
 
-#region Tokens 
+        #region Tokens 
 
         /// <summary>
         /// defines tokens that can be used in script
@@ -728,6 +596,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="op">operation to check</param>
         /// <returns>true if a jump</returns>
+        [BurstCompile]
         public static bool IsJumpOperation(blast_operation op)
         {
             return op == blast_operation.jump || op == blast_operation.jump_back || op == blast_operation.jz || op == blast_operation.jnz;
@@ -741,6 +610,7 @@ namespace NSS.Blast
         /// <param name="idx">start of range to view</param>
         /// <param name="idx_max">end of range to view</param>
         /// <returns>a single line string with token descriptions</returns>
+        [BurstDiscard]
         public static string VisualizeTokens(List<Tuple<BlastScriptToken, string>> tokens, int idx, int idx_max)
         {
             StringBuilder sb = StringBuilderCache.Acquire();
@@ -765,6 +635,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="token">the script token</param>
         /// <returns>corresponding opcode</returns>
+        [BurstCompile]
         public static blast_operation GetBlastOperationFromToken(BlastScriptToken token)
         {
             switch (token)
@@ -783,18 +654,18 @@ namespace NSS.Blast
                 case BlastScriptToken.SmallerThen: return blast_operation.smaller;
                 case BlastScriptToken.GreaterThenEquals: return blast_operation.greater_equals;
                 case BlastScriptToken.SmallerThenEquals: return blast_operation.smaller_equals;
-                default: return blast_operation.nop; 
+                default: return blast_operation.nop;
             }
         }
 
-#endregion
+        #endregion
 
-#region Functions 
+        #region Functions 
 
-    /// <summary>
-    /// defined functions for script
-    /// </summary>
-    static public List<ScriptFunctionDefinition> Functions = new List<ScriptFunctionDefinition>()
+        /// <summary>
+        /// defined functions for script
+        /// </summary>
+        static public List<ScriptFunctionDefinition> Functions = new List<ScriptFunctionDefinition>()
         {
             new ScriptFunctionDefinition(0, "abs", 1, 1, 0, 0, blast_operation.abs),
 
@@ -871,6 +742,7 @@ namespace NSS.Blast
         /// <summary>
         /// get the function for a sequence of op, add -> adda
         /// </summary>
+        [BurstCompile]
         static internal blast_operation GetSequenceFunction(blast_operation op)
         {
             // transform the sequence into a function call matching the operation 
@@ -890,6 +762,7 @@ namespace NSS.Blast
         /// <summary>
         /// return if there is a sequence function for the operation
         /// </summary>
+        [BurstCompile]
         static internal bool HasSequenceFunction(blast_operation op)
         {
             // transform the sequence into a function call matching the operation 
@@ -899,10 +772,10 @@ namespace NSS.Blast
                 case blast_operation.substract:
                 case blast_operation.divide:
                 case blast_operation.multiply:
-                case blast_operation.and: 
-                case blast_operation.or: return true; 
+                case blast_operation.and:
+                case blast_operation.or: return true;
             }
-            return false; 
+            return false;
         }
 
 
@@ -913,6 +786,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="op">the operation that should translate to a function used during interpretation</param>
         /// <returns>a function definition</returns>
+        [BurstDiscard]
         static public ScriptFunctionDefinition GetFunctionByOpCode(blast_operation op)
         {
             foreach (var f in Blast.Functions)
@@ -929,6 +803,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="name">the name of the function to lookup</param>
         /// <returns>a function definition</returns>
+        [BurstDiscard]
         static public ScriptFunctionDefinition GetFunctionByName(string name)
         {
             foreach (var f in Blast.Functions)
@@ -945,6 +820,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="function_id">the reserved id of the function to lookup</param>
         /// <returns>a function definition</returns>
+        [BurstDiscard]
         static public ScriptFunctionDefinition GetFunctionById(ReservedScriptFunctionIds function_id)
         {
             return GetFunctionById((int)function_id);
@@ -957,7 +833,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="function_id">the unique id of the function to lookup</param>
         /// <returns>a function definition</returns>
-
+        [BurstDiscard]
         static public ScriptFunctionDefinition GetFunctionById(int function_id)
         {
             foreach (var f in Blast.Functions)
@@ -973,8 +849,9 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="op">the operation mapping to a function</param>
         /// <returns>true if the function exists and has a variable parameter list</returns>
+        [BurstDiscard]
         static public bool IsVariableParamFunction(blast_operation op)
-        { 
+        {
             if (op == blast_operation.nop)
             {
                 return false;
@@ -988,12 +865,13 @@ namespace NSS.Blast
 
             return function.MinParameterCount != function.MaxParameterCount;
         }
-#endregion
+        #endregion
 
-#region Compiletime Function Pointers 
+        #region Compiletime Function Pointers 
 
         static public List<ExternalFunctionCall> FunctionCalls = new List<ExternalFunctionCall>();
 
+        [BurstDiscard]
         static public void DestroyAnyFunctionPointers()
         {
             if (FunctionCalls != null && FunctionCalls.Count > 0)
@@ -1002,6 +880,7 @@ namespace NSS.Blast
             }
         }
 
+        [BurstDiscard]
         static public int GetMaxFunctionId()
         {
             int max = int.MinValue;
@@ -1012,6 +891,7 @@ namespace NSS.Blast
             return max;
         }
 
+        [BurstDiscard]
         static public ExternalFunctionCall GetFunctionCallById(int id)
         {
             foreach (ExternalFunctionCall call in FunctionCalls)
@@ -1023,6 +903,7 @@ namespace NSS.Blast
             }
             return null;
         }
+        [BurstDiscard]
         static public bool TryGetFunctionCallById(int id, out ExternalFunctionCall fc)
         {
             foreach (ExternalFunctionCall call in FunctionCalls)
@@ -1037,6 +918,7 @@ namespace NSS.Blast
             return false;
         }
 
+        [BurstDiscard]
         static public ExternalFunctionCall GetFunctionCallByName(string name)
         {
             foreach (ExternalFunctionCall call in FunctionCalls)
@@ -1049,6 +931,7 @@ namespace NSS.Blast
             return null;
         }
 
+        [BurstDiscard]
         static public bool ExistsFunctionCall(string name)
         {
             return GetFunctionCallByName(name) != null;
@@ -1062,6 +945,7 @@ namespace NSS.Blast
         /// <param name="returns"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
+        [BurstDiscard]
         static public int RegisterFunction(string name, BlastVariableDataType returns, string[] parameters)
         {
             return RegisterFunction(default(NonGenericFunctionPointer), name, returns, parameters);
@@ -1072,6 +956,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="id"></param>
         /// <param name="fp"></param>
+        [BurstDiscard]
         static public void UpdateFunctionPointer(int id, NonGenericFunctionPointer fp)
         {
             Assert.IsNotNull(FunctionCalls);
@@ -1096,6 +981,7 @@ namespace NSS.Blast
         /// <param name="returns"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
+        [BurstDiscard]
         static public int RegisterFunction(NonGenericFunctionPointer fp, string name, BlastVariableDataType returns, string[] parameters)
         {
             Assert.IsNotNull(FunctionCalls);
@@ -1135,13 +1021,14 @@ namespace NSS.Blast
         }
 
 
-#endregion
+        #endregion
 
-#region Designtime CompileRegistry
+        #region Designtime CompileRegistry
 
         /// <summary>
         /// Enumerates all scripts known by blast 
         /// </summary>
+        [BurstDiscard]
         static public IEnumerable<BlastScript> Scripts => NSS.Blast.Register.BlastScriptRegistry.All();
 
 
@@ -1149,37 +1036,40 @@ namespace NSS.Blast
         /// <summary>
         /// Designtime compilation of script registry into hpc jobs
         /// </summary>
+        [BurstDiscard]
         static public void CompileRegistry(Blast blast, string target)
         {
-            List<BlastScript> scripts = NSS.Blast.Register.BlastScriptRegistry.All().ToList(); 
-            if(scripts.Count > 0)
+            List<BlastScript> scripts = NSS.Blast.Register.BlastScriptRegistry.All().ToList();
+            if (scripts.Count > 0)
             {
-                BlastCompilerOptions options = new BlastCompilerOptions() {
-                    Optimize = false, ConstantEpsilon = 0.001f
+                BlastCompilerOptions options = new BlastCompilerOptions()
+                {
+                    Optimize = false,
+                    ConstantEpsilon = 0.001f
                 };
 
-                List<string> code = new List<string>(); 
+                List<string> code = new List<string>();
                 foreach (BlastScript script in scripts)
                 {
                     HPCCompilationData data = BlastCompiler.CompileHPC(blast, script, options);
                     if (data.IsOK)
                     {
-                        code.Add(data.HPCCode); 
+                        code.Add(data.HPCCode);
                     }
                     else
                     {
-                        Debug.LogError("failed to compile script: " + script); 
+                        Debug.LogError("failed to compile script: " + script);
                     }
                 }
 
-                File.WriteAllText(target, HPCNamespace.CombineScriptsIntoNamespace(code)); 
+                File.WriteAllText(target, HPCNamespace.CombineScriptsIntoNamespace(code));
             }
         }
 #endif
-#endregion
+        #endregion
 
-#region Runtime compilation of configuration into compiletime script for use next compilation
-
+        #region Runtime compilation of configuration into compiletime script for use next compilation
+        [BurstDiscard]
         static public bool CompileIntoRegistry(Blast blast, BlastScript script, string script_directory)
         {
             Assert.IsNotNull(script);
@@ -1195,7 +1085,7 @@ namespace NSS.Blast
             HPCCompilationData data = BlastCompiler.CompileHPC(blast, script, options);
             if (!data.IsOK)
             {
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
                 Debug.LogError("failed to compile script: " + script);
 #else
                 System.Diagnostics.Debug.WriteLine("ERROR: Failed to compile script: " + script); 
@@ -1212,10 +1102,11 @@ namespace NSS.Blast
         }
 
 
-#endregion
+        #endregion
 
-#region HPC Jobs 
+        #region HPC Jobs 
         static Dictionary<int, IBlastHPCScriptJob> _hpc_jobs = null;
+        [BurstDiscard]
         public Dictionary<int, IBlastHPCScriptJob> HPCJobs
         {
             get
@@ -1238,6 +1129,7 @@ namespace NSS.Blast
                 return null;
             }
         }
+        [BurstDiscard]
         public IBlastHPCScriptJob GetHPCJob(int script_id)
         {
             if (is_created && script_id > 0)
@@ -1250,9 +1142,10 @@ namespace NSS.Blast
             }
             return null;
         }
-#endregion
+        #endregion
 
-#region bytecode reading / tostring
+        #region bytecode reading / tostring
+        [BurstDiscard]
         unsafe public static string GetByteCodeByteText(in byte* bytes, in int length, int column_count)
         {
             StringBuilder sb = new StringBuilder();
@@ -1268,6 +1161,7 @@ namespace NSS.Blast
         }
 
 
+        [BurstDiscard]
         unsafe public static string GetReadableByteCode(in byte* bytes, in int length)
         {
             StringBuilder sb = new StringBuilder();
@@ -1480,23 +1374,27 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="res"></param>
         /// <returns></returns>
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public bool IsError(BlastError res)
         {
-            return res != BlastError.success && res != BlastError.yield; 
+            return res != BlastError.success && res != BlastError.yield;
         }
 
         /// <summary>
         /// return if an error code actually means success 
         /// </summary>
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public bool IsSuccess(BlastError res)
         {
-            return res == BlastError.success; 
+            return res == BlastError.success;
         }
 
-#endregion
+        #endregion
 
-#region Execute Scripts (UNITY)
-#if !STANDALONE
+        #region Execute Scripts (UNITY)
+#if !STANDALONE_VSBUILD
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
         {
@@ -1507,7 +1405,7 @@ namespace NSS.Blast
 
             public void Execute()
             {
-                for(int i = 0; i < 1000;i++) interpretor.Execute(blast);
+                for (int i = 0; i < 1000; i++) interpretor.Execute(blast);
             }
         }
 
@@ -1517,15 +1415,15 @@ namespace NSS.Blast
             [NativeDisableUnsafePtrRestriction]
             public IntPtr blast;
 
-            public NativeArray<float> variables; 
+            public NativeArray<float> variables;
 
-            public FunctionPointer<BSExecuteDelegate> bsd; 
- 
+            public FunctionPointer<BSExecuteDelegate> bsd;
+
             public void Execute()
             {
                 unsafe
                 {
-                    for (int i = 0; i < 1000; i++) 
+                    for (int i = 0; i < 1000; i++)
                         bsd.Invoke(blast, (float*)variables.GetUnsafePtr());
                 }
             }
@@ -1534,6 +1432,7 @@ namespace NSS.Blast
         burst_once _burst_once_job;
         burst_hpc_once _burst_hpc_once_job;
 
+        [BurstDiscard]
         public int Execute(int script_id)
         {
             if (!is_created) return (int)BlastError.error_blast_not_initialized;
@@ -1547,10 +1446,11 @@ namespace NSS.Blast
             }
             else
             {
-                return Execute(run); 
+                return Execute(run);
             }
         }
 
+        [BurstDiscard]
         internal int Execute(runner run)
         {
             if (!is_created) return (int)BlastError.error_blast_not_initialized;
@@ -1575,14 +1475,14 @@ namespace NSS.Blast
 
                 default:
                     Debug.LogError($"runtype not supported: {run.Type}");
-                    break;            
+                    break;
             }
-            return 0; 
+            return 0;
         }
 #endif
-#endregion
+        #endregion
 
-#region Runners 
+        #region Runners 
 
         static Dictionary<int, runner> runners;
 
@@ -1591,6 +1491,7 @@ namespace NSS.Blast
             bs, hpc, cs
         }
 
+        [BurstDiscard]
         internal runner GetRunner(int script_id)
         {
             if (!is_created) return null;
@@ -1611,7 +1512,7 @@ namespace NSS.Blast
             }
 
             // to create a runner iterate fastest method first
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
             IBlastHPCScriptJob job = GetHPCJob(script_id);
             if (job != null)
             {
@@ -1663,7 +1564,7 @@ namespace NSS.Blast
             // option 1
             public BlastPackageData Package;
 
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
             // option 2
             public FunctionPointer<BSExecuteDelegate> HPCJobBSD;
             public NativeArray<float> HPCVariables;
@@ -1679,15 +1580,17 @@ namespace NSS.Blast
             }
         }
 
-#endregion
+        #endregion
 
-#region Bytecode Packages 
+        #region Bytecode Packages 
         static Dictionary<int, BlastScriptPackage> _bytecode_packages = new Dictionary<int, BlastScriptPackage>();
+        [BurstDiscard]
         static public int BytecodePackageCount => _bytecode_packages == null ? 0 : _bytecode_packages.Count;
 
         /// <summary>
         /// Using this list is not thread safe 
         /// </summary>
+        [BurstDiscard]
         static public Dictionary<int, BlastScriptPackage> BytecodePackages
         {
             get
@@ -1712,6 +1615,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="pkg">the package to add</param>
         /// <returns>the nr of packages in the repo after adding this one or 0 on failure</returns>
+        [BurstDiscard]
         static public int AddPackage(int script_id, BlastScriptPackage pkg)
         {
             if (pkg != null)
@@ -1736,6 +1640,7 @@ namespace NSS.Blast
             return 0;
         }
 
+        [BurstDiscard]
         static public BlastScriptPackage GetPackage(int script_id)
         {
             if (script_id <= 0) return null;
@@ -1753,10 +1658,11 @@ namespace NSS.Blast
             return null;
         }
 
-#endregion
+        #endregion
 
-#region Runtime Registration/Compilation of scripts 
+        #region Runtime Registration/Compilation of scripts 
 
+        [BurstDiscard]
         static public int RegisterAndCompile(Blast blast, BlastScript script)
         {
             // register script 
@@ -1773,11 +1679,13 @@ namespace NSS.Blast
             return id;
         }
 
+        [BurstDiscard]
         public int RegisterAndCompile(string code, string name = null, int id = 0)
         {
-            return RegisterAndCompile(this, code, name, id); 
+            return RegisterAndCompile(this, code, name, id);
         }
 
+        [BurstDiscard]
         static public int RegisterAndCompile(Blast blast, string code, string name = null, int id = 0)
         {
             id = BlastScriptRegistry.Register(code, name, id);
@@ -1793,7 +1701,8 @@ namespace NSS.Blast
             return id;
         }
 
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
+        [BurstDiscard]
         static public int RegisterAndCompile(Blast blast, string resource_filename_without_extension, int id = 0)
         {
             id = BlastScriptRegistry.RegisterScriptResource(resource_filename_without_extension, resource_filename_without_extension, id);
@@ -1810,7 +1719,7 @@ namespace NSS.Blast
         }
 #endif
 
-#endregion
+        #endregion
 
     }
 

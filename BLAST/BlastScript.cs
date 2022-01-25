@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
 using System.Runtime.InteropServices.WindowsRuntime;
 #endif
 using System.Threading;
@@ -58,7 +58,7 @@ namespace NSS.Blast
             };
         }
 
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
         /// <summary>
         /// load a script from resources
         /// </summary>

@@ -113,7 +113,7 @@ namespace NSS.Blast
         }
     }
 
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
     static class BurstCompilerUtil<T>
         where T : class
     {

@@ -1,8 +1,7 @@
-﻿#if STANDALONE
+﻿#if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
 #else
     using UnityEngine;
-    using Unity.Collections.LowLevel.Unsafe;
 #endif
 
 using System;

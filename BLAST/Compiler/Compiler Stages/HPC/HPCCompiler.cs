@@ -1,4 +1,4 @@
-﻿#if STANDALONE
+﻿#if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else
@@ -534,7 +534,7 @@ namespace NSS.Blast.Compiler.Stage
     }} ";
                 string result = string.Format(job, code_id, code, data.Script.Id);
 
-#if !STANDALONE
+#if !STANDALONE_VSBUILD
                 Debug.Log(result);
 #else
                 System.Diagnostics.Debug.WriteLine(result);

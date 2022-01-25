@@ -1,5 +1,5 @@
 ﻿using NSS.Blast.Cache;
-#if STANDALONE
+#if STANDALONE_VSBUILD
 using NSS.Blast.Standalone;
 #else
 using UnityEngine; 

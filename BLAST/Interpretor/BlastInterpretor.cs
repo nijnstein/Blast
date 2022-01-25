@@ -1,4 +1,4 @@
-﻿#if STANDALONE
+﻿#if STANDALONE_VSBUILD
     #if DEVELOPMENT_BUILD
         #define HANDLE_DEBUG_OP  
     #endif
@@ -19,7 +19,7 @@ namespace NSS.Blast.Interpretor
     
     /// <summary>
     /// 
-    ///  todo - use state machine instead of get_compound_result and internal grow-vector / operation sequence loop, should reduce load on stack frames
+    ///   V2 - use state machine instead of get_compound_result and internal grow-vector / operation sequence loop, should reduce load a lot on handling vectors 
     /// 
     ///   state ---- read root statement ----\ 
     ///       \------read compound ----------/
@@ -28,8 +28,10 @@ namespace NSS.Blast.Interpretor
     /// 
     /// 
     /// </summary>
-    //[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
+#if !STANDALONE_VSBUILD
     [BurstCompile]
+#endif
+
     unsafe public struct BlastInterpretor
     {
         /// <summary>
@@ -947,15 +949,23 @@ namespace NSS.Blast.Interpretor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal byte GetMetaDataSize(in byte* metadata, in byte offset)
+        static public byte GetMetaDataSize(in byte* metadata, in byte offset)
         {
             return (byte)(metadata[offset] & 0b0000_1111);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal BlastVariableDataType GetMetaDataType(in byte* metadata, in byte offset)
+        static public BlastVariableDataType GetMetaDataType(in byte* metadata, in byte offset)
         {
             return (BlastVariableDataType)((byte)(metadata[offset] & 0b1111_0000) >> 4);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void GetMetaData(in byte* metadata, in byte offset, out byte size, out BlastVariableDataType type)
+        {
+            byte b = metadata[offset];
+            size = (byte)(b & 0b0000_1111);
+            type = (BlastVariableDataType)(b & 0b1111_0000); 
         }
 
 
@@ -1261,7 +1271,7 @@ namespace NSS.Blast.Interpretor
                         float* fdata = (float*)pdata;
                         switch (vector_size)
                         {
-#if STANDALONE
+#if STANDALONE_VSBUILD
                             case 1: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: {fdata[0].ToString("0.00")}, vectorsize: {vector_size}"); break;
                             case 2: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0].ToString("0.00")}, {fdata[1].ToString("0.00")}], vectorsize: {vector_size}"); break;
                             case 3: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, NUMERIC: [{fdata[0].ToString("0.00")}, {fdata[1].ToString("0.00")}, {fdata[2].ToString("0.00")}], vectorsize: {vector_size}"); break;
