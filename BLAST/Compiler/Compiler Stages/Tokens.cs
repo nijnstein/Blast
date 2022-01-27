@@ -9,10 +9,10 @@
         nop = 0,
         assign = 1,
 
-/// <summary>
-/// Operatations from add until not_equals MUST be in sequence for quick matches
-/// </summary>
-        add = 2,  
+        /// <summary>
+        /// Operatations from add until not_equals MUST be in sequence for quick matches
+        /// </summary>
+        add = 2,
         substract = 3,
         divide = 4,
         multiply = 5,
@@ -105,13 +105,13 @@
 
         undefined3,
         undefined4,
-        
+
         undefined7, //distance,
         undefined8,// distancesq,
         undefined9,// length,
         undefined10, //lengthsq,
         undefined_pop2,     // UNDEFINED ???
-        
+
         undefined_pop3,     // UNDEFINED ???
         undefined_pop4,     // UNDEFINED ???
         undefined3431,
@@ -202,7 +202,7 @@
         cross,
         dot,
 
-        rsqrt, 
+        rsqrt,
         pow,
 
         debugstack = 252,

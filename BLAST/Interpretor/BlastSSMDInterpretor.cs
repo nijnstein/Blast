@@ -2,10 +2,10 @@
 
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
-    using Unity.Assertions; 
+    using Unity.Assertions;
 #else
     using UnityEngine; 
-#endif 
+#endif
 
 using System;
 using Unity.Burst;
@@ -16,10 +16,14 @@ using System.Runtime.CompilerServices;
 
 namespace NSS.Blast.SSMD
 {
+
+    /// <summary>
+    /// The SSMD Interpretor 
+    /// </summary>
     [BurstCompile]
     unsafe public struct BlastSSMDInterpretor
     {
-#region Internal Data 
+        #region Internal Data 
         internal BlastPackageData package;
 
         internal int code_pointer;
@@ -71,9 +75,9 @@ namespace NSS.Blast.SSMD
         [NativeDisableUnsafePtrRestriction]
         internal unsafe byte* metadata;
 
-#endregion
+        #endregion
 
-#region Public SetPackage & Execute 
+        #region Public SetPackage & Execute 
         /// <summary>
         /// set ssmd package data 
         /// </summary>
@@ -90,7 +94,16 @@ namespace NSS.Blast.SSMD
             return BlastError.success;
         }
 
-        public int Execute(in BlastPackageData packagedata, [NoAlias]BlastEngineData* blast, [NoAlias]IntPtr environment, [NoAlias]BlastSSMDDataStack* ssmddata, int ssmd_data_count)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="packagedata"></param>
+        /// <param name="blast"></param>
+        /// <param name="environment"></param>
+        /// <param name="ssmddata"></param>
+        /// <param name="ssmd_data_count"></param>
+        /// <returns></returns>
+        public int Execute(in BlastPackageData packagedata, [NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]BlastSSMDDataStack* ssmddata, int ssmd_data_count)
         {
             BlastError res = SetPackage(packagedata);
             if (res != BlastError.success) return (int)res;
@@ -98,12 +111,21 @@ namespace NSS.Blast.SSMD
             return Execute(blast, environment, ssmddata, ssmd_datacount);
         }
 
-        public int Execute([NoAlias]BlastEngineData* blast, [NoAlias]IntPtr environment, [NoAlias]BlastSSMDDataStack* ssmddata, int ssmd_data_count)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="blast"></param>
+        /// <param name="environment"></param>
+        /// <param name="ssmddata"></param>
+        /// <param name="ssmd_data_count"></param>
+        /// <returns></returns>
+        public int Execute([NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]BlastSSMDDataStack* ssmddata, int ssmd_data_count)
         {
+            if (!blast.IsCreated) return (int)BlastError.error_blast_not_initialized;
             if (code == null || metadata == null || IntPtr.Zero == package.CodeSegmentPtr) return (int)BlastError.error_execute_package_not_correctly_set;
 
             // set shared environment 
-            engine_ptr = blast;
+            engine_ptr = blast.Data;
             environment_ptr = environment;
 
             // a register for each of max vectorsize
@@ -119,9 +141,9 @@ namespace NSS.Blast.SSMD
             // execute 
             return Execute(datastack, ssmd_data_count, register);
         }
-#endregion
+        #endregion
 
-#region Stack Functions 
+        #region Stack Functions 
         /// <summary>
         /// push register[n].x as float
         /// </summary>
@@ -552,7 +574,7 @@ namespace NSS.Blast.SSMD
             }
         }
 
-#region pop_f[1|2|3|4]_into 
+        #region pop_f[1|2|3|4]_into 
 
         /// <summary>
         /// pop a float1 value form stack data or constant source and put it in destination 
@@ -627,7 +649,7 @@ namespace NSS.Blast.SSMD
         void pop_fx_into<T>(in int code_pointer, byte dataindex) where T : unmanaged
         {
             int vector_size = sizeof(T) / 4;
-            
+
             BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, dataindex);
             int datasize = BlastInterpretor.GetMetaDataSize(metadata, dataindex);
 
@@ -724,7 +746,7 @@ namespace NSS.Blast.SSMD
                 stack_offset = stack_offset - vector_size;
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
-                    destination[i] =((T*)(void*)&((float*)stack[i])[stack_offset])[0];
+                    destination[i] = ((T*)(void*)&((float*)stack[i])[stack_offset])[0];
                 }
             }
             else
@@ -778,8 +800,8 @@ namespace NSS.Blast.SSMD
         /// <param name="op">the operation to check</param>
         /// <returns>true if handled by the ssmd interpretor</returns>
         static public bool OperationIsSSMDHandled(blast_operation op)
-        {               
-            return op >= blast_operation.add && op <= blast_operation.not_equals; 
+        {
+            return op >= blast_operation.add && op <= blast_operation.not_equals;
         }
 
         /// <summary>
@@ -815,26 +837,26 @@ namespace NSS.Blast.SSMD
 #endif
                 // variable acccess
 
-                switch(op)
+                switch (op)
                 {
-                    case blast_operation.multiply: 
-                        for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] * ((float*)(data[i]))[c - BlastInterpretor.opt_id]; 
+                    case blast_operation.multiply:
+                        for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] * ((float*)(data[i]))[c - BlastInterpretor.opt_id];
                         break;
 
-                    case blast_operation.add: 
-                        for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] + ((float*)data[i])[c - BlastInterpretor.opt_id]; 
+                    case blast_operation.add:
+                        for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] + ((float*)data[i])[c - BlastInterpretor.opt_id];
                         break;
 
-                    case blast_operation.substract: 
-                        for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] - ((float*)data[i])[c - BlastInterpretor.opt_id]; 
+                    case blast_operation.substract:
+                        for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] - ((float*)data[i])[c - BlastInterpretor.opt_id];
                         break;
 
-                    case blast_operation.divide: 
+                    case blast_operation.divide:
                         for (int i = 0; i < ssmd_datacount; i++) output[i] = buffer[i] / ((float*)data[i])[c - BlastInterpretor.opt_id];
                         break;
 
                     case blast_operation.and:
-                        for (int i = 0; i < ssmd_datacount; i++) output[i] = math.select(0, 1f, buffer[i] != 0 && ((float*)data[i])[c - BlastInterpretor.opt_id] != 0); 
+                        for (int i = 0; i < ssmd_datacount; i++) output[i] = math.select(0, 1f, buffer[i] != 0 && ((float*)data[i])[c - BlastInterpretor.opt_id] != 0);
                         break;
 
 #if DEVELOPMENT_BUILD
@@ -1670,7 +1692,7 @@ namespace NSS.Blast.SSMD
                         for (int i = 0; i < ssmd_datacount; i++) output[i].xyz = buffer[i] - ((float3*)data[i])[c - BlastInterpretor.opt_id];
                         break;
 
-                    case blast_operation.divide:                             
+                    case blast_operation.divide:
                         for (int i = 0; i < ssmd_datacount; i++) output[i].xyz = buffer[i] / ((float3*)data[i])[c - BlastInterpretor.opt_id];
                         break;
                 }
@@ -1714,7 +1736,7 @@ namespace NSS.Blast.SSMD
             if (c >= BlastInterpretor.opt_value)
             {
                 float constant = engine_ptr->constants[c];
-                float3 cval = new float3(constant, constant, constant); 
+                float3 cval = new float3(constant, constant, constant);
                 switch (op)
                 {
                     case blast_operation.multiply:
@@ -1750,7 +1772,7 @@ namespace NSS.Blast.SSMD
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        T* get_data_pointer<T>(in int ssmd_index, int index) where T: unmanaged
+        T* get_data_pointer<T>(in int ssmd_index, int index) where T : unmanaged
         {
             return (T*)(void*)&((float*)data[ssmd_index])[index];
         }
@@ -1775,7 +1797,7 @@ namespace NSS.Blast.SSMD
         {
             for (int i = 0; i < ssmd_datacount; i++)
             {
-                float* p = (float*)(data[i]); 
+                float* p = (float*)(data[i]);
                 p[index] = register[i].x;
                 p[index + 1] = register[i].y;
             }
@@ -1807,10 +1829,10 @@ namespace NSS.Blast.SSMD
                 p[index] = register[i].x;
                 p[index + 1] = register[i].y;
                 p[index + 2] = register[i].z;
-                p[index + 3] = register[i].w; 
+                p[index + 3] = register[i].w;
             }
         }
-#endregion
+        #endregion
 
         /// <summary>
         /// read codebyte, determine data location, pop data and push it on the stack
@@ -1840,7 +1862,7 @@ namespace NSS.Blast.SSMD
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
                             float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
-                            float* fstack = &((float*)stack[i])[stack_offset]; 
+                            float* fstack = &((float*)stack[i])[stack_offset];
 
                             ((float4*)fstack)[0] = ((float4*)(void*)fdata)[0];
                         }
@@ -1959,9 +1981,9 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void set_register_from_data_f1(float* f1)
         {
-            for(int i = 0; i < ssmd_datacount; i++)
+            for (int i = 0; i < ssmd_datacount; i++)
             {
-                register[i].x = f1[i]; 
+                register[i].x = f1[i];
             }
         }
 
@@ -1974,9 +1996,9 @@ namespace NSS.Blast.SSMD
             UnsafeUtils.MemCpy(register, f4, ssmd_datacount * sizeof(float4));
         }
 
-#endregion
+        #endregion
 
-#region Operations Handlers 
+        #region Operations Handlers 
 
         /// <summary>
         /// handle operation a.x and b.x
@@ -2105,7 +2127,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.smaller_equals: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0f, 1f, a[i] <= b[i].xxxx); return;
                 case blast_operation.greater_equals: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0f, 1f, a[i] >= b[i].xxxx); return;
                 case blast_operation.equals: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0f, 1f, a[i] == b[i].xxxx); return;
-                                                                                          
+
                 case blast_operation.not:
 #if DEVELOPMENT_BUILD
                     Debug.LogError("not");
@@ -2231,7 +2253,9 @@ namespace NSS.Blast.SSMD
         /// <param name="code_pointer">current codepointer</param>
         /// <param name="vector_size">output vectorsize</param>
         /// <param name="f4">output data vector</param>
+#pragma warning disable CS1573 // Parameter 'operation' has no matching param tag in the XML comment for 'BlastSSMDInterpretor.get_op_a_result(void*, ref int, ref byte, ref float4*, blast_operation)' (but other parameters do)
         void get_op_a_result(void* temp, ref int code_pointer, ref byte vector_size, ref float4* f4, blast_operation operation)
+#pragma warning restore CS1573 // Parameter 'operation' has no matching param tag in the XML comment for 'BlastSSMDInterpretor.get_op_a_result(void*, ref int, ref byte, ref float4*, blast_operation)' (but other parameters do)
         {
             // decode parametercount and vectorsize from code in 62 format 
             code_pointer++;
@@ -2241,22 +2265,22 @@ namespace NSS.Blast.SSMD
             // - but could in debug 
             // - we could also allow it ....
 
-            switch(vector_size)
+            switch (vector_size)
             {
                 case 0:
                 case 4:
                     vector_size = 4;
 
-                    code_pointer++; 
+                    code_pointer++;
                     pop_fx_into<float4>(in code_pointer, f4);
-                    
-                    for(int j = 1; j < c; j++)
+
+                    for (int j = 1; j < c; j++)
                     {
                         // pop_f4_with_op_into_f4(code_pointer + j, (float4*)temp, f4, blast_operation.multiply); 
                     }
 
-                    code_pointer += c - 1;  
-                    break; 
+                    code_pointer += c - 1;
+                    break;
 
 
                 case 1:
@@ -2265,7 +2289,7 @@ namespace NSS.Blast.SSMD
 
                     for (int j = 1; j < c - 1; j++)
                     {
-                        pop_f1_with_op_into_f1(code_pointer + j, (float*)temp, (float*)temp, operation); 
+                        pop_f1_with_op_into_f1(code_pointer + j, (float*)temp, (float*)temp, operation);
                     }
 
                     pop_f1_with_op_into_f4(code_pointer + c - 1, (float*)temp, f4, operation);
@@ -2273,10 +2297,10 @@ namespace NSS.Blast.SSMD
                     break;
 
                 case 2:
-                    break;                
+                    break;
 
                 case 3:
-                    break;                    
+                    break;
             }
         }
 
@@ -2297,13 +2321,13 @@ namespace NSS.Blast.SSMD
             pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
 
             // all 3 inputs share datatype and vectorsize 
-            switch(vector_size)
+            switch (vector_size)
             {
                 case 1:
-                    float* m11 = (float*)temp;  
+                    float* m11 = (float*)temp;
                     pop_f1_into(code_pointer + 1, m11);
                     pop_f1_with_op_into_f1(code_pointer + 2, m11, m11, blast_operation.multiply);
-                    pop_f1_with_op_into_f4(code_pointer + 3, m11, f4, blast_operation.add); 
+                    pop_f1_with_op_into_f4(code_pointer + 3, m11, f4, blast_operation.add);
                     break;
 
                 case 2:
@@ -2326,17 +2350,17 @@ namespace NSS.Blast.SSMD
                     pop_fx_into(code_pointer + 1, f4); // with f4 we can avoid reading/writing to the same buffer by alternating as long as we end at f4
                     pop_f4_with_op_into_f4(code_pointer + 2, f4, m14, blast_operation.multiply);
                     pop_f4_with_op_into_f4(code_pointer + 3, m14, f4, blast_operation.add);
-                    break; 
-            }                                     
+                    break;
+            }
             code_pointer += 3;
         }
 
-#endregion
+        #endregion
 
 
-#endregion
+        #endregion
 
-#region GetCompound and Execute (privates)
+        #region GetCompound and Execute (privates)
 
         /// <summary>
         /// process a compound, on function exit write back data to register 
@@ -2421,7 +2445,7 @@ namespace NSS.Blast.SSMD
                         switch ((BlastVectorSizes)vector_size)
                         {
                             case BlastVectorSizes.float1:
-                                for(int i = 0; i < ssmd_datacount; i++) f4[i].x = f1[i];
+                                for (int i = 0; i < ssmd_datacount; i++) f4[i].x = f1[i];
                                 break;
                             case BlastVectorSizes.float2:
                                 break;
@@ -2566,12 +2590,15 @@ namespace NSS.Blast.SSMD
 #endif
 
                                     // copy register? side effects!!!!!!!!!!!!!
+
+#pragma warning disable CS1587 // XML comment is not placed on a valid language element
                                     /// f4_result = get_compound_result(ref code_pointer, ref vector_size);
                                     break;
+#pragma warning restore CS1587 // XML comment is not placed on a valid language element
 
                                 // standard functions
                                 case blast_operation.fma: get_fma_result(temp, ref code_pointer, ref vector_size, ref f4_result); break;
-                                
+
                                 case blast_operation.mula: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.multiply); break;
                                 case blast_operation.adda: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.add); break;
                                 case blast_operation.suba: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.substract); break;
@@ -2756,7 +2783,7 @@ namespace NSS.Blast.SSMD
                                         if (last_is_op_or_first)
                                         {
                                             //the last thing was an operation or the first thing, set value
-                                            switch ((BlastVectorSizes)vector_size)                                                            
+                                            switch ((BlastVectorSizes)vector_size)
                                             {
                                                 case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) { f4[i].x = f4_result[i].x; f4_result[i].x = constant; } break;
                                                 case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = constant; break;
@@ -3012,8 +3039,8 @@ namespace NSS.Blast.SSMD
                 code_pointer++;
 
             } // while ()
-            
-            
+
+
             // processing done, set results from register and return success 
             vector_size = vector_size > max_vector_size ? vector_size : max_vector_size;
             if (vector_size > 1)
@@ -3024,7 +3051,7 @@ namespace NSS.Blast.SSMD
             {
                 set_register_from_data_f1(f1);
             }
-            return (int)BlastError.success; 
+            return (int)BlastError.success;
         }
 
 
@@ -3074,7 +3101,7 @@ namespace NSS.Blast.SSMD
                 push_data_f1(code[code_pointer++] - BlastInterpretor.opt_id);
             }
 
-            return BlastError.success; 
+            return BlastError.success;
         }
 
         BlastError pushv(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
@@ -3133,7 +3160,7 @@ namespace NSS.Blast.SSMD
                 }
             }
 
-            return BlastError.success; 
+            return BlastError.success;
         }
 
         BlastError pushc(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
@@ -3168,7 +3195,7 @@ namespace NSS.Blast.SSMD
                     return BlastError.error_variable_vector_compound_not_supported;
             }
 
-            return BlastError.success; 
+            return BlastError.success;
         }
 
         BlastError pushf(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
@@ -3197,7 +3224,7 @@ namespace NSS.Blast.SSMD
                     return BlastError.error_variable_vector_op_not_supported;
             }
 
-            return BlastError.success; 
+            return BlastError.success;
         }
 
         #endregion
@@ -3375,7 +3402,7 @@ namespace NSS.Blast.SSMD
                 {
                     case blast_operation.ret: return 0;
                     case blast_operation.begin: // jumping in from somewhere
-                    case blast_operation.end: 
+                    case blast_operation.end:
                     case blast_operation.nop: break;
 
                     //
@@ -3411,9 +3438,12 @@ namespace NSS.Blast.SSMD
                         break;
 
 
+
+#pragma warning disable CS1587 // XML comment is not placed on a valid language element
                     /// assign result of a compound to some dataindex in the datasegment 
 
                     case blast_operation.assign:
+#pragma warning restore CS1587 // XML comment is not placed on a valid language element
                         if ((ires = (int)assign(ref code_pointer, ref vector_size, temp)) < 0) return ires;
                         break;
 
@@ -3472,7 +3502,9 @@ namespace NSS.Blast.SSMD
                                         return (int)BlastError.error_unsupported_operation_in_ssmd_root;
                                     }
                             }
+#pragma warning disable CS0162 // Unreachable code detected
                             break;
+#pragma warning restore CS0162 // Unreachable code detected
                         }
 
                     default:
@@ -3488,6 +3520,6 @@ namespace NSS.Blast.SSMD
             return (int)BlastError.success;
         }
 
-#endregion
+        #endregion
     }
 }

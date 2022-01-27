@@ -8,9 +8,13 @@ using Unity.Collections.LowLevel.Unsafe;
 namespace NSS.Blast
 {
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CodeUtils'
     public static class CodeUtils
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CodeUtils'
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CodeUtils.AsFloat(string)'
         public static float AsFloat(this string s)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CodeUtils.AsFloat(string)'
         {
             float f = float.NaN;
 
@@ -69,22 +73,32 @@ namespace NSS.Blast
     }
 
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer'
     public struct NonGenericFunctionPointer
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer'
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.id'
         public readonly int id;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.id'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.parameter_count'
         public readonly int parameter_count; 
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.parameter_count'
 
         [NativeDisableUnsafePtrRestriction]
         private readonly IntPtr ptr;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.NonGenericFunctionPointer(IntPtr, int, int)'
         public NonGenericFunctionPointer(IntPtr ptr, int id, int parameter_count)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.NonGenericFunctionPointer(IntPtr, int, int)'
         {
             this.ptr = ptr;
             this.id = id;
             this.parameter_count = parameter_count; 
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.Generic<T>()'
         public FunctionPointer<T> Generic<T>()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.Generic<T>()'
         {
             return new FunctionPointer<T>(ptr);
         }

@@ -4,9 +4,17 @@ using System.Linq;
 
 namespace NSS.Blast.Compiler.Stage
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'JumpLabelType'
     public enum JumpLabelType
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'JumpLabelType'
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'JumpLabelType.Offset'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'JumpLabelType.Jump'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'JumpLabelType.Label'
         Jump, Offset, Label
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'JumpLabelType.Label'
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'JumpLabelType.Jump'
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'JumpLabelType.Offset'
     }
 
     /// <summary>
@@ -14,32 +22,52 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class IMJumpLabel
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.id'
         public string id { get; protected set; }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.id'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.type'
         public JumpLabelType type { get; protected set; }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.type'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.is_label'
         public bool is_label => type == JumpLabelType.Label;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.is_label'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.is_offset'
         public bool is_offset => type == JumpLabelType.Offset;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.is_offset'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.is_jump'
         public bool is_jump => type == JumpLabelType.Jump;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.is_jump'
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.IMJumpLabel(string, JumpLabelType)'
         public IMJumpLabel(string _id, JumpLabelType _type) 
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.IMJumpLabel(string, JumpLabelType)'
         { 
             id = _id;
             type = _type; 
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.Jump(string)'
         static public IMJumpLabel Jump(string _id)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.Jump(string)'
         {
             return new IMJumpLabel(_id, JumpLabelType.Jump);
         }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.Label(string)'
         static public IMJumpLabel Label(string _id)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.Label(string)'
         {
             return new IMJumpLabel(_id, JumpLabelType.Label);
         }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.Offset(string)'
         static public IMJumpLabel Offset(string _id)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.Offset(string)'
         {
             return new IMJumpLabel(_id, JumpLabelType.Offset);
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.ToString()'
         public override string ToString()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMJumpLabel.ToString()'
         {
             switch (type)
             {
@@ -57,12 +85,20 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class IMByteCode
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.code'
         public byte code { get; protected set; }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.code'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.op'
         public blast_operation op => (blast_operation)code;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.op'
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.labels'
         public List<IMJumpLabel> labels { get; protected set; }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.labels'
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.IMByteCode(byte, IMJumpLabel)'
         public IMByteCode(byte _code, IMJumpLabel label = null)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.IMByteCode(byte, IMJumpLabel)'
         {
             code = _code;
             if (label == null)
@@ -76,7 +112,9 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.AddLabel(IMJumpLabel)'
         public void AddLabel(IMJumpLabel label)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.AddLabel(IMJumpLabel)'
         {
             if(labels == null)
             {
@@ -85,7 +123,9 @@ namespace NSS.Blast.Compiler.Stage
             labels.Add(label);
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.AddLabel(IEnumerable<IMJumpLabel>)'
         public void AddLabel(IEnumerable<IMJumpLabel> labels_to_add)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.AddLabel(IEnumerable<IMJumpLabel>)'
         {
             if (labels == null)
             {
@@ -94,7 +134,9 @@ namespace NSS.Blast.Compiler.Stage
             labels.AddRange(labels_to_add);
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.ToString()'
         public override string ToString()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.ToString()'
         {
             string l = "";
             if (labels != null)
@@ -108,7 +150,9 @@ namespace NSS.Blast.Compiler.Stage
             return $"{code.ToString().PadLeft(3, '0')}{(string.IsNullOrWhiteSpace(l) ? "" : $" [{l.Trim()}]")}";
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.UpdateOpCode(byte)'
         public void UpdateOpCode(byte new_code)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCode.UpdateOpCode(byte)'
         {
             code = new_code;
         }
@@ -150,9 +194,15 @@ namespace NSS.Blast.Compiler.Stage
         /// after that following stages might run using multithreading on the segments 
         /// </summary>
         public List<IMByteCodeList> segments { get; set; }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.SegmentCount'
         public int SegmentCount => segments == null ? 0 : segments.Count;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.SegmentCount'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.IsSegmented'
         public bool IsSegmented => segments == null ? false : segments.Count > 0; 
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.IsSegmented'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.IsZeroTerminated'
         public bool IsZeroTerminated
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.IsZeroTerminated'
         {
             get
             {
@@ -161,8 +211,12 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
         
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.list'
         public List<IMByteCode> list { get; set; }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.list'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.IMByteCodeList()'
         public IMByteCodeList() { list = new List<IMByteCode>(); segments = null; }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.IMByteCodeList()'
 
 
         /// <summary>
@@ -173,8 +227,11 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>returns index of opcode</returns>
         public int Add(byte code, IMJumpLabel label = null)
         {
+#pragma warning disable CS1587 // XML comment is not placed on a valid language element
             if (list == null) list = new List<IMByteCode>(); /// dont check each add it should be impossible to be null
-            list.Add(new IMByteCode(code, label));
+            list
+#pragma warning restore CS1587 // XML comment is not placed on a valid language element
+.Add(new IMByteCode(code, label));
             return list.Count - 1;
         }
 
@@ -189,7 +246,9 @@ namespace NSS.Blast.Compiler.Stage
             return Add((byte)op, label);
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.ToBytes()'
         public byte[] ToBytes()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.ToBytes()'
         {
             if (list == null)
             {
@@ -205,7 +264,9 @@ namespace NSS.Blast.Compiler.Stage
             return bytes;
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.AddRange(IMByteCodeList)'
         public void AddRange(IMByteCodeList bcl)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.AddRange(IMByteCodeList)'
         {
             if (bcl != null && bcl.Count > 0)
             {
@@ -213,7 +274,9 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.AddRange(IEnumerable<byte>)'
         public void AddRange(IEnumerable<byte> code)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.AddRange(IEnumerable<byte>)'
         {
             if (code != null)
             {
@@ -227,7 +290,9 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
         }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.AddRange(IEnumerable<IMByteCode>)'
         public void AddRange(IEnumerable<IMByteCode> code)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.AddRange(IEnumerable<IMByteCode>)'
         {
             if(code != null)
             {
@@ -239,7 +304,9 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.AddSegment(IMByteCodeList)'
         public void AddSegment(IMByteCodeList segment)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.AddSegment(IMByteCodeList)'
         {
             if (segment != null)
             {
@@ -276,7 +343,9 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.Insert(int, byte)'
         public void Insert(int index, byte code)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.Insert(int, byte)'
         {
             if (index > list.Count || index < 0)
             {
@@ -296,7 +365,9 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.this[int]'
         public IMByteCode this[int index]
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.this[int]'
         {
             get
             {
@@ -308,7 +379,9 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.Count'
         public int Count => list != null ? list.Count : 0;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IMByteCodeList.Count'
 
         internal bool RemoveAtAndMoveJumpLabels(IBlastCompilationData data, int index)
         {

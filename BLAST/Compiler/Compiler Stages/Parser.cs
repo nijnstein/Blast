@@ -18,8 +18,12 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastParser : IBlastCompilerStage
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastParser.Version'
         public System.Version Version => new System.Version(0, 2, 1);
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastParser.Version'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastParser.StageType'
         public BlastCompilerStageType StageType => BlastCompilerStageType.Parser;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastParser.StageType'
 
 
         /// <summary>
@@ -50,7 +54,9 @@ namespace NSS.Blast.Compiler.Stage
             return false;
         }
 
-        /// <summary>
+        
+#pragma warning disable CS1572 // XML comment has a param tag for 'token', but there is no parameter by that name
+/// <summary>
         /// scan for the next token of type 
         /// </summary>
         /// <param name="data"></param>
@@ -59,7 +65,10 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="max">max idx to look into</param>
         /// <param name="i1">idx of token</param>
         /// <returns>true if found</returns>
+#pragma warning disable CS1573 // Parameter 'tokens' has no matching param tag in the XML comment for 'BlastParser.find_next(IBlastCompilationData, BlastScriptToken[], int, in int, out int)' (but other parameters do)
         bool find_next(IBlastCompilationData data, BlastScriptToken[] tokens, int idx, in int max, out int i1)
+#pragma warning restore CS1573 // Parameter 'tokens' has no matching param tag in the XML comment for 'BlastParser.find_next(IBlastCompilationData, BlastScriptToken[], int, in int, out int)' (but other parameters do)
+#pragma warning restore CS1572 // XML comment has a param tag for 'token', but there is no parameter by that name
         {
             while (idx <= max)
             {
@@ -87,7 +96,9 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="max">max idx to look into</param>
         /// <param name="i1">idx of token</param>
         /// <returns>true if found</returns>
+#pragma warning disable CS1573 // Parameter 'accept_eof' has no matching param tag in the XML comment for 'BlastParser.find_next_skip_compound(IBlastCompilationData, BlastScriptToken, int, in int, out int, bool)' (but other parameters do)
         bool find_next_skip_compound(IBlastCompilationData data, BlastScriptToken token, int idx, in int max, out int i1, bool accept_eof = false)
+#pragma warning restore CS1573 // Parameter 'accept_eof' has no matching param tag in the XML comment for 'BlastParser.find_next_skip_compound(IBlastCompilationData, BlastScriptToken, int, in int, out int, bool)' (but other parameters do)
         {
             int size = max - idx;
             int open = 0;
@@ -142,7 +153,9 @@ namespace NSS.Blast.Compiler.Stage
             return false;
         }
 
-        /// <summary>
+        
+#pragma warning disable CS1572 // XML comment has a param tag for 'token', but there is no parameter by that name
+/// <summary>
         /// search for the next token skipping over compounds 
         /// </summary>
         /// <param name="data"></param>
@@ -151,7 +164,12 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="max">max idx to look into</param>
         /// <param name="i1">idx of token</param>
         /// <returns>true if found</returns>
+#pragma warning disable CS1573 // Parameter 'accept_eof' has no matching param tag in the XML comment for 'BlastParser.find_next_skip_compound(IBlastCompilationData, BlastScriptToken[], int, in int, out int, bool)' (but other parameters do)
+#pragma warning disable CS1573 // Parameter 'tokens' has no matching param tag in the XML comment for 'BlastParser.find_next_skip_compound(IBlastCompilationData, BlastScriptToken[], int, in int, out int, bool)' (but other parameters do)
         bool find_next_skip_compound(IBlastCompilationData data, BlastScriptToken[] tokens, int idx, in int max, out int i1, bool accept_eof = false)
+#pragma warning restore CS1573 // Parameter 'tokens' has no matching param tag in the XML comment for 'BlastParser.find_next_skip_compound(IBlastCompilationData, BlastScriptToken[], int, in int, out int, bool)' (but other parameters do)
+#pragma warning restore CS1573 // Parameter 'accept_eof' has no matching param tag in the XML comment for 'BlastParser.find_next_skip_compound(IBlastCompilationData, BlastScriptToken[], int, in int, out int, bool)' (but other parameters do)
+#pragma warning restore CS1572 // XML comment has a param tag for 'token', but there is no parameter by that name
         {
             int size = max - idx;
             int open = 0;
@@ -280,7 +298,9 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="data"></param>
         /// <param name="idx"></param>
         /// <returns></returns>
+#pragma warning disable CS1573 // Parameter 'idx_max' has no matching param tag in the XML comment for 'BlastParser.skip_closure(IBlastCompilationData, ref int, int)' (but other parameters do)
         bool skip_closure(IBlastCompilationData data, ref int idx, int idx_max)
+#pragma warning restore CS1573 // Parameter 'idx_max' has no matching param tag in the XML comment for 'BlastParser.skip_closure(IBlastCompilationData, ref int, int)' (but other parameters do)
         {
             if (idx > idx_max || data.Tokens[idx].Item1 != BlastScriptToken.OpenParenthesis)
             {
@@ -315,7 +335,9 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="idx">current index into token list</param>
         /// <param name="i1">start index of next statement</param>
         /// <param name="i2">end index of next statement</param>
+#pragma warning disable CS1573 // Parameter 'idx_max' has no matching param tag in the XML comment for 'BlastParser.find_next_statement(IBlastCompilationData, ref int, int, out int, out int)' (but other parameters do)
         bool find_next_statement(IBlastCompilationData data, ref int idx, int idx_max, out int i1, out int i2)
+#pragma warning restore CS1573 // Parameter 'idx_max' has no matching param tag in the XML comment for 'BlastParser.find_next_statement(IBlastCompilationData, ref int, int, out int, out int)' (but other parameters do)
         {
             i1 = i2 = -1;
             if (!(idx <= idx_max))
@@ -1162,10 +1184,11 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="data"></param>
         /// <param name="idx">the index starting the scan from and the must be on the first token of the identifier to parse. on succes it will be on the token directly after the identifier</param>
         /// <param name="idx_max">the max index to scan into (max including)</param>
+        /// <param name="add_minus"></param>
         /// <returns>null on errors, a valid node on success
         /// - can return nodes: function() and identifier[34].x
         /// </returns>
-        node scan_and_parse_identifier(IBlastCompilationData data, ref int idx, in int idx_max, bool add_minus = false)
+        unsafe node scan_and_parse_identifier(IBlastCompilationData data, ref int idx, in int idx_max, bool add_minus = false)
         {
             // step 1> we read a number if
 
@@ -1201,8 +1224,11 @@ namespace NSS.Blast.Compiler.Stage
 
 
             // step 2> create identifier from tokens 
-            ScriptFunctionDefinition function = Blast.GetFunctionByName(data.Tokens[idx].Item2);
-            if (function != null)
+            //
+            // -> this could be skipped based on several properties 
+            // 
+
+            if(data.Blast.Data->TryGetFunctionByName(data.Tokens[idx].Item2, out BlastScriptFunction function))
             {
                 // parse out function
                 node n_function = scan_and_parse_function(data, function, ref idx, in idx_max);
@@ -1265,31 +1291,14 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="idx">idx, starting at function, ending directly after</param>
         /// <param name="idx_max">max index to scan into</param>
         /// <returns>a node containing the function or null on failure</returns>
-        node scan_and_parse_function(IBlastCompilationData data, ScriptFunctionDefinition function, ref int idx, in int idx_max)
+        node scan_and_parse_function(IBlastCompilationData data, BlastScriptFunction function, ref int idx, in int idx_max)
         {
             node n_function = new node(null)
             {
                 type = nodetype.function,
-                identifier = function.Match,
+                identifier = function.GetFunctionName(),
                 function = function
             };
-
-            if (n_function.function != null)
-            {
-                // set vector type for known functions 
-                switch ((ReservedScriptFunctionIds)n_function.function.FunctionId)
-                {
-                    case ReservedScriptFunctionIds.Pop2:
-                        n_function.SetIsVector(2);
-                        break;
-                    case ReservedScriptFunctionIds.Pop3:
-                        n_function.SetIsVector(3);
-                        break;
-                    case ReservedScriptFunctionIds.Pop4:
-                        n_function.SetIsVector(4);
-                        break;
-                }
-            }
 
             // parse parameters, which possibly are statements too
             // idx should be at ( directly after function, any other token then ,; is an error. 
@@ -1313,7 +1322,7 @@ namespace NSS.Blast.Compiler.Stage
                     else
                     {
                         // error condition 
-                        data.LogError($"parse.parse_function: scanned function {function.Match}, malformed parameter compound, expecting parameters, empty compound or statement termination");
+                        data.LogError($"parse.parse_function: scanned function {function.GetFunctionName()}, malformed parameter compound, expecting parameters, empty compound or statement termination");
                         return null;
                     }
                 }
@@ -1429,7 +1438,7 @@ namespace NSS.Blast.Compiler.Stage
                                 }
                                 else
                                 {
-                                    data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.Match}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)}  => \n{n_function.ToNodeTreeString()}");
+                                    data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.GetFunctionName()}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)}  => \n{n_function.ToNodeTreeString()}");
                                     return null;
                                 }
                                 break; 
@@ -1443,7 +1452,7 @@ namespace NSS.Blast.Compiler.Stage
                             case BlastScriptToken.Switch:
                             case BlastScriptToken.Case:
                             case BlastScriptToken.Default:
-                                data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.Match}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)}  => \n{n_function.ToNodeTreeString()}");
+                                data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.GetFunctionName()}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)}  => \n{n_function.ToNodeTreeString()}");
                                 return null;
                         }
                     }
@@ -1468,7 +1477,7 @@ namespace NSS.Blast.Compiler.Stage
                 }
                 else
                 {
-                    data.LogError($"parse.parse_function: scanned function {function.Match} has malformed parenthesis");
+                    data.LogError($"parse.parse_function: scanned function {function.GetFunctionName()} has malformed parenthesis");
                 }
 
                 // validate what we can: determine parameter count from nr of seperators, other validations in later stages
@@ -1480,7 +1489,7 @@ namespace NSS.Blast.Compiler.Stage
                     //  produces:       clamp(((1 2) 3) 4)
                     //  -> dueue to tokenizer removing the , after the )
 
-                    data.LogError($"parser.parse_function: found function {function.Match} with {param_count} parameters while it should have {function.MinParameterCount} to {function.MaxParameterCount} parameters => \n{n_function.ToNodeTreeString()}");
+                    data.LogError($"parser.parse_function: found function {function.GetFunctionName()} with {param_count} parameters while it should have {function.MinParameterCount} to {function.MaxParameterCount} parameters => \n{n_function.ToNodeTreeString()}");
                     return null;
                 }
 
@@ -1497,7 +1506,7 @@ namespace NSS.Blast.Compiler.Stage
                 }
                 else
                 {
-                    data.LogError($"parser.parse_function: found function {function.Match} without parameters while at minimum {function.MinParameterCount} parameters are expected => \n{n_function.ToNodeTreeString()}");
+                    data.LogError($"parser.parse_function: found function {function.GetFunctionName()} without parameters while at minimum {function.MinParameterCount} parameters are expected => \n{n_function.ToNodeTreeString()}");
                     return null;
                 }
             }
@@ -1776,13 +1785,18 @@ namespace NSS.Blast.Compiler.Stage
             return chain_root;
         }
 
-        /// <summary>
+        
+#pragma warning disable CS1572 // XML comment has a param tag for 'node', but there is no parameter by that name
+/// <summary>
         /// check if the node is an assignment 
         /// </summary>
         /// <param name="data"></param>
         /// <param name="node">node to map out</param>
         /// <returns></returns>
+#pragma warning disable CS1573 // Parameter 'ast_node' has no matching param tag in the XML comment for 'BlastParser.check_if_assignment_node(IBlastCompilationData, node)' (but other parameters do)
         bool check_if_assignment_node(IBlastCompilationData data, node ast_node)
+#pragma warning restore CS1573 // Parameter 'ast_node' has no matching param tag in the XML comment for 'BlastParser.check_if_assignment_node(IBlastCompilationData, node)' (but other parameters do)
+#pragma warning restore CS1572 // XML comment has a param tag for 'node', but there is no parameter by that name
         {
             // check if this is an assignment 
             // [identifier][indexchain] = [sequence] ;/nop
@@ -1980,7 +1994,7 @@ namespace NSS.Blast.Compiler.Stage
                         // its a constant, only lookup the positive part of values, if a match on negated we add back a minus op
                         string value = is_negated ? ast_node.identifier.Substring(1) : ast_node.identifier;
 
-                        blast_operation op = data.Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
+                        blast_operation op = Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
                         if (op == blast_operation.nan)
                         {
                             data.LogError($"parse.map_identifiers: ({ast_node.identifier}) could not convert to a float or use as mathematical constant (pi, epsilon, infinity, minflt, euler)");

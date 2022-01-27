@@ -118,7 +118,9 @@ namespace NSS.Blast.Interpretor
         /// reset code_pointer and stack_offset to their initial states 
         /// </summary>
         /// <param name="blast">pointer to blast engine data</param>
+#pragma warning disable CS1573 // Parameter 'pkg' has no matching param tag in the XML comment for 'BlastInterpretor.Reset(BlastEngineData*, BlastPackageData)' (but other parameters do)
         public void Reset([NoAlias]BlastEngineData* blast, BlastPackageData pkg)
+#pragma warning restore CS1573 // Parameter 'pkg' has no matching param tag in the XML comment for 'BlastInterpretor.Reset(BlastEngineData*, BlastPackageData)' (but other parameters do)
         {
             engine_ptr = blast;
             SetPackage(pkg); 
@@ -151,7 +153,9 @@ namespace NSS.Blast.Interpretor
         /// <param name="_code">code pointer</param>
         /// <param name="_data">datastack pointer</param>
         /// <param name="_metadata">metadata</param>
+#pragma warning disable CS1573 // Parameter 'initial_stack_offset' has no matching param tag in the XML comment for 'BlastInterpretor.SetPackage(BlastPackageData, byte*, float*, byte*, int)' (but other parameters do)
         public void SetPackage(BlastPackageData pkg, byte* _code, float* _data, byte* _metadata, int initial_stack_offset)
+#pragma warning restore CS1573 // Parameter 'initial_stack_offset' has no matching param tag in the XML comment for 'BlastInterpretor.SetPackage(BlastPackageData, byte*, float*, byte*, int)' (but other parameters do)
         {
             package = pkg;
             code = _code;
@@ -213,17 +217,17 @@ namespace NSS.Blast.Interpretor
         /// <param name="environment">pointer to environment data in native memory</param>
         /// <param name="caller">pointer to caller data in native memory</param>
         /// <returns>exit code</returns>
-        public int Execute([NoAlias]IntPtr blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller)
+        public int Execute([NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller)
         {
-            return execute((BlastEngineData*)blast, environment, caller, false);
+            return execute(blast.Data, environment, caller, false);
         }
 
         /// <summary>
         /// execute bytecode set to the interpretor 
         /// </summary>
-        public int Execute([NoAlias]IntPtr blast)
+        public int Execute([NoAlias]BlastEngineDataPtr blast)
         {
-            return execute((BlastEngineData*)blast, IntPtr.Zero, IntPtr.Zero, false);
+            return execute(blast.Data, IntPtr.Zero, IntPtr.Zero, false);
         }
 
         /// <summary>
@@ -233,24 +237,26 @@ namespace NSS.Blast.Interpretor
         /// <param name="environment">pointer to environment data in native memory</param>
         /// <param name="caller">pointer to caller data in native memory</param>
         /// <returns>exit code</returns>
-        public int ResumeYield([NoAlias]IntPtr blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller)
+        public int ResumeYield([NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller)
         {
-            return execute((BlastEngineData*)blast, environment, caller, true);
+            return execute(blast.Data, environment, caller, true);
         }
 
         /// <summary>
         /// resume executing bytecode after yielding
         /// </summary>
-        public int ResumeYield([NoAlias]IntPtr blast)
+        public int ResumeYield([NoAlias]BlastEngineDataPtr blast)
         {
-            return execute((BlastEngineData*)blast, IntPtr.Zero, IntPtr.Zero, true);
+            return execute(blast.Data, IntPtr.Zero, IntPtr.Zero, true);
         }
         #endregion
 
         #region Stack 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.push(float)'
         public void push(float f)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.push(float)'
         {
             // set stack value 
             ((float*)data)[stack_offset] = f;
@@ -263,7 +269,9 @@ namespace NSS.Blast.Interpretor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.push(float2)'
         public void push(float2 f2)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.push(float2)'
         {
             // really... wonder how this compiles (should be simple 8byte move) TODO 
             ((float2*)(void*)&((float*)data)[stack_offset])[0] = f2;
@@ -274,7 +282,9 @@ namespace NSS.Blast.Interpretor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.push(float3)'
         public void push(float3 f3)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.push(float3)'
         {
             ((float3*)(void*)&((float*)data)[stack_offset])[0] = f3;
 
@@ -284,7 +294,9 @@ namespace NSS.Blast.Interpretor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.push(float4)'
         public void push(float4 f4)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.push(float4)'
         {
             // really... wonder how this compiles (should be simple 8byte move) TODO 
             ((float4*)(void*)&((float*)data)[stack_offset])[0] = f4;
@@ -296,7 +308,9 @@ namespace NSS.Blast.Interpretor
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.push(int)'
         public void push(int i)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.push(int)'
         {
 #if DEVELOPMENT_BUILD || CHECK_STACK
             if (stack_offset + 1 > package.StackCapacity)
@@ -311,7 +325,9 @@ namespace NSS.Blast.Interpretor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.pop(out float)'
         public void pop(out float f)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.pop(out float)'
         {
            stack_offset = stack_offset - 1;
 
@@ -341,7 +357,9 @@ namespace NSS.Blast.Interpretor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.pop(out int)'
         public void pop(out int i)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.pop(out int)'
         {
             stack_offset = stack_offset - 1;
 
@@ -373,7 +391,9 @@ namespace NSS.Blast.Interpretor
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.pop(out float4)'
         public void pop(out float4 f)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.pop(out float4)'
         {
             stack_offset = stack_offset - 4;
 
@@ -406,7 +426,9 @@ namespace NSS.Blast.Interpretor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.pop(out int4)'
         public void pop(out int4 i)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.pop(out int4)'
         {
             stack_offset = stack_offset - 4;
 
@@ -440,7 +462,9 @@ namespace NSS.Blast.Interpretor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.peek(int)'
         public bool peek(int n = 1)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.peek(int)'
         {
             return stack_offset >= n;
         }
@@ -718,7 +742,9 @@ namespace NSS.Blast.Interpretor
         /// <param name="vector_size">vectorsize of element popped</param>
         /// <returns>pointer to data castable to valuetype*</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1573 // Parameter 'code_pointer' has no matching param tag in the XML comment for 'BlastInterpretor.pop_with_info(in int, out BlastVariableDataType, out byte)' (but other parameters do)
         internal void* pop_with_info(in int code_pointer, out BlastVariableDataType type, out byte vector_size)
+#pragma warning restore CS1573 // Parameter 'code_pointer' has no matching param tag in the XML comment for 'BlastInterpretor.pop_with_info(in int, out BlastVariableDataType, out byte)' (but other parameters do)
         {
             // we get either a pop instruction or an instruction to get a value 
             byte c = code[code_pointer];
@@ -949,19 +975,25 @@ namespace NSS.Blast.Interpretor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.GetMetaDataSize(in byte*, in byte)'
         static public byte GetMetaDataSize(in byte* metadata, in byte offset)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.GetMetaDataSize(in byte*, in byte)'
         {
             return (byte)(metadata[offset] & 0b0000_1111);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.GetMetaDataType(in byte*, in byte)'
         static public BlastVariableDataType GetMetaDataType(in byte* metadata, in byte offset)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.GetMetaDataType(in byte*, in byte)'
         {
             return (BlastVariableDataType)((byte)(metadata[offset] & 0b1111_0000) >> 4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.GetMetaData(in byte*, in byte, out byte, out BlastVariableDataType)'
         static public void GetMetaData(in byte* metadata, in byte offset, out byte size, out BlastVariableDataType type)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.GetMetaData(in byte*, in byte, out byte, out BlastVariableDataType)'
         {
             byte b = metadata[offset];
             size = (byte)(b & 0b0000_1111);
@@ -1368,20 +1400,28 @@ namespace NSS.Blast.Interpretor
             code_pointer += 4;
 
             // get function pointer 
-            NonGenericFunctionPointer p;
-            if (engine_ptr->TryGetFunctionPointer(id, out p))
+            if (engine_ptr->CanBeAValidFunctionId(id))
             {
+                BlastScriptFunction p = engine_ptr->Functions[id];
+
                 // get parameter count (expected from script excluding the 3 data pointers: engine, env, caller) 
                 // but dont call it in validation mode 
                 if (ValidationMode == true)
                 {
-                    code_pointer += p.parameter_count;
+                    // external functions (to blast) always have a fixed amount of parameters 
+#if DEVELOPMENT_BUILD
+                    if(id > (int)ReservedBlastScriptFunctionIds.Offset && p.MinParameterCount != p.MaxParameterCount) 
+                    {
+                        Debug.LogError($"function {id} min/max parameters should be of equal size"); 
+                    }
+#endif
+                    code_pointer += p.MinParameterCount;
                     return float4.zero;
                 }
 
                // Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}");
 
-                switch (p.parameter_count)
+                switch (p.MinParameterCount)
                 {
                     case 0:
                         FunctionPointer<Blast.BlastDelegate_f0> fp0 = p.Generic<Blast.BlastDelegate_f0>();
@@ -1473,9 +1513,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion 
+#endregion
 
-        #region Function Handlers 
+#region Function Handlers 
 
 
 
@@ -4382,9 +4422,9 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #endregion
+#endregion
 
-        #region ByteCode Execution
+#region ByteCode Execution
 
 
 
@@ -4586,7 +4626,7 @@ namespace NSS.Blast.Interpretor
                         {
                             if (last_is_op_or_first)
                             {
-#if DEVELOPMENT_BUILD 
+#if DEVELOPMENT_BUILD
                                 if (minus)
                                 {
                                     Debug.LogError("double token: - -, this will be become +, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
@@ -4651,11 +4691,14 @@ namespace NSS.Blast.Interpretor
                                 // mula family
                                 case blast_operation.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); max_vector_size = vector_size; break;
 
-                                ///
+                                
+#pragma warning disable CS1587 // XML comment is not placed on a valid language element
+///
                                 ///  FROM HERE NOT CONVERTED YET TO METADATA USE
                                 /// 
 
                                 case blast_operation.random:
+#pragma warning restore CS1587 // XML comment is not placed on a valid language element
                                     get_random_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
                                     break;
 
@@ -4900,7 +4943,7 @@ namespace NSS.Blast.Interpretor
                                                     default:
 #if DEVELOPMENT_BUILD
                                                         Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector from other vectors not fully supported");
-#endif 
+#endif
                                                         break;
                                                 }
                                             }

@@ -8,10 +8,19 @@ namespace NSS.Blast.Compiler
     /// </summary>
     public class CSCompilationData : HPCCompilationData
     {
+        /// <summary>
+        /// Target namespace for compiling scripts into
+        /// </summary>
         public Assembly Namespace;
 
-        public CSCompilationData(Blast blast, BlastScript script, BlastCompilerOptions options)
-            : base(blast, script, options)
+
+        /// <summary>
+        /// Setup CS Compiler chain
+        /// </summary>
+        /// <param name="blast">blast engine data</param>
+        /// <param name="script">script code</param>
+        /// <param name="options">compiler options</param>
+        public CSCompilationData(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options) : base(blast, script, options)
         {
 
         }

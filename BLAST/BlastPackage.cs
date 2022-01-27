@@ -214,7 +214,9 @@ namespace NSS.Blast
 
         #region Properties deduced from fields 
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastPackageData.CodeSize'
         public readonly ushort CodeSize
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastPackageData.CodeSize'
         {
             get
             {
@@ -520,12 +522,16 @@ namespace NSS.Blast
 
         #region Cloning Util
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastPackageData.Clone()'
         public BlastPackageData Clone()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastPackageData.Clone()'
         {
             return Clone((Unity.Collections.Allocator)Allocator); 
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastPackageData.Clone(Allocator)'
         public BlastPackageData Clone(Allocator allocator)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastPackageData.Clone(Allocator)'
         {
             BlastPackageData clone = default;
             clone.PackageMode = PackageMode;

@@ -19,8 +19,12 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastBytecodeOptimizer : IBlastCompilerStage
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.Version'
         public Version Version => new Version(0, 1, 0);
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.Version'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.StageType'
         public BlastCompilerStageType StageType => BlastCompilerStageType.BytecodeOptimizer;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.StageType'
 
 
         static bool ReplaceCommonPatterns(CompilationData data, IMByteCodeList code)
@@ -66,13 +70,23 @@ namespace NSS.Blast.Compiler.Stage
         #region bytecode optimizer
         #region optimizer patterns 
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern'
         public class optimizer_pattern
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern'
         {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.name'
             public string name; 
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.name'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.pattern'
             public byte[] pattern;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.pattern'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.replace'
             public byte[] replace;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.replace'
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.ToString()'
             public override string ToString()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.ToString()'
             {
                 if (pattern != null && replace != null)
                 {
@@ -84,10 +98,16 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.min_match_for_next'
             public int min_match_for_next;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.min_match_for_next'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.next'
             public optimizer_pattern next;   // the next pattern to check if matching minimal count, inverting this might be more efficient 
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.next'
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.has_repeat_in_pattern()'
             public bool has_repeat_in_pattern()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.has_repeat_in_pattern()'
             {
                 for (int i = 0; i < pattern.Length; i++)
                     if (pattern[i] == opt_repeat)
@@ -95,7 +115,9 @@ namespace NSS.Blast.Compiler.Stage
                 return false;
             }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.repeat_in_pattern_length()'
             public int repeat_in_pattern_length()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.repeat_in_pattern_length()'
             {
                 for (int i = 0; i < pattern.Length; i++)
                     if (pattern[i] == opt_repeat)
@@ -103,7 +125,9 @@ namespace NSS.Blast.Compiler.Stage
                 return -1;
             }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.has_repeat_in_replace()'
             public bool has_repeat_in_replace()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.has_repeat_in_replace()'
             {
                 for (int i = 0; i < replace.Length; i++)
                     if (replace[i] == opt_repeat)
@@ -111,7 +135,9 @@ namespace NSS.Blast.Compiler.Stage
                 return false;
             }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.validate()'
             public bool validate()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.validate()'
             {
                 // both either repeat or they dont
                 if (has_repeat_in_pattern() != has_repeat_in_replace()) return false;
@@ -122,11 +148,13 @@ namespace NSS.Blast.Compiler.Stage
             }
 
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.replace_match(CompilationData, IMByteCodeList, ref int)'
             public unsafe void replace_match(CompilationData cdata, IMByteCodeList code, ref int i)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastBytecodeOptimizer.optimizer_pattern.replace_match(CompilationData, IMByteCodeList, ref int)'
             {
                 // determine if replacing a variable function length 
-                var function = Blast.GetFunctionByOpCode((blast_operation)replace[0]);
-                bool variable_param_length = function == null ? false : function.MinParameterCount != function.MaxParameterCount;
+                var function = cdata.Blast.Data->GetFunction((blast_operation)replace[0]);
+                bool variable_param_length = function.IsNotValid ? false : function.MinParameterCount != function.MaxParameterCount;
 
                 byte var_param_count = 0;
                 byte vector_size = 1;
@@ -151,7 +179,7 @@ namespace NSS.Blast.Compiler.Stage
 
                     if (var_param_count == 0)
                     {
-                        cdata.LogError($"optimizer.replace_match: replace pattern variable count {var_param_count} smaller then min variable count {function.MinParameterCount} for function {function.Match}");
+                        cdata.LogError($"optimizer.replace_match: replace pattern variable count {var_param_count} smaller then min variable count {function.MinParameterCount} for function {function.GetFunctionName()}");
                         return;
                     }
                 }
@@ -763,7 +791,7 @@ namespace NSS.Blast.Compiler.Stage
                     if (pattern.match(data, code, i, ref matched_pattern))
                     {
                         matched_pattern.replace_match(data, code, ref i);
-                        if (!data.Success) return false;
+                        if (!data.IsOK) return false;
                         matched = true;
                         break;
                     }
@@ -836,13 +864,16 @@ namespace NSS.Blast.Compiler.Stage
 #endregion
 
 
-        /// <summary>
+        
+#pragma warning disable CS1572 // XML comment has a param tag for 'segment', but there is no parameter by that name
+/// <summary>
         /// optimize all code segments 
         /// </summary>
         /// <param name="cdata"></param>
         /// <param name="segment"></param>
         /// <returns></returns>
         int Optimize(CompilationData cdata)
+#pragma warning restore CS1572 // XML comment has a param tag for 'segment', but there is no parameter by that name
         {
             if (cdata.code.IsSegmented && cdata.CompilerOptions.ParallelCompilation)
             {

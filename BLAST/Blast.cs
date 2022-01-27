@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -49,15 +50,20 @@ namespace NSS.Blast
         public float* constants;
 
         /// <summary>
-        /// external function pointer array. these provide api access to the script  
+        /// external function info array. these provide api access to the script  
         /// </summary>
-        public NonGenericFunctionPointer* functionpointers;
+        public BlastScriptFunction* Functions;
+
+        /// <summary>
+        /// function pointer data
+        /// </summary>
+        public IntPtr* FunctionPointers; 
 
         /// <summary>
         /// number of function pointers in the fp array. function id's dont match indices.....  
         /// - TODO   this means each function call needs a lookup...
         /// </summary>
-        public int functionpointer_count;
+        public int FunctionCount;
 
         /// <summary>
         /// base random number generator, all random actions have their origin in this random number generator
@@ -80,53 +86,161 @@ namespace NSS.Blast
             }
         }
 
-        #region [try]get function pointer 
-
         /// <summary>
-        /// get a function pointer with a given id 
+        /// lookup function attached to operation, this assumes the function exists 
+        /// - TODO -> we could update this to a tableindexer instead of a scan by building a lookuptable[operation] == function
         /// </summary>
-        /// <param name="id">id of function</param>
-        /// <returns>the function pointer</returns>
-        unsafe public NonGenericFunctionPointer GetFunctionPointer(int id)
+        /// <param name="op">the operation to lookup the function for</param>
+        /// <returns>function record</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public BlastScriptFunction GetFunction(blast_operation op)
         {
-            NonGenericFunctionPointer p;
-            if (TryGetFunctionPointer(id, out p))
+            for(int i = 0; i < FunctionCount; i++)
             {
-                return p;
+                if(Functions[i].ScriptOp == op) return Functions[i];
             }
-            return default(NonGenericFunctionPointer);
+            return default; 
         }
 
         /// <summary>
-        /// linear scan for a function pointer with a given id
-        /// -> should not use TODO 
+        /// lookup a function using its name, this uses string input so wont be burst compiled 
         /// </summary>
-        /// <param name="id">id of function</param>
-        /// <param name="p">the functionpointer</param>
+        /// <param name="name_match">function name to match</param>
+        /// <param name="function">returned function</param>
         /// <returns>true if found</returns>
-        unsafe public bool TryGetFunctionPointer(int id, out NonGenericFunctionPointer p)
+        [BurstDiscard]
+        internal bool TryGetFunctionByName(string name_match, out BlastScriptFunction function)
         {
-            for (int i = 0; i < functionpointer_count; i++)
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(name_match), "damn those feeding me empty strings");
+
+            name_match = name_match.ToLower().Trim(); 
+            char first = name_match[0];
+
+            for (int i = 1; i < FunctionCount; i++)
             {
-                if (functionpointers[i].id == id)
+                if(Functions[i].Match[0] == first)
                 {
-                    p = functionpointers[i];
-                    return true;
+                    for(int j = 1; j < name_match.Length; j++)
+                    {
+                        if (Functions[i].Match[j] != name_match[j]) break;
+                        if (j == name_match.Length - 1)
+                        {
+                            if (Functions[i].Match[j + 1] == (char)0)
+                            {
+                                function = Functions[i];
+                                return true;
+                            }
+                        }
+                    }
                 }
             }
-            p = default(NonGenericFunctionPointer);
-            return false;
+            function = default; 
+            return false; 
         }
 
-        #endregion
+        /// <summary>
+        /// get the function matching to the name 
+        /// </summary>
+        /// <param name="name_match">name to match</param>
+        /// <returns>the function struct, note that it returns the default zero'd struct on matching failure</returns>
+        [BurstDiscard]
+        public BlastScriptFunction GetFunction(string name_match)
+        {
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(name_match), "damn those feeding me empty strings");
 
+            name_match = name_match.ToLower().Trim();
+            char first = name_match[0];
 
+            for (int i = 0; i < FunctionCount; i++)
+            {
+                if (Functions[i].Match[0] == first)
+                {
+                    for (int j = 1; j < name_match.Length; j++)
+                    {
+                        if (Functions[i].Match[j] != name_match[j]) continue;
+                        if (j == name_match.Length - 1)
+                        {
+                            return Functions[i];
+                        }
+                    }
+                }
+            }
+            return default;
+        }
 
+        /// <summary>
+        /// return if the id is in the correct range and its pointer is not null
+        /// </summary>
+        /// <param name="id">the index/id</param>
+        /// <returns>true if possibly valid</returns>
+        public bool CanBeAValidFunctionId(int id)
+        {
+            return id > 0 && id < FunctionCount && FunctionPointers[id] != IntPtr.Zero; 
+        }
+
+        /// <summary>
+        /// lookup a function mapping to the given operation, performs a linear scan through the function table 
+        /// </summary>
+        /// <param name="op">the operation to lookup</param>
+        /// <returns>returns true if the function is found and can have a variable parameter count</returns>
+        public bool IsVariableParamFunction(blast_operation op)
+        {
+            if (op == blast_operation.nop) return false;
+
+            for (int i = 0; i < FunctionCount; i++)
+            {
+                if (Functions[i].ScriptOp == op) return Functions[i].HasVariableParameterCount;
+            }
+
+            return false; 
+        }
     }
 
     /// <summary>
+    /// abstraction for enginedata pointer
+    /// </summary>
+    public struct BlastEngineDataPtr
+    {
+        /// <summary>
+        /// pointer to engine data 
+        /// </summary>
+        public IntPtr ptr;
+
+        /// <summary>
+        /// unsafe casted BlastEngineData pointer
+        /// </summary>
+        unsafe public BlastEngineData* Data 
+        { 
+            get
+            { 
+                return (BlastEngineData*) ptr.ToPointer(); 
+            } 
+        }
+
+        /// <summary>
+        /// returns if the pointer is not null / it doesnt actually track creation
+        /// </summary>
+        public bool IsCreated
+        {
+            get
+            {
+                return ptr != IntPtr.Zero;
+            }
+        }
+
+
+#if STANDALONE_VSBUILD
+        /// <summary>
+        /// implicit conversion of this to an intptr 
+        /// </summary>
+        /// <param name="p"></param>
+        public static implicit operator BlastEngineDataPtr(IntPtr p) => new BlastEngineDataPtr() { ptr = p };
+#endif    
+    }
+
+
+    /// <summary>
     /// Blast Engine
-    /// - use seperate instances for threads
     /// </summary>
     unsafe public struct Blast
     {
@@ -140,6 +254,8 @@ namespace NSS.Blast
         /// <returns></returns>
         public delegate int BlastExecute(int scriptid, float* p_stack, IntPtr data, IntPtr caller);
 
+
+#pragma warning disable CS1591 
         public delegate float BlastDelegate_f0(IntPtr engine, IntPtr data, IntPtr caller);
         public delegate float BlastDelegate_f1(IntPtr engine, IntPtr data, IntPtr caller, float a);
         public delegate float BlastDelegate_f2(IntPtr engine, IntPtr data, IntPtr caller, float a, float b);
@@ -149,11 +265,17 @@ namespace NSS.Blast
         public delegate float BlastDelegate_f6(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f);
         public delegate float BlastDelegate_f7(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g);
         public delegate float BlastDelegate_f8(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h);
+#pragma warning restore CS1591 
 
         /// <summary>
         /// the comment character 
         /// </summary>
         public const char Comment = '#';
+
+        /// <summary>
+        /// the maximum length of a function name in number of ASCII characters
+        /// </summary>
+        public const int MaximumFunctionNameLength = 32;
 
         /// <summary>
         /// the value used for invalid numerics 
@@ -185,13 +307,35 @@ namespace NSS.Blast
         /// </summary>
         public IntPtr Engine => (IntPtr)data;
 
+
         /// <summary>
         /// simple object/lock method for some threadsafety
         /// </summary>
         static internal object mt_lock = new object();
 
+
+
+
         #region Create / Destroy
+
+        /// <summary>
+        /// create a new instance of BLAST use the core scriptfunction api
+        /// </summary>
+        /// <param name="allocator">allocator to use, dont use temp allocator for bursted code</param>
+        /// <returns>the blast struct</returns>
         public unsafe static Blast Create(Allocator allocator)
+        {
+            return Create(null, allocator); 
+        }
+
+
+        /// <summary>
+        /// create a new instance of blast using a customized api 
+        /// </summary>
+        /// <param name="api">function api to use</param>
+        /// <param name="allocator">allocator to use, dont use temp allocator for bursted code</param>
+        /// <returns>the blast struct|class should refactor TODO</returns>
+        public unsafe static Blast Create(BlastScriptAPI api, Allocator allocator)
         {
             Blast blast;
             if (mt_lock == null) mt_lock = new object();
@@ -200,20 +344,64 @@ namespace NSS.Blast
             blast.data->constants = (float*)UnsafeUtils.Malloc(4 * 256 * 2, 4, blast.allocator);
             blast.data->random = Random.CreateFromIndex(1);
 
+
+            // setup constant data 
             for (int b = 0; b < 256; b++)
             {
                 blast.data->constants[b] = Blast.GetConstantValue((blast_operation)b);
             }
 
-            blast.data->functionpointer_count = FunctionCalls.Count;
-            blast.data->functionpointers = (NonGenericFunctionPointer*)UnsafeUtils.Malloc(sizeof(NonGenericFunctionPointer) * FunctionCalls.Count, 8, blast.allocator);
-
-            for (int i = 0; i < FunctionCalls.Count; i++)
+            // setup api 
+            if (api == null)
             {
-                ExternalFunctionCall call = FunctionCalls[i];
-                blast.data->functionpointers[i] = call.FunctionPointer;
+                api = (new CoreAPI(allocator)).Initialize();
+                blast.OwnScriptAPIMemory = true;
+            }
+            else
+            {
+                blast.OwnScriptAPIMemory = false;
+                Assert.IsTrue(api.IsInitialized, "Blast: script api not initialized");
             }
 
+            blast.API = api;
+            blast.data->FunctionCount = api.FunctionCount; 
+            blast.data->Functions = api.Functions; // memory is just referenced, not copied 
+
+            // we only allocate some memory for the intptr array
+            blast.data->FunctionPointers = (IntPtr*)UnsafeUtils.Malloc(sizeof(IntPtr) * api.FunctionCount, 8, blast.allocator); 
+            for(int i = 1; i < api.FunctionCount; i++)
+            {
+                if (api.FunctionInfo[i] != null)
+                {
+                    blast.data->FunctionPointers[i] = api.FunctionInfo[i].Function.NativeFunctionPointer;
+                }
+            }
+
+#if DEVELOPMENT_BUILD || TRACE
+            // show an overview of the functions available in the log 
+            StringBuilder fsb = new StringBuilder(4098);
+
+            fsb.AppendLine();
+            fsb.AppendLine("BLAST: known script functions: ");
+            fsb.AppendLine();
+            fsb.AppendLine($"{"Index".PadLeft(6)} {"FID".PadLeft(6)}   {"FunctionName".PadRight(32)} {"Operation".PadRight(12)} {"Extended Op".PadRight(12)} ");
+                
+            fsb.AppendLine("".PadRight(80, '-'));
+            for (int i = 1; i < api.FunctionCount; i++)
+            {
+                BlastScriptFunction f = blast.data->Functions[i];
+                if (f.IsValid)
+                {
+                    fsb.AppendLine($"{i.ToString().PadLeft(6)} {f.FunctionId.ToString().PadLeft(6)}   {f.GetFunctionName().PadRight(32)} {f.ScriptOp.ToString().PadRight(12)} {f.ExtendedScriptOp.ToString().PadRight(12)}"); 
+                    blast.data->FunctionPointers[i] = api.FunctionInfo[i].Function.NativeFunctionPointer;
+                }
+            }
+            fsb.AppendLine("".PadRight(80, '-'));
+            fsb.AppendLine();
+
+            Debug.Log(fsb.ToString());
+            fsb = null;
+#endif
 #if !STANDALONE_VSBUILD
             blast._burst_hpc_once_job = default;
             blast._burst_once_job = default;
@@ -224,30 +412,43 @@ namespace NSS.Blast
         }
 
         /// <summary>
-        /// Destroy blast handler 
+        /// release all memory allocated by this instance of blast 
         /// </summary>
         public unsafe void Destroy()
         {
             if (data != null)
             {
+                // constant values
                 if (data->constants != null)
                 {
                     UnsafeUtils.Free(data->constants, allocator);
                 }
-                if (data->functionpointers != null)
+                // function pointers
+                if (data->FunctionPointers != null)
                 {
-                    UnsafeUtils.Free(data->functionpointers, allocator);
+                    UnsafeUtils.Free(data->FunctionPointers, allocator);
                 }
                 UnsafeUtils.Free(data, allocator);
                 data = null;
             }
+            // if the api is owned by this instance then destroy it
+            // - TODO => should reference count its use and destroy when its not referenced by any blast instance anymore 
+            if(OwnScriptAPIMemory && API != null && API.IsInitialized)
+            {
+                API.Dispose(); 
+                API = null;
+                OwnScriptAPIMemory = false; 
+            }
+
             is_created = false;
         }
 
         #endregion
 
         #region Execute 
-
+        //
+        // create jobs for use in unity with burst 
+        //
 #if !STANDALONE_VSBUILD
 
         [BurstCompile]
@@ -292,48 +493,235 @@ namespace NSS.Blast
             };
         }
 
-#endif 
-#endregion
+#endif
+        //
+        // after problems with overloads in partially bursted structures i just settled for a dumb list of overloads, its probably fixed in a future release of burst 
+        //
 
-        #region Package
-
+        /// <summary>
+        /// Execute a Package
+        /// </summary>
+        /// <param name="package">the package data</param>
+        /// <returns>succes or an error code</returns>
         [BurstDiscard]
-        public static BlastScriptPackage Package(BlastScript script)
+        public BlastError Execute(in BlastPackageData package)
         {
-            Blast blast = Blast.Create(Allocator.Temp);
-            try
+            return Execute(Engine, in package, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Execute a Package
+        /// </summary>
+        /// <param name="package">the package data to execute</param>
+        /// <param name="environment">the environment data to use</param>
+        /// <returns>succes or an error code</returns>
+        [BurstDiscard]
+        public BlastError Execute(in BlastPackageData package, IntPtr environment)
+        {
+            return Execute(Engine, in package, environment, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Execute a Package
+        /// </summary>
+        /// <param name="package">the package data to execute</param>
+        /// <param name="environment">the environment data to use</param>
+        /// <param name="caller">the caller data to use</param>
+        /// <returns>succes or an error code</returns>
+        [BurstDiscard]
+        public BlastError Execute(in BlastPackageData package, IntPtr environment, IntPtr caller)
+        {                                 
+            return Execute(Engine, in package, environment, caller);
+        }
+
+        /// <summary>
+        /// Execute a Package
+        /// </summary>
+        /// <param name="package">the package data to execute</param>
+        /// <returns>succes or an error code</returns>
+        [BurstDiscard]
+        public BlastError Execute(in BlastScriptPackage package)
+        {
+            return Execute(Engine, in package.Package, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Execute a Package
+        /// </summary>
+        /// <param name="package">the package data to execute</param>
+        /// <param name="environment">the environment data to use</param>
+        /// <returns>succes or an error code</returns>
+        [BurstDiscard]
+        public BlastError Execute(in BlastScriptPackage package, IntPtr environment)
+        {
+            return Execute(Engine, in package.Package, environment, IntPtr.Zero);
+        }
+        /// <summary>
+        /// Execute a Package
+        /// </summary>
+        /// <param name="package">the package data to execute</param>
+        /// <param name="environment">the environment data to use</param>
+        /// <param name="caller">the caller data to use</param>
+        /// <returns>succes or an error code</returns>
+        [BurstDiscard]
+        public BlastError Execute(in BlastScriptPackage package, IntPtr environment, IntPtr caller)
+        {
+            return Execute(Engine, in package.Package, environment, caller);
+        }
+        /// <summary>
+        /// Execute a Package in ssmd mode
+        /// </summary>
+        /// <param name="package">the package data to execute</param>
+        /// <param name="ssmd_data">data for each entity|script|component</param>
+        /// <param name="ssmd_count">the number of data elements</param>
+        /// <returns>succes or an error code</returns>
+        [BurstDiscard]
+        public BlastError Execute(in BlastPackageData package, [NoAlias]IntPtr ssmd_data, int ssmd_count)
+        {
+            return Execute(package, IntPtr.Zero, ssmd_data, ssmd_count);
+        }
+        /// <summary>
+        /// Execute a Package in ssmd mode
+        /// </summary>
+        /// <param name="package">the package data to execute</param>
+        /// <param name="environment">the environment data to use</param>
+        /// <param name="ssmd_data">data for each entity|script|component</param>
+        /// <param name="ssmd_count">the number of data elements</param>
+        /// <returns>succes or an error code</returns>
+        [BurstDiscard]
+        public BlastError Execute(in BlastPackageData package, [NoAlias]IntPtr environment, [NoAlias]IntPtr ssmd_data, int ssmd_count)
+        {
+            return Blast.Execute(Engine, package, environment, ssmd_data, ssmd_count);
+        }
+        /// <summary>
+        /// Execute a Package in ssmd mode
+        /// </summary>
+        /// <param name="package">the package data to execute</param>
+        /// <param name="ssmd_data">data for each entity|script|component</param>
+        /// <param name="ssmd_count">the number of data elements</param>
+        /// <returns>succes or an error code</returns>
+        [BurstDiscard]
+        public BlastError Execute(in BlastScriptPackage package, [NoAlias]IntPtr ssmd_data, int ssmd_count)
+        {
+            return Execute(package.Package, IntPtr.Zero, ssmd_data, ssmd_count);
+        }
+
+        /// <summary>
+        /// Execute a Package in ssmd mode
+        /// </summary>
+        /// <param name="package">the package data to execute</param>
+        /// <param name="environment">the environment data to use</param>
+        /// <param name="ssmd_data">data for each entity|script|component</param>
+        /// <param name="ssmd_count">the number of data elements</param>
+        /// <returns>succes or an error code</returns>
+        [BurstDiscard]
+        public BlastError Execute(in BlastScriptPackage package, [NoAlias]IntPtr environment, [NoAlias]IntPtr ssmd_data, int ssmd_count)
+        {
+            return Execute(package.Package, environment, ssmd_data, ssmd_count);
+        }
+
+        /// <summary>
+        /// Execute a Package
+        /// </summary>
+        /// <param name="blast">Blast engine data</param>
+        /// <param name="package">the package data to execute</param>
+        /// <param name="environment">the environment data to use</param>
+        /// <param name="caller"></param>
+        /// <returns>succes or an error code</returns>
+        [BurstDiscard]
+        public static BlastError Execute(in BlastEngineDataPtr blast, in BlastPackageData package, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller)
+        {
+            if (!blast.IsCreated) return BlastError.error_blast_not_initialized;
+            if (!package.IsAllocated) return BlastError.error_package_not_allocated;
+
+            BlastInterpretor blaster = default;
+            blaster.SetPackage(package);
+
+            unsafe
             {
-                return blast.Package(script);
-            }
-            finally
-            {
-                blast.Destroy();
+                return (BlastError)blaster.Execute(blast, environment, caller);
             }
         }
+
+        /// <summary>
+        /// Execute a Package in ssmd mode
+        /// </summary>
+        /// <param name="blast"></param>
+        /// <param name="package">the package data to execute</param>
+        /// <param name="environment">the environment data to use</param>
+        /// <param name="ssmd_data">data for each entity|script|component</param>
+        /// <param name="ssmd_count">the number of data elements</param>
+        /// <returns>succes or an error code</returns>
         [BurstDiscard]
-        public static BlastScriptPackage Package(string code)
+        public static BlastError Execute(in BlastEngineDataPtr blast, in BlastPackageData package, [NoAlias]IntPtr environment, [NoAlias]IntPtr ssmd_data, int ssmd_count)
         {
-            return Blast.Package(BlastScript.FromText(code));
+            if (!blast.IsCreated) return BlastError.error_blast_not_initialized;
+            if (!package.IsAllocated) return BlastError.error_package_not_allocated;
+            if (ssmd_count == 0) return BlastError.error_nothing_to_execute;
+
+            BlastSSMDInterpretor blaster = default;
+            return (BlastError)blaster.Execute(blast, environment, (BlastSSMDDataStack*)ssmd_data, ssmd_count); 
         }
 
-        [BurstDiscard]
-        public BlastScriptPackage Package(string code, BlastCompilerOptions options = null)
-        {
-            return BlastCompiler.CompilePackage(this, BlastScript.FromText(code), options);
-        }
-
-        [BurstDiscard]
-        public BlastScriptPackage Package(BlastScript script, BlastCompilerOptions options = null)
-        {
-            return BlastCompiler.CompilePackage(this, script, options);
-        }
 
         #endregion
 
-        #region GetNodeTree
+        #region Package
 
-        [BurstDiscard]
-        static public CompilationData Intermediate(Blast blast, BlastScript script, BlastCompilerOptions options = null)
+        /// <summary>
+        /// Complile the code and package into blastscriptpackage 
+        /// </summary>
+        /// <param name="code">the script code</param>
+        /// <param name="options">compiler options</param>
+        /// <returns>the blastscript package</returns>
+        public BlastScriptPackage Package(string code, BlastCompilerOptions options = null)
+        {
+            return Package(BlastScript.FromText(code), options);
+        }
+
+        /// <summary>
+        /// Compile and package the script 
+        /// </summary>
+        /// <param name="script">the script to compile</param>
+        /// <param name="options">compiler options</param>
+        /// <returns>the blastscript package</returns>
+        public BlastScriptPackage Package(BlastScript script, BlastCompilerOptions options = null)
+        {
+            return Blast.Package(Engine, script, options);
+        }
+        /// <summary>
+        /// Compile and package script code
+        /// </summary>
+        /// <param name="blast">blast engine data</param>
+        /// <param name="code">script code to compile</param>
+        /// <param name="options">compiler options</param>
+        /// <returns>the code packaged and ready to execute</returns>
+        static public BlastScriptPackage Package(BlastEngineDataPtr blast, string code, BlastCompilerOptions options = null)
+        {
+            return Package(blast, BlastScript.FromText(code), options);
+        }
+
+        /// <summary>
+        /// Compile and package script code
+        /// </summary>
+        /// <param name="blast">blast engine data</param>
+        /// <param name="script">script code to compile</param>
+        /// <param name="options">compiler options</param>
+        /// <returns>the code packaged and ready to execute</returns>
+        static public BlastScriptPackage Package(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options = null)
+        {
+            return BlastCompiler.CompilePackage(blast, script, options);
+        }
+
+
+        /// <summary>
+        /// compile the compiler intermediate
+        /// </summary>
+        /// <param name="blast">blast engine data</param>
+        /// <param name="script">script</param>
+        /// <param name="options">compiler options</param>
+        /// <returns></returns>
+        public IBlastCompilationData Intermediate(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options = null)
         {
             return BlastCompiler.Compile(blast, script, options); 
         }
@@ -342,67 +730,76 @@ namespace NSS.Blast
 
         #region Constants 
 
-        [BurstDiscard]
-        public IEnumerable<blast_operation> ValueOperations()
+        /// <summary>
+        /// list all value operations, these operations directly encode constant values 
+        /// -> burst should be able to access this if needed.. 
+        /// </summary>
+        public static blast_operation[] ValueOperations =
         {
-            // we dont want this as static, but on a struct its also no good as field 
-            // structs dont carry arround function tables so this seems ok... 
-            yield return blast_operation.pi;
-            yield return blast_operation.inv_pi;
-            yield return blast_operation.epsilon;
-            yield return blast_operation.infinity;
-            yield return blast_operation.negative_infinity;
-            yield return blast_operation.nan;
-            yield return blast_operation.min_value;
+            blast_operation.pi,
+            blast_operation.inv_pi,
+            blast_operation.epsilon,
+            blast_operation.infinity,
+            blast_operation.negative_infinity,
+            blast_operation.nan,
+            blast_operation.min_value,
 
-            yield return blast_operation.value_0;
-            yield return blast_operation.value_1;
-            yield return blast_operation.value_2;
-            yield return blast_operation.value_3;
-            yield return blast_operation.value_4;
-            yield return blast_operation.value_8;
-            yield return blast_operation.value_10;
-            yield return blast_operation.value_16;
-            yield return blast_operation.value_24;
-            yield return blast_operation.value_32;
-            yield return blast_operation.value_64;
-            yield return blast_operation.value_100;
-            yield return blast_operation.value_128;
-            yield return blast_operation.value_256;
-            yield return blast_operation.value_512;
-            yield return blast_operation.value_1000;
-            yield return blast_operation.value_1024;
-            yield return blast_operation.value_30;
-            yield return blast_operation.value_45;
-            yield return blast_operation.value_90;
-            yield return blast_operation.value_180;
-            yield return blast_operation.value_270;
-            yield return blast_operation.value_360;
-            yield return blast_operation.inv_value_2;
-            yield return blast_operation.inv_value_3;
-            yield return blast_operation.inv_value_4;
-            yield return blast_operation.inv_value_8;
-            yield return blast_operation.inv_value_10;
-            yield return blast_operation.inv_value_16;
-            yield return blast_operation.inv_value_24;
-            yield return blast_operation.inv_value_32;
-            yield return blast_operation.inv_value_64;
-            yield return blast_operation.inv_value_100;
-            yield return blast_operation.inv_value_128;
-            yield return blast_operation.inv_value_256;
-            yield return blast_operation.inv_value_512;
-            yield return blast_operation.inv_value_1000;
-            yield return blast_operation.inv_value_1024;
-            yield return blast_operation.inv_value_30;
-            yield return blast_operation.inv_value_45;
-            yield return blast_operation.inv_value_90;
-            yield return blast_operation.inv_value_180;
-            yield return blast_operation.inv_value_270;
-            yield return blast_operation.inv_value_360;
-        }
+            blast_operation.value_0,
+            blast_operation.value_1,
+            blast_operation.value_2,
+            blast_operation.value_3,
+            blast_operation.value_4,
+            blast_operation.value_8,
+            blast_operation.value_10,
+            blast_operation.value_16,
+            blast_operation.value_24,
+            blast_operation.value_32,
+            blast_operation.value_64,
+            blast_operation.value_100,
+            blast_operation.value_128,
+            blast_operation.value_256,
+            blast_operation.value_512,
+            blast_operation.value_1000,
+            blast_operation.value_1024,
+            blast_operation.value_30,
+            blast_operation.value_45,
+            blast_operation.value_90,
+            blast_operation.value_180,
+            blast_operation.value_270,
+            blast_operation.value_360,
+            blast_operation.inv_value_2,
+            blast_operation.inv_value_3,
+            blast_operation.inv_value_4,
+            blast_operation.inv_value_8,
+            blast_operation.inv_value_10,
+            blast_operation.inv_value_16,
+            blast_operation.inv_value_24,
+            blast_operation.inv_value_32,
+            blast_operation.inv_value_64,
+            blast_operation.inv_value_100,
+            blast_operation.inv_value_128,
+            blast_operation.inv_value_256,
+            blast_operation.inv_value_512,
+            blast_operation.inv_value_1000,
+            blast_operation.inv_value_1024,
+            blast_operation.inv_value_30,
+            blast_operation.inv_value_45,
+            blast_operation.inv_value_90,
+            blast_operation.inv_value_180,
+            blast_operation.inv_value_270,
+            blast_operation.inv_value_360
+        }; 
+        
 
+        /// <summary>
+        /// get the constant numeric value of the operation 
+        /// </summary>
+        /// <param name="op">the operation to return the constant for</param>
+        /// <returns>a constant float value</returns>
         [BurstCompile]
+
         public static float GetConstantValue(blast_operation op)
+
         {
             switch (op)
             {
@@ -474,19 +871,19 @@ namespace NSS.Blast
 #endif
 #endif
                     return float.NaN;
-            }
+            }          
         }
 
 
+        
         /// <summary>
         /// get the script_op belonging to a constant value, eiter by name or value 
         /// </summary>
-        /// <param name="blast">blast engine data</param>
         /// <param name="value">the value to match</param>
         /// <param name="constant_epsilon">the epsilon to use matching constant values</param>
         /// <returns>nop on no match, nan of not a string match and no float, operation on match</returns>
         [BurstDiscard]
-        public blast_operation GetConstantValueOperation(string value, float constant_epsilon = 0.0001f)
+        public static blast_operation GetConstantValueOperation(string value, float constant_epsilon = 0.0001f)
         {
             // prevent matching to epsilon and/or min flt values (as they are very close to 0) 
             if (value == "0") return blast_operation.value_0;
@@ -505,7 +902,7 @@ namespace NSS.Blast
                 return blast_operation.nan;
             }
 
-            foreach (blast_operation value_op in ValueOperations())
+            foreach (blast_operation value_op in ValueOperations)
             {
                 float f2 = Blast.GetConstantValue(value_op);
                 if (f2 > f - constant_epsilon && f2 < f + constant_epsilon)
@@ -521,7 +918,7 @@ namespace NSS.Blast
         /// check if name matches a named system constant like  'PI' or 'NaN'
         /// </summary>                                                   
         [BurstDiscard]
-        public blast_operation IsNamedSystemConstant(string name)
+        public static blast_operation IsNamedSystemConstant(string name)
         {
             switch (name.Trim().ToLower())
             {
@@ -539,7 +936,7 @@ namespace NSS.Blast
         /// get the value of a named system constant 
         /// </summary>
         [BurstDiscard]
-        public float GetNamedSystemConstantValue(string name)
+        public static float GetNamedSystemConstantValue(string name)
         {
             switch (name.Trim().ToLower())
             {
@@ -662,88 +1059,12 @@ namespace NSS.Blast
 
         #region Functions 
 
-        /// <summary>
-        /// defined functions for script
-        /// </summary>
-        static public List<ScriptFunctionDefinition> Functions = new List<ScriptFunctionDefinition>()
-        {
-            new ScriptFunctionDefinition(0, "abs", 1, 1, 0, 0, blast_operation.abs),
-
-            new ScriptFunctionDefinition(1, "min", 2, 63, 0, 0, blast_operation.min),
-            new ScriptFunctionDefinition(2, "max", 2, 63, 0, 0, blast_operation.max),
-            new ScriptFunctionDefinition(3, "mina", 1, 63, 1, 0, blast_operation.mina),
-            new ScriptFunctionDefinition(4, "maxa", 1, 63, 1, 0, blast_operation.maxa),
-
-            new ScriptFunctionDefinition(5, "select", 3, 3, 0, 0, blast_operation.select, "a", "b", "condition"),
-
-            new ScriptFunctionDefinition(6, "random", 0, 2, 0, 0, blast_operation.random),  // random value from 0 to 1 (inclusive), 0 to max, or min to max depending on parameter count 1
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Seed, "seed", 1, 1, 0, 0, blast_operation.seed),
-
-            new ScriptFunctionDefinition(7, "sqrt", 1, 1, 0, 0, blast_operation.sqrt),
-            new ScriptFunctionDefinition(8, "rsqrt", 1, 1, 0, 0, extended_blast_operation.rsqrt),
-
-            new ScriptFunctionDefinition(9, "lerp", 3, 3, 0, 0, blast_operation.lerp, "a", "b", "t"),
-            new ScriptFunctionDefinition(10, "slerp", 3, 3, 4, 4, blast_operation.slerp, "a", "b", "t"),
-            new ScriptFunctionDefinition(47, "nlerp", 3, 3, 4, 4, blast_operation.nlerp, "a", "b", "t"),
-
-            new ScriptFunctionDefinition(11, "any", 2, 63, 0, 0, blast_operation.any),
-            new ScriptFunctionDefinition(12, "all", 2, 63, 0, 0, blast_operation.all),
-            new ScriptFunctionDefinition(13, "adda", 2, 63, 0, 0, blast_operation.adda),
-            new ScriptFunctionDefinition(14, "suba", 2, 63, 0, 0, blast_operation.suba),
-            new ScriptFunctionDefinition(15, "diva", 2, 63, 0, 0, blast_operation.diva),
-            new ScriptFunctionDefinition(16, "mula", 2, 63, 0, 0, blast_operation.mula),
-
-            new ScriptFunctionDefinition(17, "ceil", 1, 1, 0, 0, blast_operation.ceil),
-            new ScriptFunctionDefinition(18, "floor", 1, 1, 0, 0, blast_operation.floor),
-            new ScriptFunctionDefinition(19, "frac", 1, 1, 0, 0, blast_operation.frac),
-
-            new ScriptFunctionDefinition(21, "sin", 1, 1, 0, 0, blast_operation.sin),
-            new ScriptFunctionDefinition(22, "cos", 1, 1, 0, 0, blast_operation.cos),
-            new ScriptFunctionDefinition(23, "tan", 1, 1, 0, 0, blast_operation.tan),
-            new ScriptFunctionDefinition(24, "atan", 1, 1, 0, 0, blast_operation.atan),
-            new ScriptFunctionDefinition(25, "cosh", 1, 1, 0, 0, blast_operation.cosh),
-            new ScriptFunctionDefinition(26, "sinh", 1, 1, 0, 0, blast_operation.sinh),
-
-            new ScriptFunctionDefinition(28, "degrees", 1, 1, 0, 0, blast_operation.degrees),
-            new ScriptFunctionDefinition(29, "rad", 1, 1, 0, 0, blast_operation.radians),
-
-            new ScriptFunctionDefinition(46, "fma", 3, 3, 0, 0, blast_operation.fma, "m1", "m2", "a1"),
-
-            new ScriptFunctionDefinition(33, "pow", 2, 2, 0, 0, extended_blast_operation.pow, null, "a", "power"),
-
-            new ScriptFunctionDefinition(32, "normalize", 1, 1, 0, 0, blast_operation.normalize, "a"),
-            new ScriptFunctionDefinition(30, "saturate", 1, 1, 0, 0, blast_operation.saturate, "a"),
-            new ScriptFunctionDefinition(31, "clamp", 3, 3, 0, 0, blast_operation.clamp, "a", "min", "max"),
-
-            new ScriptFunctionDefinition(41, "log2", 1, 1,  0, 0, extended_blast_operation.log2, null, "a", "b"),
-            new ScriptFunctionDefinition(42, "log10", 1, 1, 0, 0, extended_blast_operation.log10, null, "a"),
-            new ScriptFunctionDefinition(43, "log", 1, 1, 0, 0, extended_blast_operation.logn, null, "a"),
-            new ScriptFunctionDefinition(40, "exp", 1, 1,  0, 0, extended_blast_operation.exp, null, "exponent_of_e"),
-            new ScriptFunctionDefinition(44, "exp10", 1, 1, 0, 0, extended_blast_operation.exp10, null, "a", "b"),
-            new ScriptFunctionDefinition(38, "cross", 2, 2, 3, 3, extended_blast_operation.cross, null, "a", "b"),
-            new ScriptFunctionDefinition(39, "dot", 2, 2, 1, 0, extended_blast_operation.dot, null, "a", "b"),
-
-            new ScriptFunctionDefinition(45, "return", 0, 0,  0, 0,blast_operation.ret),
-
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Push, "push", 1, 4, 0, 0,blast_operation.push, "n", "a"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushFunction, "pushf", 1, 1, 0, 0,blast_operation.pushf, "n", "a"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushCompound, "pushc", 1, 1, 0, 0,blast_operation.pushc, "n", "a"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.PushVector, "pushv", 1, 1, 0, 0,blast_operation.pushv, "n", "a"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Pop, "pop", 0, 0, 0, 0,blast_operation.pop, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Peek, "peek", 0, 1, 0, 0, blast_operation.peek, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Yield, "yield", 0, 1, 0, 0,blast_operation.yield, "n"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Input, "input", 3, 3, 0, 0,blast_operation.nop, "id", "offset", "length"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Output, "output", 3, 3, 0, 0,blast_operation.nop, "id", "offset", "length"),
-
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debug", 1, 1, 0, 0, extended_blast_operation.debug, null, "id"),
-            new ScriptFunctionDefinition((int)ReservedScriptFunctionIds.Debug, "debugstack",0, 0, 0, 0, extended_blast_operation.debugstack)
-        };
-
+     
         /// <summary>
         /// get the function for a sequence of op, add -> adda
         /// </summary>
         [BurstCompile]
-        static internal blast_operation GetSequenceFunction(blast_operation op)
+        static internal blast_operation GetSequenceOperation(blast_operation op)
         {
             // transform the sequence into a function call matching the operation 
             switch (op)
@@ -763,7 +1084,7 @@ namespace NSS.Blast
         /// return if there is a sequence function for the operation
         /// </summary>
         [BurstCompile]
-        static internal bool HasSequenceFunction(blast_operation op)
+        static internal bool HasSequenceOperation(blast_operation op)
         {
             // transform the sequence into a function call matching the operation 
             switch (op)
@@ -781,165 +1102,23 @@ namespace NSS.Blast
 
 
 
-        /// <summary>
-        /// lookup a function definition that is directly linked to an interpretor operation 
-        /// </summary>
-        /// <param name="op">the operation that should translate to a function used during interpretation</param>
-        /// <returns>a function definition</returns>
-        [BurstDiscard]
-        static public ScriptFunctionDefinition GetFunctionByOpCode(blast_operation op)
-        {
-            foreach (var f in Blast.Functions)
-                if (f.ScriptOp == op)
-                    return f;
-
-            // look in user defined functions 
-            return null;
-        }
-
-
-        /// <summary>
-        /// lookup a function definition that is directly linked to an interpretor operation 
-        /// </summary>
-        /// <param name="name">the name of the function to lookup</param>
-        /// <returns>a function definition</returns>
-        [BurstDiscard]
-        static public ScriptFunctionDefinition GetFunctionByName(string name)
-        {
-            foreach (var f in Blast.Functions)
-                if (string.Compare(name, f.Match, true) == 0)
-                    return f;
-
-            // look in user defined functions 
-            return null;
-        }
-
-
-        /// <summary>
-        /// lookup a function definition that is directly linked to an interpretor operation 
-        /// </summary>
-        /// <param name="function_id">the reserved id of the function to lookup</param>
-        /// <returns>a function definition</returns>
-        [BurstDiscard]
-        static public ScriptFunctionDefinition GetFunctionById(ReservedScriptFunctionIds function_id)
-        {
-            return GetFunctionById((int)function_id);
-        }
-
-
-
-        /// <summary>
-        /// lookup a function definition that is directly linked to an interpretor operation 
-        /// </summary>
-        /// <param name="function_id">the unique id of the function to lookup</param>
-        /// <returns>a function definition</returns>
-        [BurstDiscard]
-        static public ScriptFunctionDefinition GetFunctionById(int function_id)
-        {
-            foreach (var f in Blast.Functions)
-                if (f.FunctionId == function_id)
-                    return f;
-
-            // look in user defined functions 
-            return null;
-        }
-
-        /// <summary>
-        /// returns true if the function accepts a variable sized list of paramaters 
-        /// </summary>
-        /// <param name="op">the operation mapping to a function</param>
-        /// <returns>true if the function exists and has a variable parameter list</returns>
-        [BurstDiscard]
-        static public bool IsVariableParamFunction(blast_operation op)
-        {
-            if (op == blast_operation.nop)
-            {
-                return false;
-            }
-
-            ScriptFunctionDefinition function = GetFunctionByOpCode(op);
-            if (function == null)
-            {
-                return false;
-            }
-
-            return function.MinParameterCount != function.MaxParameterCount;
-        }
         #endregion
 
         #region Compiletime Function Pointers 
 
-        static public List<ExternalFunctionCall> FunctionCalls = new List<ExternalFunctionCall>();
-
-        [BurstDiscard]
-        static public void DestroyAnyFunctionPointers()
-        {
-            if (FunctionCalls != null && FunctionCalls.Count > 0)
-            {
-                FunctionCalls.Clear();
-            }
-        }
-
-        [BurstDiscard]
-        static public int GetMaxFunctionId()
-        {
-            int max = int.MinValue;
-            foreach (var f in Functions)
-            {
-                max = math.max(max, f.FunctionId);
-            }
-            return max;
-        }
-
-        [BurstDiscard]
-        static public ExternalFunctionCall GetFunctionCallById(int id)
-        {
-            foreach (ExternalFunctionCall call in FunctionCalls)
-            {
-                if (call.ScriptFunction.FunctionId == id)
-                {
-                    return call;
-                }
-            }
-            return null;
-        }
-        [BurstDiscard]
-        static public bool TryGetFunctionCallById(int id, out ExternalFunctionCall fc)
-        {
-            foreach (ExternalFunctionCall call in FunctionCalls)
-            {
-                if (call.ScriptFunction.FunctionId == id)
-                {
-                    fc = call;
-                    return true;
-                }
-            }
-            fc = null;
-            return false;
-        }
-
-        [BurstDiscard]
-        static public ExternalFunctionCall GetFunctionCallByName(string name)
-        {
-            foreach (ExternalFunctionCall call in FunctionCalls)
-            {
-                if (string.Compare(call.Match, name, true) == 0)
-                {
-                    return call;
-                }
-            }
-            return null;
-        }
-
-        [BurstDiscard]
-        static public bool ExistsFunctionCall(string name)
-        {
-            return GetFunctionCallByName(name) != null;
-        }
-
+        /// <summary>
+        /// the current set of script accessible functions, check OwnScriptAPIMemory to see if this instance of blast is the owner of the memory used in the API
+        /// </summary>
+        public BlastScriptAPI API;
 
         /// <summary>
-        /// register functionpointer as an external call  / reserve id 
+        /// true if memory is owned by this instance of blast and should be destroyed with it 
+        /// </summary>
+        private bool OwnScriptAPIMemory; 
+
+       /*
+        /// <summary>
+        /// register functionpointer as an external call / reserve id 
         /// </summary>
         /// <param name="name"></param>
         /// <param name="returns"></param>
@@ -949,27 +1128,6 @@ namespace NSS.Blast
         static public int RegisterFunction(string name, BlastVariableDataType returns, string[] parameters)
         {
             return RegisterFunction(default(NonGenericFunctionPointer), name, returns, parameters);
-        }
-
-        /// <summary>
-        /// update the functionpointer for an external call 
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="fp"></param>
-        [BurstDiscard]
-        static public void UpdateFunctionPointer(int id, NonGenericFunctionPointer fp)
-        {
-            Assert.IsNotNull(FunctionCalls);
-
-            ExternalFunctionCall call = GetFunctionCallById(id);
-
-            Assert.IsNotNull(call);
-            Assert.IsTrue(fp.id == call.ScriptFunction.FunctionId); // force it to be set on update 
-
-            if (call != null)
-            {
-                call.FunctionPointer = fp;
-            }
         }
 
 
@@ -1019,7 +1177,7 @@ namespace NSS.Blast
 
             return call.ScriptFunction.FunctionId;
         }
-
+                        */
 
         #endregion
 
@@ -1069,8 +1227,16 @@ namespace NSS.Blast
         #endregion
 
         #region Runtime compilation of configuration into compiletime script for use next compilation
-        [BurstDiscard]
-        static public bool CompileIntoRegistry(Blast blast, BlastScript script, string script_directory)
+
+        /// <summary>
+        /// compile the script into the designtime registry 
+        /// </summary>
+        /// <param name="blast">blast engine data</param>
+        /// <param name="script">the script to compile</param>
+        /// <param name="script_directory">the directory to place the script in</param>
+        /// <returns>true on success</returns>
+        static public bool CompileIntoDesignTimeRegistry(BlastEngineDataPtr blast, BlastScript script, string script_directory)
+
         {
             Assert.IsNotNull(script);
             Assert.IsFalse(string.IsNullOrWhiteSpace(script.Name));
@@ -1094,10 +1260,24 @@ namespace NSS.Blast
             }
 
             string target = script_directory + "//" + script.Name + ".cs";
-            File.WriteAllText(
-                target,
-                HPCNamespace.CombineScriptsIntoNamespace(new string[] { data.HPCCode }));
 
+            try
+            {
+                File.WriteAllText(
+                    target,
+                    HPCNamespace.CombineScriptsIntoNamespace(new string[] { data.HPCCode }));
+            }
+            catch(Exception ex)
+            {
+                // 99% sure this is an IO error
+#if !STANDALONE_VSBUILD
+                Debug.LogError($"Blast.CompileIntoRegistry: Failed to write script '{script}' to target location at: {target}\n\nError: {ex.ToString()}\n");
+#else
+                System.Diagnostics.Debug.WriteLine($"Blast.CompileIntoRegistry: Failed to write script '{script}' to target location at: {target}\n\nError: {ex.ToString()}\n");
+#endif
+
+                return false; 
+            }
             return true;
         }
 
@@ -1107,7 +1287,9 @@ namespace NSS.Blast
         #region HPC Jobs 
         static Dictionary<int, IBlastHPCScriptJob> _hpc_jobs = null;
         [BurstDiscard]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'Blast.HPCJobs'
         public Dictionary<int, IBlastHPCScriptJob> HPCJobs
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'Blast.HPCJobs'
         {
             get
             {
@@ -1130,7 +1312,9 @@ namespace NSS.Blast
             }
         }
         [BurstDiscard]
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'Blast.GetHPCJob(int)'
         public IBlastHPCScriptJob GetHPCJob(int script_id)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'Blast.GetHPCJob(int)'
         {
             if (is_created && script_id > 0)
             {
@@ -1145,22 +1329,13 @@ namespace NSS.Blast
         #endregion
 
         #region bytecode reading / tostring
-        [BurstDiscard]
-        unsafe public static string GetByteCodeByteText(in byte* bytes, in int length, int column_count)
-        {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < length; i++)
-            {
-                sb.Append($"{bytes[i].ToString().PadLeft(3, '0').PadRight(4)}");
-                if ((i + 1) % column_count == 0 || i == length - 1)
-                {
-                    sb.Append("\n");
-                }
-            }
-            return sb.ToString();
-        }
 
-
+        /// <summary>
+        /// get somewhat readable assembly from bytes
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
         [BurstDiscard]
         unsafe public static string GetReadableByteCode(in byte* bytes, in int length)
         {
@@ -1171,17 +1346,6 @@ namespace NSS.Blast
             while (i < length)
             {
                 blast_operation op = (blast_operation)bytes[i];
-
-                // generate a somewhat readable assembly view
-                //
-                // offset |  translation
-                //-------------------------------
-                // 000    |  assign a 2 nop
-                // 004    |  assign b (4 * 4) nop
-                // etc. 
-                //
-                //
-
                 switch (op)
                 {
                     case blast_operation.nop: sb.Append("\n"); break;
@@ -1480,245 +1644,6 @@ namespace NSS.Blast
             return 0;
         }
 #endif
-        #endregion
-
-        #region Runners 
-
-        static Dictionary<int, runner> runners;
-
-        internal enum runner_type
-        {
-            bs, hpc, cs
-        }
-
-        [BurstDiscard]
-        internal runner GetRunner(int script_id)
-        {
-            if (!is_created) return null;
-            if (script_id <= 0) return null;
-
-            runner r = null;
-
-            lock (mt_lock)
-            {
-                if (runners == null)
-                {
-                    runners = new Dictionary<int, runner>();
-                }
-                if (runners != null)
-                {
-                    if (runners.TryGetValue(script_id, out r)) return r;
-                }
-            }
-
-            // to create a runner iterate fastest method first
-#if !STANDALONE_VSBUILD
-            IBlastHPCScriptJob job = GetHPCJob(script_id);
-            if (job != null)
-            {
-                r = new runner(script_id, runner_type.hpc)
-                {
-                    HPCJobBSD = job.GetBSD(),
-                    HPCVariables = new NativeArray<float>(new float[20], Allocator.TempJob)
-                };
-            }
-            else
-#endif
-            {
-                BlastScriptPackage pkg = GetPackage(script_id);
-                if (pkg != null)
-                {
-                    r = new runner(script_id, runner_type.bs)
-                    {
-                        Package = pkg.Package,
-                    };
-                }
-            }
-
-            if (r != null)
-            {
-                lock (mt_lock)
-                {
-                    if (!runners.ContainsKey(script_id))
-                    {
-                        runners.Add(script_id, r);
-                    }
-                }
-                return r;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-
-        /// <summary>
-        /// todo: update ? or just keep like this?
-        /// </summary>
-        internal class runner
-        {
-            public int ScriptId;
-            public runner_type Type;
-
-            // option 1
-            public BlastPackageData Package;
-
-#if !STANDALONE_VSBUILD
-            // option 2
-            public FunctionPointer<BSExecuteDelegate> HPCJobBSD;
-            public NativeArray<float> HPCVariables;
-#endif
-
-            // option 3
-            // c# script (windows) 
-
-            public runner(int script_id, runner_type type)
-            {
-                ScriptId = script_id;
-                Type = type;
-            }
-        }
-
-        #endregion
-
-        #region Bytecode Packages 
-        static Dictionary<int, BlastScriptPackage> _bytecode_packages = new Dictionary<int, BlastScriptPackage>();
-        [BurstDiscard]
-        static public int BytecodePackageCount => _bytecode_packages == null ? 0 : _bytecode_packages.Count;
-
-        /// <summary>
-        /// Using this list is not thread safe 
-        /// </summary>
-        [BurstDiscard]
-        static public Dictionary<int, BlastScriptPackage> BytecodePackages
-        {
-            get
-            {
-                if (_bytecode_packages == null)
-                {
-                    lock (mt_lock)
-                    {
-                        if (_bytecode_packages == null)
-                        {
-                            _bytecode_packages = new Dictionary<int, BlastScriptPackage>();
-                        }
-                    }
-                }
-                return _bytecode_packages;
-            }
-        }
-
-
-        /// <summary>
-        /// add a package to the internal packages repo
-        /// </summary>
-        /// <param name="pkg">the package to add</param>
-        /// <returns>the nr of packages in the repo after adding this one or 0 on failure</returns>
-        [BurstDiscard]
-        static public int AddPackage(int script_id, BlastScriptPackage pkg)
-        {
-            if (pkg != null)
-            {
-                lock (mt_lock)
-                {
-                    if (_bytecode_packages == null)
-                    {
-                        _bytecode_packages = new Dictionary<int, BlastScriptPackage>();
-                    }
-                    if (_bytecode_packages.ContainsKey(script_id))
-                    {
-                        _bytecode_packages[script_id] = pkg;
-                    }
-                    else
-                    {
-                        _bytecode_packages.Add(script_id, pkg);
-                    }
-                    return _bytecode_packages.Count;
-                }
-            }
-            return 0;
-        }
-
-        [BurstDiscard]
-        static public BlastScriptPackage GetPackage(int script_id)
-        {
-            if (script_id <= 0) return null;
-            lock (mt_lock)
-            {
-                if (_bytecode_packages != null)
-                {
-                    BlastScriptPackage pkg;
-                    if (_bytecode_packages.TryGetValue(script_id, out pkg))
-                    {
-                        return pkg;
-                    }
-                }
-            }
-            return null;
-        }
-
-        #endregion
-
-        #region Runtime Registration/Compilation of scripts 
-
-        [BurstDiscard]
-        static public int RegisterAndCompile(Blast blast, BlastScript script)
-        {
-            // register script 
-            int id = BlastScriptRegistry.Register(script);
-            if (id <= 0) return 0;
-
-            // compile into package 
-            BlastScriptPackage pkg = BlastCompiler.CompilePackage(blast, script);
-            if (pkg == null) return 0;
-
-            // store package 
-            Blast.AddPackage(id, pkg);
-
-            return id;
-        }
-
-        [BurstDiscard]
-        public int RegisterAndCompile(string code, string name = null, int id = 0)
-        {
-            return RegisterAndCompile(this, code, name, id);
-        }
-
-        [BurstDiscard]
-        static public int RegisterAndCompile(Blast blast, string code, string name = null, int id = 0)
-        {
-            id = BlastScriptRegistry.Register(code, name, id);
-            if (id <= 0) return 0;
-
-            BlastScript script = BlastScriptRegistry.Get(id);
-            if (script == null) return 0;
-
-            BlastScriptPackage pkg = BlastCompiler.CompilePackage(blast, script);
-            if (pkg == null) return 0;
-
-            Blast.AddPackage(id, pkg);
-            return id;
-        }
-
-#if !STANDALONE_VSBUILD
-        [BurstDiscard]
-        static public int RegisterAndCompile(Blast blast, string resource_filename_without_extension, int id = 0)
-        {
-            id = BlastScriptRegistry.RegisterScriptResource(resource_filename_without_extension, resource_filename_without_extension, id);
-            if (id <= 0) return 0;
-
-            BlastScript script = BlastScriptRegistry.Get(id);
-            if (script == null) return 0;
-
-            BlastScriptPackage pkg = BlastCompiler.CompilePackage(blast, script);
-            if (pkg == null) return 0;
-
-            Blast.AddPackage(id, pkg);
-            return id;
-        }
-#endif
-
         #endregion
 
     }

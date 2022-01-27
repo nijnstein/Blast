@@ -15,9 +15,15 @@ namespace NSS.Blast.Compiler
         const byte opt_value = (byte)blast_operation.pi;
 
         // large max size 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastIntermediate.data_capacity'
         public const int data_capacity = 256; // in elements
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastIntermediate.data_capacity'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastIntermediate.code_capacity'
         public const int code_capacity = 1024; // in bytes 
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastIntermediate.code_capacity'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastIntermediate.data_element_bytesize'
         public const int data_element_bytesize = 4; 
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastIntermediate.data_element_bytesize'
 
         /// <summary>
         /// unique script id
@@ -60,14 +66,18 @@ namespace NSS.Blast.Compiler
         // - otherwise its a pointer (FUTURE)      
         // - datatype                              datatype = high 4 bits >> 4
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastIntermediate.metadata'
         public fixed byte metadata[data_capacity];
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastIntermediate.metadata'
 
 
         /// <summary>
         /// nr of data elements (presumably 32bits so 4bytes/element) - same as data_offset, added for clarity
         /// </summary>
         public byte DataCount => data_count;
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastIntermediate.DataByteSize'
         public int DataByteSize => data_count * data_element_bytesize;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastIntermediate.DataByteSize'
 
         /// <summary>
         /// read a float from the datasegement at given element index
@@ -103,7 +113,9 @@ namespace NSS.Blast.Compiler
         /// </summary>
         /// <param name="blast"></param>
         /// <returns></returns>
+#pragma warning disable CS1573 // Parameter 'validation_run' has no matching param tag in the XML comment for 'BlastIntermediate.Execute(in IntPtr, bool)' (but other parameters do)
         public int Execute(in IntPtr blast, bool validation_run = false)
+#pragma warning restore CS1573 // Parameter 'validation_run' has no matching param tag in the XML comment for 'BlastIntermediate.Execute(in IntPtr, bool)' (but other parameters do)
         {
             // setup a package to run 
             BlastPackageData package = default;

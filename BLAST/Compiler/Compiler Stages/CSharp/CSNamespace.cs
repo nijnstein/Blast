@@ -4,7 +4,9 @@ using System.Text;
 
 namespace NSS.Blast.Compiler
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CSNamespace'
     public static class CSNamespace
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CSNamespace'
     {
         static string[] usings = new string[]
         {
@@ -23,7 +25,9 @@ namespace NSS.Blast.Cache.CS
     {1}
 }}";
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CSNamespace.CombineScriptsIntoNamespace(IEnumerable<string>)'
         static public string CombineScriptsIntoNamespace(IEnumerable<string> scripts)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CSNamespace.CombineScriptsIntoNamespace(IEnumerable<string>)'
         {
             StringBuilder sb_using = GetUsings();
 
@@ -48,7 +52,9 @@ namespace NSS.Blast.Cache.CS
             return sb_using;
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CSNamespace.MergeScriptIntoNamespace(string)'
         static public string MergeScriptIntoNamespace(string script)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CSNamespace.MergeScriptIntoNamespace(string)'
         {
             return string.Format(ns, GetUsings(), Environment.NewLine + script);
         }

@@ -20,78 +20,244 @@ namespace NSS.Blast.Compiler
     /// </summary>
     public interface IBlastCompilationData
     {
+        /// <summary>
+        /// compiler version 
+        /// </summary>
         Version Version { get; }
-        Blast Blast { get; }
+
+        /// <summary>
+        /// blast engine data used in this compilation
+        /// </summary>
+        BlastEngineDataPtr Blast { get; }
+
+        /// <summary>
+        /// the script 
+        /// </summary>
         BlastScript Script { get; }
+
+        /// <summary>
+        /// Compiler Options used during compilation
+        /// </summary>
         BlastCompilerOptions CompilerOptions { get; }
 
+        /// <summary>
+        /// Compiler node tree
+        /// </summary>
         node AST { get; }
 
+        /// <summary>
+        /// List of tokens as parsed from the input
+        /// </summary>
         List<Tuple<BlastScriptToken, string>> Tokens { get; set; }
+
+        /// <summary>
+        /// List of variables as found in input
+        /// </summary>
         List<BlastVariable> Variables { get; set; }
+        
+        /// <summary>
+        /// Offsets into the datasegment for variable indices 
+        /// </summary>
         List<byte> Offsets { get; set; }
+
+        /// <summary>
+        /// Jumps found in the script 
+        /// </summary>
         List<Tuple<int, int>> Jumps { get; set; }
+
+        /// <summary>
+        /// Compiler defines used during compilation, this contains only the unique defines set by this script
+        /// and more defines might apply depending on the setup
+        /// </summary>
         Dictionary<string, string> Defines { get; set; }
+
+        /// <summary>
+        /// Defined Inputs 
+        /// </summary>
         List<BlastVariableMapping> Inputs { get; set; }
+
+        /// <summary>
+        /// Defined Outputs 
+        /// </summary>
         List<BlastVariableMapping> Outputs { get; set; }
+        
+        /// <summary>
+        /// Validations defined in script 
+        /// </summary>
         Dictionary<string, string> Validations { get; set; }
 
+        /// <summary>
+        /// log an error to the compiler log
+        /// </summary>
+        /// <param name="msg">the message to log</param>
+        /// <param name="code">an error code</param>
+        /// <param name="linenr">possibly the linenr</param>
+        /// <param name="member">possibly the callername</param>
         void LogError(string msg, int code = 0, int linenr = 0, [CallerMemberName] string member = "");
+
+        /// <summary>
+        /// trace information, does nothing in release 
+        /// </summary>
+        /// <param name="msg">the message to log</param>
+        /// <param name="linenr">possibly the linenr</param>
+        /// <param name="member">possibly the callername</param>
         void LogTrace(string msg, int linenr = 0, [CallerMemberName] string member = "");
+
+        /// <summary>
+        /// log a warning to the compiler log
+        /// </summary>
+        /// <param name="msg">the message to log</param>
+        /// <param name="linenr">possibly the linenr</param>
+        /// <param name="member">possibly the callername</param>
         void LogWarning(string msg, int linenr = 0, [CallerMemberName] string member = "");
+ 
+        /// <summary>
+        /// log a message to the compiler log
+        /// </summary>
+        /// <param name="msg">the message to log</param>
+        /// <param name="linenr">possibly the linenr</param>
+        /// <param name="member">possibly the callername</param>
         void LogToDo(string msg, int linenr = 0, [CallerMemberName] string member = "");
 
+        /// <summary>
+        /// true if no errors are set in the compilation log and no errorcode is set
+        /// </summary>
         bool IsOK { get; }
+
+        /// <summary>
+        /// true if an errorcode is set or errors are present in the compilation log 
+        /// </summary>
+        bool HasErrors { get; }
+
+        /// <summary>
+        /// true if the script can be validated (it contains validation defines) 
+        /// </summary>
         bool CanValidate { get; }
+
+        /// <summary>
+        /// true if the script defines compiler defines 
+        /// </summary>
         bool HasDefines { get; }
 
+        /// <summary>
+        /// lookup a variablemapping defined by the script by its name
+        /// </summary>
+        /// <param name="name">the name of the variable as used in the script code</param>
+        /// <returns>the variable if found, null otherwise</returns>
         BlastVariable GetVariable(string name);
+
+        /// <summary>
+        /// lookup a variable defined by script based on its offset 
+        /// </summary>
+        /// <param name="offset">the datasegment offset</param>
+        /// <returns>the variable</returns>
         BlastVariable GetVariableFromOffset(byte offset);
+        
+        /// <summary>
+        /// attempt to get a defined value from script defined compilerdefines
+        /// </summary>
+        /// <param name="identifier">the identifier</param>
+        /// <param name="defined_value">the output value</param>
+        /// <returns>true if a define was found with the given name</returns>
         bool TryGetDefine(string identifier, out string defined_value);
 
+
+        /// <summary>
+        /// returns true if a variable exists with the given name
+        /// </summary>
+        /// <param name="name">variable name</param>
+        /// <returns>true if the variable exists</returns>
         bool ExistsVariable(string name);
+
+        /// <summary>
+        /// check if there is an input defined by the script with the given id 
+        /// </summary>
+        /// <param name="id">the integer identifier</param>
+        /// <returns>true if defined</returns>
         bool HasInput(int id);
+
+        /// <summary>
+        /// check if there is an input defined by the script with the given id 
+        /// </summary>
+        /// <param name="name">the input variable name</param>
+        /// <returns>true if defined</returns>
         bool HasInput(string name);
+
+        /// <summary>
+        /// true if the script defines variables 
+        /// </summary>
         bool HasVariables { get; }
+        
+        /// <summary>
+        /// true if the script defines variables 
+        /// </summary>
         bool HasOffsets { get; }
+
+        /// <summary>
+        /// number of variables defined in the script 
+        /// </summary>
         int VariableCount { get; }
+
+        /// <summary>
+        /// number of variable offsets defined in the script
+        /// </summary>
         int OffsetCount { get; }
 
     }
 
     /// <summary>
-    /// Data created during compilation and used for analysis and packaging
+    /// Data created during compilation and used for analysis, packaging and debugging/display purposes
     /// </summary>
     public class CompilationData : IBlastCompilationData
     {
+        /// <summary>
+        /// Version
+        /// </summary>
         protected Version version = new Version(0, 1, 0);
-        public Version Version => version; 
 
-#region Compiler Messages 
+        /// <summary>
+        /// Version
+        /// </summary>
+        public Version Version => version;
+
+        #region Compiler Messages 
+        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.WriteHumanReadableCode(StringBuilder, List<byte>, int, bool)'
+
+        /// <summary>
+        /// a compiler message 
+        /// </summary>
         public class Message
         {
-            public enum MessageType { Normal, Warning, Error, ToDo, Trace };
+            public enum MessageType 
+            { 
+                Normal, 
+                Warning, 
+                Error, 
+                ToDo,
+                Trace 
+            };
 
             public DateTime Timestamp = DateTime.Now;
             public MessageType Type = MessageType.Normal;
 
             public int LineNumber = 0;
             public string CallerMember = string.Empty;
-
             public string Content = string.Empty;
             public int Code = 0;
-
             public bool IsError => Type == MessageType.Error;
             public bool IsWarning => Type == MessageType.Warning || Type == MessageType.ToDo;
             public bool IsNormal => Type == MessageType.Normal || Type == MessageType.Trace;
             public bool IsTrace => Type == MessageType.Trace;
-
             public override string ToString()
             {
                 return $"{DateTime.Now.ToString()} {(Content ?? string.Empty)}";
             }
         }
+        #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.WriteHumanReadableCode(StringBuilder, List<byte>, int, bool)'
 
+        /// <summary>
+        /// List of messages issued during compilation 
+        /// </summary>
         public List<Message> CompilerMessages = new List<Message>();
 
         /// <summary>
@@ -99,11 +265,10 @@ namespace NSS.Blast.Compiler
         /// see: https://stackoverflow.com/questions/12556767/how-do-i-get-the-current-line-number
         /// and: https://stackoverflow.com/questions/38476796/how-to-set-net-core-in-if-statement-for-compilation
         /// </summary>
-
         public void LogMessage(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
-            if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
-            if (CompilerOptions.Verbose)
+            if (CompilerOptions.TraceLogging || CompilerOptions.TraceLogging) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
+            if (CompilerOptions.VerboseLogging)
             {
 #if !STANDALONE_VSBUILD
                 Debug.Log(msg);
@@ -112,15 +277,31 @@ namespace NSS.Blast.Compiler
 #endif
             }
         }
+
+        /// <summary>
+        /// Trace a message, does nothing in release builds 
+        /// </summary>
+        /// <param name="msg">the message to trace</param>
+        /// <param name="linenr">line number</param>
+        /// <param name="member">caller member name</param>
         public void LogTrace(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
-            if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
-            if (CompilerOptions.Verbose && CompilerOptions.Trace)
+#if DEVELOPMENT_BUILD && TRACE
+            if (CompilerOptions.VerboseLogging || CompilerOptions.TraceLogging) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
+            if (CompilerOptions.VerboseLogging && CompilerOptions.TraceLogging)
             {
                 Debug.Log(msg);
             }
+#endif
         }
 
+        /// <summary>
+        /// Log an error to the log, also writes to player log / debugstream
+        /// </summary>
+        /// <param name="msg">the message</param>
+        /// <param name="code">optional errorcode</param>
+        /// <param name="linenr">optional linenr</param>
+        /// <param name="member">optional caller member name</param>
         public void LogError(string msg, int code = 0, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
             LastErrorMessage = msg;
@@ -128,6 +309,12 @@ namespace NSS.Blast.Compiler
             Debug.LogError(msg);
         }
 
+        /// <summary>
+        /// Log a warning to the log, also writes to player log / debugstream
+        /// </summary>
+        /// <param name="msg">the message</param>
+        /// <param name="linenr">optional linenr</param>
+        /// <param name="member">optional caller member name</param>
         public void LogWarning(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
             CompilerMessages.Add(new Message() { Type = Message.MessageType.Warning, Content = msg, LineNumber = linenr, CallerMember = member });
@@ -135,7 +322,7 @@ namespace NSS.Blast.Compiler
         }
 
 #if !STANDALONE_VSBUILD
-        string FormatWithColor(string msg, Color rgb)
+        public string FormatWithColor(string msg, Color rgb)
         {
             return string.Format(
                 "<color=#{0:X2}{1:X2}{2:X2}>{3}</color>", 
@@ -143,29 +330,68 @@ namespace NSS.Blast.Compiler
         }
 #endif
 
+        /// <summary>
+        /// logs a todo, only in standalone debug builds 
+        /// </summary>
+        /// <param name="msg">the message</param>
+        /// <param name="linenr">optional line number</param>
+        /// <param name="member">optional caller member name</param>
         public void LogToDo(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
-            if (CompilerOptions.Report || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Type = Message.MessageType.ToDo, Content = msg, LineNumber = linenr, CallerMember = member });
+#if !STANDALONE_VSBUILD && DEVELOPMENT_BUILD 
+            if (CompilerOptions.Trace || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Type = Message.MessageType.ToDo, Content = msg, LineNumber = linenr, CallerMember = member });
             if (CompilerOptions.Verbose || CompilerOptions.Trace)
             {
                 Debug.LogWarning("TODO: " + msg);
             }
+#endif
         }
 
+        /// <summary>
+        /// keep reference of any last error message, voiding the need to search for it 
+        /// </summary>
         public string LastErrorMessage { get; private set; }
+        /// <summary>
+        /// returns the last error code or success if nothing went wrong 
+        /// </summary>
         public BlastError LastError { get; internal set; }
-
+        /// <summary>
+        /// number of errors that occured during compilation 
+        /// </summary>
         public int ErrorCount => CompilerMessages.Count(x => x.IsError);
-        public bool HasErrors => CompilerMessages.Any(x => x.IsError);
+        /// <summary>
+        /// number of errors that occured during compilation
+        /// </summary>
+        public bool HasErrors => LastError != BlastError.success || !string.IsNullOrEmpty(LastErrorMessage); 
+        /// <summary>
+        /// number of warnings that occured during compilation 
+        /// </summary>
         public int WarningCount => CompilerMessages.Count(x => x.IsWarning);
+        /// <summary>
+        /// true if any warning was logged during compilation
+        /// </summary>
         public bool HasWarnings => CompilerMessages.Any(x => x.IsWarning);
+        /// <summary>
+        /// true if any erorr or warning occured 
+        /// </summary>
         public bool HasErrorsOrWarnings => HasErrors || HasWarnings;
-        public bool Success { get { return string.IsNullOrEmpty(LastErrorMessage); } }
+
+        /// <summary>
+        /// true if everything went ok 
+        /// </summary>
+        public bool IsOK { get { return !HasErrors; } }
 
 
 #endregion
 
-        public CompilationData(Blast blast, BlastScript script, BlastCompilerOptions options)
+
+        /// <summary>
+        /// setup new compilation data
+        /// </summary>
+        /// <param name="blast">blast engine data</param>
+        /// <param name="script">the script to compile</param>
+        /// <param name="options">compiler options</param>
+        public CompilationData(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options)
         {
             Blast = blast;
             Script = script;
@@ -191,14 +417,9 @@ namespace NSS.Blast.Compiler
         }
 
         /// <summary>
-        /// the data is OK when there is no known errormessage 
+        /// blast engine data 
         /// </summary>
-        public bool IsOK { get { return Success; } }
-
-        /// <summary>
-        /// global blast manager 
-        /// </summary>
-        public Blast Blast { get; set; }
+        public BlastEngineDataPtr Blast { get; set; }
 
         /// <summary>
         /// the input script 
@@ -215,13 +436,13 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public BlastCompilerOptions CompilerOptions { get; set; }
 
-        #region Code Display 
+#region Code Display 
 
 
         /// <summary>
         /// this version has a little more information than the generic bytecode reader in blast due to having access to all compilation data
         /// </summary>
-        /// <returns></returns>
+        /// <returns>a readable string</returns>
         public unsafe string GetHumanReadableCode(int columns = 10, bool index = false)
         {
             StringBuilder sb = StringBuilderCache.Acquire();
@@ -237,7 +458,7 @@ namespace NSS.Blast.Compiler
                 {
                     if (jump != null)
                     {
-                        sb.Append($"@label_{Jumps.IndexOf(jump)} <<< ERROR CONDITION - OUT OF BOUNDS - {jump.Item1} {jump.Item2} >>> ");
+                        sb.Append($"@label_{Jumps.IndexOf(jump)} <<< E: OUT OF BOUNDS - {jump.Item1} {jump.Item2} >>> ");
                     }
                 }
             }
@@ -254,12 +475,10 @@ namespace NSS.Blast.Compiler
                     sb.Append("-no code available to convert to string-");
                 }
             }
-
             return StringBuilderCache.GetStringAndRelease(ref sb);
-
-
         }
-        public unsafe void WriteHumanReadableCode(StringBuilder sb, List<byte> code, int columns = 10, bool index = true)
+
+        unsafe void WriteHumanReadableCode(StringBuilder sb, List<byte> code, int columns = 10, bool index = true)
         {
             int i = 0;
             blast_operation prev = blast_operation.nop;
@@ -273,7 +492,6 @@ namespace NSS.Blast.Compiler
                     if (i != 0) sb.Append("\n");
                     sb.Append("" + i.ToString().PadLeft(3, '0') + "| ");
                 }
-
 
                 // starting a jump ? 
                 Tuple<int, int> jump = Jumps.FirstOrDefault(x => x.Item1 == i);
@@ -436,16 +654,17 @@ namespace NSS.Blast.Compiler
 
                                 case extended_blast_operation.call:
                                     sb.Append("call ");
+
                                     // next 4 bytes are the function id 
                                     int id = this.code[i + 1].code << 24;
                                     id += this.code[i + 2].code << 16;
                                     id += this.code[i + 3].code << 8;
                                     id += this.code[i + 4].code;
                                     i += 4;
-                                    var def = Blast.GetFunctionById(id);
-                                    if (def != null)
+
+                                    if (id > 0)
                                     {
-                                        sb.Append(def.Match + " ");
+                                        sb.Append(Blast.Data->Functions[id].GetFunctionName() + " ");
                                     }
                                     else
                                     {
@@ -453,6 +672,7 @@ namespace NSS.Blast.Compiler
                                     }
 
                                     break;
+
                                 default:
                                     // just append byte value instead of raising big error making it unreadable mess
                                     sb.Append(op.ToString().PadLeft(3, ' ') + " ");
@@ -503,13 +723,12 @@ namespace NSS.Blast.Compiler
                             }
                             else if (op >= BlastCompiler.opt_value)
                             {
-                                sb.Append(Blast.GetConstantValue((blast_operation)op) + " ");
+                                sb.Append(NSS.Blast.Blast.GetConstantValue((blast_operation)op) + " ");
                             }
                             else
                             {
                                 // just append byte value instead of raising big error making it unreadable mess
                                 sb.Append(op.ToString().PadLeft(3, ' ') + " ");
-
                                 // sb.Append($"\n\noperation {(blast_operation)op} not yet translated in source debug\n\n");
                             }
                             break;
@@ -520,6 +739,13 @@ namespace NSS.Blast.Compiler
 
             }
         }
+
+        /// <summary>
+        /// get a readable string from the compiled code
+        /// </summary>
+        /// <param name="columns">number of columns to use in the presentation of the bytes</param>
+        /// <param name="index">true if you want an index (000| ) at the start of each line</param>
+        /// <returns></returns>
         public unsafe string GetHumanReadableBytes(int columns = 10, bool index = true)
         {
             StringBuilder sb = StringBuilderCache.Acquire();
@@ -569,14 +795,29 @@ namespace NSS.Blast.Compiler
 #endregion
 
 
-        public node root;
+        internal node root;
+        internal bool use_new_stuff = false;
+
+        /// <summary>
+        /// intermediate bytecode, only public for debugging view purposes, dont use, dont modify
+        /// </summary>
         public IMByteCodeList code;
 
-        public bool use_new_stuff = false;
 
+        
+        /// <summary>
+        /// the rootnode of the abstract syntax tree
+        /// </summary>
         public node AST => root;
 
+        /// <summary>
+        /// List of variables in script 
+        /// </summary>
         public List<BlastVariable> Variables { get; set; }
+                        
+        /// <summary>
+        /// List of constant variables (constant data needs to be somewhere)
+        /// </summary>
         public IEnumerable<BlastVariable> ConstantVariables
         {
             get
@@ -585,12 +826,40 @@ namespace NSS.Blast.Compiler
                 yield break;
             }
         }
+
+        /// <summary>
+        /// list of used variable offsets 
+        /// </summary>
         public List<byte> Offsets { get; set; }
+
+        /// <summary>
+        /// list of jumps 
+        /// </summary>
         public List<Tuple<int, int>> Jumps { get; set; }
+
+        /// <summary>
+        /// list of defines defined by this script 
+        /// </summary>
         public Dictionary<string, string> Defines { get; set; }
+
+        /// <summary>
+        /// list of inputs defined by this script
+        /// </summary>
         public List<BlastVariableMapping> Inputs { get; set; }
+
+        /// <summary>
+        /// list of outputs defined by this script
+        /// </summary>
         public List<BlastVariableMapping> Outputs { get; set; }
+
+        /// <summary>
+        /// list of validations defined by this script
+        /// </summary>
         public Dictionary<string, string> Validations { get; set; }
+
+        /// <summary>
+        /// list of tokens as parsed out of the script
+        /// </summary>
         public List<Tuple<BlastScriptToken, string>> Tokens { get; set; }
 
         /// <summary>
@@ -599,8 +868,9 @@ namespace NSS.Blast.Compiler
         /// - initializes reference count at 1
         /// </summary>
         /// <param name="name">first part of identifier - the name</param>
-        /// <param name="is_inputoutput_define">if part of #input of #output we dont want to add references</param>
-        /// <returns>null on failure</returns>
+        /// <param name="is_input">true if used as an input</param>
+        /// <param name="is_output">true if used as an output</param>
+        /// <returns>null on failure, any error will be logged</returns>
         public BlastVariable CreateVariable(string name, bool is_input = false, bool is_output = false)
         {
             name = name.ToLower();
@@ -655,11 +925,11 @@ namespace NSS.Blast.Compiler
 
         /// <summary>
         /// try to lookup a reference 
-        /// - doens not reference count 
+        /// - does not reference count 
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="variable"></param>
-        /// <returns></returns>
+        /// <param name="name">the name of the variable to lookup</param>
+        /// <param name="variable">output variable</param>
+        /// <returns>true if found</returns>
         internal bool TryGetVariable(string name, out BlastVariable variable)
         {
             if (!string.IsNullOrWhiteSpace(name))
@@ -755,6 +1025,12 @@ namespace NSS.Blast.Compiler
             return false;
         }
 
+        /// <summary>
+        /// Try to lookup a input variable mapping 
+        /// </summary>
+        /// <param name="v">the variable</param>
+        /// <param name="mapping">output mapping</param>
+        /// <returns>true if found</returns>
         public bool TryGetInput(BlastVariable v, out BlastVariableMapping mapping)
         {
             foreach (var i in Inputs)
@@ -769,6 +1045,12 @@ namespace NSS.Blast.Compiler
             return false; 
         }
 
+        /// <summary>
+        /// try to lookup an output variable mapping
+        /// </summary>
+        /// <param name="v">the variable</param>
+        /// <param name="mapping">the output variable mapping</param>
+        /// <returns>true if found</returns>
         public bool TryGetOutput(BlastVariable v, out BlastVariableMapping mapping)
         {
             foreach (var i in Outputs)
@@ -786,7 +1068,9 @@ namespace NSS.Blast.Compiler
 
 
 #region exposed via interface, non reference counting 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.ExistsVariable(string)'
         public bool ExistsVariable(string name)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.ExistsVariable(string)'
         {
             if (string.IsNullOrWhiteSpace(name) || Variables == null || Variables.Count == 0) return false;
 
@@ -800,7 +1084,9 @@ namespace NSS.Blast.Compiler
 
             return false;
         }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.GetVariable(string)'
         public BlastVariable GetVariable(string name)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.GetVariable(string)'
         {
             if (string.IsNullOrWhiteSpace(name) || Variables == null || Variables.Count == 0) return null;
 
@@ -814,7 +1100,9 @@ namespace NSS.Blast.Compiler
 
             return null;
         }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.GetVariableFromOffset(byte)'
         public BlastVariable GetVariableFromOffset(byte offset)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.GetVariableFromOffset(byte)'
         {
             int index = Offsets.IndexOf(offset);
 
@@ -828,14 +1116,28 @@ namespace NSS.Blast.Compiler
         }
 
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.CanValidate'
         public bool CanValidate => Validations != null && Validations.Count > 0;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.CanValidate'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasDefines'
         public bool HasDefines => Defines != null && Defines.Count > 0;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasDefines'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasVariables'
         public bool HasVariables => Variables != null && Variables.Count > 0;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasVariables'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasOffsets'
         public bool HasOffsets => Offsets != null && Offsets.Count > 0;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasOffsets'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.VariableCount'
         public int VariableCount => Variables != null ? Variables.Count : 0;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.VariableCount'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.OffsetCount'
         public int OffsetCount => Offsets != null ? Offsets.Count : 0;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.OffsetCount'
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasInput(int)'
         public bool HasInput(int id)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasInput(int)'
         {
             foreach (var v in Inputs)
             {
@@ -846,7 +1148,9 @@ namespace NSS.Blast.Compiler
             }
             return false;
         }
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasInput(string)'
         public bool HasInput(string name)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasInput(string)'
         {
             foreach (var v in Inputs)
             {
@@ -861,7 +1165,9 @@ namespace NSS.Blast.Compiler
             return false;
         }
 
-        public unsafe int CalculateVariableOffsets()
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.CalculateVariableOffsets()'
+        internal unsafe int CalculateVariableOffsets()
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.CalculateVariableOffsets()'
         {
             // clear out any existing offsets (might have ran multiple times..) 
             Offsets.Clear();

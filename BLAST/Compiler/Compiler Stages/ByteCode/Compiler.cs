@@ -75,14 +75,7 @@ namespace NSS.Blast.Compiler.Stage
                 &&
                 ast_param.type == nodetype.function
                 &&
-                    (ast_param.function.FunctionId == (int)ReservedScriptFunctionIds.Pop
-                    ||
-                    ast_param.function.FunctionId == (int)ReservedScriptFunctionIds.Pop2
-                    ||
-                    ast_param.function.FunctionId == (int)ReservedScriptFunctionIds.Pop3
-                    ||
-                    ast_param.function.FunctionId == (int)ReservedScriptFunctionIds.Pop4
-                ))
+                ast_param.function.FunctionId == (int)ReservedBlastScriptFunctionIds.Pop)
             {
                 // must be a pop, parameters cant push 
                 code.Add(ast_param.function.ScriptOp);
@@ -184,7 +177,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>true on success, false otherwise, errors will be logged in data</returns>
         static public bool CompileFunction(CompilationData data, node ast_function, IMByteCodeList code)
         {
-            if (ast_function.function == null)
+            if (!ast_function.IsFunction)
             {
                 data.LogError($"CompileFunction: node <{ast_function}> has no function set");
                 return false;
@@ -193,7 +186,7 @@ namespace NSS.Blast.Compiler.Stage
             // skip compilation of debug if not enabled 
             if (!data.CompilerOptions.CompileDebug)
             {
-                if (ast_function.function.FunctionId == (int)ReservedScriptFunctionIds.Debug)
+                if (ast_function.function.FunctionId == (int)ReservedBlastScriptFunctionIds.Debug)
                 {
                     // debug function: skip
                     return true;
@@ -707,27 +700,24 @@ namespace NSS.Blast.Compiler.Stage
                 // function 
                 case nodetype.function:
                     {
-                        if(ast_node.function == null)
+                        if(!ast_node.IsFunction || ast_node.function.FunctionId <= 0)
                         {
                             data.LogError($"CompileNode: encountered function node with no function set, node: <{ast_node}>");
                             return null; 
                         }
-                        if (ast_node.parent == null || ast_node.parent.type == nodetype.root)
+                        if ((ast_node.parent == null || ast_node.parent.type == nodetype.root) && ast_node.function.ReturnsVectorSize > 0)
                         {
-                            switch ((ReservedScriptFunctionIds)ast_node.function.FunctionId)
+                            switch ((ReservedBlastScriptFunctionIds)ast_node.function.FunctionId)
                             {
                                 // these procedures are allowed at the root, the rest is not 
-                                case ReservedScriptFunctionIds.Push:
-                                case ReservedScriptFunctionIds.PushFunction:
-                                case ReservedScriptFunctionIds.PushCompound:
-                                case ReservedScriptFunctionIds.PushVector:
-                                case ReservedScriptFunctionIds.Yield:
-                                case ReservedScriptFunctionIds.Pop:
-                                case ReservedScriptFunctionIds.Pop2:
-                                case ReservedScriptFunctionIds.Pop3:
-                                case ReservedScriptFunctionIds.Pop4:
-                                case ReservedScriptFunctionIds.Seed:
-                                case ReservedScriptFunctionIds.Debug:
+                                case ReservedBlastScriptFunctionIds.Push:
+                                case ReservedBlastScriptFunctionIds.PushFunction:
+                                case ReservedBlastScriptFunctionIds.PushCompound:
+                                case ReservedBlastScriptFunctionIds.PushVector:
+                                case ReservedBlastScriptFunctionIds.Yield:
+                                case ReservedBlastScriptFunctionIds.Pop:
+                                case ReservedBlastScriptFunctionIds.Seed:
+                                case ReservedBlastScriptFunctionIds.Debug:
                                     {
                                         if (!CompileFunction(data, ast_node, code))
                                         {
@@ -739,7 +729,7 @@ namespace NSS.Blast.Compiler.Stage
 
                                 default:
                                     data.LogToDo($"todo: allow functions on root");
-                                    data.LogError($"CompileNode: only procedures are allowed to execute at root, no functions, found {(ast_node.function != null ? ast_node.function.Match : "")}");
+                                    data.LogError($"CompileNode: only procedures are allowed to execute at root, no functions, found {ast_node.function.GetFunctionName()}");
                                     return null;
                             }
                         }

@@ -9,8 +9,12 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastJumpResolver : IBlastCompilerStage
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastJumpResolver.Version'
         public Version Version => new Version(0, 1, 0);
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastJumpResolver.Version'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastJumpResolver.StageType'
         public BlastCompilerStageType StageType => BlastCompilerStageType.JumpResolver;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastJumpResolver.StageType'
 
 
         /// <summary>

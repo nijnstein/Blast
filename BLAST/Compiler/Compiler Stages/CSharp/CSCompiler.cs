@@ -44,10 +44,16 @@ namespace NSS.Blast.Compiler.Stage
     }
 #endif
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastCSCompiler'
     public class BlastCSCompiler : IBlastCompilerStage
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastCSCompiler'
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastCSCompiler.Version'
         public Version Version => new Version(0, 1, 0);
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastCSCompiler.Version'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastCSCompiler.StageType'
         public BlastCompilerStageType StageType => BlastCompilerStageType.Compile;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastCSCompiler.StageType'
 
 #if CSC
         public int Compile(CSCompilationData data)

@@ -17,12 +17,17 @@
             - these are set by the constant value operations and they can be replaced with other values... if you are mad
             </summary>
         </member>
-        <member name="F:NSS.Blast.BlastEngineData.functionpointers">
+        <member name="F:NSS.Blast.BlastEngineData.Functions">
             <summary>
-            external function pointer array. these provide api access to the script  
+            external function info array. these provide api access to the script  
             </summary>
         </member>
-        <member name="F:NSS.Blast.BlastEngineData.functionpointer_count">
+        <member name="F:NSS.Blast.BlastEngineData.FunctionPointers">
+            <summary>
+            function pointer data
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastEngineData.FunctionCount">
             <summary>
             number of function pointers in the fp array. function id's dont match indices.....  
             - TODO   this means each function call needs a lookup...
@@ -39,26 +44,72 @@
             </summary>
             <param name="i">the new seed value</param>
         </member>
-        <member name="M:NSS.Blast.BlastEngineData.GetFunctionPointer(System.Int32)">
+        <member name="M:NSS.Blast.BlastEngineData.GetFunction(NSS.Blast.blast_operation)">
             <summary>
-            get a function pointer with a given id 
+            lookup function attached to operation, this assumes the function exists 
+            - TODO -> we could update this to a tableindexer instead of a scan by building a lookuptable[operation] == function
             </summary>
-            <param name="id">id of function</param>
-            <returns>the function pointer</returns>
+            <param name="op">the operation to lookup the function for</param>
+            <returns>function record</returns>
         </member>
-        <member name="M:NSS.Blast.BlastEngineData.TryGetFunctionPointer(System.Int32,NSS.Blast.NonGenericFunctionPointer@)">
+        <member name="M:NSS.Blast.BlastEngineData.TryGetFunctionByName(System.String,NSS.Blast.BlastScriptFunction@)">
             <summary>
-            linear scan for a function pointer with a given id
-            -> should not use TODO 
+            lookup a function using its name, this uses string input so wont be burst compiled 
             </summary>
-            <param name="id">id of function</param>
-            <param name="p">the functionpointer</param>
+            <param name="name_match">function name to match</param>
+            <param name="function">returned function</param>
             <returns>true if found</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastEngineData.GetFunction(System.String)">
+            <summary>
+            get the function matching to the name 
+            </summary>
+            <param name="name_match">name to match</param>
+            <returns>the function struct, note that it returns the default zero'd struct on matching failure</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastEngineData.CanBeAValidFunctionId(System.Int32)">
+            <summary>
+            return if the id is in the correct range and its pointer is not null
+            </summary>
+            <param name="id">the index/id</param>
+            <returns>true if possibly valid</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastEngineData.IsVariableParamFunction(NSS.Blast.blast_operation)">
+            <summary>
+            lookup a function mapping to the given operation, performs a linear scan through the function table 
+            </summary>
+            <param name="op">the operation to lookup</param>
+            <returns>returns true if the function is found and can have a variable parameter count</returns>
+        </member>
+        <member name="T:NSS.Blast.BlastEngineDataPtr">
+            <summary>
+            abstraction for enginedata pointer
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastEngineDataPtr.ptr">
+            <summary>
+            pointer to engine data 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastEngineDataPtr.Data">
+            <summary>
+            unsafe casted BlastEngineData pointer
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastEngineDataPtr.IsCreated">
+            <summary>
+            returns if the pointer is not null / it doesnt actually track creation
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastEngineDataPtr.op_Implicit(System.IntPtr)~NSS.Blast.BlastEngineDataPtr">
+            <summary>
+            implicit conversion of this to an intptr 
+            </summary>
+            <param name="p"></param>
         </member>
         <member name="T:NSS.Blast.Blast">
             <summary>
             Blast Engine
-            - use seperate instances for threads
             </summary>
         </member>
         <member name="T:NSS.Blast.Blast.BlastExecute">
@@ -74,6 +125,11 @@
         <member name="F:NSS.Blast.Blast.Comment">
             <summary>
             the comment character 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Blast.MaximumFunctionNameLength">
+            <summary>
+            the maximum length of a function name in number of ASCII characters
             </summary>
         </member>
         <member name="F:NSS.Blast.Blast.InvalidNumeric">
@@ -108,34 +164,193 @@
             simple object/lock method for some threadsafety
             </summary>
         </member>
+        <member name="M:NSS.Blast.Blast.Create(Unity.Collections.Allocator)">
+            <summary>
+            create a new instance of BLAST use the core scriptfunction api
+            </summary>
+            <param name="allocator">allocator to use, dont use temp allocator for bursted code</param>
+            <returns>the blast struct</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Create(NSS.Blast.BlastScriptAPI,Unity.Collections.Allocator)">
+            <summary>
+            create a new instance of blast using a customized api 
+            </summary>
+            <param name="api">function api to use</param>
+            <param name="allocator">allocator to use, dont use temp allocator for bursted code</param>
+            <returns>the blast struct|class should refactor TODO</returns>
+        </member>
         <member name="M:NSS.Blast.Blast.Destroy">
             <summary>
-            Destroy blast handler 
+            release all memory allocated by this instance of blast 
             </summary>
         </member>
-        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage,System.IntPtr,System.IntPtr)">
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData@)">
             <summary>
-            execute package in given environment with attached caller data
+            Execute a Package
             </summary>
-            <param name="package">the package to execute</param>
-            <param name="environment">optional environment data [global-data]</param>
-            <param name="caller">optional callerdata [threadonly]</param>
-            <returns>exitcode 0 on success</returns>
+            <param name="package">the package data</param>
+            <returns>succes or an error code</returns>
         </member>
-        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData,System.IntPtr,System.IntPtr)">
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData@,System.IntPtr)">
             <summary>
-            execute package in given environment with attached caller data
+            Execute a Package
             </summary>
-            <param name="package">the package to execute</param>
-            <param name="environment">optional environment data [global-data]</param>
-            <param name="caller">optional callerdata [threadonly]</param>
-            <returns>exitcode 0 on success</returns>
+            <param name="package">the package data to execute</param>
+            <param name="environment">the environment data to use</param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData@,System.IntPtr,System.IntPtr)">
+            <summary>
+            Execute a Package
+            </summary>
+            <param name="package">the package data to execute</param>
+            <param name="environment">the environment data to use</param>
+            <param name="caller">the caller data to use</param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage@)">
+            <summary>
+            Execute a Package
+            </summary>
+            <param name="package">the package data to execute</param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage@,System.IntPtr)">
+            <summary>
+            Execute a Package
+            </summary>
+            <param name="package">the package data to execute</param>
+            <param name="environment">the environment data to use</param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage@,System.IntPtr,System.IntPtr)">
+            <summary>
+            Execute a Package
+            </summary>
+            <param name="package">the package data to execute</param>
+            <param name="environment">the environment data to use</param>
+            <param name="caller">the caller data to use</param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData@,System.IntPtr,System.Int32)">
+            <summary>
+            Execute a Package in ssmd mode
+            </summary>
+            <param name="package">the package data to execute</param>
+            <param name="ssmd_data">data for each entity|script|component</param>
+            <param name="ssmd_count">the number of data elements</param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData@,System.IntPtr,System.IntPtr,System.Int32)">
+            <summary>
+            Execute a Package in ssmd mode
+            </summary>
+            <param name="package">the package data to execute</param>
+            <param name="environment">the environment data to use</param>
+            <param name="ssmd_data">data for each entity|script|component</param>
+            <param name="ssmd_count">the number of data elements</param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage@,System.IntPtr,System.Int32)">
+            <summary>
+            Execute a Package in ssmd mode
+            </summary>
+            <param name="package">the package data to execute</param>
+            <param name="ssmd_data">data for each entity|script|component</param>
+            <param name="ssmd_count">the number of data elements</param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage@,System.IntPtr,System.IntPtr,System.Int32)">
+            <summary>
+            Execute a Package in ssmd mode
+            </summary>
+            <param name="package">the package data to execute</param>
+            <param name="environment">the environment data to use</param>
+            <param name="ssmd_data">data for each entity|script|component</param>
+            <param name="ssmd_count">the number of data elements</param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastEngineDataPtr@,NSS.Blast.BlastPackageData@,System.IntPtr,System.IntPtr)">
+            <summary>
+            Execute a Package
+            </summary>
+            <param name="blast">Blast engine data</param>
+            <param name="package">the package data to execute</param>
+            <param name="environment">the environment data to use</param>
+            <param name="caller"></param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Execute(NSS.Blast.BlastEngineDataPtr@,NSS.Blast.BlastPackageData@,System.IntPtr,System.IntPtr,System.Int32)">
+            <summary>
+            Execute a Package in ssmd mode
+            </summary>
+            <param name="blast"></param>
+            <param name="package">the package data to execute</param>
+            <param name="environment">the environment data to use</param>
+            <param name="ssmd_data">data for each entity|script|component</param>
+            <param name="ssmd_count">the number of data elements</param>
+            <returns>succes or an error code</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Package(System.String,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Complile the code and package into blastscriptpackage 
+            </summary>
+            <param name="code">the script code</param>
+            <param name="options">compiler options</param>
+            <returns>the blastscript package</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Package(NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Compile and package the script 
+            </summary>
+            <param name="script">the script to compile</param>
+            <param name="options">compiler options</param>
+            <returns>the blastscript package</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Package(NSS.Blast.BlastEngineDataPtr,System.String,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Compile and package script code
+            </summary>
+            <param name="blast">blast engine data</param>
+            <param name="code">script code to compile</param>
+            <param name="options">compiler options</param>
+            <returns>the code packaged and ready to execute</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Package(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Compile and package script code
+            </summary>
+            <param name="blast">blast engine data</param>
+            <param name="script">script code to compile</param>
+            <param name="options">compiler options</param>
+            <returns>the code packaged and ready to execute</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Intermediate(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            compile the compiler intermediate
+            </summary>
+            <param name="blast">blast engine data</param>
+            <param name="script">script</param>
+            <param name="options">compiler options</param>
+            <returns></returns>
+        </member>
+        <member name="F:NSS.Blast.Blast.ValueOperations">
+            <summary>
+            list all value operations, these operations directly encode constant values 
+            -> burst should be able to access this if needed.. 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Blast.GetConstantValue(NSS.Blast.blast_operation)">
+            <summary>
+            get the constant numeric value of the operation 
+            </summary>
+            <param name="op">the operation to return the constant for</param>
+            <returns>a constant float value</returns>
         </member>
         <member name="M:NSS.Blast.Blast.GetConstantValueOperation(System.String,System.Single)">
             <summary>
             get the script_op belonging to a constant value, eiter by name or value 
             </summary>
-            <param name="blast">blast engine data</param>
             <param name="value">the value to match</param>
             <param name="constant_epsilon">the epsilon to use matching constant values</param>
             <returns>nop on no match, nan of not a string match and no float, operation on match</returns>
@@ -178,86 +393,47 @@
             <param name="token">the script token</param>
             <returns>corresponding opcode</returns>
         </member>
-        <member name="F:NSS.Blast.Blast.Functions">
-            <summary>
-            defined functions for script
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.Blast.GetSequenceFunction(NSS.Blast.blast_operation)">
+        <member name="M:NSS.Blast.Blast.GetSequenceOperation(NSS.Blast.blast_operation)">
             <summary>
             get the function for a sequence of op, add -> adda
             </summary>
         </member>
-        <member name="M:NSS.Blast.Blast.HasSequenceFunction(NSS.Blast.blast_operation)">
+        <member name="M:NSS.Blast.Blast.HasSequenceOperation(NSS.Blast.blast_operation)">
             <summary>
             return if there is a sequence function for the operation
             </summary>
         </member>
-        <member name="M:NSS.Blast.Blast.GetFunctionByOpCode(NSS.Blast.blast_operation)">
+        <member name="F:NSS.Blast.Blast.API">
             <summary>
-            lookup a function definition that is directly linked to an interpretor operation 
+            the current set of script accessible functions, check OwnScriptAPIMemory to see if this instance of blast is the owner of the memory used in the API
             </summary>
-            <param name="op">the operation that should translate to a function used during interpretation</param>
-            <returns>a function definition</returns>
         </member>
-        <member name="M:NSS.Blast.Blast.GetFunctionByName(System.String)">
+        <member name="F:NSS.Blast.Blast.OwnScriptAPIMemory">
             <summary>
-            lookup a function definition that is directly linked to an interpretor operation 
+            true if memory is owned by this instance of blast and should be destroyed with it 
             </summary>
-            <param name="name">the name of the function to lookup</param>
-            <returns>a function definition</returns>
-        </member>
-        <member name="M:NSS.Blast.Blast.GetFunctionById(NSS.Blast.ReservedScriptFunctionIds)">
-            <summary>
-            lookup a function definition that is directly linked to an interpretor operation 
-            </summary>
-            <param name="function_id">the reserved id of the function to lookup</param>
-            <returns>a function definition</returns>
-        </member>
-        <member name="M:NSS.Blast.Blast.GetFunctionById(System.Int32)">
-            <summary>
-            lookup a function definition that is directly linked to an interpretor operation 
-            </summary>
-            <param name="function_id">the unique id of the function to lookup</param>
-            <returns>a function definition</returns>
-        </member>
-        <member name="M:NSS.Blast.Blast.IsVariableParamFunction(NSS.Blast.blast_operation)">
-            <summary>
-            returns true if the function accepts a variable sized list of paramaters 
-            </summary>
-            <param name="op">the operation mapping to a function</param>
-            <returns>true if the function exists and has a variable parameter list</returns>
-        </member>
-        <member name="M:NSS.Blast.Blast.RegisterFunction(System.String,NSS.Blast.BlastVariableDataType,System.String[])">
-            <summary>
-            register functionpointer as an external call  / reserve id 
-            </summary>
-            <param name="name"></param>
-            <param name="returns"></param>
-            <param name="parameters"></param>
-            <returns></returns>
-        </member>
-        <member name="M:NSS.Blast.Blast.UpdateFunctionPointer(System.Int32,NSS.Blast.NonGenericFunctionPointer)">
-            <summary>
-            update the functionpointer for an external call 
-            </summary>
-            <param name="id"></param>
-            <param name="fp"></param>
-        </member>
-        <member name="M:NSS.Blast.Blast.RegisterFunction(NSS.Blast.NonGenericFunctionPointer,System.String,NSS.Blast.BlastVariableDataType,System.String[])">
-            <summary>
-            register functionpointer as an external call 
-            </summary>
-            <param name="fp"></param>
-            <param name="name"></param>
-            <param name="returns"></param>
-            <param name="parameters"></param>
-            <returns></returns>
         </member>
         <member name="P:NSS.Blast.Blast.Scripts">
             <summary>
             Enumerates all scripts known by blast 
             </summary>
+        </member>
+        <member name="M:NSS.Blast.Blast.CompileIntoDesignTimeRegistry(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,System.String)">
+            <summary>
+            compile the script into the designtime registry 
+            </summary>
+            <param name="blast">blast engine data</param>
+            <param name="script">the script to compile</param>
+            <param name="script_directory">the directory to place the script in</param>
+            <returns>true on success</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.GetReadableByteCode(System.Byte*@,System.Int32@)">
+            <summary>
+            get somewhat readable assembly from bytes
+            </summary>
+            <param name="bytes"></param>
+            <param name="length"></param>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.Blast.IsError(NSS.Blast.BlastError)">
             <summary>
@@ -270,23 +446,6 @@
             <summary>
             return if an error code actually means success 
             </summary>
-        </member>
-        <member name="T:NSS.Blast.Blast.runner">
-            <summary>
-            todo: update ? or just keep like this?
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.Blast.BytecodePackages">
-            <summary>
-            Using this list is not thread safe 
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.Blast.AddPackage(System.Int32,NSS.Blast.BlastScriptPackage)">
-            <summary>
-            add a package to the internal packages repo
-            </summary>
-            <param name="pkg">the package to add</param>
-            <returns>the nr of packages in the repo after adding this one or 0 on failure</returns>
         </member>
         <member name="T:NSS.Blast.BlastRuntimeVersions">
             <summary>
@@ -321,6 +480,11 @@
         <member name="F:NSS.Blast.BlastLanguageVersion.HPC">
             <summary>
             Burstable C# code packed in functions for burst to compile at designtime
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastLanguageVersion.CS">
+            <summary>
+            Runtime compiled c# code, .net framework and windows only 
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastVectorSizes">
@@ -378,6 +542,242 @@
             Errorcodes that can be returned by blast 
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastError.yield">
+            <summary>
+            execution returned back to caller 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.success">
+            <summary>
+            everything went OK
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error">
+            <summary>
+            a generic error occured 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_unknown_op">
+            <summary>
+            an unknown operation was found
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_assign_vector_size_mismatch">
+            <summary>
+            a vector is assigned to a variable of differnt vectorsize and no automatic conversion is possible or implemented
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_begin_end_sequence_in_root">
+            <summary>
+            a begin-end opcode sequence is found in root while that should not be possible
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_unsupported_operation_in_root">
+            <summary>
+            an operation is encountered that is not supported while executing root level nodes
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_variable_vector_op_not_supported">
+            <summary>
+            a variable vector operation is not supported by the current sequence of operations
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_update_vector_fail">
+            <summary>
+            failed to update a vector
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.stack_error_peek">
+            <summary>
+            error peeking stack information 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.stack_error_pop">
+            <summary>
+            error taking values from stack
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.stack_error_variable_pop_not_supported">
+            <summary>
+            a variable sized pop is not supported
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.stack_error_pop_multi_from_root">
+            <summary>
+            a pop instruction is found where it doesnt belong 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_variable_vector_compound_not_supported">
+            <summary>
+            a variably sized compound is not supported in the current sequence of operations 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_max_iterations">
+            <summary>
+            the interpretor reached the maximum number of iterations, this is an indication of scripts running in an endless loop
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.validate_error_stack_too_small">
+            <summary>
+            the allocated space for the stack is too small (to few stack memory locations)
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.script_id_not_found">
+            <summary>
+            the given script id could not be found
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_blast_not_initialized">
+            <summary>
+            blast engine data is not initialized (use: Blast.Create()         
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_invalid_script_id">
+            <summary>
+            the given script id is invalid in the current context 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_cs_compiler_not_supported_on_platform">
+            <summary>
+            the c-sharp compiler is only supported in .Net Framework builds on windows. 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_invalid_nodetype">
+            <summary>
+            the node type is invalid in the current context 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_unsupported_operation">
+            <summary>
+            the operation is not supported in the current context 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_node_not_flat">
+            <summary>
+            the node has not been sufficiently flattened for execution 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_failed_to_compile_function_parameters">
+            <summary>
+            1 or more function parameters failed to be compiled 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_too_many_parameters">
+            <summary>
+            a function is used with too many parameters 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_failed_to_translate_offset_into_index">
+            <summary>
+            failed to translate a dataoffset into a variable index, the bytecode uses offsets instead of id;s voiding the need for some checks
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_vector_size_not_supported">
+            <summary>
+            the given vectorsize is not supported by the target operation 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.datasegment_size_larger_then_target">
+            <summary>
+            the datasegment is too large to be mapped to the target buffer 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.compile_packaging_error">
+            <summary>
+            the compiler failed to package the compiled bytecode 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.ssmd_invalid_packagemode">
+            <summary>
+            invalid packagemode set in package for ssmd execution
+            - packages need to be compiled in SSMD mode for SSMD interpretation (it can still run normal interpretation on ssmd packages though)
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_unsupported_operation_in_ssmd_root">
+            <summary>
+            the current operation is not supported at the root level during ssmd interpretation
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.ssmd_error_expecting_value">
+            <summary>
+            the ssmd interpretor expected a value but received something else
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.ssmd_error_unsupported_vector_size">
+            <summary>
+            the current vectorsize is not supported in the current sequence of operations
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_execute_package_not_correctly_set">
+            <summary>
+            package not correctly set to interpretor, use interpretor.SetPackage();
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_invalid_nodetype_in_root">
+            <summary>
+            the ast nodetype is not allowed in the root, this indicates compiler errors 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_node_function_unknown">
+            <summary>
+            the ast node encodes an unknown function 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_failed_to_flatten_function_parameters">
+            <summary>
+            the flatten operation failed on parameters of the target function node
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_pushv_vector_size_not_supported">
+            <summary>
+            the currentvector size is not supported to be pushed to the stack 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_optimizer_operation_mismatch">
+            <summary>
+            the optimizer failed to match operations 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_optimizer_parameter_mismatch">
+            <summary>
+            the optimizer failed to match parameters
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_optimizer_failed_to_replace_sequence">
+            <summary>
+            the optimizer failed to replace a sequence it targetted to optimize
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_package_not_allocated">
+            <summary>
+            the given package doesnt have any allocated code or data segments 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_nothing_to_execute">
+            <summary>
+            there is nothing to execute
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_packagemode_not_supported_for_direct_execution">
+            <summary>
+            the packagemode is not supported in the given execution method
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_already_packaged">
+            <summary>
+            package alread created, usually means that 'Prepare' is called while the script is already prepared 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_compilation_failure">
+            <summary>
+            generic error during compilation of the script, the log could contain more data depending on compilation options
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_language_version_not_supported">
+            <summary>
+            language version not supported in given context
+            </summary>
+        </member>
         <member name="T:NSS.Blast.BlastPackageMode">
             <summary>
             Blast script packaging types 
@@ -405,7 +805,9 @@
             
             - SSMD requirement: while data changes, its intent does not so metadata is shared
             
-            ? could allow branches and split from there? 
+            - SSDM in V2/BS2 allows for (nested) branching by setting sync points on non constant jumps: 
+            -- loop ends
+            -- if then else jumps 
             
             [----CODE----|----METADATA----]       [----DATA----|----STACK----]
                          1                2                    3             4
@@ -487,7 +889,69 @@
         </member>
         <member name="T:NSS.Blast.BlastPackageData">
             <summary>
-            the bare minimum data to package a script for execution 
+            the bare minimum data (28 bytes) to package a script for execution 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastPackageData.CodeSegmentPtr">
+            <summary>
+            points to codesegment, may be shared with other segments, see packagemode
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastPackageData.P2">
+            <summary>
+            points to the other segment, see packagemode
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastPackageData.PackageMode">
+            <summary>
+            Packaging mode 
+            
+            NORMAL: 
+                    [----CODE----|----METADATA----|----DATA----|----STACK----]
+                                 1                2            3             4  
+            
+            SSMD:
+                    [----CODE----|----METADATA----]       [----DATA----|----STACK----]
+                                 1                2                    3             4
+            
+            ENTITY:
+                    [----CODE----]      [----METADATA----]     [----DATA----|----STACK----]
+                                 1                       2                  3             4
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastPackageData.LanguageVersion">
+            <summary>
+            Package languageversion, determines feature support 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastPackageData.Flags">
+            <summary>
+            Package flags, see flags enumeration  
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastPackageData.Allocator">
+            <summary>
+            Package memory allocator 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastPackageData.O1">
+            <summary>
+            Offset 1, intent depends on packagemode
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastPackageData.O2">
+            <summary>
+            Offset 2, intent depends on packagemode
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastPackageData.O3">
+            <summary>
+            Offset 3, intent depends on packagemode
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastPackageData.O4">
+            <summary>
+            Offset 4, intent depends on packagemode
             </summary>
         </member>
         <member name="P:NSS.Blast.BlastPackageData.MetadataSize">
@@ -669,6 +1133,21 @@
             the actual scriptcode conforming to the languageversion set
             </summary>
         </member>
+        <member name="P:NSS.Blast.BlastScript.Package">
+            <summary>
+            native package data, contains references to code and data segments 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScript.IsPackaged">
+            <summary>
+             true if the script has been packaged / prepared
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScript.IsPrepared">
+            <summary>
+             true if the script has been packaged / prepared
+            </summary>
+        </member>
         <member name="M:NSS.Blast.BlastScript.FromText(System.String,System.String,System.Int32)">
             <summary>
             create script object from code 
@@ -678,9 +1157,35 @@
             <param name="id">a unique id</param>
             <returns>a blast script</returns>
         </member>
+        <member name="M:NSS.Blast.BlastScript.Prepare(System.IntPtr)">
+            <summary>
+            Prepare the script for execution
+            </summary>
+            <param name="blast">blast engine data</param>
+            <returns>success if all is ok </returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.Execute(System.IntPtr,System.IntPtr,System.IntPtr)">
+            <summary>
+            execute the script in the given environment with the supplied data
+            </summary>
+            <param name="blast">blastengine data</param>
+            <param name="environment">[optional] pointer to environment data</param>
+            <param name="caller">[ooptional] caller data</param>
+            <returns>success if all is ok</returns>
+        </member>
         <member name="M:NSS.Blast.BlastScript.ToString">
             <summary>
             get the string representation of a blast script as ID:Name
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.Dispose">
+            <summary>
+            cleanup package data if allocated on dispose 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.ReleasePackage">
+            <summary>
+            release package memory, nulls reference to it and free;s any native package memory with it 
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastScriptPackage">
@@ -717,7 +1222,7 @@
         </member>
         <member name="F:NSS.Blast.BlastScriptPackage.Outputs">
             <summary>
-            defined outputs, obsolete as we view the in and outputs as 1 segment, the input will be renamed   
+            defined outputs
             </summary>
         </member>
         <member name="F:NSS.Blast.BlastScriptPackage.Variables">
@@ -738,6 +1243,16 @@
         <member name="P:NSS.Blast.BlastScriptPackage.PackageSize">
             <summary>
             size of package data 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptPackage.PackageMode">
+            <summary>
+            packaging mode set by attached package data
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptPackage.Flags">
+            <summary>
+            package flags as set by attached package
             </summary>
         </member>
         <member name="M:NSS.Blast.BlastScriptPackage.Destroy">
@@ -787,7 +1302,37 @@
             </summary>
             <returns></returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "T:NSS.Blast.Compiler.BlastCompiler" -->
+        <member name="M:NSS.Blast.BlastScriptPackage.Execute(System.IntPtr,System.IntPtr,System.IntPtr)">
+            <summary>
+            execute the script in the given environment with the supplied data
+            </summary>
+            <param name="blast">blastengine data</param>
+            <param name="environment">[optional] pointer to environment data</param>
+            <param name="caller">[ooptional] caller data</param>
+            <returns>success if all is ok</returns>
+        </member>
+        <member name="T:NSS.Blast.Compiler.BlastCompiler">
+             <summary>
+             Blast Compiler 
+             
+             Compile scripts into bytecode, the process consists of several stages:
+             
+             
+             For bytecode these stages might be executed:
+             
+             1   - tokenize:            convert code into a list of tokens 
+             2   - parse:               parse list of tokens into a tree of nodes 
+             3   - transform:           transform nodes sequences  
+             4.1 - analyse parameters:  determine parameter types and check inputs and outputs
+             4.2 - analyse:             analyse nodes, reorder were needed, optimize for execution
+             5   - flatten:             flatten execution path
+             6   - node optimizer:      optimize nodes 
+             7   - compile:             generate bytecode from the internal representation 
+             8   - optimize bytecode:   optimize bytecode patterns 
+             9   - package:             package bytecode and set it up for execution 
+             
+            </summary>
+        </member>
         <member name="F:NSS.Blast.Compiler.BlastCompiler.opt_value">
             <summary>
             from this opcode until opt_ident constant values are encoded
@@ -814,10 +1359,20 @@
             C# compilation uses the output from the hpc stage
             </summary>
         </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.Validate(NSS.Blast.Compiler.IBlastCompilationData,System.IntPtr)">
+            <summary>
+            Validate output using data set in script for NULL inputs 
+            </summary>
+            <param name="result">bytecode compiler data</param>
+            <param name="blast">blast engine data</param>
+            <returns>true if validation succeeded</returns>
+        </member>
         <member name="M:NSS.Blast.Compiler.BlastCompiler.EstimateStackSize(NSS.Blast.Compiler.CompilationData)">
             <summary>
             estimate stack size by running script with a selection of parameters from
             input, output and validation settings 
+            
+            TODO: EstimateStackSize and Validate should be combined 
             </summary>
             <returns>estimated stack size in bytes</returns>
         </member>
@@ -829,7 +1384,6 @@
             - languageversion   = BS1
             </summary>
             <param name="cdata">Compiler data</param>
-            <param name="allocator">Allocation type</param>
             <param name="code_size">size of code in bytes</param>
             <param name="metadata_size">size of metadata in bytes, 1 byte per data element in data and stack segment combined</param>
             <param name="data_size">size of datasegment in bytes</param>
@@ -842,7 +1396,6 @@
             package for ssmd use:  [code-metadata] [data-stack]
             </summary>
             <param name="cdata">compiler result data</param>
-            <param name="allocator"></param>
             <param name="code_size"></param>
             <param name="metadata_size"></param>
             <param name="data_size"></param>
@@ -850,25 +1403,61 @@
             <param name="flags"></param>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.Package(NSS.Blast.Compiler.CompilationData,NSS.Blast.BlastCompilerOptions)">
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.Package(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastCompilerOptions)">
             <summary>
-            estimate size of package needed to execute the script
+            package the result of the compiler into an executable package 
             </summary>
-            <returns>size in bytes</returns>
+            <returns>the native blast package data structure</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileHPC(NSS.Blast.Blast,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.Compile(NSS.Blast.BlastEngineDataPtr,System.String,NSS.Blast.BlastCompilerOptions)">
             <summary>
-            compile to hpc code 
+            Compile script from text
+            </summary>
+            <param name="blast">blast engine data</param>
+            <param name="code">the code</param>
+            <param name="options">compiler options</param>
+            <returns>compiler data</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.Compile(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Compile a script
+            </summary>
+            <param name="blast">blast engine data</param>
+            <param name="script">the script to compile</param>
+            <param name="options">compileoptions</param>
+            <returns>compiler data</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileHPC(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            
             </summary>
             <param name="blast"></param>
-            <param name="blastScript"></param>
-            <param name="blastCompilerOptions"></param>
+            <param name="script"></param>
+            <param name="options"></param>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileCS(NSS.Blast.Blast,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileCS(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
             <summary>
             Compile using .net c# compiler 
             - only on windows .net framework > 4.5 
+            </summary>
+            <param name="blast"></param>
+            <param name="script"></param>
+            <param name="options"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompilePackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            compile script into a managed blastscriptpackage containing blastpackagedata
+            </summary>
+            <param name="blast"></param>
+            <param name="script"></param>
+            <param name="options"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileDataPackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Compile the script into a native blastscript datapackage
             </summary>
             <param name="blast"></param>
             <param name="script"></param>
@@ -1159,6 +1748,32 @@
             - compiles the ast into hpc code for compile-time scripts 
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastHPCCompiler.Version">
+            <summary>
+            Version 0.1
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastHPCCompiler.StageType">
+            <summary>
+            = HPC Compilation Stage 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastHPCCompiler.GetOperationString(NSS.Blast.Compiler.CompilationData,NSS.Blast.BlastScriptToken)">
+            <summary>
+            Get a string representing the token in the target
+            </summary>
+            <param name="data">compiler data (logging)</param>
+            <param name="token">the token to translate</param>
+            <returns>the operation translated to target operation text</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastHPCCompiler.GetFunctionName(NSS.Blast.Compiler.CompilationData,NSS.Blast.BlastScriptFunction)">
+            <summary>
+            get the name of the function in the target hpc 
+            </summary>
+            <param name="data">compilation data</param>
+            <param name="function">the function to get the name for</param>
+            <returns>the hpc function name </returns>
+        </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastHPCCompiler.CompileParameter(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,System.Text.StringBuilder)">
             <summary>
             compile a single parameter node into the code stream
@@ -1185,6 +1800,7 @@
             Compile the abstract syntax tree into a c# job to be used as hpc for burst by unity
             </summary>
             <param name="data">compilerdata, among which the AST</param>
+            <param name="indent">indentation used in output</param>
             <returns>a string containg the code</returns>
         </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastHPCCompiler.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
@@ -1259,10 +1875,11 @@
             optimizer stage 
             </summary>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastOptimizer.ReplaceSequence(NSS.Blast.Compiler.node,NSS.Blast.blast_operation,NSS.Blast.blast_operation,System.Int32,System.Int32)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastOptimizer.ReplaceSequence(NSS.Blast.BlastEngineDataPtr,NSS.Blast.Compiler.node,NSS.Blast.blast_operation,NSS.Blast.blast_operation,System.Int32,System.Int32)">
             <summary>
             replace sequence IN PLACE with a function 
             </summary>
+            <param name="blast">blast engine data -> needs access to functions</param>
             <param name="node">node to be updated</param>
             <param name="singleop">the singleop</param>
             <param name="replacement_function">the replacement fucntion</param>
@@ -1291,6 +1908,16 @@
         <member name="T:NSS.Blast.Compiler.Stage.BlastPackaging">
             <summary>
             Package Stage: process compiled bytecode into packages 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastPackaging.Version">
+            <summary>
+            Version 0.1
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastPackaging.StageType">
+            <summary>
+            Packaging Stage -> creates package 
             </summary>
         </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastPackaging.PackageIntermediate(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.Stage.IMByteCodeList)">
@@ -1460,6 +2087,7 @@
             <param name="data"></param>
             <param name="idx">the index starting the scan from and the must be on the first token of the identifier to parse. on succes it will be on the token directly after the identifier</param>
             <param name="idx_max">the max index to scan into (max including)</param>
+            <param name="add_minus"></param>
             <returns>null on errors, a valid node on success
             - can return nodes: function() and identifier[34].x
             </returns>
@@ -1474,7 +2102,7 @@
             <param name="n_function"></param>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.scan_and_parse_function(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.ScriptFunctionDefinition,System.Int32@,System.Int32@)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.scan_and_parse_function(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastScriptFunction,System.Int32@,System.Int32@)">
             <summary>
             scan and parse out the next function. 
             
@@ -1546,7 +2174,25 @@
             <param name="data">compilation data</param>
             <returns>exitcode, 0 == success</returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "T:NSS.Blast.Compiler.Stage.BlastTokenizer" -->
+        <member name="T:NSS.Blast.Compiler.Stage.BlastTokenizer">
+            <summary>
+            The Tokenizer:
+            
+            - splits input into list of tokens and identifiers 
+            - splits out: comments, defines and validations (all stuff starting with # until eol)
+            
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastTokenizer.Version">
+            <summary>
+            version
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastTokenizer.StageType">
+            <summary>
+            Tokenizer -> converts input text into array of tokens 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastTokenizer.parse_token(System.Char)">
             <summary>
             classify char as token, default to identifier 
@@ -1579,7 +2225,15 @@
             <param name="data"></param>
             <param name="comment"></param>
             <param name="a"></param>
+            <param name="is_input"></param>
             <returns>null on failure (also logs error in data)</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastTokenizer.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
+            <summary>
+            Execute the tokenizer stage
+            </summary>
+            <param name="data">compilation data</param>
+            <returns>success if ok, otherwise an errorcode</returns>
         </member>
         <member name="T:NSS.Blast.Compiler.Stage.BlastTransform">
             <summary>
@@ -1621,10 +2275,288 @@
             the different nodetypes used in the ast
             </summary>
         </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.none">
+            <summary>
+            nodetype is not set
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.root">
+            <summary>
+            this is the root node
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.function">
+            <summary>
+            this node represents a function
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.assignment">
+            <summary>
+            this node represents an assignment to identifier
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.parameter">
+            <summary>
+            node represents a parameter to a function or sequence with identifier name/value
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.index">
+            <summary>
+            BS2 parameter indexer, .[] 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.operation">
+            <summary>
+            node represents an operation: +-/ etc.
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.yield">
+            <summary>
+            yield operation, must be in root
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.compound">
+            <summary>
+            represents a compound: ( () )
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.ifthenelse">
+            <summary>
+            the root of an if then else structure
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.ifthen">
+            <summary>
+            the ifthen clausule
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.ifelse">
+            <summary>
+            the ifelse clausule
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.condition">
+            <summary>
+            a condition, either in if statements or while/for loops 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.whileloop">
+            <summary>
+            the root of a while loop
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.whilecompound">
+            <summary>
+            the while loop body, handled as a compound 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.switchnode">
+            <summary>
+            the switch statement root node, transformed into ifthenelse statements during compilation
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.switchcase">
+            <summary>
+            a switch case 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.switchdefault">
+            <summary>
+            the default case 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.forloop">
+            <summary>
+            the root of a for loop 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.jump_to">
+            <summary>
+            a jump instruction inserted by the compiler that jumps to a given label in the ast
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.label">
+            <summary>
+            a label (a jump target) inserted by the compiler 
+            </summary>
+        </member>
         <member name="T:NSS.Blast.Compiler.node">
             <summary>
             an ast node used by the blast compiler
             </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.parent">
+            <summary>
+            the parent node, null if the node is the root
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.type">
+            <summary>
+            nodetype of node
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.function">
+            <summary>
+            if the node is a function then its this one
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.token">
+            <summary>
+            any token attached to this node 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.identifier">
+            <summary>
+            any identifier attached to this node
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.variable">
+            <summary>
+            variable data inferred from the ast and connected to the nodes identifier 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.children">
+            <summary>
+            children of node 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.depends_on">
+            <summary>
+            dependencies of node 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.indexers">
+            <summary>
+            BS2: indexers, arrays and compound types []. 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.constant_op">
+            <summary>
+            any operation connected to this node (type == function | operation | parameter (pop))
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.skip_compilation">
+            <summary>
+            skip general compilation of this node, some nodes control when to compile their own dependencies like initializers in loops
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.is_constant">
+            <summary>
+            true if the node represents a constant value 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.vector_size">
+            <summary>
+            the vector size 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.is_vector">
+            <summary>
+            true if the value represented is a vector, dont use this directly as the compilers interpretation might change during the process. 
+            check variable or function property instead to find out if something is a vector 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.linked_push">
+            <summary>
+            internal use: a linked push operation, used during compilation to keep track of pushpop pairs
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.node.linked_pop">
+            <summary>
+            internal use: a linked pop operation, used during compilation to keep track of pushpop pairs
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsRoot">
+            <summary>
+            Only true if this is the root of the ast
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsCompound">
+            <summary>
+            True if this a compound node
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsAssignment">
+            <summary>
+            True if this is an assignment
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsFunction">
+            <summary>
+            True if this is a function 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsPushFunction">
+            <summary>
+            True if this is a function pushing to the stack 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsPopFunction">
+            <summary>
+            True if this is a function popping from the stack
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsOperation">
+            <summary>
+            True if this is an operation 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsLeaf">
+            <summary>
+            True if this is a leaf nod
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsVector">
+            <summary>
+            True if this is data with a cardinality larger then 1 (a vector) 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsScriptVariable">
+            <summary>
+            True if this node represents a scripted variable 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.HasDependencies">
+            <summary>
+            true if the node has dependencies
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.DependencyCount">
+            <summary>
+            get the number of dependency nodes
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.HasChildren">
+            <summary>
+            true if the node contains child nodes 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.HasOneChild">
+            <summary>
+            true if the node has exactly 1 node
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.HasIndexers">
+            <summary>
+            true if node contains indexers 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.HasIdentifier">
+            <summary>
+            true if node is represented by an identifier 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.CountNodes">
+            <summary>
+            get the total number of nodes in the tree as seen from current node
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.CountChildNodes(NSS.Blast.Compiler.node)">
+            <summary>
+            get the total number of nodes in the children of n
+            </summary>
+            <param name="n">the node to count all child nodes of</param>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.Compiler.node.IsVectorDefinition(NSS.Blast.Compiler.node)">
             <summary>
@@ -1657,6 +2589,13 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:NSS.Blast.Compiler.node.IsNonNestedVectorDefinition(NSS.Blast.Compiler.node)">
+            <summary>
+            check if given node contains a non nested vector define: node = (1 2 3 4)  | node = (1 2 (-3) 4)
+            </summary>
+            <param name="n">the node to check</param>
+            <returns>true if it does</returns>
+        </member>
         <member name="M:NSS.Blast.Compiler.node.FirstConsecutiveOperationSequence(NSS.Blast.Compiler.node,System.Int32,System.Int32,NSS.Blast.blast_operation@,System.Int32@,NSS.Blast.Compiler.node@)">
             <summary>
             get the largest group of operations of the same type 
@@ -1684,6 +2623,38 @@
             <summary>
             interpret this node as a float value and return that
             </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.AsFloat">
+            <summary>
+            interpret the node's attached identifier as a floating point value, returns Blast.InvalidNumeric if it could
+            not parse the identifier as a numeric
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.#ctor(NSS.Blast.Compiler.node,NSS.Blast.Compiler.node[])">
+            <summary>
+            general constructor
+            </summary>
+            <param name="_parent">parent node</param>
+            <param name="_children">child nodes</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.#ctor(NSS.Blast.Compiler.nodetype,NSS.Blast.BlastScriptToken)">
+            <summary>
+            general constructor
+            </summary>
+            <param name="_type">the nodetype</param>
+            <param name="_token">the attached token</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.ToString">
+            <summary>
+            provides information in debug display through a tostring overload
+            </summary>
+            <returns>node formatted as string</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.GetNodeDescription">
+            <summary>
+            get a textual description of this node 
+            </summary>
+            <returns>the text description</returns>
         </member>
         <member name="M:NSS.Blast.Compiler.node.ToNodeTreeString(System.Int32)">
             <summary>
@@ -1743,11 +2714,17 @@
             -encode parametercount in high nibble 
             </summary>
         </member>
+        <member name="M:NSS.Blast.Compiler.node.SetDependency(NSS.Blast.Compiler.node)">
+            <summary>
+            set a dependency for this node, some constructs such as loops use this for the initializer
+            </summary>
+            <param name="ast_node">the node to add to dependencies</param>
+        </member>
         <member name="M:NSS.Blast.Compiler.node.InsertDependency(NSS.Blast.Compiler.node)">
             <summary>
-            insert a depenency, updateing parent and chldren list 
+            insert (actually it appends) a depenency, updateing parent and chldren list 
             </summary>
-            <param name="ast_node"></param>
+            <param name="ast_node">the node to append</param>
         </member>
         <member name="M:NSS.Blast.Compiler.node.AppendDependency(NSS.Blast.Compiler.node)">
             <summary>
@@ -1756,32 +2733,49 @@
             </summary>
             <param name="n">the node to add</param>
         </member>
+        <member name="M:NSS.Blast.Compiler.node.AppendDependencies(System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.node})">
+            <summary>
+            append multiple dependant nodes
+            </summary>
+            <param name="nodes">nodes to add to dependencies</param>
+        </member>
         <member name="M:NSS.Blast.Compiler.node.GetChild(NSS.Blast.Compiler.nodetype)">
             <summary>
             get the first child found of a given nodetype
             </summary>
         </member>
+        <member name="M:NSS.Blast.Compiler.node.GetChild(NSS.Blast.Compiler.nodetype,NSS.Blast.Compiler.nodetype)">
+            <summary>
+            get first child matching first choice, if none found, try the second choice
+            </summary>
+            <param name="first_choice">first to try to locate</param>
+            <param name="second_choice">next attemt to locate</param>
+            <returns>a node if any was found, otherwise null</returns>
+        </member>
         <member name="M:NSS.Blast.Compiler.node.GetChildren(NSS.Blast.Compiler.nodetype)">
             <summary>
             get children of given nodetype
             </summary>
+            <returns>an array of nodes</returns>
         </member>
         <member name="M:NSS.Blast.Compiler.node.GetOtherChildren(NSS.Blast.Compiler.nodetype)">
             <summary>
             get child nodes not of the type t
             </summary>
-            <param name="t"></param>
-            <returns></returns>
+            <param name="t">the nodetype to discriminate</param>
+            <returns>an array of nodes</returns>
         </member>
         <member name="M:NSS.Blast.Compiler.node.CountOtherChildren(NSS.Blast.Compiler.nodetype)">
             <summary>
             count nr of childnodes with not nodetype t
             </summary>
+            <returns>number of children not matching nodetype t</returns>
         </member>
         <member name="M:NSS.Blast.Compiler.node.CountChildren(NSS.Blast.Compiler.nodetype)">
             <summary>
             count children of given nodetype 
             </summary>
+            <returns>number of children matching type t</returns>
         </member>
         <member name="M:NSS.Blast.Compiler.node.DeepClone">
             <summary>
@@ -1794,6 +2788,13 @@
             get all leaf nodes from this node
             </summary>
             <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.GetLeafNodes(System.Collections.Generic.List{NSS.Blast.Compiler.node},NSS.Blast.Compiler.node)">
+            <summary>
+            gather all leaf nodes from a given node
+            </summary>
+            <param name="leafs">leaf node list to use</param>
+            <param name="n">node to gather leafs from</param>
         </member>
         <member name="M:NSS.Blast.Compiler.node.HasSingleCompoundAsChild">
             <summary>
@@ -1808,19 +2809,26 @@
             <param name="op">the op representing the function</param>
             <returns>true if used</returns>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:NSS.Blast.Compiler.node.ReduceSingularCompounds(NSS.Blast.Compiler.node)" -->
-        <member name="M:NSS.Blast.Compiler.node.CreatePopNode(NSS.Blast.Compiler.node)">
+        <member name="M:NSS.Blast.Compiler.node.ReduceSingularCompounds(NSS.Blast.Compiler.node)">
+            <summary>
+            recursively reduces unneeded compound nesting 
+            (((2 3))) => (2 2)
+            </summary>
+            <param name="node">the root node of the nested compound</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.CreatePopNode(NSS.Blast.BlastEngineDataPtr,NSS.Blast.Compiler.node)">
             <summary>
             create a pop node based on the information pushed, links the push and pop together 
             </summary>
-            <param name="data">compiler data</param>
+            <param name="blast">current engine data</param>
             <param name="related_push">the earlier push op</param>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.node.CreatePushNode(NSS.Blast.Compiler.node)">
+        <member name="M:NSS.Blast.Compiler.node.CreatePushNode(NSS.Blast.BlastEngineDataPtr,NSS.Blast.Compiler.node)">
             <summary>
             create a push node with the information from the given node, THIS DOES NOT ADD THAT NODE AS CHILD
             </summary>
+            <param name="blast">blast engine data</param>
             <param name="topush">node to push</param>
             <returns>returns the pushing node</returns>
         </member>
@@ -1915,9 +2923,24 @@
             count all children matching one of 2 types 
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.node.HasChildNodes">
+            <summary>
+            True if the node contains children
+            </summary>
+        </member>
         <member name="P:NSS.Blast.Compiler.node.ChildCount">
             <summary>
             number of child nodes below this node
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.FirstChild">
+            <summary>
+            first child of node, null if there are no children
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.LastChild">
+            <summary>
+            last child of node, null if there are no children, equals first if childcount == 1
             </summary>
         </member>
         <member name="M:NSS.Blast.Compiler.node.CheckIfCouldBeVectorList">
@@ -1931,7 +2954,7 @@
             insert a new node of the given type and operation  before this node in parent 
             </summary>
             <param name="type">node type</param>
-            <param name="op">script operation</param>
+            <param name="token">token for script operation</param>
         </member>
         <member name="M:NSS.Blast.Compiler.node.InsertChild(System.Int32,NSS.Blast.Compiler.node)">
             <summary>
@@ -1988,9 +3011,211 @@
             interface into compilationdata, we should restrict outside use a bit via this 
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Version">
+            <summary>
+            compiler version 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Blast">
+            <summary>
+            blast engine data used in this compilation
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Script">
+            <summary>
+            the script 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.CompilerOptions">
+            <summary>
+            Compiler Options used during compilation
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.AST">
+            <summary>
+            Compiler node tree
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Tokens">
+            <summary>
+            List of tokens as parsed from the input
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Variables">
+            <summary>
+            List of variables as found in input
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Offsets">
+            <summary>
+            Offsets into the datasegment for variable indices 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Jumps">
+            <summary>
+            Jumps found in the script 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Defines">
+            <summary>
+            Compiler defines used during compilation, this contains only the unique defines set by this script
+            and more defines might apply depending on the setup
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Inputs">
+            <summary>
+            Defined Inputs 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Outputs">
+            <summary>
+            Defined Outputs 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.Validations">
+            <summary>
+            Validations defined in script 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.LogError(System.String,System.Int32,System.Int32,System.String)">
+            <summary>
+            log an error to the compiler log
+            </summary>
+            <param name="msg">the message to log</param>
+            <param name="code">an error code</param>
+            <param name="linenr">possibly the linenr</param>
+            <param name="member">possibly the callername</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.LogTrace(System.String,System.Int32,System.String)">
+            <summary>
+            trace information, does nothing in release 
+            </summary>
+            <param name="msg">the message to log</param>
+            <param name="linenr">possibly the linenr</param>
+            <param name="member">possibly the callername</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.LogWarning(System.String,System.Int32,System.String)">
+            <summary>
+            log a warning to the compiler log
+            </summary>
+            <param name="msg">the message to log</param>
+            <param name="linenr">possibly the linenr</param>
+            <param name="member">possibly the callername</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.LogToDo(System.String,System.Int32,System.String)">
+            <summary>
+            log a message to the compiler log
+            </summary>
+            <param name="msg">the message to log</param>
+            <param name="linenr">possibly the linenr</param>
+            <param name="member">possibly the callername</param>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.IsOK">
+            <summary>
+            true if no errors are set in the compilation log and no errorcode is set
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.HasErrors">
+            <summary>
+            true if an errorcode is set or errors are present in the compilation log 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.CanValidate">
+            <summary>
+            true if the script can be validated (it contains validation defines) 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.HasDefines">
+            <summary>
+            true if the script defines compiler defines 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.GetVariable(System.String)">
+            <summary>
+            lookup a variablemapping defined by the script by its name
+            </summary>
+            <param name="name">the name of the variable as used in the script code</param>
+            <returns>the variable if found, null otherwise</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.GetVariableFromOffset(System.Byte)">
+            <summary>
+            lookup a variable defined by script based on its offset 
+            </summary>
+            <param name="offset">the datasegment offset</param>
+            <returns>the variable</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.TryGetDefine(System.String,System.String@)">
+            <summary>
+            attempt to get a defined value from script defined compilerdefines
+            </summary>
+            <param name="identifier">the identifier</param>
+            <param name="defined_value">the output value</param>
+            <returns>true if a define was found with the given name</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.ExistsVariable(System.String)">
+            <summary>
+            returns true if a variable exists with the given name
+            </summary>
+            <param name="name">variable name</param>
+            <returns>true if the variable exists</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.HasInput(System.Int32)">
+            <summary>
+            check if there is an input defined by the script with the given id 
+            </summary>
+            <param name="id">the integer identifier</param>
+            <returns>true if defined</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.HasInput(System.String)">
+            <summary>
+            check if there is an input defined by the script with the given id 
+            </summary>
+            <param name="name">the input variable name</param>
+            <returns>true if defined</returns>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.HasVariables">
+            <summary>
+            true if the script defines variables 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.HasOffsets">
+            <summary>
+            true if the script defines variables 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.VariableCount">
+            <summary>
+            number of variables defined in the script 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.OffsetCount">
+            <summary>
+            number of variable offsets defined in the script
+            </summary>
+        </member>
         <member name="T:NSS.Blast.Compiler.CompilationData">
             <summary>
-            Data created during compilation and used for analysis and packaging
+            Data created during compilation and used for analysis, packaging and debugging/display purposes
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.CompilationData.version">
+            <summary>
+            Version
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.Version">
+            <summary>
+            Version
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.Compiler.CompilationData.Message">
+            <summary>
+            a compiler message 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.CompilationData.CompilerMessages">
+            <summary>
+            List of messages issued during compilation 
             </summary>
         </member>
         <member name="M:NSS.Blast.Compiler.CompilationData.LogMessage(System.String,System.Int32,System.String)">
@@ -2000,14 +3225,90 @@
             and: https://stackoverflow.com/questions/38476796/how-to-set-net-core-in-if-statement-for-compilation
             </summary>
         </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.LogTrace(System.String,System.Int32,System.String)">
+            <summary>
+            Trace a message, does nothing in release builds 
+            </summary>
+            <param name="msg">the message to trace</param>
+            <param name="linenr">line number</param>
+            <param name="member">caller member name</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.LogError(System.String,System.Int32,System.Int32,System.String)">
+            <summary>
+            Log an error to the log, also writes to player log / debugstream
+            </summary>
+            <param name="msg">the message</param>
+            <param name="code">optional errorcode</param>
+            <param name="linenr">optional linenr</param>
+            <param name="member">optional caller member name</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.LogWarning(System.String,System.Int32,System.String)">
+            <summary>
+            Log a warning to the log, also writes to player log / debugstream
+            </summary>
+            <param name="msg">the message</param>
+            <param name="linenr">optional linenr</param>
+            <param name="member">optional caller member name</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.LogToDo(System.String,System.Int32,System.String)">
+            <summary>
+            logs a todo, only in standalone debug builds 
+            </summary>
+            <param name="msg">the message</param>
+            <param name="linenr">optional line number</param>
+            <param name="member">optional caller member name</param>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.LastErrorMessage">
+            <summary>
+            keep reference of any last error message, voiding the need to search for it 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.LastError">
+            <summary>
+            returns the last error code or success if nothing went wrong 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.ErrorCount">
+            <summary>
+            number of errors that occured during compilation 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.HasErrors">
+            <summary>
+            number of errors that occured during compilation
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.WarningCount">
+            <summary>
+            number of warnings that occured during compilation 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.HasWarnings">
+            <summary>
+            true if any warning was logged during compilation
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.HasErrorsOrWarnings">
+            <summary>
+            true if any erorr or warning occured 
+            </summary>
+        </member>
         <member name="P:NSS.Blast.Compiler.CompilationData.IsOK">
             <summary>
-            the data is OK when there is no known errormessage 
+            true if everything went ok 
             </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.#ctor(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            setup new compilation data
+            </summary>
+            <param name="blast">blast engine data</param>
+            <param name="script">the script to compile</param>
+            <param name="options">compiler options</param>
         </member>
         <member name="P:NSS.Blast.Compiler.CompilationData.Blast">
             <summary>
-            global blast manager 
+            blast engine data 
             </summary>
         </member>
         <member name="P:NSS.Blast.Compiler.CompilationData.Script">
@@ -2025,11 +3326,74 @@
             Options used during compilation 
             </summary>
         </member>
-        <member name="M:NSS.Blast.Compiler.CompilationData.GetHumanReadableCode">
+        <member name="M:NSS.Blast.Compiler.CompilationData.GetHumanReadableCode(System.Int32,System.Boolean)">
             <summary>
             this version has a little more information than the generic bytecode reader in blast due to having access to all compilation data
             </summary>
+            <returns>a readable string</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.GetHumanReadableBytes(System.Int32,System.Boolean)">
+            <summary>
+            get a readable string from the compiled code
+            </summary>
+            <param name="columns">number of columns to use in the presentation of the bytes</param>
+            <param name="index">true if you want an index (000| ) at the start of each line</param>
             <returns></returns>
+        </member>
+        <member name="F:NSS.Blast.Compiler.CompilationData.code">
+            <summary>
+            intermediate bytecode, only public for debugging view purposes, dont use, dont modify
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.AST">
+            <summary>
+            the rootnode of the abstract syntax tree
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.Variables">
+            <summary>
+            List of variables in script 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.ConstantVariables">
+            <summary>
+            List of constant variables (constant data needs to be somewhere)
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.Offsets">
+            <summary>
+            list of used variable offsets 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.Jumps">
+            <summary>
+            list of jumps 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.Defines">
+            <summary>
+            list of defines defined by this script 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.Inputs">
+            <summary>
+            list of inputs defined by this script
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.Outputs">
+            <summary>
+            list of outputs defined by this script
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.Validations">
+            <summary>
+            list of validations defined by this script
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.Tokens">
+            <summary>
+            list of tokens as parsed out of the script
+            </summary>
         </member>
         <member name="M:NSS.Blast.Compiler.CompilationData.CreateVariable(System.String,System.Boolean,System.Boolean)">
             <summary>
@@ -2038,17 +3402,18 @@
             - initializes reference count at 1
             </summary>
             <param name="name">first part of identifier - the name</param>
-            <param name="is_inputoutput_define">if part of #input of #output we dont want to add references</param>
-            <returns>null on failure</returns>
+            <param name="is_input">true if used as an input</param>
+            <param name="is_output">true if used as an output</param>
+            <returns>null on failure, any error will be logged</returns>
         </member>
         <member name="M:NSS.Blast.Compiler.CompilationData.TryGetVariable(System.String,NSS.Blast.BlastVariable@)">
             <summary>
             try to lookup a reference 
-            - doens not reference count 
+            - does not reference count 
             </summary>
-            <param name="name"></param>
-            <param name="variable"></param>
-            <returns></returns>
+            <param name="name">the name of the variable to lookup</param>
+            <param name="variable">output variable</param>
+            <returns>true if found</returns>
         </member>
         <member name="M:NSS.Blast.Compiler.CompilationData.GetOrCreateVariable(System.String)">
             <summary>
@@ -2066,16 +3431,58 @@
             <param name="defined_value"></param>
             <returns></returns>
         </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.TryGetInput(NSS.Blast.BlastVariable,NSS.Blast.BlastVariableMapping@)">
+            <summary>
+            Try to lookup a input variable mapping 
+            </summary>
+            <param name="v">the variable</param>
+            <param name="mapping">output mapping</param>
+            <returns>true if found</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.TryGetOutput(NSS.Blast.BlastVariable,NSS.Blast.BlastVariableMapping@)">
+            <summary>
+            try to lookup an output variable mapping
+            </summary>
+            <param name="v">the variable</param>
+            <param name="mapping">the output variable mapping</param>
+            <returns>true if found</returns>
+        </member>
         <member name="T:NSS.Blast.Compiler.CSCompilationData">
             <summary>
             compiler data for the C# compiler 
             - as it uses the output from hpc we base data on its data
             </summary>
         </member>
+        <member name="F:NSS.Blast.Compiler.CSCompilationData.Namespace">
+            <summary>
+            Target namespace for compiling scripts into
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CSCompilationData.#ctor(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Setup CS Compiler chain
+            </summary>
+            <param name="blast">blast engine data</param>
+            <param name="script">script code</param>
+            <param name="options">compiler options</param>
+        </member>
         <member name="T:NSS.Blast.Compiler.HPCCompilationData">
             <summary>
             compiler data for the hpc compiler 
             </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.HPCCompilationData.HPCCode">
+            <summary>
+            resulting burstable C# code
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.HPCCompilationData.#ctor(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            setup compilation data for the HPC compiler chain
+            </summary>
+            <param name="blast">blast</param>
+            <param name="script">the blast script to compile</param>
+            <param name="options">blast compiler options</param>
         </member>
         <member name="T:NSS.Blast.Compiler.BlastIntermediate">
             <summary>
@@ -2146,6 +3553,23 @@
             Options for compiling and packaging scripts 
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastCompilerOptions.Language">
+            <summary>
+            The languageversion to use for the output of the compilation. Packagemode and language version are coupled but there may be deviations:
+            - You can execute BS1 language version files with SSMD package modes if you guarentee that the code doesnt branch (the interpretor wont check this)
+            - You can exectue BS1SSMD compiled packages with the normal interpretor in normal package mode
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastCompilerOptions.PackageMode">
+            <summary>
+            the package mode for the output, this determines how code and data is organized in memory 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastCompilerOptions.PackageAllocator">
+            <summary>
+            Allocator for data package 
+            </summary>
+        </member>
         <member name="F:NSS.Blast.BlastCompilerOptions.AutoValidate">
             <summary>
             run validation if set in script 
@@ -2166,6 +3590,11 @@
             compare epsilon for constants, on fast float mode it wont match on float.epsilon
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastCompilerOptions.ConstantPrecision">
+            <summary>
+            constant precision expressed as a string value
+            </summary>
+        </member>
         <member name="F:NSS.Blast.BlastCompilerOptions.DefaultStackSize">
             <summary>
             default stack size in number of bytes
@@ -2183,19 +3612,14 @@
             - overridden if the script defines a stack size
             </summary>
         </member>
-        <member name="F:NSS.Blast.BlastCompilerOptions.Verbose">
+        <member name="F:NSS.Blast.BlastCompilerOptions.VerboseLogging">
             <summary>
             verbose report logging, log is also blitted to unity
             </summary>
         </member>
-        <member name="F:NSS.Blast.BlastCompilerOptions.Trace">
+        <member name="F:NSS.Blast.BlastCompilerOptions.TraceLogging">
             <summary>
             enable trace level logging -> will generate a massive report 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerOptions.Report">
-            <summary>
-            build a report during compilation 
             </summary>
         </member>
         <member name="F:NSS.Blast.BlastCompilerOptions.SupportYield">
@@ -2209,15 +3633,9 @@
             compile the debug function only if enabled 
             </summary>
         </member>
-        <member name="F:NSS.Blast.BlastCompilerOptions.PackageMode">
-            <summary>
-            package mode
-            </summary>
-        </member>
         <member name="F:NSS.Blast.BlastCompilerOptions.ParallelCompilation">
             <summary>
-            enable for partially parallel compilation 
-            - fails somewhere in optimizer or jumpresolver 
+            enable for partially parallel compilation [forcebly disabled]
             </summary>
         </member>
         <member name="F:NSS.Blast.BlastCompilerOptions.Defines">
@@ -2227,31 +3645,157 @@
         </member>
         <member name="F:NSS.Blast.BlastCompilerOptions.Experimental">
             <summary>
-            dont touch
+            dont touch if you need to ask 
             </summary>
         </member>
         <member name="P:NSS.Blast.BlastCompilerOptions.Default">
             <summary>
-            default compiler options 
+            Default compiler options:
+            BS1 - Normal - Optimizing
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastCompilerOptions.SSMD">
+            <summary>
+            Default SSMD compiler options:
+            BS1 - SSMD Packagemode - Optimizing
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastCompilerOptions.Entity">
+            <summary>
+            Default compiler options for packaging entities:
+            BS1 - Entity Packagemode - Optimizing
             </summary>
         </member>
         <member name="M:NSS.Blast.BlastCompilerOptions.#ctor(System.Int32)">
             <summary>
             initialize default options with given stacksize 
             </summary>
-            <param name="stack_size"></param>
+            <param name="stack_size">stacksize, stack estimation will be turned off</param>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.#ctor(NSS.Blast.BlastPackageMode)">
+            <summary>
+            initilize default options in given packaging mode
+            </summary>
+            <param name="packagemode">the package mode to set</param>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.#ctor(System.Int32,NSS.Blast.BlastPackageMode)">
+            <summary>
+            initialize default options in given packagemode with a pre-determined stack size
+            </summary>
+            <param name="stack_size">stacksize, stack estimation will be turned off</param>
+            <param name="packagemode">packaging mode</param>
         </member>
         <member name="M:NSS.Blast.BlastCompilerOptions.#ctor">
             <summary>
             initialize with default options 
             </summary>
         </member>
-        <member name="M:NSS.Blast.BlastCompilerOptions.AddDefine(System.String,System.String)">
+        <member name="M:NSS.Blast.BlastCompilerOptions.EnableValidation(System.Boolean)">
             <summary>
-            add a compiler define 
+            enable validation (default = off) 
             </summary>
-            <param name="key">the key value</param>
-            <param name="value">single, or parameter name when brave</param>
+            <param name="run_auto_validation">true to enable validation</param>
+            <returns>options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.SetStackSize(System.Int32)">
+            <summary>
+            set the size of the stack, if 0 is set stack is estimated during compilation 
+            </summary>
+            <param name="stack_size"></param>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.PackageWithoutStack">
+            <summary>
+            package without a stack segment, use stackmemory in the interpretor 
+            </summary>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.SetLanguage(NSS.Blast.BlastLanguageVersion)">
+            <summary>
+            Set language target 
+            </summary>
+            <param name="language">Supported language: BS1 | BSSSMD1 | HPC </param>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.SetPackageMode(NSS.Blast.BlastPackageMode)">
+            <summary>
+            Set packaging mode
+            </summary>
+            <param name="packagemode">Packagemode: Normal, SSMD or Entity</param>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.SetAllocator(Unity.Collections.Allocator)">
+            <summary>
+            Set allocation mode for packages, use temp with caution in combination with bursted code
+            </summary>
+            <param name="allocator">the unity memory allocation type</param>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.EnableOptimisations">
+            <summary>
+            enable compiler optimizations, default == enabled
+            </summary>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.DisableOptimisations">
+            <summary>
+            disable compiler optimisations, default = enabled
+            </summary>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.Silent">
+            <summary>
+            disable all logging, fails silently
+            </summary>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.Verbose">
+            <summary>
+            set verbose logging
+            </summary>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.Trace">
+            <summary>
+            set trace logging
+            </summary>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.AddDefine(System.String,System.String,System.Boolean)">
+            <summary>
+            add a compiled define
+            </summary>
+            <param name="key">defined name</param>
+            <param name="value">value</param>
+            <param name="allow_overwrite_existing"></param>
+            <returns>compiler options</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.IsDefined(System.String)">
+            <summary>
+            Check if the key is defined in compiler options 
+            </summary>
+            <param name="key">the case insensitive key to check</param>
+            <returns>true if its defined</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.TryGetDefine(System.String,System.String)">
+            <summary>
+            Try to lookup a key and get its value
+            </summary>
+            <param name="key">case insensitive key</param>
+            <param name="value">the value if present</param>
+            <returns>true if the key was defined</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.ClearDefines">
+            <summary>
+            remove all defines from compiler options 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastCompilerOptions.RemoveDefine(System.String)">
+            <summary>
+            Remove any value possibly assosiated with the key
+            </summary>
+            <param name="key">case insensitive key</param>
+            <returns>true if the key was defined and subsequently removed</returns>
         </member>
         <member name="T:NSS.Blast.BlastCompilerStageType">
             <summary>
@@ -2335,89 +3879,415 @@
             a compiler stage - employs 1 step of the compilation process
             </summary>
         </member>
-        <member name="F:NSS.Blast.ScriptFunctionDefinition.ReturnsVectorSize">
+        <member name="T:NSS.Blast.BlastScriptFunctionFlag">
             <summary>
-            if == 0 returns same as input 
+            flags for extra information on script functions
             </summary>
         </member>
-        <member name="F:NSS.Blast.ScriptFunctionDefinition.AcceptsVectorSize">
+        <member name="F:NSS.Blast.BlastScriptFunctionFlag.Reserved">
             <summary>
-            if == 0 accepts any 
+            function targets a blast reserved function (seed, push, peek) 
             </summary>
         </member>
-        <member name="T:NSS.Blast.ReservedScriptFunctionIds">
+        <member name="F:NSS.Blast.BlastScriptFunctionFlag.NativeFunction">
+            <summary>
+            function uses a native function pointer for execution
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.ReservedBlastScriptFunctionIds">
             <summary>
             IDs reserved for functions used in blast, these get registered to blast with a name (that doesnt need to be equal) 
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Input">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Input">
             <summary>
             input mapping function - reserved for internal use
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Output">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Output">
             <summary>
             output mapping function - reserved for internal use
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Yield">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Yield">
             <summary>
             Yield execution 
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Pop">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Pop">
             <summary>
             Pop something from the stack 
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Pop2">
-            <summary>
-            Pop a vector of size 2 from the stack 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Pop3">
-            <summary>
-            Pop a vector of size 3 from the stack 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Pop4">
-            <summary>
-            Pop a vector of size 4 from the stack 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Peek">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Peek">
             <summary>
             Peek stack top 
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Seed">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Seed">
             <summary>
             Seed the random number generator 
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Push">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Push">
             <summary>
             Push something to the stack 
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.PushFunction">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.PushFunction">
             <summary>
             Push a function's return value to the stack 
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.PushCompound">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.PushCompound">
             <summary>
             Push the result from executing a compound onto the stack 
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.PushVector">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.PushVector">
             <summary>
             Push a vector directly onto the stack 
             </summary>
         </member>
-        <member name="F:NSS.Blast.ReservedScriptFunctionIds.Debug">
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Debug">
             <summary>
             Output debuginformation to the debug stream about given parameter 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.DebugStack">
+            <summary>
+            Output debuginformation to the debug stream
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Offset">
+            <summary>
+            all other functions start indexing from this offset
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.BlastScriptFunction">
+            <summary>
+            burst compatible function description 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.NativeFunctionPointer">
+            <summary>
+            a native function pointer (1st member, makes sure its aligned if this struct is)
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.FunctionId">
+            <summary>
+            function Id, doubles as index into function tables
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.Match">
+            <summary>
+            char array to match to in lowercase, only ASCII
+            - length == Blast.MaximumFunctionNameLength
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.MinParameterCount">
+            <summary>
+            minimal number of parameters 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.MaxParameterCount">
+            <summary>
+            maximal number of parameters, 0 for none, max = 31 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.ReturnsVectorSize">
+            <summary>
+            vectorsize of returnvalue, 0 if no value is returned
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.AcceptsVectorSize">
+            <summary>
+            vectorsize of accepted values in parameters, set to 0 to perform no check
+            - TODO, V2/3/4?? could make this more strict
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.Flags">
+            <summary>
+            Flags: 
+            - reserved: function targets a reserved function
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.ScriptOp">
+            <summary>
+            Built-in functions directly compile into a script operation
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.ExtendedScriptOp">
+            <summary>
+            Built-in functions directly compile into a script operation
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsReserved">
+            <summary>
+            true if the function targets a reserved function name 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsExternalCall">
+            <summary>
+            True if the functioncall is an external functionpointer
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsPopVariant">
+            <summary>
+            true if function encodes a pop function
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsPushVariant">
+            <summary>
+            true function encodes a push operation 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.CanHaveParameters">
+            <summary>
+            true if the function can have parameters
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.HasVariableParameterCount">
+            <summary>
+            returns true if the function accepts a variable sized list of paramaters 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsNotValid">
+            <summary>
+            returns if the function is NOT valid (checks id, assumes memory is initialized to zeros)
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsValid">
+            <summary>
+            returns if the function is valid (checks id, assumes memory is initialized to zeros)
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptFunction.Generic``1">
+            <summary>
+            cast our functionpointer into the delegate used to call it
+            </summary>
+            <typeparam name="T">the delegate type</typeparam>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptFunction.GetFunctionName">
+            <summary>
+            rebuilds the functionname from a native character array (expensive operation) 
+            </summary>
+            <returns>the string representing the functionname</returns>
+        </member>
+        <member name="T:NSS.Blast.BlastScriptFunctionInfo">
+            <summary>
+            managed information on functions 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionInfo.Function">
+            <summary>
+            the native function data contains id, information and function pointer 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionInfo.Match">
+            <summary>
+            the identifier to match the function to = function name
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionInfo.CSName">
+            <summary>
+            the identifier used in CS code - DONT USE
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionInfo.Parameters">
+            <summary>
+            [Optional] parameter names, these dont dictate min/max parametercount 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptFunctionInfo.ToString">
+            <summary>
+            tostring override for better view in debugger
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunctionInfo.HasVariableParameterCount">
+            <summary>
+            true if the function has a variable length parameter list
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.BlastScriptAPI">
+            <summary>
+            For now, just a collection of function pointers that holds a native list with function information
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptAPI.Name">
+            <summary>
+            name of the api
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptAPI.Functions">
+            <summary>
+            native function definition info 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptAPI.FunctionInfo">
+            <summary>
+            managed information, includes a copy of the native info
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptAPI.Allocator">
+            <summary>
+            allocated to be used for any data comming from this api
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptAPI.IsInitialized">
+            <summary>
+            true if native function pointer data is initialized/allocated
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptAPI.FunctionCount">
+            <summary>
+            number of functions defined in this api
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.#ctor(Unity.Collections.Allocator)">
+            <summary>
+            Constructor for a new blastscriptapi instance, provides native allocator
+            </summary>
+            <param name="allocator"></param>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.Initialize">
+            <summary>
+            Initialize native function pointer stack 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.Dispose">
+            <summary>
+            dispose of any native memory that could be allocated for holding function pointer information 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(NSS.Blast.ReservedBlastScriptFunctionIds,System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.blast_operation)">
+            <summary>
+            Register a function with blast
+            </summary>
+            <param name="id">a reserved function id</param>
+            <param name="name">functino name</param>
+            <param name="min_param_count">minimal parameter count</param>
+            <param name="max_param_count">maximum parameter count</param>
+            <param name="accept_vector_size">accepted vector size, 0 for any</param>
+            <param name="return_vector_size">returned verctor size, 0 for any</param>
+            <param name="op">blast operation used to encode it</param>
+            <returns>returns a unique (within the blast instance) function id</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(NSS.Blast.ReservedBlastScriptFunctionIds,System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.extended_blast_operation)">
+            <summary>
+            Register a function with blast
+            </summary>
+            <param name="id">a reserved function id</param>
+            <param name="name">functino name</param>
+            <param name="min_param_count">minimal parameter count</param>
+            <param name="max_param_count">maximum parameter count</param>
+            <param name="accept_vector_size">minimal vector size, 0 for any</param>
+            <param name="return_vector_size">max verctor size, 0 for any</param>
+            <param name="op">extended blast operation used to encode it</param>
+            <returns>returns a unique (within the blast instance) function id</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Register a function with blast
+            </summary>
+            <param name="nativefunction">a native function pointer</param>
+            <param name="name">functino name</param>
+            <param name="parameter_count">parameter count</param>
+            <param name="accept_vector_size">minimal vector size, 0 for any</param>
+            <param name="return_vector_size">max verctor size, 0 for any</param>
+            <returns>returns a unique (within the blast instance) function id</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.blast_operation)">
+            <summary>
+            Register a function with blast
+            </summary>
+            <param name="name">functino name</param>
+            <param name="min_param_count">minimal parameter count</param>
+            <param name="max_param_count">maximum parameter count</param>
+            <param name="accept_vector_size">minimal vector size, 0 for any</param>
+            <param name="return_vector_size">max verctor size, 0 for any</param>
+            <param name="op">blast operation used to encode it</param>
+            <returns>returns a unique (within the blast instance) function id</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.extended_blast_operation)">
+            <summary>
+            Register a function with blast
+            </summary>
+            <param name="name">functino name</param>
+            <param name="min_param_count">minimal parameter count</param>
+            <param name="max_param_count">maximum parameter count</param>
+            <param name="accept_vector_size">minimal vector size, 0 for any</param>
+            <param name="return_vector_size">max verctor size, 0 for any</param>
+            <param name="op">blast operation used to encode it</param>
+            <returns>returns a unique (within the blast instance) function id</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionByOpCode(NSS.Blast.blast_operation)">
+            <summary>
+            lookup a function definition that is directly linked to an interpretor operation 
+            </summary>
+            <param name="op">the operation that should translate to a function used during interpretation</param>
+            <returns>a function definition</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionByName(System.String)">
+            <summary>
+            lookup a function definition that is directly linked to an interpretor operation 
+            </summary>
+            <param name="name">the name of the function to lookup</param>
+            <returns>a function definition</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionById(NSS.Blast.ReservedBlastScriptFunctionIds)">
+            <summary>
+            lookup a function definition that is directly linked to an interpretor operation 
+            </summary>
+            <param name="function_id">the reserved id of the function to lookup</param>
+            <returns>a function definition</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionById(System.Int32)">
+            <summary>
+            lookup a function definition that is directly linked to an interpretor operation 
+            </summary>
+            <param name="function_id">the unique id of the function to lookup</param>
+            <returns>a function definition</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionDataById(System.Int32)">
+            <summary>
+            Directly get a function using the id as an index 
+            </summary>
+            <param name="id">function id/index</param>
+            <returns>the script function object</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.TryGetFunctionCallById(System.Int32,NSS.Blast.BlastScriptFunction@)">
+            <summary>
+            try to get a function by id, in release it just gets it, in debug it checks  
+            </summary>
+            <param name="id">function id/index</param>
+            <param name="function">function</param>
+            <returns>true if found</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.IsVariableParamFunction(NSS.Blast.blast_operation)">
+            <summary>
+            returns true if the function accepts a variable sized list of paramaters 
+            </summary>
+            <param name="op">the operation mapping to a function</param>
+            <returns>true if the function exists and has a variable parameter list</returns>
+        </member>
+        <member name="T:NSS.Blast.CoreAPI">
+            <summary>
+            Implements Core-API functionality 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.CoreAPI.#ctor(Unity.Collections.Allocator)">
+            <summary>
+            Extend BlastScriptAPI (core just is a shell) 
+            </summary>
+            <param name="allocator"></param>
+        </member>
+        <member name="M:NSS.Blast.CoreAPI.RegisterCoreAPI">
+            <summary>
+            register all base functions
             </summary>
         </member>
         <member name="M:NSS.Blast.Cache.blast.max(System.Single,System.Single)">
@@ -2470,7 +4340,7 @@
         <member name="T:NSS.Blast.Interpretor.BlastInterpretor">
             <summary>
             
-             todo - use state machine instead of get_compound_result and internal grow-vector / operation sequence loop, should reduce load on stack frames
+              V2 - use state machine instead of get_compound_result and internal grow-vector / operation sequence loop, should reduce load a lot on handling vectors 
             
               state ---- read root statement ----\ 
                   \------read compound ----------/
@@ -2568,7 +4438,7 @@
             <param name="resume_state">resume state from yield or reset state to initial</param>
             <returns>success</returns>
         </member>
-        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.Execute(System.IntPtr,System.IntPtr,System.IntPtr)">
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.Execute(NSS.Blast.BlastEngineDataPtr,System.IntPtr,System.IntPtr)">
             <summary>
             execute bytecode
             </summary>
@@ -2577,12 +4447,12 @@
             <param name="caller">pointer to caller data in native memory</param>
             <returns>exit code</returns>
         </member>
-        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.Execute(System.IntPtr)">
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.Execute(NSS.Blast.BlastEngineDataPtr)">
             <summary>
             execute bytecode set to the interpretor 
             </summary>
         </member>
-        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.ResumeYield(System.IntPtr,System.IntPtr,System.IntPtr)">
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.ResumeYield(NSS.Blast.BlastEngineDataPtr,System.IntPtr,System.IntPtr)">
             <summary>
             resume executing bytecode after yielding
             </summary>
@@ -2591,7 +4461,7 @@
             <param name="caller">pointer to caller data in native memory</param>
             <returns>exit code</returns>
         </member>
-        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.ResumeYield(System.IntPtr)">
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.ResumeYield(NSS.Blast.BlastEngineDataPtr)">
             <summary>
             resume executing bytecode after yielding
             </summary>
@@ -2939,8 +4809,7 @@
             <param name="code_pointer"></param>
             <param name="minus"></param>
             <param name="not"></param>
-            <param name="code"></param>
-            <param name="data"></param>
+            <param name="vector_size"></param>
             <returns></returns>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_all_result(System.Int32@,System.Boolean@,System.Boolean@,System.Byte@)">
@@ -2973,6 +4842,11 @@
             <param name="caller"></param>
             <returns></returns>
         </member>
+        <member name="T:NSS.Blast.SSMD.BlastSSMDInterpretor">
+            <summary>
+            The SSMD Interpretor 
+            </summary>
+        </member>
         <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.engine_ptr">
             <summary>
             pointer to engine data
@@ -3003,6 +4877,27 @@
             <summary>
             set ssmd package data 
             </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastPackageData@,NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="packagedata"></param>
+            <param name="blast"></param>
+            <param name="environment"></param>
+            <param name="ssmddata"></param>
+            <param name="ssmd_data_count"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="blast"></param>
+            <param name="environment"></param>
+            <param name="ssmddata"></param>
+            <param name="ssmd_data_count"></param>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.push_register_f1">
             <summary>

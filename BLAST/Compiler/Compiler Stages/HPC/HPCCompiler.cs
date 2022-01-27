@@ -21,10 +21,23 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastHPCCompiler : IBlastCompilerStage
     {
+        /// <summary>
+        /// Version 0.1
+        /// </summary>
         public Version Version => new Version(0, 1, 0);
+
+        /// <summary>
+        /// = HPC Compilation Stage 
+        /// </summary>
         public BlastCompilerStageType StageType => BlastCompilerStageType.Compile;
 
 
+        /// <summary>
+        /// Get a string representing the token in the target
+        /// </summary>
+        /// <param name="data">compiler data (logging)</param>
+        /// <param name="token">the token to translate</param>
+        /// <returns>the operation translated to target operation text</returns>
         static string GetOperationString(CompilationData data, BlastScriptToken token)
         {
             switch (token)
@@ -70,16 +83,17 @@ namespace NSS.Blast.Compiler.Stage
             return string.Empty; 
         }
 
-        static string GetFunctionName(CompilationData data, ScriptFunctionDefinition function)
-        {
-            if (function != null)
-            {
-                // any function not standard
-                if (!string.IsNullOrWhiteSpace(function.CSName))
-                {
-                    return function.CSName; 
-                }
 
+        /// <summary>
+        /// get the name of the function in the target hpc 
+        /// </summary>
+        /// <param name="data">compilation data</param>
+        /// <param name="function">the function to get the name for</param>
+        /// <returns>the hpc function name </returns>
+        static string GetFunctionName(CompilationData data, BlastScriptFunction function)
+        {
+            if (function.FunctionId > 0)
+            {
                 switch (function.ScriptOp)
                 {
                     case blast_operation.ret: return "return"; 
@@ -169,20 +183,11 @@ namespace NSS.Blast.Compiler.Stage
             }
             else
             {
-                if (ast_param.type == nodetype.function
-                    &&
-                    (ast_param.function.FunctionId == (int)ReservedScriptFunctionIds.Pop
-                    ||
-                    ast_param.function.FunctionId == (int)ReservedScriptFunctionIds.Pop2
-                    ||
-                    ast_param.function.FunctionId == (int)ReservedScriptFunctionIds.Pop3
-                    ||
-                    ast_param.function.FunctionId == (int)ReservedScriptFunctionIds.Pop4
-                ))
+                if (ast_param.type == nodetype.function && ast_param.function.IsPopVariant)
                 {
-                    switch ((ReservedScriptFunctionIds)ast_param.function.FunctionId)
+                    switch ((ReservedBlastScriptFunctionIds)ast_param.function.FunctionId)
                     {
-                        case ReservedScriptFunctionIds.Pop:
+                        case ReservedBlastScriptFunctionIds.Pop:
                             code.Append("(--___bs_stack)[0]");
                             break;
                         default:
@@ -318,15 +323,10 @@ namespace NSS.Blast.Compiler.Stage
                 data.LogError("HPCCompiler.CompileFunction: tried to compile NULL node"); 
                 return (int)BlastError.error; 
             }
-            if(n.type != nodetype.function)
+            if (!n.IsFunction)
             {
                 data.LogError($"HPCCompiler.CompileFunction: node not a function: <{n.parent}>.<{n}>");
                 return (int)BlastError.error_invalid_nodetype;
-            }
-            if (n.function == null)
-            {
-                data.LogError($"HPCCompiler.CompileFunction: node <{n}> has no function set");
-                return (int)BlastError.error;
             }
 
             // special cases: yield and push
@@ -430,9 +430,10 @@ namespace NSS.Blast.Compiler.Stage
                     }  
                     break;
 
-                    /// functions 
-                    /// if then else
-                    /// while..... 
+                    
+                    // functions 
+                    // if then else
+                    // while..... 
 
                 default:
                     {
@@ -450,6 +451,7 @@ namespace NSS.Blast.Compiler.Stage
         /// Compile the abstract syntax tree into a c# job to be used as hpc for burst by unity
         /// </summary>
         /// <param name="data">compilerdata, among which the AST</param>
+        /// <param name="indent">indentation used in output</param>
         /// <returns>a string containg the code</returns>
         static string CompileAST(HPCCompilationData data, int indent = 0)
         {
@@ -458,7 +460,7 @@ namespace NSS.Blast.Compiler.Stage
                 return null; 
             }
 
-            StringBuilder code = new StringBuilder();
+            StringBuilder code = StringBuilderCache.Acquire(); 
 
             // should determine stack size, if null, dont use it ... TODO 
             data.LogToDo("determine stack size at hpccompile"); 
@@ -489,7 +491,7 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
 
-            return code.ToString(); 
+            return StringBuilderCache.GetStringAndRelease(ref code); 
         }
 
 

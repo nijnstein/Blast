@@ -18,8 +18,12 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastAnalysis : IBlastCompilerStage
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastAnalysis.Version'
         public System.Version Version => new System.Version(0, 1, 0);
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastAnalysis.Version'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastAnalysis.StageType'
         public BlastCompilerStageType StageType => BlastCompilerStageType.Analysis;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastAnalysis.StageType'
 
         /// <summary>
         /// simplify non-vector non-function compounds by removing nested compounds when operations allow it. 
@@ -75,7 +79,8 @@ namespace NSS.Blast.Compiler.Stage
 
                                 n_compounds++;
 
-                                /// remove compound only if:
+                                
+                                // remove compound only if:
                                 foreach (var cc in c.children)
                                 {
                                     switch (cc.type)
@@ -218,7 +223,7 @@ namespace NSS.Blast.Compiler.Stage
 
                             // is the new variable already mapped ? 
                             string value = f.ToString("R");
-                            blast_operation op = data.Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
+                            blast_operation op = Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
                             if (op == blast_operation.nan)
                             {
                                 data.LogError($"analyse.refactor_divisions: failure converting constant value to its reciprocal and remapping it");
@@ -478,7 +483,9 @@ namespace NSS.Blast.Compiler.Stage
         /// analyze a node and its children, can be run in parallel on different node roots
         /// </summary>
         /// <param name="n"></param>
+#pragma warning disable CS1573 // Parameter 'data' has no matching param tag in the XML comment for 'BlastAnalysis.analyze_node(IBlastCompilationData, node)' (but other parameters do)
         static void analyze_node(IBlastCompilationData data, node n)
+#pragma warning restore CS1573 // Parameter 'data' has no matching param tag in the XML comment for 'BlastAnalysis.analyze_node(IBlastCompilationData, node)' (but other parameters do)
         {
             if (!n.skip_compilation)
             {
@@ -491,8 +498,11 @@ namespace NSS.Blast.Compiler.Stage
                             refactor_divisions(data, n);
                             simplify_compound_arithmetic(data, n);
                             replace_double_minus(data, n);
-                         ///   encode_minus_into_identifier_of_vector_part(data, n); 
+                         
+#pragma warning disable CS1587 // XML comment is not placed on a valid language element
+///   encode_minus_into_identifier_of_vector_part(data, n); 
                         }
+#pragma warning restore CS1587 // XML comment is not placed on a valid language element
                         return;
 
                     case nodetype.function:

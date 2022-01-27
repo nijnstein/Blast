@@ -11,16 +11,26 @@ using UnityEngine.Rendering;
 
 namespace NSS.Blast.Cache
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BSExecuteDelegate'
     unsafe public delegate void BSExecuteDelegate(IntPtr engine, float* variables);
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BSExecuteDelegate'
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IBlastHPCScriptJob'
     public interface IBlastHPCScriptJob
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IBlastHPCScriptJob'
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IBlastHPCScriptJob.ScriptId'
         int ScriptId { get; }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IBlastHPCScriptJob.ScriptId'
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IBlastHPCScriptJob.GetBSD()'
         FunctionPointer<BSExecuteDelegate> GetBSD();
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IBlastHPCScriptJob.GetBSD()'
     }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'blast'
     public struct blast
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'blast'
     {
 
 

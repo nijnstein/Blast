@@ -22,26 +22,90 @@ namespace NSS.Blast.Compiler
     /// </summary>
     public enum nodetype
     {
+        /// <summary>
+        /// nodetype is not set
+        /// </summary>
         none,
+        /// <summary>
+        /// this is the root node
+        /// </summary>
         root,
+        /// <summary>
+        /// this node represents a function
+        /// </summary>
         function,
+        /// <summary>
+        /// this node represents an assignment to identifier
+        /// </summary>
         assignment,
-        parameter, index,
+        /// <summary>
+        /// node represents a parameter to a function or sequence with identifier name/value
+        /// </summary>
+        parameter,
+        /// <summary>
+        /// BS2 parameter indexer, .[] 
+        /// </summary>
+        index,
+        /// <summary>
+        /// node represents an operation: +-/ etc.
+        /// </summary>
         operation,
+        /// <summary>
+        /// yield operation, must be in root
+        /// </summary>
         yield,
+        /// <summary>
+        /// represents a compound: ( () )
+        /// </summary>
         compound,
-
-        ifthenelse, ifthen, ifelse,
-
+        /// <summary>
+        /// the root of an if then else structure
+        /// </summary>
+        ifthenelse, 
+        /// <summary>
+        /// the ifthen clausule
+        /// </summary>
+        ifthen, 
+        /// <summary>
+        /// the ifelse clausule
+        /// </summary>
+        ifelse,
+        /// <summary>
+        /// a condition, either in if statements or while/for loops 
+        /// </summary>
         condition,
-
-        whileloop, whilecompound,
-
-        switchnode, switchcase, switchdefault,
-
+        /// <summary>
+        /// the root of a while loop
+        /// </summary>
+        whileloop, 
+        /// <summary>
+        /// the while loop body, handled as a compound 
+        /// </summary>
+        whilecompound,
+        /// <summary>
+        /// the switch statement root node, transformed into ifthenelse statements during compilation
+        /// </summary>
+        switchnode, 
+        /// <summary>
+        /// a switch case 
+        /// </summary>
+        switchcase, 
+        /// <summary>
+        /// the default case 
+        /// </summary>
+        switchdefault,
+        /// <summary>
+        /// the root of a for loop 
+        /// </summary>
         forloop,
-
-        jump_to, label
+        /// <summary>
+        /// a jump instruction inserted by the compiler that jumps to a given label in the ast
+        /// </summary>
+        jump_to, 
+        /// <summary>
+        /// a label (a jump target) inserted by the compiler 
+        /// </summary>
+        label
     }
 
     /// <summary>
@@ -49,42 +113,165 @@ namespace NSS.Blast.Compiler
     /// </summary>
     public class node
     {
+        /// <summary>
+        /// the parent node, null if the node is the root
+        /// </summary>
         public node parent;
+        
+        /// <summary>
+        /// nodetype of node
+        /// </summary>
         public nodetype type;
-        public ScriptFunctionDefinition function;
+        
+        /// <summary>
+        /// if the node is a function then its this one
+        /// </summary>
+        public BlastScriptFunction function;
+        
+        /// <summary>
+        /// any token attached to this node 
+        /// </summary>
         public BlastScriptToken token;
+
+        /// <summary>
+        /// any identifier attached to this node
+        /// </summary>
         public string identifier;
+
+        /// <summary>
+        /// variable data inferred from the ast and connected to the nodes identifier 
+        /// </summary>
         public BlastVariable variable = null;
 
+        /// <summary>
+        /// children of node 
+        /// </summary>
         public List<node> children = new List<node>();
+
+        /// <summary>
+        /// dependencies of node 
+        /// </summary>
         public List<node> depends_on = new List<node>();
+
+        /// <summary>
+        /// BS2: indexers, arrays and compound types []. 
+        /// </summary>
         public List<node> indexers = new List<node>();
 
+        /// <summary>
+        /// any operation connected to this node (type == function | operation | parameter (pop))
+        /// </summary>
         public blast_operation constant_op = blast_operation.nop;
+
+        /// <summary>
+        /// skip general compilation of this node, some nodes control when to compile their own dependencies like initializers in loops
+        /// </summary>
         public bool skip_compilation;
+
+        /// <summary>
+        /// true if the node represents a constant value 
+        /// </summary>
         public bool is_constant;
+
+        /// <summary>
+        /// the vector size 
+        /// </summary>
         public int vector_size;
+
+        /// <summary>
+        /// true if the value represented is a vector, dont use this directly as the compilers interpretation might change during the process. 
+        /// check variable or function property instead to find out if something is a vector 
+        /// </summary>
         internal bool is_vector;
 
+        /// <summary>
+        /// internal use: a linked push operation, used during compilation to keep track of pushpop pairs
+        /// </summary>
         public node linked_push = null;
+
+        /// <summary>
+        /// internal use: a linked pop operation, used during compilation to keep track of pushpop pairs
+        /// </summary>
         public node linked_pop = null; 
 
+        /// <summary>
+        /// Only true if this is the root of the ast
+        /// </summary>
         public bool IsRoot => parent == null && type == nodetype.root; 
+
+        /// <summary>
+        /// True if this a compound node
+        /// </summary>
         public bool IsCompound => type == nodetype.compound;
+
+        /// <summary>
+        /// True if this is an assignment
+        /// </summary>
         public bool IsAssignment => type == nodetype.assignment;
+
+        /// <summary>
+        /// True if this is a function 
+        /// </summary>
         public bool IsFunction => type == nodetype.function;
-        public bool IsPushFunction => type == nodetype.function && function != null && function.IsPushVariant();
-        public bool IsPopFunction => type == nodetype.function && function != null && function.IsPopVariant();
+
+        /// <summary>
+        /// True if this is a function pushing to the stack 
+        /// </summary>
+        public bool IsPushFunction => type == nodetype.function && function.IsPushVariant;
+
+        /// <summary>
+        /// True if this is a function popping from the stack
+        /// </summary>
+        public bool IsPopFunction => type == nodetype.function && function.IsPopVariant;
+
+        /// <summary>
+        /// True if this is an operation 
+        /// </summary>
         public bool IsOperation => type == nodetype.operation;
+
+        /// <summary>
+        /// True if this is a leaf nod
+        /// </summary>
         public bool IsLeaf => ChildCount == 0 && parent != null;
+
+        /// <summary>
+        /// True if this is data with a cardinality larger then 1 (a vector) 
+        /// </summary>
         public bool IsVector => is_vector && vector_size > 1;
 
+        /// <summary>
+        /// True if this node represents a scripted variable 
+        /// </summary>
         public bool IsScriptVariable => variable != null;
+
+        /// <summary>
+        /// true if the node has dependencies
+        /// </summary>
         public bool HasDependencies => depends_on != null && depends_on.Count > 0;
+
+        /// <summary>
+        /// get the number of dependency nodes
+        /// </summary>
         public int DependencyCount => depends_on != null ? depends_on.Count : 0; 
+
+        /// <summary>
+        /// true if the node contains child nodes 
+        /// </summary>
         public bool HasChildren => children != null && children.Count > 0;
+
+        /// <summary>
+        /// true if the node has exactly 1 node
+        /// </summary>
         public bool HasOneChild => children != null && children.Count == 1;
+
+        /// <summary>
+        /// true if node contains indexers 
+        /// </summary>
         public bool HasIndexers => indexers != null && indexers.Count > 0;
+
+        /// <summary>
+        /// true if node is represented by an identifier 
+        /// </summary>
         public bool HasIdentifier => !string.IsNullOrWhiteSpace(identifier);
 
         /// <summary>
@@ -211,7 +398,11 @@ namespace NSS.Blast.Compiler
             return IsNonNestedVectorDefinition(this); 
         }
 
-
+        /// <summary>
+        /// check if given node contains a non nested vector define: node = (1 2 3 4)  | node = (1 2 (-3) 4)
+        /// </summary>
+        /// <param name="n">the node to check</param>
+        /// <returns>true if it does</returns>
         public static bool IsNonNestedVectorDefinition(node n)
         {
             Assert.IsNotNull(n);
@@ -220,7 +411,7 @@ namespace NSS.Blast.Compiler
             // or a pusv instruction 
             if (!n.IsCompound)
             {
-                if (n.IsFunction && n.function.FunctionId == (int)ReservedScriptFunctionIds.PushVector)
+                if (n.IsFunction && n.function.FunctionId == (int)ReservedBlastScriptFunctionIds.PushVector)
                 {
                 }
                 else
@@ -246,7 +437,7 @@ namespace NSS.Blast.Compiler
                 if (child.IsFunction)
                 {
                     // allow pops 
-                    if (child.function.IsPopVariant()) continue;
+                    if (child.function.IsPopVariant) continue;
 
                     // allow returnsize 1 
                     if (child.function.ReturnsVectorSize == 1) continue;
@@ -433,6 +624,11 @@ namespace NSS.Blast.Compiler
             }            
         }
 
+
+        /// <summary>
+        /// interpret the node's attached identifier as a floating point value, returns Blast.InvalidNumeric if it could
+        /// not parse the identifier as a numeric
+        /// </summary>
         public float AsFloat
         {
             get
@@ -442,6 +638,11 @@ namespace NSS.Blast.Compiler
         }
 
 
+        /// <summary>
+        /// general constructor
+        /// </summary>
+        /// <param name="_parent">parent node</param>
+        /// <param name="_children">child nodes</param>
         public node(node _parent, params node[] _children)
         {
             parent = _parent;
@@ -452,6 +653,11 @@ namespace NSS.Blast.Compiler
             if (_children != null) children.AddRange(_children);
         }
 
+        /// <summary>
+        /// general constructor
+        /// </summary>
+        /// <param name="_type">the nodetype</param>
+        /// <param name="_token">the attached token</param>
         public node(nodetype _type, BlastScriptToken _token)
         {
             parent = null;
@@ -462,6 +668,11 @@ namespace NSS.Blast.Compiler
             type = _type;
         }
 
+
+        /// <summary>
+        /// provides information in debug display through a tostring overload
+        /// </summary>
+        /// <returns>node formatted as string</returns>
         public override string ToString()
         {
             if (HasChildren)
@@ -482,6 +693,10 @@ namespace NSS.Blast.Compiler
             }
         }
 
+        /// <summary>
+        /// get a textual description of this node 
+        /// </summary>
+        /// <returns>the text description</returns>
         public string GetNodeDescription()
         {
             string sconstant = is_constant ? "constant " : "";
@@ -491,7 +706,7 @@ namespace NSS.Blast.Compiler
                 case nodetype.root: return $"{sconstant}{svector}root of {children.Count}";
                 case nodetype.assignment: return $"{sconstant}{svector}assignment of {identifier}";
                 case nodetype.compound: return $"{sconstant}{svector}compound statement of {children.Count}";
-                case nodetype.function: return $"{sconstant}{svector}function {function.Match}";
+                case nodetype.function: return $"{sconstant}{svector}function {function.GetFunctionName()}";
                 case nodetype.operation: return $"{sconstant}{svector}operation {token}";
                 case nodetype.parameter: return $"{sconstant}{svector}parameter {identifier}";
                 case nodetype.none: return $"{sconstant}{svector}nop";
@@ -750,6 +965,11 @@ namespace NSS.Blast.Compiler
         }
 
 
+
+        /// <summary>
+        /// set a dependency for this node, some constructs such as loops use this for the initializer
+        /// </summary>
+        /// <param name="ast_node">the node to add to dependencies</param>
         public void SetDependency(node ast_node)
         {
             Assert.IsNotNull(ast_node);
@@ -764,9 +984,9 @@ namespace NSS.Blast.Compiler
         }
 
         /// <summary>
-        /// insert a depenency, updateing parent and chldren list 
+        /// insert (actually it appends) a depenency, updateing parent and chldren list 
         /// </summary>
-        /// <param name="ast_node"></param>
+        /// <param name="ast_node">the node to append</param>
         public void InsertDependency(node ast_node)
         {
             Assert.IsNotNull(ast_node);
@@ -793,7 +1013,7 @@ namespace NSS.Blast.Compiler
         /// this node during compilation, the parent of the node is updated to this
         /// </summary>
         /// <param name="n">the node to add</param>
-        internal void AppendDependency(node n)
+        public void AppendDependency(node n)
         {
             if(n == null)
             {
@@ -807,6 +1027,10 @@ namespace NSS.Blast.Compiler
             depends_on.Add(n); 
         }
 
+        /// <summary>
+        /// append multiple dependant nodes
+        /// </summary>
+        /// <param name="nodes">nodes to add to dependencies</param>
         public void AppendDependencies(IEnumerable<node> nodes)
         {
             foreach(node n in nodes) AppendDependency(n); 
@@ -821,6 +1045,12 @@ namespace NSS.Blast.Compiler
             return children.FirstOrDefault(x => x.type == t);
         }
 
+        /// <summary>
+        /// get first child matching first choice, if none found, try the second choice
+        /// </summary>
+        /// <param name="first_choice">first to try to locate</param>
+        /// <param name="second_choice">next attemt to locate</param>
+        /// <returns>a node if any was found, otherwise null</returns>
         public node GetChild(nodetype first_choice, nodetype second_choice)
         {
             node c = GetChild(first_choice); 
@@ -834,6 +1064,7 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// get children of given nodetype
         /// </summary>
+        /// <returns>an array of nodes</returns>
         public node[] GetChildren(nodetype t)
         {
             node[] nodes = new node[CountChildren(t)];
@@ -853,12 +1084,14 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// get child nodes not of the type t
         /// </summary>
-        /// <param name="t"></param>
-        /// <returns></returns>
+        /// <param name="t">the nodetype to discriminate</param>
+        /// <returns>an array of nodes</returns>
         public node[] GetOtherChildren(nodetype t)
         {
+            // count, allocate enough room
             node[] others = new node[CountOtherChildren(t)];
 
+            // then set them 
             if (others.Length > 0)
             {
                 int count = 0;
@@ -869,15 +1102,13 @@ namespace NSS.Blast.Compiler
             }
 
             return others; 
-            
-            // using linq will probably make it harder to port 
-            // return children.Where(x => x.type != t).ToArray();
         }
 
 
         /// <summary>
         /// count nr of childnodes with not nodetype t
         /// </summary>
+        /// <returns>number of children not matching nodetype t</returns>
         public int CountOtherChildren(nodetype t)
         {
             int count = 0;
@@ -894,6 +1125,7 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// count children of given nodetype 
         /// </summary>
+        /// <returns>number of children matching type t</returns>
         public int CountChildren(nodetype t)
         {
             int count = 0;
@@ -950,6 +1182,12 @@ namespace NSS.Blast.Compiler
             return leafs;
         }
 
+
+        /// <summary>
+        /// gather all leaf nodes from a given node
+        /// </summary>
+        /// <param name="leafs">leaf node list to use</param>
+        /// <param name="n">node to gather leafs from</param>
         static void GetLeafNodes(List<node> leafs, node n)
         {
             if (n.IsLeaf)
@@ -989,7 +1227,7 @@ namespace NSS.Blast.Compiler
         /// <returns>true if used</returns>
         internal bool CheckIfFunctionIsUsedInTree(blast_operation op)
         {
-            if (this.function != null && this.function.ScriptOp == op)
+            if (function.FunctionId > 0 && this.function.ScriptOp == op)
             {
                 return true;
             }
@@ -1059,19 +1297,24 @@ namespace NSS.Blast.Compiler
         }
 
 
+
         /// <summary>
         /// create a pop node based on the information pushed, links the push and pop together 
         /// </summary>
-        /// <param name="data">compiler data</param>
+        /// <param name="blast">current engine data</param>
         /// <param name="related_push">the earlier push op</param>
         /// <returns></returns>
-        public static node CreatePopNode(node related_push)
+        public static node CreatePopNode(BlastEngineDataPtr blast, node related_push)
         {
             node pop = new node(null);
 
             pop.identifier = "_gen_pop";
             pop.type = nodetype.function;
-            pop.function = Blast.GetFunctionById(ReservedScriptFunctionIds.Pop);
+            unsafe
+            {
+                // reserved functions: can directly index on id 
+                pop.function = blast.Data->Functions[(int)ReservedBlastScriptFunctionIds.Pop];
+            }
             pop.is_vector = related_push.is_vector;
             pop.vector_size = related_push.vector_size;
 
@@ -1084,36 +1327,40 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// create a push node with the information from the given node, THIS DOES NOT ADD THAT NODE AS CHILD
         /// </summary>
+        /// <param name="blast">blast engine data</param>
         /// <param name="topush">node to push</param>
         /// <returns>returns the pushing node</returns>
-        static public node CreatePushNode(node topush)
+        static public node CreatePushNode(BlastEngineDataPtr blast, node topush)
         {
             node push = new node(null);
             push.identifier = "_gen_push";
             push.type = nodetype.function;
 
-            if (topush.IsFunction)
+            unsafe
             {
+                if (topush.IsFunction)
+                {
 
-                push.function = Blast.GetFunctionById(ReservedScriptFunctionIds.PushFunction);
+                    push.function = blast.Data->Functions[(int)ReservedBlastScriptFunctionIds.PushFunction];
 
-            }
-            else
-            {
-                if (topush.IsCompound)
-                {                            
-                    if (topush.IsNonNestedVectorDefinition())
-                    {
-                        push.function = Blast.GetFunctionById(ReservedScriptFunctionIds.PushVector); 
-                    } 
-                    else
-                    {
-                        push.function = Blast.GetFunctionById(ReservedScriptFunctionIds.PushCompound);
-                    }
                 }
                 else
                 {
-                    push.function = Blast.GetFunctionById(ReservedScriptFunctionIds.Push);
+                    if (topush.IsCompound)
+                    {
+                        if (topush.IsNonNestedVectorDefinition())
+                        {
+                            push.function = blast.Data->Functions[(int)ReservedBlastScriptFunctionIds.PushVector];
+                        }
+                        else
+                        {
+                            push.function = blast.Data->Functions[(int)ReservedBlastScriptFunctionIds.PushCompound];
+                        }
+                    }
+                    else
+                    {
+                        push.function = blast.Data->Functions[(int)ReservedBlastScriptFunctionIds.Push];
+                    }
                 }
             }
 
@@ -1154,11 +1401,8 @@ namespace NSS.Blast.Compiler
                     {
                         switch (c.function.FunctionId)
                         {
-                            case (int)ReservedScriptFunctionIds.Pop:
-                            case (int)ReservedScriptFunctionIds.Pop2:
-                            case (int)ReservedScriptFunctionIds.Pop3:
-                            case (int)ReservedScriptFunctionIds.Pop4:
-                                if (c.children.Count == 0)
+                            case (int)ReservedBlastScriptFunctionIds.Pop:
+                                 if (c.children.Count == 0)
                                 {
                                     continue;
                                 }
@@ -1374,9 +1618,12 @@ namespace NSS.Blast.Compiler
             return children == null ? 0 : children.Count(x => x.type == type_a || x.type == type_b);
         }
 
+        /// <summary>
+        /// True if the node contains children
+        /// </summary>
         public bool HasChildNodes => children != null && children.Count > 0;
 
-                /// <summary>
+        /// <summary>
         /// number of child nodes below this node
         /// </summary>
         public int ChildCount
@@ -1384,8 +1631,16 @@ namespace NSS.Blast.Compiler
             get { return children == null ? 0 : children.Count; }
         }
 
+        /// <summary>
+        /// first child of node, null if there are no children
+        /// </summary>
         public node FirstChild => ChildCount > 0 ? children[0] : null;
+        
+        /// <summary>
+        /// last child of node, null if there are no children, equals first if childcount == 1
+        /// </summary>
         public node LastChild => ChildCount > 0 ? children[ChildCount - 1] : null;
+
 
         internal bool SetIsVector(int _vector_size, bool propagate_to_parents = true)
         {
@@ -1402,7 +1657,7 @@ namespace NSS.Blast.Compiler
                 {
                     case nodetype.function:
                         // depends on function if it returns a vector
-                        if (parent.function != null && (parent.function.AcceptsVectorSize == 0 || parent.function.AcceptsVectorSize == _vector_size))
+                        if (parent.function.FunctionId > 0 && (parent.function.AcceptsVectorSize == 0 || parent.function.AcceptsVectorSize == _vector_size))
                         {
                             // function set, parameter vectorsize ok 
                             if (parent.function.ReturnsVectorSize == 0)
@@ -1430,6 +1685,7 @@ namespace NSS.Blast.Compiler
 
             return true; 
         }
+
 
         internal bool ValidateType(IBlastCompilationData data, IEnumerable<nodetype> valid_node_types)
         {
@@ -1478,11 +1734,12 @@ namespace NSS.Blast.Compiler
             return true;
         }
 
+        
         /// <summary>
         /// insert a new node of the given type and operation  before this node in parent 
         /// </summary>
         /// <param name="type">node type</param>
-        /// <param name="op">script operation</param>
+        /// <param name="token">token for script operation</param>
         public node InsertBeforeThisNodeInParent(nodetype type, BlastScriptToken token)
         { 
             if (parent != null)
@@ -1557,7 +1814,7 @@ namespace NSS.Blast.Compiler
         {
             if (is_constant)
             {
-                /// node should have op set on constant map
+                // node should have op set on constant map
                 if (constant_op != blast_operation.nop)
                 {
                     // maps to constant op 
@@ -1565,7 +1822,7 @@ namespace NSS.Blast.Compiler
                 }
 
                 // if it encodes to some system constant op then get its value 
-                float f = data.Blast.GetNamedSystemConstantValue(this.identifier);
+                float f = Blast.GetNamedSystemConstantValue(this.identifier);
                 if (float.IsNaN(f))
                 {
                     // not a system constant: we should be able to just parse it 

@@ -8,7 +8,9 @@ namespace NSS.Blast
     /// </summary>
     public enum BlastCompilerStageType
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastCompilerStageType.None'
         None,
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastCompilerStageType.None'
         /// <summary>
         /// convert input script into a list of tokens 
         /// </summary>
@@ -75,16 +77,22 @@ namespace NSS.Blast
     /// </summary>
     public interface IBlastCompilerStage
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IBlastCompilerStage.Version'
         System.Version Version
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IBlastCompilerStage.Version'
         {
             get;
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IBlastCompilerStage.StageType'
         BlastCompilerStageType StageType
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IBlastCompilerStage.StageType'
         {
             get;
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'IBlastCompilerStage.Execute(IBlastCompilationData)'
         int Execute(IBlastCompilationData data);
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'IBlastCompilerStage.Execute(IBlastCompilationData)'
     }
 }

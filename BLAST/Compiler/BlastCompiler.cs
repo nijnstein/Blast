@@ -15,52 +15,12 @@ using Unity.Mathematics;
 namespace NSS.Blast.Compiler
 {
     /// <summary>
-    /// a compiled bytecode script fragment executable from burst with input and output variables and a small stack    
-    /// 
-    /// - no functions as parameters                (not yet)
-    /// - no if {} then {}                          (not yet)
-    /// - no functions                              (wont)    -> any function should be either hardcoded or scripted seperately and added to the interpretor    
-    /// - no strings                                (never)   -> no burst support anyway
-    /// - no arrays                                 (future)
-    /// - foreach and while loops                   (future) 
-    /// - stack functions                           (not yet)
-    /// - external data structures via . notation   (future)
-    /// - vector operations (float3 and float4)     (future)
-    /// 
-    /// - hard limits: 
-    /// -- max combined variable & constant count:  64 floats       64x4    =   256 byte
-    /// -- max code size:                           512 byte        512     =   512 byte  
-    /// -- max stack size:                          32 floats       32x4    =   128 byte
-    ///                                                             total   =   786 bytes without other parameters (counts and ids and call refs (for functions))
-    /// 
-    /// from:  https://software.intel.com/content/www/us/en/develop/articles/align-and-organize-data-for-better-performance.html
-    /// 
-    /// Align data on natural operand size address boundaries.If the data will be accessed with vector instruction loads and stores, align the data on 16-byte boundaries. For best performance, align data as follows:
-    ///
-    /// Align 8-bit data at any address.
-    /// Align 16-bit data to be contained within an aligned four-byte word.
-    /// Align 32-bit data so that its base address is a multiple of four.
-    /// Align 64-bit data so that its base address is a multiple of eight.
-    /// Align 80-bit data so that its base address is a multiple of sixteen.
-    /// Align 128-bit data so that its base address is a multiple of sixteen.
-    /// 
-    /// In addition, pad data structures defined in the source code so that every data element is aligned to a 
-    /// natural operand size address boundary. If the operands are packed in a SIMD instruction, 
-    /// align to the packed element size (64- or 128-bit). Align data by providing padding inside structures and 
-    /// arrays. Programmers can reorganize structures and arrays to minimize the amount of memory wasted by padding.
-    /// 
-    /// 
-    /// optimization help:
-    /// https://gametorrahod.com/analyzing-burst-generated-assemblies/
-    /// 
-    /// </summary>
-
-
-
-    /// <summary>
     /// Blast Compiler 
     /// 
     /// Compile scripts into bytecode, the process consists of several stages:
+    /// 
+    /// 
+    /// For bytecode these stages might be executed:
     /// 
     /// 1   - tokenize:            convert code into a list of tokens 
     /// 2   - parse:               parse list of tokens into a tree of nodes 
@@ -175,32 +135,27 @@ namespace NSS.Blast.Compiler
 
         #region output validation 
 
-        static bool validate(CompilationData result)
+        /// <summary>
+        /// Validate output using data set in script for NULL inputs 
+        /// </summary>
+        /// <param name="result">bytecode compiler data</param>
+        /// <param name="blast">blast engine data</param>
+        /// <returns>true if validation succeeded</returns>
+        static public bool Validate(IBlastCompilationData result, IntPtr blast)
         {
-            Blast blast = Blast.Create(Unity.Collections.Allocator.Persistent);
-
-            bool b_result = Validate(result, blast.Engine);
-
-            blast.Destroy();
-
-            return b_result;
-        }
-
-        static public bool Validate(CompilationData result, IntPtr blast)
-        {
-            if (!result.CompilerOptions.EstimateStackSize)
+            if (!result.CompilerOptions.EstimateStackSize && !result.CanValidate)
             {
-                if (!result.CanValidate)
-                {
-                    result.LogError($"validate: the script defines no validations, dont call validate if this was intentional");
-                    return false;
-                }
+                result.LogError($"validate: the script defines no validations, dont call validate if this was intentional");
+                return false;
             }
+
+            CompilationData cdata = result as CompilationData;
+            Assert.IsNotNull(cdata, "dont call validate on anything but normal script packages"); 
 
             // make sure offsets are set 
             if (result.HasVariables && !result.HasOffsets || result.VariableCount != result.OffsetCount)
             {
-                result.CalculateVariableOffsets();
+                cdata.CalculateVariableOffsets();
                 if (result.VariableCount != result.OffsetCount)
                 {
                     result.LogError("validate: failure calculating variable offsets");
@@ -208,7 +163,7 @@ namespace NSS.Blast.Compiler
                 }
             }
 
-            result.Executable.Validate(blast);
+            cdata.Executable.Validate(blast);
 
             // check results 
             if (result.Validations.Count > 0)
@@ -227,14 +182,14 @@ namespace NSS.Blast.Compiler
                         continue;
                     }
 
-                    f_a = result.Executable.GetDataSegmentElement(result.Offsets[v_a.Id]);
+                    f_a = cdata.Executable.GetDataSegmentElement(result.Offsets[v_a.Id]);
 
                     // b can be a float or a parameter 
                     if (float.IsNaN(f_b = b.AsFloat()))
                     {
                         // try to get as parameter 
                         var v_b = result.GetVariable(b);
-                        f_b = result.Executable.GetDataSegmentElement(result.Offsets[v_b.Id]);
+                        f_b = cdata.Executable.GetDataSegmentElement(result.Offsets[v_b.Id]);
                     }
 
                     // compare validations using the epsilon set in compiler options 
@@ -246,7 +201,7 @@ namespace NSS.Blast.Compiler
                 }
             }
 
-            return result.Success;
+            return result.IsOK;
         }
 
         #endregion
@@ -256,6 +211,8 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// estimate stack size by running script with a selection of parameters from
         /// input, output and validation settings 
+        /// 
+        /// TODO: EstimateStackSize and Validate should be combined 
         /// </summary>
         /// <returns>estimated stack size in bytes</returns>
         static unsafe public int EstimateStackSize(CompilationData result)
@@ -336,6 +293,7 @@ namespace NSS.Blast.Compiler
         }
 
 
+        
         /// <summary>
         /// Package in normal mode. 
         /// 
@@ -343,7 +301,6 @@ namespace NSS.Blast.Compiler
         /// - languageversion   = BS1
         /// </summary>
         /// <param name="cdata">Compiler data</param>
-        /// <param name="allocator">Allocation type</param>
         /// <param name="code_size">size of code in bytes</param>
         /// <param name="metadata_size">size of metadata in bytes, 1 byte per data element in data and stack segment combined</param>
         /// <param name="data_size">size of datasegment in bytes</param>
@@ -380,15 +337,16 @@ namespace NSS.Blast.Compiler
             // calculate package size including alignments 
             int package_size = code_size + metadata_size + align_data + data_size + align_stack + stack_size;
 
-            /// [----CODE----|----METADATA----|----DATA----|----STACK----]
-            ///              1                2            3             4  
-            /// 
-            /// ** ALL OFFSETS IN PACKAGE IN BYTES ***
-            /// 
-            /// 1 = metadata offset   | codesize 
-            /// 2 = data_offset       | codesize + metadatasize 
-            /// 3 = stack_offset 
-            /// 4 = package_size  
+            
+            // [----CODE----|----METADATA----|----DATA----|----STACK----]
+            //              1                2            3             4  
+            // 
+            // ** ALL OFFSETS IN PACKAGE IN BYTES ***
+            // 
+            // 1 = metadata offset   | codesize 
+            // 2 = data_offset       | codesize + metadatasize 
+            // 3 = stack_offset 
+            // 4 = package_size  
 
             BlastPackageData data = default;
             data.PackageMode = BlastPackageMode.Normal;
@@ -453,11 +411,11 @@ namespace NSS.Blast.Compiler
         }
 
 
+        
         /// <summary>
         /// package for ssmd use:  [code-metadata] [data-stack]
         /// </summary>
         /// <param name="cdata">compiler result data</param>
-        /// <param name="allocator"></param>
         /// <param name="code_size"></param>
         /// <param name="metadata_size"></param>
         /// <param name="data_size"></param>
@@ -472,21 +430,21 @@ namespace NSS.Blast.Compiler
             bool a8 = (flags & BlastPackageFlags.Aligned8) == BlastPackageFlags.Aligned8;
             bool has_stack = (flags & BlastPackageFlags.NoStack) == BlastPackageFlags.NoStack;
 
-            /// SSMD Package with code & metadata seperate from data&stack
-            /// 
-            /// - SSMD requirement: while data changes, its intent does not so metadata is shared
-            /// 
-            /// ? could allow branches and split from there? 
-            /// 
-            /// [----CODE----|----METADATA----]       [----DATA----|----STACK----]
-            ///              1                2                    3             4
-            /// 
-            /// 1 = metadata offset 
-            /// 2 = codesegment size 
-            /// 3 = stack offset 
-            /// 4 = datasegment size 
-            /// 
-            /// prop stacksize (in elements) => (datasegment size - stack_offset) / 4
+            // SSMD Package with code & metadata seperate from data&stack
+            // 
+            // - SSMD requirement: while data changes, its intent does not so metadata is shared
+            // 
+            // ? could allow branches and split from there? 
+            // 
+            // [----CODE----|----METADATA----]       [----DATA----|----STACK----]
+            //              1                2                    3             4
+            // 
+            // 1 = metadata offset 
+            // 2 = codesegment size 
+            // 3 = stack offset 
+            // 4 = datasegment size 
+            // 
+            // prop stacksize (in elements) => (datasegment size - stack_offset) / 4
 
             int align_stack = 0;
             if (a8 && has_stack)
@@ -560,22 +518,25 @@ namespace NSS.Blast.Compiler
         }
 
 
-
-
         /// <summary>
-        /// estimate size of package needed to execute the script
+        /// package the result of the compiler into an executable package 
         /// </summary>
-        /// <returns>size in bytes</returns>
-        static public BlastPackageData Package(CompilationData result, BlastCompilerOptions options)
+        /// <returns>the native blast package data structure</returns>
+        static public BlastPackageData Package(IBlastCompilationData compilerdata, BlastCompilerOptions options)
         {
-            BlastPackageMode package_mode = options.PackageMode; 
+            // this heavily depends on bytecode 
+            Assert.IsTrue(options.Language == BlastLanguageVersion.BS1 || options.Language == BlastLanguageVersion.BSSMD1);
+
+            // get compilerdata for the bytecode languages 
+            CompilationData result = compilerdata as CompilationData; 
 
             // get sizes of seperate segments 
             int stack_size = EstimateStackSize(result);
             int code_size = result.Executable.code_size;
             int data_size = result.Executable.data_count * 4;
-            int metadata_size = result.Executable.data_count + stack_size / 4; 
+            int metadata_size = result.Executable.data_count + stack_size / 4;
 
+            BlastPackageMode package_mode = options.PackageMode;
             switch (package_mode)
             {
                 case BlastPackageMode.Normal:
@@ -605,82 +566,127 @@ namespace NSS.Blast.Compiler
 
         #endregion
 
-        #region compile 
+        #region Compile overloads
 
-        static public CompilationData Compile(Blast blast, string code, BlastCompilerOptions options = null)
+        /// <summary>
+        /// Compile script from text
+        /// </summary>
+        /// <param name="blast">blast engine data</param>
+        /// <param name="code">the code</param>
+        /// <param name="options">compiler options</param>
+        /// <returns>compiler data</returns>
+        static public IBlastCompilationData Compile(BlastEngineDataPtr blast, string code, BlastCompilerOptions options = default)
         {
             return Compile(blast, BlastScript.FromText(code), options);
         }
 
-        static public CompilationData Compile(string code, BlastCompilerOptions options = null)
-        {
-            return Compile(BlastScript.FromText(code), options);
-        }
-
-        static public CompilationData Compile(BlastScript script, BlastCompilerOptions options = null)
-        {
-            Blast blast = Blast.Create(Allocator.Temp);
-            try
-            {
-                return Compile(blast, script, options);
-            }
-            finally
-            {
-                blast.Destroy();
-            }
-        }       
-
-        static public CompilationData Compile(Blast blast, BlastScript script, BlastCompilerOptions options = null)
+        /// <summary>
+        /// Compile a script
+        /// </summary>
+        /// <param name="blast">blast engine data</param>
+        /// <param name="script">the script to compile</param>
+        /// <param name="options">compileoptions</param>
+        /// <returns>compiler data</returns>
+        static public IBlastCompilationData Compile(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options = default)
         {
             if (options == null) options = BlastCompilerOptions.Default;
 
-            CompilationData result = new CompilationData(blast, script, options);
+            // setup compiler for given compiler options  
+            IBlastCompilationData result = null;
+            List<IBlastCompilerStage> stages = null;
+
+            switch (options.Language)
+            {
+                // when we get to implementing special jumps for ssmd these will differ 
+                case BlastLanguageVersion.BSSMD1: 
+                case BlastLanguageVersion.BS1:
+                    result = new CompilationData(blast, script, options); 
+                    stages = ByteCodeStages; 
+                    break;
+
+                // setup compilation chain for compiling into c#
+                case BlastLanguageVersion.HPC:
+                    result = new HPCCompilationData(blast, script, options); 
+                    stages = HPCStages;
+                    break;
+
+                // only windows 
+                case BlastLanguageVersion.CS:
+                    result = new CSCompilationData(blast, script, options);
+                    stages = CSStages;
+                    break; 
+            }
+            if (stages == null || stages.Count == 0)
+            {
+                result.LogError($"Blast Compilation Error: language {options.Language} not supported.", (int)BlastError.error_language_version_not_supported);
+                return result; 
+            }
 
             // execute each compilation stage 
-            for(int istage = 0; istage < ByteCodeStages.Count; istage++)
+            for(int istage = 0; istage < stages.Count; istage++)
             {
-                int exitcode = ByteCodeStages[istage].Execute(result);
+                int exitcode = stages[istage].Execute(result);
 
                 if (exitcode != (int)BlastError.success)
                 {
                     // error condition 
-                    result.LogError($"Compilation Error, stage: {istage}, type {ByteCodeStages[istage].GetType().Name}, exitcode: {exitcode}");
-                    if (options.Verbose || options.Trace)
-                    {
-                        Debug.Log(result.root.ToNodeTreeString());
-                        Debug.Log(result.GetHumanReadableCode() + "\n");
-                        Debug.Log(result.GetHumanReadableBytes() + "\n");
-                    }
-                    return result;
+                    result.LogError($"Blast Compilation Error: stage: {istage}, type {stages[istage].GetType().Name}, exitcode: {exitcode}");
+                    break;
                 }
             }
 
-            if (options.Verbose || options.Trace)
+            if (result.HasErrors || options.VerboseLogging || options.TraceLogging)
             {
-                Debug.Log(result.root.ToNodeTreeString());
-                Debug.Log(result.GetHumanReadableCode() + "\n");
-                Debug.Log(result.GetHumanReadableBytes() + "\n");
-
-           //     Debug.Log(Blast.GetReadableByteCode(result.Executable.code, result.Executable.code_size); 
+                if (result.HasErrors || options.TraceLogging) Debug.Log(result.AST.ToNodeTreeString());
+                switch(result.CompilerOptions.Language)
+                {
+                    case BlastLanguageVersion.BS1:
+                    case BlastLanguageVersion.BSSMD1:
+                        CompilationData data = result as CompilationData; 
+                        Debug.Log(data.GetHumanReadableCode() + "\n");
+                        Debug.Log(data.GetHumanReadableBytes() + "\n");
+                        break; 
+                }
             }
 
-            // run validations if any are defined
-            if (result.CompilerOptions.EstimateStackSize || result.CompilerOptions.AutoValidate && result.CanValidate)
+            if (result.IsOK)
             {
-                validate(result);
+                // run validations if any are defined
+                // - OR if stacksize is estimated as they do a bit of the same thing
+                if (result.CompilerOptions.EstimateStackSize
+                    ||
+                    (result.CompilerOptions.AutoValidate && result.CanValidate))
+                {
+                    switch (result.CompilerOptions.Language)
+                    {
+                        case BlastLanguageVersion.BS1:
+                        case BlastLanguageVersion.BSSMD1:
+                            CompilationData data = result as CompilationData;
+                            if(!Validate(data, blast.ptr))
+                            {
+                                result.LogError("Compile: failed to validate script or estimate stack size"); 
+                            }
+                            break;
+
+                        default:
+                            result.LogError($"Compile: cannot validate script in language version {result.CompilerOptions.Language}, please use a different set of compiler options"); 
+                            break; 
+                    }
+                }
             }
 
             return result;
         }
 
+
         /// <summary>
-        /// compile to hpc code 
+        /// 
         /// </summary>
         /// <param name="blast"></param>
-        /// <param name="blastScript"></param>
-        /// <param name="blastCompilerOptions"></param>
+        /// <param name="script"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        public static HPCCompilationData CompileHPC(Blast blast, BlastScript script, BlastCompilerOptions options)
+        public static HPCCompilationData CompileHPC(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options)
         {
             if (options == null) options = BlastCompilerOptions.Default;
 
@@ -693,7 +699,7 @@ namespace NSS.Blast.Compiler
                 if (exitcode != (int)BlastError.success)
                 {
                     result.LogError($"Compilation Error, stage: {istage}, type {HPCStages[istage].GetType().Name}, exitcode: {exitcode}");
-                    if (options.Verbose || options.Trace)
+                    if (options.VerboseLogging || options.TraceLogging)
                     {
                         Debug.Log(result.root.ToNodeTreeString());
                         Debug.Log(result.GetHumanReadableCode());
@@ -713,7 +719,7 @@ namespace NSS.Blast.Compiler
         /// <param name="script"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        public static HPCCompilationData CompileCS(Blast blast, BlastScript script, BlastCompilerOptions options)
+        public static HPCCompilationData CompileCS(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options)
         {
             if (options == null) options = BlastCompilerOptions.Default;
 
@@ -726,7 +732,7 @@ namespace NSS.Blast.Compiler
                 if (exitcode != (int)BlastError.success)
                 {
                     result.LogError($"Compilation Error, stage: {istage}, type {CSStages[istage].GetType().Name}, exitcode: {exitcode}");
-                    if (options.Verbose || options.Trace)
+                    if (options.VerboseLogging || options.TraceLogging)
                     {
                         Debug.Log(result.root.ToNodeTreeString());
                         Debug.Log(result.GetHumanReadableCode());
@@ -738,13 +744,20 @@ namespace NSS.Blast.Compiler
             return result;
         }
 
-
-        unsafe static public BlastScriptPackage CompilePackage(Blast blast, BlastScript script, BlastCompilerOptions options = null)
+        
+        /// <summary>
+        /// compile script into a managed blastscriptpackage containing blastpackagedata
+        /// </summary>
+        /// <param name="blast"></param>
+        /// <param name="script"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        unsafe static public BlastScriptPackage CompilePackage(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options = null)
         {
             if (options == null) options = new BlastCompilerOptions();
 
-            CompilationData result = Compile(blast, script, options);
-            if (result.Success)
+            IBlastCompilationData result = Compile(blast, script, options);
+            if (result.IsOK)
             {
                 BlastScriptPackage pkg = new BlastScriptPackage()
                 {
@@ -754,28 +767,32 @@ namespace NSS.Blast.Compiler
                     Inputs = result.Inputs.ToArray(),
                     Outputs = result.Outputs.ToArray()
                 };
-
                 return pkg;
             }
             else
             {
-                result.LogError(result.LastErrorMessage);
                 return null;
             }
         }
 
-        unsafe static public BlastPackageData CompileDataPackage(Blast blast, BlastScript script, BlastCompilerOptions options = null)
+        /// <summary>
+        /// Compile the script into a native blastscript datapackage
+        /// </summary>
+        /// <param name="blast"></param>
+        /// <param name="script"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        unsafe static public BlastPackageData CompileDataPackage(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options = null)
         {
             if (options == null) options = new BlastCompilerOptions();
 
-            CompilationData result = Compile(blast, script, options);
-            if (result.Success)
+            IBlastCompilationData result = Compile(blast, script, options);
+            if (result.IsOK)
             {
                 return Package(result, options); 
             }
             else
             {
-                result.LogError(result.LastErrorMessage);
                 return default;
             }
         }

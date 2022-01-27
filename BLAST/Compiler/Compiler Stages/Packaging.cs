@@ -7,9 +7,16 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastPackaging : IBlastCompilerStage
     {
+        /// <summary>
+        /// Version 0.1
+        /// </summary>
         public Version Version => new Version(0, 1, 0);
+        
+        /// <summary>
+        /// Packaging Stage -> creates package 
+        /// </summary>
         public BlastCompilerStageType StageType => BlastCompilerStageType.Packaging;
-     
+             
 
         /// <summary>
         /// package the compiled code into BlastIntermediate 
@@ -150,7 +157,7 @@ namespace NSS.Blast.Compiler.Stage
                         // !!!!!
                         // from this it is hardcoded that any extended op function may never have variable parameter length
                         // !! IMPORTANT !!
-                        Blast.IsVariableParamFunction(op))
+                        cdata.Blast.Data->IsVariableParamFunction(op))
                     {
                         next_is_hardcoded_value += 1; 
                     }

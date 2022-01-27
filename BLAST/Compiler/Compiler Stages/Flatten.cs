@@ -17,8 +17,12 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastFlatten : IBlastCompilerStage
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Version'
         public Version Version => new Version(0, 1, 0);
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Version'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.StageType'
         public BlastCompilerStageType StageType => BlastCompilerStageType.Flatten;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.StageType'
 
 
         /// <summary>
@@ -62,7 +66,7 @@ namespace NSS.Blast.Compiler.Stage
                         flattened_output.Insert(0, push);
 
                         // replace function parameter with the newly created pop node linked to the push
-                        node pop = node.CreatePopNode(push);
+                        node pop = node.CreatePopNode(data.Blast, push);
                         compound.children[i] = pop;
                         pop.parent = compound;
                         break;
@@ -117,7 +121,7 @@ namespace NSS.Blast.Compiler.Stage
                         }
                         else
                         {
-                            push = node.CreatePushNode(child);
+                            push = node.CreatePushNode(data.Blast, child);
                             if (child.IsCompound)
                             {
                                 // add children of compound 
@@ -133,7 +137,7 @@ namespace NSS.Blast.Compiler.Stage
                         flattened_output.Insert(0, push);
 
                         // need to replace function param with pop op  
-                        node pop = node.CreatePopNode(push);
+                        node pop = node.CreatePopNode(data.Blast, push);
                         pop.parent = function;
                         function.children[i] = pop;
                     }
@@ -150,10 +154,13 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     if ((child.IsFunction && !child.IsPopFunction) || child.IsCompound)
                     {
-                        ///
+                        
+#pragma warning disable CS1587 // XML comment is not placed on a valid language element
+///
                         ///  we might want to do this with recursion.. 
                         ///   
                         switch (child.type)
+#pragma warning restore CS1587 // XML comment is not placed on a valid language element
                         {
                             case nodetype.function:
                                 {
@@ -169,7 +176,7 @@ namespace NSS.Blast.Compiler.Stage
 
                                     flattened_output.InsertRange(0, flatten_inner_function);
 
-                                    node pop = node.CreatePopNode(pusher_for_function);
+                                    node pop = node.CreatePopNode(data.Blast, pusher_for_function);
                                     function.children[i] = pop;
                                     pop.parent = function;
                                     break;
@@ -205,7 +212,7 @@ namespace NSS.Blast.Compiler.Stage
                                     }
 
                                     // replace function parameter with the newly created pop node linked to the push
-                                    node pop = node.CreatePopNode(push);
+                                    node pop = node.CreatePopNode(data.Blast, push);
                                     function.children[i] = pop;
                                     pop.parent = function;
 
@@ -244,10 +251,12 @@ namespace NSS.Blast.Compiler.Stage
             Assert.IsNotNull(function);
             
             flattened_output = new List<node>();
-            pusher = null; 
-            
-            if (function.function == null)
+            pusher = null;
+
+            if (!function.IsFunction || function.function.FunctionId <= 0)
+            {
                 return BlastError.error_node_function_unknown;
+            }
 
             // scan parameters:
             // - if a simple parameter list: nothing needs to be done, we can move the node asis
@@ -259,7 +268,7 @@ namespace NSS.Blast.Compiler.Stage
                     continue;
                 }
 
-                if (param.IsCompound || (param.IsFunction && !param.function.IsPopVariant()) || param.IsOperation)
+                if (param.IsCompound || (param.IsFunction && !param.function.IsPopVariant) || param.IsOperation)
                 {
                     flat = false;
                     break;
@@ -290,13 +299,13 @@ namespace NSS.Blast.Compiler.Stage
                     flattened_output.AddRange(flat_compound_nodes);
 
                     // push remaining child list as operation push 
-                    node push_ol  = node.CreatePushNode(function);
+                    node push_ol  = node.CreatePushNode(data.Blast, function);
                     push_ol.children.AddRange(function.children);
                     foreach (node c_ol in push_ol.children) c_ol.parent = push_ol;
                     
                     function.children.Clear();
 
-                    node pop_ol = node.CreatePopNode(push_ol);
+                    node pop_ol = node.CreatePopNode(data.Blast, push_ol);
                     pop_ol.parent = function;
                     function.children.Add(pop_ol); 
                     flattened_output.Add(push_ol);                 
@@ -330,7 +339,7 @@ namespace NSS.Blast.Compiler.Stage
 
         private static node CreatePushNodeAndAddChild(IBlastCompilationData data, node child)
         {
-            node push = node.CreatePushNode(child);
+            node push = node.CreatePushNode(data.Blast, child);
 
             child.parent = push;
             push.children.Add(child);
@@ -340,7 +349,7 @@ namespace NSS.Blast.Compiler.Stage
 
         private static node CreatePushNodeAndAddChildsChildren(IBlastCompilationData data, node child)
         {
-            node push = node.CreatePushNode(child);
+            node push = node.CreatePushNode(data.Blast, child);
             
             push.children.AddRange(child.children);
             foreach (node pch in push.children) pch.parent = push;
@@ -403,7 +412,7 @@ namespace NSS.Blast.Compiler.Stage
                                     flat.Insert(0, push);
 
                                     // and pop back its result in child
-                                    node pop = node.CreatePopNode(push);
+                                    node pop = node.CreatePopNode(data.Blast, push);
 
                                     assignment.children[i] = pop;
                                     pop.parent = assignment;
@@ -419,11 +428,14 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 List<node> flattened_output_of_function;
 
-                                ///
+                                
+#pragma warning disable CS1587 // XML comment is not placed on a valid language element
+///
                                 /// need to account for operation lists
                                 ///
 
                                 res = FlattenFunctionParameters(data, child, out flattened_output_of_function);
+#pragma warning restore CS1587 // XML comment is not placed on a valid language element
                                 if (res != BlastError.success)
                                 {
                                     data.LogError($"flatten.assignment: failed to flatten child function: <{assignment.parent}>.<{assignment}>.<{child}>, error = {res}");
@@ -447,7 +459,7 @@ namespace NSS.Blast.Compiler.Stage
                                     flat.Add(push);
                                     
                                     // replace children with pop
-                                    node pop = node.CreatePopNode(push);
+                                    node pop = node.CreatePopNode(data.Blast, push);
                                     child.children.Clear();
                                     child.SetChild(pop);
                                 }
@@ -520,8 +532,11 @@ namespace NSS.Blast.Compiler.Stage
                         
                         nthpop++; 
                     }
-                    /// there is max 1 compound below
+                    
+#pragma warning disable CS1587 // XML comment is not placed on a valid language element
+/// there is max 1 compound below
                     foreach(node gchild in child.children)
+#pragma warning restore CS1587 // XML comment is not placed on a valid language element
                     {
                         if (gchild.linked_push != null)
                         {
@@ -818,7 +833,9 @@ namespace NSS.Blast.Compiler.Stage
             return BlastError.success;
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Flatten(IBlastCompilationData, node)'
         public BlastError Flatten(IBlastCompilationData data, node root)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Flatten(IBlastCompilationData, node)'
         {
             List<node> flat = new List<node>(); 
 
@@ -840,7 +857,9 @@ namespace NSS.Blast.Compiler.Stage
 
 
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Execute(IBlastCompilationData)'
         public int Execute(IBlastCompilationData data)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Execute(IBlastCompilationData)'
         {
           //  if (((CompilationData)data).use_new_stuff)
           //  {

@@ -18,8 +18,12 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastTransform : IBlastCompilerStage
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.Version'
         public Version Version => new Version(0, 1, 4);
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.Version'
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.StageType'
         public BlastCompilerStageType StageType => BlastCompilerStageType.Transform;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.StageType'
 
         /// <summary>
         /// reduce a singular function in a sequence
@@ -46,12 +50,17 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
-        /// <summary>
+        
+#pragma warning disable CS1572 // XML comment has a param tag for 'result', but there is no parameter by that name
+/// <summary>
         /// transform a switch into a series of ifthen statements 
         /// </summary>
         /// <param name="result"></param>
         /// <param name="n_switch">the node containing the switch statement</param>
+#pragma warning disable CS1573 // Parameter 'data' has no matching param tag in the XML comment for 'BlastTransform.transform_switch(IBlastCompilationData, node)' (but other parameters do)
         static void transform_switch(IBlastCompilationData data, node n_switch)
+#pragma warning restore CS1572 // XML comment has a param tag for 'result', but there is no parameter by that name
+#pragma warning restore CS1573 // Parameter 'data' has no matching param tag in the XML comment for 'BlastTransform.transform_switch(IBlastCompilationData, node)' (but other parameters do)
         {
             if (n_switch.parent == null)
             {
@@ -231,7 +240,9 @@ namespace NSS.Blast.Compiler.Stage
         }
 
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.Execute(IBlastCompilationData)'
         public int Execute(IBlastCompilationData data)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.Execute(IBlastCompilationData)'
         {
             if (!data.IsOK || data.AST == null) return (int)BlastError.error;
 

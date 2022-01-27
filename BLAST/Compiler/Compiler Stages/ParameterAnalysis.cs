@@ -309,30 +309,8 @@ namespace NSS.Blast.Compiler.Stage
                                             {
                                                 if (c.children.Count == 0)
                                                 {
-                                                    if (c.function.IsPopVariant())
-                                                    {
-                                                        switch ((ReservedScriptFunctionIds)c.function.FunctionId)
-                                                        {
-                                                            case ReservedScriptFunctionIds.Pop2:
-                                                                c.vector_size = 2;
-                                                                c.is_vector = true;
-                                                                break;
-                                                            case ReservedScriptFunctionIds.Pop3:
-                                                                c.vector_size = 3;
-                                                                c.is_vector = true;
-                                                                break;
-                                                            case ReservedScriptFunctionIds.Pop4:
-                                                                c.vector_size = 4;
-                                                                c.is_vector = true;
-                                                                break;
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        c.vector_size = math.max(1, c.function.ReturnsVectorSize);
-                                                        c.is_vector = false; 
-                                                    }
-
+                                                    c.vector_size = math.max(1, c.function.ReturnsVectorSize);
+                                                    c.is_vector = false; 
                                                 }
                                                 else
                                                 {
@@ -357,7 +335,7 @@ namespace NSS.Blast.Compiler.Stage
                                                         else
                                                         {
                                                             // errorrr 
-                                                            data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {c.function.Match} at {c}, function allows vectorsize {c.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {fsize} ");
+                                                            data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {c.function.GetFunctionName()} at {c}, function allows vectorsize {c.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {fsize} ");
                                                             return;
                                                         }
                                                     }
@@ -384,7 +362,13 @@ namespace NSS.Blast.Compiler.Stage
                                     else
                                     {
                                         // errorrr 
-                                        data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {current.function.Match} at {current}, function allows vectorsize {current.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {size} ");
+                                       ///  
+
+                                        /// 
+                                        // /  / / / / / / // 
+
+
+                                        data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {current.function.GetFunctionName()} at {current}, function allows vectorsize {current.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {size} ");
                                         return;
                                     }
                                 }

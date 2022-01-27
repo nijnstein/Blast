@@ -3,7 +3,9 @@ using System.Text;
 
 namespace NSS.Blast.Compiler
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'HPCNamespace'
     public static class HPCNamespace
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'HPCNamespace'
     {
         static string[] usings = new string[]
         {
@@ -25,7 +27,9 @@ namespace NSS.Blast.Cache
 
 }}";
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'HPCNamespace.CombineScriptsIntoNamespace(IEnumerable<string>)'
         static public string CombineScriptsIntoNamespace(IEnumerable<string> scripts)
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'HPCNamespace.CombineScriptsIntoNamespace(IEnumerable<string>)'
         {
             StringBuilder sb_using = new StringBuilder();
             foreach (string u in usings)

@@ -33,13 +33,14 @@ namespace NSS.Blast.Compiler.Stage
         /// <summary>
         /// replace sequence IN PLACE with a function 
         /// </summary>
+        /// <param name="blast">blast engine data -> needs access to functions</param>
         /// <param name="node">node to be updated</param>
         /// <param name="singleop">the singleop</param>
         /// <param name="replacement_function">the replacement fucntion</param>
         /// <param name="from">only use childnodes starting from this index</param>
         /// <param name="operation_count">the number of operations to replace if > 0</param>
         /// <returns></returns>
-        BlastError ReplaceSequence(node node, blast_operation singleop, blast_operation replacement_function, int from = 0, int operation_count = -1)
+        unsafe BlastError ReplaceSequence(BlastEngineDataPtr blast, node node, blast_operation singleop, blast_operation replacement_function, int from = 0, int operation_count = -1)
         {
             Assert.IsNotNull(node);
             Assert.IsTrue(replacement_function != blast_operation.nop);
@@ -51,7 +52,7 @@ namespace NSS.Blast.Compiler.Stage
             // the input sequence is expected to be in the form: id op id op etc.. 
             List<node> parameters = new List<node>();
             List<node> ops = new List<node>();
-            ScriptFunctionDefinition function = Blast.GetFunctionByOpCode(replacement_function);
+            BlastScriptFunction function = blast.Data->GetFunction(replacement_function);
             Assert.IsNotNull(function);
 
             // gather parameters 
@@ -190,10 +191,10 @@ namespace NSS.Blast.Compiler.Stage
             //                            
             if (node.IsSingleOperationList(out op))
             {
-                if (Blast.HasSequenceFunction(op))
+                if (Blast.HasSequenceOperation(op))
                 {
                     // transform the sequence into a function call matching the operation 
-                    res = ReplaceSequence(node, op, Blast.GetSequenceFunction(op));
+                    res = ReplaceSequence(data.Blast, node, op, Blast.GetSequenceOperation(op));
                     if (res != BlastError.success) return BlastError.error_optimizer_failed_to_replace_sequence;
 
                     // no use to look any further 
@@ -222,7 +223,7 @@ namespace NSS.Blast.Compiler.Stage
                 }
 
                 // replace the partial sequence 
-                res = ReplaceSequence(node, op, Blast.GetSequenceFunction(op), from, op_count);
+                res = ReplaceSequence(data.Blast, node, op, Blast.GetSequenceOperation(op), from, op_count);
                 if (res != BlastError.success) return BlastError.error_optimizer_failed_to_replace_sequence;
 
 

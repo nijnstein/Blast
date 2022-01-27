@@ -13,16 +13,24 @@ using Unity.Mathematics;
 namespace NSS.Blast.Compiler.Stage
 {
 
+   
     /// <summary>
     /// The Tokenizer:
     /// 
     /// - splits input into list of tokens and identifiers 
-    /// - splits out: comments, defines & validations (all stuff starting with # until eol)
+    /// - splits out: comments, defines and validations (all stuff starting with # until eol)
     /// 
     /// </summary>
     public class BlastTokenizer : IBlastCompilerStage
     {
+        /// <summary>
+        /// version
+        /// </summary>
         public Version Version => new Version(0, 2, 1);
+        
+        /// <summary>
+        /// Tokenizer -> converts input text into array of tokens 
+        /// </summary>
         public BlastCompilerStageType StageType => BlastCompilerStageType.Tokenizer;
 
 
@@ -141,7 +149,7 @@ namespace NSS.Blast.Compiler.Stage
             return false;
         }
 
-        #endregion 
+        #endregion
 
         /// <summary>
         /// read #input and #output defines 
@@ -149,6 +157,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="data"></param>
         /// <param name="comment"></param>
         /// <param name="a"></param>
+        /// <param name="is_input"></param>
         /// <returns>null on failure (also logs error in data)</returns>
         static BlastVariableMapping read_input_output_mapping(IBlastCompilationData data, string comment, string[] a, bool is_input)
         {
@@ -301,28 +310,31 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             string def_key = a[1].Trim().ToLowerInvariant();
 
-                            // check it does not map to a function name
-                            if (Blast.GetFunctionByName(def_key) != null)
+                            unsafe
                             {
-                                data.LogError($"tokenize: #define identifier name: <{def_key}> is already mapped to a function");
-                            }
-                            else
-                            {
-                                // it may also not be a constant name 
-                                if (data.Blast.IsNamedSystemConstant(def_key) != blast_operation.nop)
+                                // check it does not map to a function name
+                                if (data.Blast.Data->GetFunction(def_key).IsValid)
                                 {
-                                    data.LogError($"tokenize: #define identifier name: <{def_key}> is already mapped to a system constant");
+                                    data.LogError($"tokenize: #define identifier name: <{def_key}> is already mapped to a function");
                                 }
                                 else
                                 {
-                                    // it has to be unique
-                                    if (!data.Defines.ContainsKey(def_key))
+                                    // it may also not be a constant name 
+                                    if (Blast.IsNamedSystemConstant(def_key) != blast_operation.nop)
                                     {
-                                        data.Defines.Add(def_key, a[2].Trim());
+                                        data.LogError($"tokenize: #define identifier name: <{def_key}> is already mapped to a system constant");
                                     }
                                     else
                                     {
-                                        data.LogError($"tokenize: #define identifier name: <{def_key}> has already been defined with value: {data.Defines[def_key]}");
+                                        // it has to be unique
+                                        if (!data.Defines.ContainsKey(def_key))
+                                        {
+                                            data.Defines.Add(def_key, a[2].Trim());
+                                        }
+                                        else
+                                        {
+                                            data.LogError($"tokenize: #define identifier name: <{def_key}> has already been defined with value: {data.Defines[def_key]}");
+                                        }
                                     }
                                 }
                             }
@@ -619,7 +631,12 @@ namespace NSS.Blast.Compiler.Stage
 
             return (int)BlastError.success;
         }
-       
+
+        /// <summary>
+        /// Execute the tokenizer stage
+        /// </summary>
+        /// <param name="data">compilation data</param>
+        /// <returns>success if ok, otherwise an errorcode</returns>
         public int Execute(IBlastCompilationData data)
         {
             // run tokenizer 

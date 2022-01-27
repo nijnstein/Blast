@@ -10,6 +10,7 @@ using UnityEngine.Assertions;
 using System;
 using System.Text;
 using Unity.Collections;
+using NSS.Blast.Interpretor;
 
 namespace NSS.Blast
 {
@@ -47,9 +48,8 @@ namespace NSS.Blast
         public BlastVariableMapping[] Inputs;
 
         /// <summary>
-        /// defined outputs, obsolete as we view the in and outputs as 1 segment, the input will be renamed   
+        /// defined outputs
         /// </summary>
-        [Obsolete]
         public BlastVariableMapping[] Outputs;
 
         /// <summary>
@@ -81,6 +81,18 @@ namespace NSS.Blast
         }
 
         /// <summary>
+        /// packaging mode set by attached package data
+        /// </summary>
+        public BlastPackageMode PackageMode => Package.PackageMode;
+
+
+        /// <summary>
+        /// package flags as set by attached package
+        /// </summary>
+        public BlastPackageFlags Flags => Package.Flags; 
+
+
+        /// <summary>
         /// Destroy any allocated native memory 
         /// </summary>
         public void Destroy()
@@ -93,7 +105,9 @@ namespace NSS.Blast
 #endif
             }
             Inputs = null;
+#pragma warning disable CS0612 // 'BlastScriptPackage.Outputs' is obsolete
             Outputs = null;
+#pragma warning restore CS0612 // 'BlastScriptPackage.Outputs' is obsolete
             Variables = null;
             VariableOffsets = null;
             Package = default;
@@ -132,7 +146,9 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="width">number of columns to render</param>
         /// <returns>A formatted string</returns>
+#pragma warning disable CS1573 // Parameter 'show_index' has no matching param tag in the XML comment for 'BlastScriptPackage.GetCodeSegmentText(int, bool)' (but other parameters do)
         public string GetCodeSegmentText(int width = 16, bool show_index = true)
+#pragma warning restore CS1573 // Parameter 'show_index' has no matching param tag in the XML comment for 'BlastScriptPackage.GetCodeSegmentText(int, bool)' (but other parameters do)
         {
             if (IsAllocated)
             {
@@ -275,8 +291,37 @@ namespace NSS.Blast
             }
         }
 
-#endregion
+        #endregion
 
+
+
+        /// <summary>
+        /// execute the script in the given environment with the supplied data
+        /// </summary>
+        /// <param name="blast">blastengine data</param>
+        /// <param name="environment">[optional] pointer to environment data</param>
+        /// <param name="caller">[ooptional] caller data</param>
+        /// <returns>success if all is ok</returns>
+        public BlastError Execute(IntPtr blast, IntPtr environment, IntPtr caller)
+        {
+            if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
+            if (!IsAllocated) return BlastError.error_package_not_allocated;
+
+            switch (Package.PackageMode)
+            {
+                case BlastPackageMode.Normal:
+                     BlastInterpretor blaster = default;
+                    blaster.SetPackage(Package);
+                    return (BlastError)blaster.Execute(blast, environment, caller);
+
+                case BlastPackageMode.Entity:
+                case BlastPackageMode.Compiler:
+                case BlastPackageMode.SSMD:
+                    return BlastError.error_packagemode_not_supported_for_direct_execution;
+            }
+
+            return BlastError.success;
+        }
 
     }
 }

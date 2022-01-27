@@ -45,7 +45,13 @@ namespace NSS.Blast
         /// <summary>
         /// Burstable C# code packed in functions for burst to compile at designtime
         /// </summary>
-        HPC = 3
+        HPC = 3,
+
+        /// <summary>
+        /// Runtime compiled c# code, .net framework and windows only 
+        /// </summary>
+        CS = 4
+
     }
 
     /// <summary>

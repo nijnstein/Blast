@@ -52,13 +52,18 @@ namespace NSS.Blast.Register
 
         #region Register
 
-        /// <summary>
+        
+#pragma warning disable CS1570 // XML comment has badly formed XML -- 'An identifier was expected.'
+#pragma warning disable CS1570 // XML comment has badly formed XML -- '1'
+/// <summary>
         /// Register a given script with the registry. If the given script id < 1 then a new id is generated that is 1 higher then the max known id. 
         /// If the name already exists then the given scripts name is appended '_1'. 
         /// </summary>
         /// <param name="script">a reference to the script to register</param>
         /// <returns>the script id</returns>
         static public int Register(BlastScript script)
+#pragma warning restore CS1570 // XML comment has badly formed XML -- '1'
+#pragma warning restore CS1570 // XML comment has badly formed XML -- 'An identifier was expected.'
         {
             if (script == null)
             {
