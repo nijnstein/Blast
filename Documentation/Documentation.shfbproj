@@ -15,31 +15,54 @@
     <RootNamespace>Documentation</RootNamespace>
     <Name>Documentation</Name>
     <!-- SHFB properties -->
-    <FrameworkVersion>.NET Framework 4.7.2</FrameworkVersion>
+    <FrameworkVersion>.NET Core/.NET Standard/.NET 5.0+</FrameworkVersion>
     <OutputPath>.\Help\</OutputPath>
     <HtmlHelpName>Documentation</HtmlHelpName>
     <Language>en-US</Language>
     <TransformComponentArguments>
-      <Argument Key="logoFile" Value="Help.png" xmlns="" />
-      <Argument Key="logoHeight" Value="" xmlns="" />
-      <Argument Key="logoWidth" Value="" xmlns="" />
-      <Argument Key="logoAltText" Value="" xmlns="" />
-      <Argument Key="logoPlacement" Value="left" xmlns="" />
-      <Argument Key="logoAlignment" Value="left" xmlns="" />
-      <Argument Key="maxVersionParts" Value="" xmlns="" />
+      <Argument Key="logoFile" Value="help.png" />
+      <Argument Key="logoHeight" Value="" />
+      <Argument Key="logoWidth" Value="" />
+      <Argument Key="logoAltText" Value="BLAST Documentation" />
+      <Argument Key="logoPlacement" Value="left" />
+      <Argument Key="logoAlignment" Value="left" />
+      <Argument Key="logoUrl" Value="" />
+      <Argument Key="maxVersionParts" Value="" />
+      <Argument Key="defaultLanguage" Value="cs" />
+      <Argument Key="includeEnumValues" Value="true" />
+      <Argument Key="baseSourceCodeUrl" Value="" />
+      <Argument Key="requestExampleUrl" Value="" />
     </TransformComponentArguments>
     <DocumentationSources>
       <DocumentationSource sourceFile="..\BLAST\BLAST.csproj" xmlns="" />
     </DocumentationSources>
-    <HelpFileFormat>Website</HelpFileFormat>
-    <SyntaxFilters>C#, Visual Basic, Managed C++</SyntaxFilters>
-    <PresentationStyle>VS2013</PresentationStyle>
+    <HelpFileFormat>Markdown</HelpFileFormat>
+    <SyntaxFilters>C#</SyntaxFilters>
+    <PresentationStyle>Markdown</PresentationStyle>
     <CleanIntermediates>True</CleanIntermediates>
     <KeepLogFile>True</KeepLogFile>
     <DisableCodeBlockComponent>False</DisableCodeBlockComponent>
-    <IndentHtml>False</IndentHtml>
-    <BuildAssemblerVerbosity>OnlyWarningsAndErrors</BuildAssemblerVerbosity>
+    <IndentHtml>True</IndentHtml>
+    <BuildAssemblerVerbosity>OnlyErrors</BuildAssemblerVerbosity>
     <SaveComponentCacheCapacity>100</SaveComponentCacheCapacity>
+    <HelpTitle>BLAST - A Burst compatible script engine for Unity</HelpTitle>
+    <HelpFileVersion>1.0.0.0</HelpFileVersion>
+    <NamingMethod>MemberName</NamingMethod>
+    <ContentPlacement>AboveNamespaces</ContentPlacement>
+    <RootNamespaceContainer>False</RootNamespaceContainer>
+    <NamespaceGrouping>False</NamespaceGrouping>
+    <MaximumGroupParts>2</MaximumGroupParts>
+    <Preliminary>False</Preliminary>
+    <SdkLinkTarget>Blank</SdkLinkTarget>
+    <CatalogProductId>VS</CatalogProductId>
+    <CatalogVersion>100</CatalogVersion>
+    <VendorName>NS Software</VendorName>
+    <ProductTitle>BLAST</ProductTitle>
+    <TocOrder>-1</TocOrder>
+    <TocParentId>-1</TocParentId>
+    <TocParentVersion>100</TocParentVersion>
+    <TopicVersion>100</TopicVersion>
+    <MSHelpViewerSdkLinkType>Msdn</MSHelpViewerSdkLinkType>
   </PropertyGroup>
   <!-- There are no properties for these groups.  AnyCPU needs to appear in order for Visual Studio to perform
 			 the build.  The others are optional common platform types that may appear. -->
@@ -74,7 +97,10 @@
     <ContentLayout Include="ContentLayout.content" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="icons\Help.png" />
+    <Image Include="icons\help.png">
+      <ImageId>blast icon</ImageId>
+      <AlternateText>blast icon</AlternateText>
+    </Image>
   </ItemGroup>
   <!-- Import the common build targets during NuGet restore because before the packages are being installed, $(SHFBROOT) is not set yet -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="'$(MSBuildRestoreSessionId)' != ''" />

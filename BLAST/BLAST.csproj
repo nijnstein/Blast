@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <PackageIcon>blast icon.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -25,6 +26,13 @@
     <Reference Include="UnityEngine">
       <HintPath>..\..\UnityCsReference\Projects\CSharp\obj\Debug\netstandard2.1\UnityEngine.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Icons\blast icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

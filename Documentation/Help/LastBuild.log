@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shfbBuild product="Sandcastle Help File Builder and Tools" version="2022.1.22.0" projectFile="F:\Repo\Nijnstein\Blast\Documentation\Documentation.shfbproj" started="28-1-2022 12:31:36">
+<shfbBuild product="Sandcastle Help File Builder and Tools" version="2022.1.22.0" projectFile="F:\Repo\Nijnstein\Blast\Documentation\Documentation.shfbproj" started="28-1-2022 13:42:27">
 <buildStep step="Initializing">
 Finding tools...
 The Sandcastle tools are located in &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder&#39;
@@ -7,12 +7,8 @@ Locating components in the following folder(s):
     F:\Repo\Nijnstein\Blast\Documentation
     C:\ProgramData\EWSoftware\Sandcastle Help File Builder\Components and Plug-Ins
     C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components
-Using framework reflection data for &#39;.NET Framework 4.7.2&#39; located in &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Data\.NETFramework&#39;
-Using presentation style &#39;VS2013&#39; located in &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013&#39;
-Loading and initializing plug-ins...
-Lightweight Website Style Version 2022.1.22.0
-Copyright &#169; 2006-2022, Eric Woodruff, All Rights Reserved
-Portions Copyright &#169; 2014, Sam Harwell, All Rights Reserved
+Using framework reflection data for &#39;.NET Core/.NET Standard/.NET 5.0+&#39; located in &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Data\.NET&#39;
+Using presentation style &#39;Markdown&#39; located in &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown&#39;
 -------------------------------
 Clearing any prior web/markdown output...
 </buildStep>
@@ -23,7 +19,6 @@ Source: F:\Repo\Nijnstein\Blast\BLAST\BLAST.csproj
 
 Parsing project files
     Found assembly &#39;F:\Repo\Nijnstein\Blast\BLAST\bin\Debug\netstandard2.1\BLAST.dll&#39; (.NETStandard 2.1)
-SHFB: Warning BE0007: A project with a different or higher framework version was found.  Changing project FrameworkVersion property from &#39;.NET Framework 4.7.2&#39; to &#39;.NET Core/.NET Standard/.NET 5.0+&#39; for the build.
 
 References to include:
     Microsoft.Win32.Primitives
@@ -155,18 +150,17 @@ Copying XML comments files
 </buildStep>
 <buildStep step="GenerateSharedContent">
 Generating shared content files (en-US, English (United States))...
-<plugIn name="Lightweight Website Style" behavior="After" priority="1000">
-</plugIn>    Last step completed in 00:00:00,0089
+    Last step completed in 00:00:00,0015
 </buildStep>
 <buildStep step="GenerateApiFilter">
 Generating API filter for MRefBuilder...
-    Last step completed in 00:00:00,0020
+    Last step completed in 00:00:00,0015
 </buildStep>
 <buildStep step="GenerateReflectionInfo">
 Generating reflection information...
-[C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe - GenerateRefInfo-58df7767-d818-4c3c-bb57-700765e1f86b.proj]
-Build started 28-1-2022 12:31:36.
-Project &quot;F:\Repo\Nijnstein\Blast\Documentation\Help\Working\GenerateRefInfo-58df7767-d818-4c3c-bb57-700765e1f86b.proj&quot; on node 1 (default targets).
+[C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe - GenerateRefInfo-972f666b-d71f-4100-9a35-cbd395ff2a06.proj]
+Build started 28-1-2022 13:42:27.
+Project &quot;F:\Repo\Nijnstein\Blast\Documentation\Help\Working\GenerateRefInfo-972f666b-d71f-4100-9a35-cbd395ff2a06.proj&quot; on node 1 (default targets).
 PrepareForBuild:
   Creating directory &quot;obj\Debug\&quot;.
 GenerateBindingRedirects:
@@ -179,24 +173,87 @@ GenerateRefInfo:
   Wrote information on 13 namespaces, 95 types, and 986 members
   Merging duplicate type and member information
   Merged 0 duplicate type(s) and 0 duplicate member(s)
-Done Building Project &quot;F:\Repo\Nijnstein\Blast\Documentation\Help\Working\GenerateRefInfo-58df7767-d818-4c3c-bb57-700765e1f86b.proj&quot; (default targets).
-    Last step completed in 00:00:00,6339
+Done Building Project &quot;F:\Repo\Nijnstein\Blast\Documentation\Help\Working\GenerateRefInfo-972f666b-d71f-4100-9a35-cbd395ff2a06.proj&quot; (default targets).
+    Last step completed in 00:00:00,6264
 </buildStep>
 <buildStep step="ApplyDocumentModel">
 Applying document model to reflection output...
-    Last step completed in 00:00:00,0441
+    Last step completed in 00:00:00,0422
 </buildStep>
 <buildStep step="AddApiTopicFilenames">
 Adding topic filenames to API members...
-    Last step completed in 00:00:00,0243
+    Unique name M_NSS_Blast_Blast_Create_1 generated for M:NSS.Blast.Blast.Create(Unity.Collections.Allocator)
+    Unique name M_NSS_Blast_Blast_Execute_1 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastEngineDataPtr@,NSS.Blast.BlastPackageData@,System.IntPtr,System.IntPtr,System.Int32)
+    Unique name M_NSS_Blast_Blast_Execute_2 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData@)
+    Unique name M_NSS_Blast_Blast_Execute_3 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData@,System.IntPtr)
+    Unique name M_NSS_Blast_Blast_Execute_4 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData@,System.IntPtr,System.Int32)
+    Unique name M_NSS_Blast_Blast_Execute_5 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData@,System.IntPtr,System.IntPtr)
+    Unique name M_NSS_Blast_Blast_Execute_6 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastPackageData@,System.IntPtr,System.IntPtr,System.Int32)
+    Unique name M_NSS_Blast_Blast_Execute_7 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage@)
+    Unique name M_NSS_Blast_Blast_Execute_8 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage@,System.IntPtr)
+    Unique name M_NSS_Blast_Blast_Execute_9 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage@,System.IntPtr,System.Int32)
+    Unique name M_NSS_Blast_Blast_Execute_10 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage@,System.IntPtr,System.IntPtr)
+    Unique name M_NSS_Blast_Blast_Execute_11 generated for M:NSS.Blast.Blast.Execute(NSS.Blast.BlastScriptPackage@,System.IntPtr,System.IntPtr,System.Int32)
+    Unique name M_NSS_Blast_Blast_Package_1 generated for M:NSS.Blast.Blast.Package(NSS.Blast.BlastEngineDataPtr,System.String,NSS.Blast.BlastCompilerOptions)
+    Unique name M_NSS_Blast_Blast_Package_2 generated for M:NSS.Blast.Blast.Package(NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)
+    Unique name M_NSS_Blast_Blast_Package_3 generated for M:NSS.Blast.Blast.Package(System.String,NSS.Blast.BlastCompilerOptions)
+    Unique name M_NSS_Blast_BlastCompilerOptions__ctor_1 generated for M:NSS.Blast.BlastCompilerOptions.#ctor(NSS.Blast.BlastPackageMode)
+    Unique name M_NSS_Blast_BlastCompilerOptions__ctor_2 generated for M:NSS.Blast.BlastCompilerOptions.#ctor(System.Int32)
+    Unique name M_NSS_Blast_BlastCompilerOptions__ctor_3 generated for M:NSS.Blast.BlastCompilerOptions.#ctor(System.Int32,NSS.Blast.BlastPackageMode)
+    Unique name M_NSS_Blast_BlastEngineData_GetFunction_1 generated for M:NSS.Blast.BlastEngineData.GetFunction(System.String)
+    Unique name M_NSS_Blast_BlastPackageData_Clone_1 generated for M:NSS.Blast.BlastPackageData.Clone(Unity.Collections.Allocator)
+    Unique name M_NSS_Blast_BlastPackageData_CloneData_1 generated for M:NSS.Blast.BlastPackageData.CloneData(System.Int32,NSS.Blast.BlastMetaDataStack*)
+    Unique name M_NSS_Blast_BlastPackageData_CloneData_2 generated for M:NSS.Blast.BlastPackageData.CloneData(System.Int32,Unity.Collections.Allocator)
+    Unique name M_NSS_Blast_BlastPackageData_CloneDataStack_1 generated for M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32,NSS.Blast.BlastSSMDDataStack*)
+    Unique name M_NSS_Blast_BlastPackageData_CloneDataStack_2 generated for M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32,Unity.Collections.Allocator)
+    Unique name M_NSS_Blast_BlastPackageData_FreeData_1 generated for M:NSS.Blast.BlastPackageData.FreeData(NSS.Blast.BlastSSMDDataStack*,Unity.Collections.Allocator)
+    Unique name M_NSS_Blast_BlastScriptAPI_GetFunctionById_1 generated for M:NSS.Blast.BlastScriptAPI.GetFunctionById(System.Int32)
+    Unique name M_NSS_Blast_BlastScriptAPI_RegisterFunction_1 generated for M:NSS.Blast.BlastScriptAPI.RegisterFunction(NSS.Blast.ReservedBlastScriptFunctionIds,System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.extended_blast_operation)
+    Unique name M_NSS_Blast_BlastScriptAPI_RegisterFunction_2 generated for M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.blast_operation)
+    Unique name M_NSS_Blast_BlastScriptAPI_RegisterFunction_3 generated for M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.extended_blast_operation)
+    Unique name M_NSS_Blast_BlastScriptAPI_RegisterFunction_4 generated for M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.IntPtr,System.Int32,System.Int32,System.Int32)
+    Unique name M_NSS_Blast_math_extensions_RoundUpToPowerOf2_1 generated for M:NSS.Blast.math_extensions.RoundUpToPowerOf2(System.Int32,System.Int32)
+    Unique name M_NSS_Blast_Compiler_BlastCompiler_Compile_1 generated for M:NSS.Blast.Compiler.BlastCompiler.Compile(NSS.Blast.BlastEngineDataPtr,System.String,NSS.Blast.BlastCompilerOptions)
+    Unique name M_NSS_Blast_Compiler_CompilationData_HasInput_1 generated for M:NSS.Blast.Compiler.CompilationData.HasInput(System.String)
+    Unique name M_NSS_Blast_Compiler_IBlastCompilationData_HasInput_1 generated for M:NSS.Blast.Compiler.IBlastCompilationData.HasInput(System.String)
+    Unique name M_NSS_Blast_Compiler_node__ctor_1 generated for M:NSS.Blast.Compiler.node.#ctor(NSS.Blast.Compiler.nodetype,NSS.Blast.BlastScriptToken)
+    Unique name M_NSS_Blast_Compiler_node_CountChildType_1 generated for M:NSS.Blast.Compiler.node.CountChildType(NSS.Blast.Compiler.nodetype,NSS.Blast.Compiler.nodetype)
+    Unique name M_NSS_Blast_Compiler_node_encode44_1 generated for M:NSS.Blast.Compiler.node.encode44(NSS.Blast.Compiler.node,System.Byte)
+    Unique name M_NSS_Blast_Compiler_node_FirstConsecutiveOperationSequence_1 generated for M:NSS.Blast.Compiler.node.FirstConsecutiveOperationSequence(System.Int32,System.Int32,NSS.Blast.blast_operation@,System.Int32@,NSS.Blast.Compiler.node@)
+    Unique name M_NSS_Blast_Compiler_node_GetChild_1 generated for M:NSS.Blast.Compiler.node.GetChild(NSS.Blast.Compiler.nodetype,NSS.Blast.Compiler.nodetype)
+    Unique name M_NSS_Blast_Compiler_node_IsCompoundWithSingleNegationOfValue_1 generated for M:NSS.Blast.Compiler.node.IsCompoundWithSingleNegationOfValue(NSS.Blast.Compiler.node)
+    Unique name M_NSS_Blast_Compiler_node_IsNonNestedVectorDefinition_1 generated for M:NSS.Blast.Compiler.node.IsNonNestedVectorDefinition(NSS.Blast.Compiler.node)
+    Unique name M_NSS_Blast_Compiler_node_IsOperationList_1 generated for M:NSS.Blast.Compiler.node.IsOperationList(NSS.Blast.Compiler.node)
+    Unique name M_NSS_Blast_Compiler_node_IsOperationList_2 generated for M:NSS.Blast.Compiler.node.IsOperationList(NSS.Blast.Compiler.node,NSS.Blast.blast_operation@)
+    Unique name M_NSS_Blast_Compiler_node_IsSingleValueOrPop_1 generated for M:NSS.Blast.Compiler.node.IsSingleValueOrPop(NSS.Blast.Compiler.node)
+    Unique name M_NSS_Blast_Compiler_Stage_IMByteCode_AddLabel_1 generated for M:NSS.Blast.Compiler.Stage.IMByteCode.AddLabel(System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.Stage.IMJumpLabel})
+    Unique name M_NSS_Blast_Compiler_Stage_IMByteCodeList_Add_1 generated for M:NSS.Blast.Compiler.Stage.IMByteCodeList.Add(System.Byte,NSS.Blast.Compiler.Stage.IMJumpLabel)
+    Unique name M_NSS_Blast_Compiler_Stage_IMByteCodeList_AddRange_1 generated for M:NSS.Blast.Compiler.Stage.IMByteCodeList.AddRange(System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.Stage.IMByteCode})
+    Unique name M_NSS_Blast_Compiler_Stage_IMByteCodeList_AddRange_2 generated for M:NSS.Blast.Compiler.Stage.IMByteCodeList.AddRange(System.Collections.Generic.IEnumerable{System.Byte})
+    Unique name M_NSS_Blast_Interpretor_BlastInterpretor_Execute_1 generated for M:NSS.Blast.Interpretor.BlastInterpretor.Execute(NSS.Blast.BlastEngineDataPtr,System.IntPtr,System.IntPtr)
+    Unique name M_NSS_Blast_Interpretor_BlastInterpretor_pop_1 generated for M:NSS.Blast.Interpretor.BlastInterpretor.pop(System.Single@)
+    Unique name M_NSS_Blast_Interpretor_BlastInterpretor_pop_2 generated for M:NSS.Blast.Interpretor.BlastInterpretor.pop(Unity.Mathematics.float4@)
+    Unique name M_NSS_Blast_Interpretor_BlastInterpretor_pop_3 generated for M:NSS.Blast.Interpretor.BlastInterpretor.pop(Unity.Mathematics.int4@)
+    Unique name M_NSS_Blast_Interpretor_BlastInterpretor_push_1 generated for M:NSS.Blast.Interpretor.BlastInterpretor.push(System.Single)
+    Unique name M_NSS_Blast_Interpretor_BlastInterpretor_push_2 generated for M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float2)
+    Unique name M_NSS_Blast_Interpretor_BlastInterpretor_push_3 generated for M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float3)
+    Unique name M_NSS_Blast_Interpretor_BlastInterpretor_push_4 generated for M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float4)
+    Unique name M_NSS_Blast_Interpretor_BlastInterpretor_ResumeYield_1 generated for M:NSS.Blast.Interpretor.BlastInterpretor.ResumeYield(NSS.Blast.BlastEngineDataPtr,System.IntPtr,System.IntPtr)
+    Unique name M_NSS_Blast_Interpretor_BlastInterpretor_SetPackage_1 generated for M:NSS.Blast.Interpretor.BlastInterpretor.SetPackage(NSS.Blast.BlastPackageData,System.Byte*,System.Single*,System.Byte*,System.Int32)
+    Unique name M_NSS_Blast_Register_BlastScriptRegistry_Exists_1 generated for M:NSS.Blast.Register.BlastScriptRegistry.Exists(System.String)
+    Unique name M_NSS_Blast_Register_BlastScriptRegistry_Get_1 generated for M:NSS.Blast.Register.BlastScriptRegistry.Get(System.String)
+    Unique name M_NSS_Blast_Register_BlastScriptRegistry_Register_1 generated for M:NSS.Blast.Register.BlastScriptRegistry.Register(System.String,System.String,System.Int32)
+    Unique name M_NSS_Blast_SSMD_BlastSSMDInterpretor_Execute_1 generated for M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastPackageData@,NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)
+    Unique name M_Unity_Collections_BurstCompileAttribute__ctor_1 generated for M:Unity.Collections.BurstCompileAttribute.#ctor(Unity.Collections.FloatPrecision,Unity.Collections.FloatMode)
+    Last step completed in 00:00:00,0967
 </buildStep>
 <buildStep step="GenerateApiTopicManifest">
 Generating API topic manifest...
-    Last step completed in 00:00:00,0263
+    Last step completed in 00:00:00,0169
 </buildStep>
 <buildStep step="GenerateNamespaceSummaries">
 Generating namespace summary information...
-    Last step completed in 00:00:00,2912
+    Last step completed in 00:00:00,2966
 </buildStep>
 <buildStep step="CopyConceptualContent">
 Copying conceptual content...
@@ -204,6 +261,7 @@ Copying standard token shared content file...
 Checking for other token files...
 Checking for code snippets files...
 Copying images and creating the media map file...
+    F:\Repo\Nijnstein\Blast\Documentation\icons\help.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\media\help.png
 Generating conceptual topic files
     Parsing topic file &#39;F:\Repo\Nijnstein\Blast\Documentation\Content\Welcome.aml&#39;
     F:\Repo\Nijnstein\Blast\Documentation\Content\Welcome.aml -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\ddueXml\b84cc328-fe66-4900-9a10-6477fab7b598.xml
@@ -211,7 +269,7 @@ Generating conceptual topic files
     F:\Repo\Nijnstein\Blast\Documentation\Content\VersionHistory\VersionHistory.aml -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\ddueXml\247455fe-83e9-48c3-9cdf-e5073aae7451.xml
     Parsing topic file &#39;F:\Repo\Nijnstein\Blast\Documentation\Content\VersionHistory\v1.0.0.0.aml&#39;
     F:\Repo\Nijnstein\Blast\Documentation\Content\VersionHistory\v1.0.0.0.aml -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\ddueXml\fc4cf5a7-53d8-471f-95dc-d2e5934d544e.xml
-    Last step completed in 00:00:00,0094
+    Last step completed in 00:00:00,0109
 </buildStep>
 <buildStep step="CreateConceptualTopicConfigs">
 Creating conceptual topic configuration files...
@@ -222,8 +280,8 @@ Creating conceptual topic configuration files...
 </buildStep>
 <buildStep step="CopyAdditionalContent">
 Copying additional content files...
-F:\Repo\Nijnstein\Blast\Documentation\icons\Help.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\Help.png
-    Last step completed in 00:00:00,0015
+No additional content to copy
+    Last step completed in 00:00:00,0005
 </buildStep>
 <buildStep step="MergeTablesOfContents">
 Merging conceptual and additional tables of contents...
@@ -232,12 +290,12 @@ Merging conceptual and additional tables of contents...
 <buildStep step="GenerateIntermediateTableOfContents">
 Generating intermediate table of contents file for API content...
 Generating conceptual content intermediate TOC file...
-    Last step completed in 00:00:00,0337
+    Last step completed in 00:00:00,0327
 </buildStep>
 <buildStep step="CreateBuildAssemblerConfigs">
 Creating Sandcastle configuration files...
     sandcastle.config
-    Last step completed in 00:00:00,1994
+    Last step completed in 00:00:00,1761
 </buildStep>
 <buildStep step="MergeCustomConfigs">
 Merging custom build component configurations
@@ -250,727 +308,91 @@ F:\Repo\Nijnstein\Blast\Documentation\Help\Working\sandcastle.config
 <buildStep step="BuildTopics">
 Building help topics...
 [C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe - BuildTopics.proj]
-Build started 28-1-2022 12:31:38.
+Build started 28-1-2022 13:42:29.
 Project &quot;F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj&quot; on node 1 (default targets).
 BuildTopics:
   Microsoft.Build (v16.5.0+d4cbfca49cea3b14c8b3cc0bbd6cb2a6d55ff3d9)
   &#184; Microsoft Corporation. All rights reserved.
   Loading configuration...
   Processing topics...
-BuildAssembler : warning : ShowMissingComponent: [N:NSS.Blast] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.Blast.Create(NSS.Blast.BlastScriptAPI,Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.Blast.Create(Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.Execute(NSS.Blast.BlastEngineDataPtr@,NSS.Blast.BlastPackageData@,System.IntPtr,System.IntPtr)] Missing &lt;param name=&quot;caller&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.Execute(NSS.Blast.BlastEngineDataPtr@,NSS.Blast.BlastPackageData@,System.IntPtr,System.IntPtr,System.Int32)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.GetHPCJob(System.Int32)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.GetHPCJob(System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.GetHPCJob(System.Int32)] Missing &lt;param name=&quot;script_id&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.GetNamedSystemConstantValue(System.String)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.GetNamedSystemConstantValue(System.String)] Missing &lt;param name=&quot;name&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.GetReadableByteCode(System.Byte*@,System.Int32@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.GetReadableByteCode(System.Byte*@,System.Int32@)] Missing &lt;param name=&quot;bytes&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.GetReadableByteCode(System.Byte*@,System.Int32@)] Missing &lt;param name=&quot;length&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Blast.HPCJobs] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.Intermediate(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.IsError(NSS.Blast.BlastError)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.IsError(NSS.Blast.BlastError)] Missing &lt;param name=&quot;res&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.IsNamedSystemConstant(System.String)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.IsNamedSystemConstant(System.String)] Missing &lt;param name=&quot;name&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.IsSuccess(NSS.Blast.BlastError)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Blast.IsSuccess(NSS.Blast.BlastError)] Missing &lt;param name=&quot;res&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Blast.BlastDelegate_f0] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Blast.BlastDelegate_f1] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Blast.BlastDelegate_f2] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Blast.BlastDelegate_f3] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Blast.BlastDelegate_f4] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Blast.BlastDelegate_f5] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Blast.BlastDelegate_f6] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Blast.BlastDelegate_f7] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Blast.BlastDelegate_f8] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastCompilerOptions.AddDefine(System.String,System.String,System.Boolean)] Missing &lt;param name=&quot;allow_overwrite_existing&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [F:NSS.Blast.BlastCompilerOptions.PackageAllocator] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.BlastCompilerOptions.SetAllocator(Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastCompilerOptions.SetStackSize(System.Int32)] Missing &lt;param name=&quot;stack_size&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [F:NSS.Blast.BlastEngineData.random] Unknown reference link target &#39;T:Unity.Mathematics.Random&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastEngineDataPtr.op_Implicit(System.IntPtr)~NSS.Blast.BlastEngineDataPtr] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastEngineDataPtr.op_Implicit(System.IntPtr)~NSS.Blast.BlastEngineDataPtr] Missing &lt;param name=&quot;p&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.Clone] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.Clone] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.Clone(Unity.Collections.Allocator)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.Clone(Unity.Collections.Allocator)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.Clone(Unity.Collections.Allocator)] Missing &lt;param name=&quot;allocator&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.BlastPackageData.Clone(Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneData(System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneData(System.Int32)] Missing &lt;param name=&quot;n&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneData(System.Int32,NSS.Blast.BlastMetaDataStack*)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneData(System.Int32,NSS.Blast.BlastMetaDataStack*)] Missing &lt;param name=&quot;n&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneData(System.Int32,NSS.Blast.BlastMetaDataStack*)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneData(System.Int32,Unity.Collections.Allocator)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneData(System.Int32,Unity.Collections.Allocator)] Missing &lt;param name=&quot;n&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneData(System.Int32,Unity.Collections.Allocator)] Missing &lt;param name=&quot;allocator&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.BlastPackageData.CloneData(System.Int32,Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32)] Missing &lt;param name=&quot;n&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32,NSS.Blast.BlastSSMDDataStack*)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32,NSS.Blast.BlastSSMDDataStack*)] Missing &lt;param name=&quot;n&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32,NSS.Blast.BlastSSMDDataStack*)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32,Unity.Collections.Allocator)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32,Unity.Collections.Allocator)] Missing &lt;param name=&quot;n&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32,Unity.Collections.Allocator)] Missing &lt;param name=&quot;allocator&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.BlastPackageData.CloneDataStack(System.Int32,Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.FreeData(NSS.Blast.BlastMetaDataStack*,Unity.Collections.Allocator)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.FreeData(NSS.Blast.BlastMetaDataStack*,Unity.Collections.Allocator)] Missing &lt;param name=&quot;allocator&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.BlastPackageData.FreeData(NSS.Blast.BlastMetaDataStack*,Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.FreeData(NSS.Blast.BlastSSMDDataStack*,Unity.Collections.Allocator)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastPackageData.FreeData(NSS.Blast.BlastSSMDDataStack*,Unity.Collections.Allocator)] Missing &lt;param name=&quot;allocator&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.BlastPackageData.FreeData(NSS.Blast.BlastSSMDDataStack*,Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScript.ToString] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptAPI.#ctor(Unity.Collections.Allocator)] Missing &lt;param name=&quot;allocator&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.BlastScriptAPI.#ctor(Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [F:NSS.Blast.BlastScriptAPI.Allocator] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptAPI.Initialize] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptFunction.Generic``1] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptFunctionInfo.ToString] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptPackage.GetCodeSegmentText(System.Int32,System.Boolean)] Missing &lt;param name=&quot;show_index&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptPackage.GetDataSegmentText] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptPackage.GetPackageCodeBytesText(System.Int32,System.Boolean)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptPackage.GetPackageCodeBytesText(System.Int32,System.Boolean)] Missing &lt;param name=&quot;column_count&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptPackage.GetPackageCodeBytesText(System.Int32,System.Boolean)] Missing &lt;param name=&quot;show_index&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptPackage.GetPackageDataBytesText(System.Int32,System.Boolean)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptPackage.GetPackageDataBytesText(System.Int32,System.Boolean)] Missing &lt;param name=&quot;column_count&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptPackage.GetPackageDataBytesText(System.Int32,System.Boolean)] Missing &lt;param name=&quot;show_index&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptPackage.GetPackageInfoText] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptPackage.ToString] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.BlastScriptToken] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptTokenDefinition.#ctor(NSS.Blast.BlastScriptToken,System.Char,System.String)] Missing &lt;param name=&quot;token&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptTokenDefinition.#ctor(NSS.Blast.BlastScriptToken,System.Char,System.String)] Missing &lt;param name=&quot;match&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastScriptTokenDefinition.#ctor(NSS.Blast.BlastScriptToken,System.Char,System.String)] Missing &lt;param name=&quot;description&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.BlastScriptTokenDefinition.Description] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.BlastScriptTokenDefinition.Match] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.BlastScriptTokenDefinition.Token] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.BlastSSMDDataStack.a] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [F:NSS.Blast.BlastSSMDDataStack.a] Unknown reference link target &#39;T:Unity.Mathematics.float4&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.BlastSSMDDataStack.b] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [F:NSS.Blast.BlastSSMDDataStack.b] Unknown reference link target &#39;T:Unity.Mathematics.float4&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.BlastSSMDDataStack.c] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [F:NSS.Blast.BlastSSMDDataStack.c] Unknown reference link target &#39;T:Unity.Mathematics.float4&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.BlastSSMDDataStack.d] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [F:NSS.Blast.BlastSSMDDataStack.d] Unknown reference link target &#39;T:Unity.Mathematics.float4&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.BlastVariable.ToString] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.CodeUtils] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.CodeUtils.AsFloat(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.CodeUtils.AsFloat(System.String)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.CodeUtils.AsFloat(System.String)] Missing &lt;param name=&quot;s&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.CodeUtils.GetBytesView(System.Byte*,System.Int32,System.Int32,System.Boolean)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.CodeUtils.GetBytesView(System.Byte*,System.Int32,System.Int32,System.Boolean)] Missing &lt;param name=&quot;code&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.CodeUtils.GetBytesView(System.Byte*,System.Int32,System.Int32,System.Boolean)] Missing &lt;param name=&quot;length&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.CodeUtils.GetBytesView(System.Byte*,System.Int32,System.Int32,System.Boolean)] Missing &lt;param name=&quot;column_count&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.CodeUtils.GetBytesView(System.Byte*,System.Int32,System.Int32,System.Boolean)] Missing &lt;param name=&quot;use_index&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.CoreAPI.#ctor(Unity.Collections.Allocator)] Missing &lt;param name=&quot;allocator&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.CoreAPI.#ctor(Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.CoreAPI.RegisterCoreAPI] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.extended_blast_operation] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.IBlastCompilerStage.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.IBlastCompilerStage.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.IBlastCompilerStage.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.IBlastCompilerStage.StageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.IBlastCompilerStage.Version] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.math_extensions] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.math_extensions.RoundUpToPowerOf2(System.Byte,System.Byte)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.math_extensions.RoundUpToPowerOf2(System.Byte,System.Byte)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.math_extensions.RoundUpToPowerOf2(System.Byte,System.Byte)] Missing &lt;param name=&quot;n&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.math_extensions.RoundUpToPowerOf2(System.Byte,System.Byte)] Missing &lt;param name=&quot;roundTo&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.math_extensions.RoundUpToPowerOf2(System.Int32,System.Int32)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.math_extensions.RoundUpToPowerOf2(System.Int32,System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.math_extensions.RoundUpToPowerOf2(System.Int32,System.Int32)] Missing &lt;param name=&quot;n&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.math_extensions.RoundUpToPowerOf2(System.Int32,System.Int32)] Missing &lt;param name=&quot;roundTo&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.NonGenericFunctionPointer] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.NonGenericFunctionPointer.#ctor(System.IntPtr,System.Int32,System.Int32)] Missing &lt;param name=&quot;ptr&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.NonGenericFunctionPointer.#ctor(System.IntPtr,System.Int32,System.Int32)] Missing &lt;param name=&quot;id&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.NonGenericFunctionPointer.#ctor(System.IntPtr,System.Int32,System.Int32)] Missing &lt;param name=&quot;parameter_count&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.NonGenericFunctionPointer.Generic``1] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.NonGenericFunctionPointer.Generic``1] Missing &lt;typeparam name=&quot;T&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.NonGenericFunctionPointer.Generic``1] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.NonGenericFunctionPointer.id] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.NonGenericFunctionPointer.parameter_count] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.UnsafeUtils] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.Free(System.Void*,Unity.Collections.Allocator)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.Free(System.Void*,Unity.Collections.Allocator)] Missing &lt;param name=&quot;memory&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.Free(System.Void*,Unity.Collections.Allocator)] Missing &lt;param name=&quot;allocator&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.UnsafeUtils.Free(System.Void*,Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.Malloc(System.Int64,System.Int32,Unity.Collections.Allocator)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.Malloc(System.Int64,System.Int32,Unity.Collections.Allocator)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.Malloc(System.Int64,System.Int32,Unity.Collections.Allocator)] Missing &lt;param name=&quot;size&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.Malloc(System.Int64,System.Int32,Unity.Collections.Allocator)] Missing &lt;param name=&quot;alignment&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.Malloc(System.Int64,System.Int32,Unity.Collections.Allocator)] Missing &lt;param name=&quot;allocator&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.UnsafeUtils.Malloc(System.Int64,System.Int32,Unity.Collections.Allocator)] Unknown reference link target &#39;T:Unity.Collections.Allocator&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemClear(System.Void*,System.Int64)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemClear(System.Void*,System.Int64)] Missing &lt;param name=&quot;destination&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemClear(System.Void*,System.Int64)] Missing &lt;param name=&quot;size&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemCpy(System.Void*,System.Void*,System.Int64)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemCpy(System.Void*,System.Void*,System.Int64)] Missing &lt;param name=&quot;destination&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemCpy(System.Void*,System.Void*,System.Int64)] Missing &lt;param name=&quot;source&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemCpy(System.Void*,System.Void*,System.Int64)] Missing &lt;param name=&quot;size&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemCpyReplicate(System.Void*,System.Void*,System.Int32,System.Int32)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemCpyReplicate(System.Void*,System.Void*,System.Int32,System.Int32)] Missing &lt;param name=&quot;destination&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemCpyReplicate(System.Void*,System.Void*,System.Int32,System.Int32)] Missing &lt;param name=&quot;source&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemCpyReplicate(System.Void*,System.Void*,System.Int32,System.Int32)] Missing &lt;param name=&quot;size&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemCpyReplicate(System.Void*,System.Void*,System.Int32,System.Int32)] Missing &lt;param name=&quot;count&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemSet(System.Void*,System.Byte,System.Int64)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemSet(System.Void*,System.Byte,System.Int64)] Missing &lt;param name=&quot;destination&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemSet(System.Void*,System.Byte,System.Int64)] Missing &lt;param name=&quot;value&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.MemSet(System.Void*,System.Byte,System.Int64)] Missing &lt;param name=&quot;size&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.SizeOf(System.Type)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.SizeOf(System.Type)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.UnsafeUtils.SizeOf(System.Type)] Missing &lt;param name=&quot;type&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:NSS.Blast.Cache] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Cache.blast] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Cache.BSExecuteDelegate] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Cache.IBlastHPCScriptJob] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Cache.IBlastHPCScriptJob.GetBSD] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Cache.IBlastHPCScriptJob.GetBSD] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Cache.IBlastHPCScriptJob.ScriptId] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:NSS.Blast.Compiler] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileCS(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileCS(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileCS(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;script&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileCS(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;options&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileDataPackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileDataPackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileDataPackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;script&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileDataPackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;options&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileHPC(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileHPC(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileHPC(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileHPC(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;script&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompileHPC(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;options&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompilePackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompilePackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompilePackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;script&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.CompilePackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;options&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.EstimateStackSize(NSS.Blast.Compiler.CompilationData)] Missing &lt;param name=&quot;result&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.Package(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;compilerdata&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastCompiler.Package(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastCompilerOptions)] Missing &lt;param name=&quot;options&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.BlastIntermediate.code_capacity] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.BlastIntermediate.data_capacity] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.BlastIntermediate.data_element_bytesize] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.BlastIntermediate.DataByteSize] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastIntermediate.Execute(System.IntPtr@,System.Boolean)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastIntermediate.Execute(System.IntPtr@,System.Boolean)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastIntermediate.Execute(System.IntPtr@,System.Boolean)] Missing &lt;param name=&quot;validation_run&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.BlastIntermediate.metadata] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastIntermediate.Validate(System.IntPtr@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.BlastIntermediate.Validate(System.IntPtr@)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.CompilationData.CanValidate] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.ExistsVariable(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.ExistsVariable(System.String)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.ExistsVariable(System.String)] Missing &lt;param name=&quot;name&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.GetHumanReadableBytes(System.Int32,System.Boolean)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.GetHumanReadableCode(System.Int32,System.Boolean)] Missing &lt;param name=&quot;columns&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.GetHumanReadableCode(System.Int32,System.Boolean)] Missing &lt;param name=&quot;index&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.GetVariable(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.GetVariable(System.String)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.GetVariable(System.String)] Missing &lt;param name=&quot;name&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.GetVariableFromOffset(System.Byte)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.GetVariableFromOffset(System.Byte)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.GetVariableFromOffset(System.Byte)] Missing &lt;param name=&quot;offset&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.CompilationData.HasDefines] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.HasInput(System.Int32)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.HasInput(System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.HasInput(System.Int32)] Missing &lt;param name=&quot;id&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.HasInput(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.HasInput(System.String)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.HasInput(System.String)] Missing &lt;param name=&quot;name&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.CompilationData.HasOffsets] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.CompilationData.HasVariables] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.LogMessage(System.String,System.Int32,System.String)] Missing &lt;param name=&quot;msg&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.LogMessage(System.String,System.Int32,System.String)] Missing &lt;param name=&quot;linenr&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.LogMessage(System.String,System.Int32,System.String)] Missing &lt;param name=&quot;member&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.CompilationData.OffsetCount] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.TryGetDefine(System.String,System.String@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.TryGetDefine(System.String,System.String@)] Missing &lt;param name=&quot;identifier&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.TryGetDefine(System.String,System.String@)] Missing &lt;param name=&quot;defined_value&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.CompilationData.VariableCount] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.CompilationData.Message.CallerMember] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.CompilationData.Message.Code] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.CompilationData.Message.Content] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.CompilationData.Message.IsError] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.CompilationData.Message.IsNormal] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.CompilationData.Message.IsTrace] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.CompilationData.Message.IsWarning] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.CompilationData.Message.LineNumber] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.CompilationData.Message.Timestamp] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.Message.ToString] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CompilationData.Message.ToString] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.CompilationData.Message.Type] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Compiler.CompilationData.Message.MessageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Compiler.CSNamespace] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CSNamespace.CombineScriptsIntoNamespace(System.Collections.Generic.IEnumerable{System.String})] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CSNamespace.CombineScriptsIntoNamespace(System.Collections.Generic.IEnumerable{System.String})] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CSNamespace.CombineScriptsIntoNamespace(System.Collections.Generic.IEnumerable{System.String})] Missing &lt;param name=&quot;scripts&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CSNamespace.MergeScriptIntoNamespace(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CSNamespace.MergeScriptIntoNamespace(System.String)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.CSNamespace.MergeScriptIntoNamespace(System.String)] Missing &lt;param name=&quot;script&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Compiler.HPCNamespace] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.HPCNamespace.CombineScriptsIntoNamespace(System.Collections.Generic.IEnumerable{System.String})] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.HPCNamespace.CombineScriptsIntoNamespace(System.Collections.Generic.IEnumerable{System.String})] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.HPCNamespace.CombineScriptsIntoNamespace(System.Collections.Generic.IEnumerable{System.String})] Missing &lt;param name=&quot;scripts&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.CountChildNodes(NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.CountChildren(NSS.Blast.Compiler.nodetype)] Missing &lt;param name=&quot;t&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.CountChildType(NSS.Blast.Compiler.nodetype)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.CountChildType(NSS.Blast.Compiler.nodetype,NSS.Blast.Compiler.nodetype)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.CountChildType(NSS.Blast.Compiler.nodetype,NSS.Blast.Compiler.nodetype)] Missing &lt;param name=&quot;type_a&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.CountChildType(NSS.Blast.Compiler.nodetype,NSS.Blast.Compiler.nodetype)] Missing &lt;param name=&quot;type_b&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.CountNodes] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.CountOtherChildren(NSS.Blast.Compiler.nodetype)] Missing &lt;param name=&quot;t&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.CreatePopNode(NSS.Blast.BlastEngineDataPtr,NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.DeepClone] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.encode44(NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.encode44(NSS.Blast.Compiler.node)] Missing &lt;param name=&quot;node&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.encode44(NSS.Blast.Compiler.node,System.Byte)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.encode44(NSS.Blast.Compiler.node,System.Byte)] Missing &lt;param name=&quot;node&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.encode44(NSS.Blast.Compiler.node,System.Byte)] Missing &lt;param name=&quot;parameter_count&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.FirstConsecutiveOperationSequence(NSS.Blast.Compiler.node,System.Int32,System.Int32,NSS.Blast.blast_operation@,System.Int32@,NSS.Blast.Compiler.node@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.FirstConsecutiveOperationSequence(NSS.Blast.Compiler.node,System.Int32,System.Int32,NSS.Blast.blast_operation@,System.Int32@,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;first_op_in_sequence&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.FirstConsecutiveOperationSequence(System.Int32,System.Int32,NSS.Blast.blast_operation@,System.Int32@,NSS.Blast.Compiler.node@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.GetChild(NSS.Blast.Compiler.nodetype)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.GetChild(NSS.Blast.Compiler.nodetype)] Missing &lt;param name=&quot;t&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.GetChildren(NSS.Blast.Compiler.nodetype)] Missing &lt;param name=&quot;t&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.GetConstantFloat4Value(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.GetConstantFloat4Value(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.Compiler.node.GetConstantFloat4Value(NSS.Blast.Compiler.IBlastCompilationData)] Unknown reference link target &#39;T:Unity.Mathematics.float4&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.GetLeafNodes] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.HasSingleCompoundAsChild] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.InsertBeforeThisNodeInParent(NSS.Blast.Compiler.nodetype,NSS.Blast.BlastScriptToken)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.InsertChild(System.Int32,NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.InsertChild(System.Int32,NSS.Blast.Compiler.node)] Missing &lt;param name=&quot;index&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.InsertChild(System.Int32,NSS.Blast.Compiler.node)] Missing &lt;param name=&quot;node&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.InsertParent(NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsCompoundWithSingleNegationOfValue] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsCompoundWithSingleNegationOfValue(NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsFlat(System.Boolean)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsFlat(System.Boolean)] Missing &lt;param name=&quot;allow_vector_root_compound&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsFlatParameterList(System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.node})] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsNonNestedVectorDefinition] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsOperationList] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsOperationList(NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsSingleOperationList(NSS.Blast.blast_operation@)] Missing &lt;param name=&quot;op&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsSingleValueOrPop] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsSingleValueOrPop(NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsSingleValueOrPop(NSS.Blast.Compiler.node)] Missing &lt;param name=&quot;node&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsVectorDefinition(NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.IsVectorDefinition(NSS.Blast.Compiler.node)] Missing &lt;param name=&quot;n&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.ReduceSingularCompounds(NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.node.ToNodeTreeString(System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:NSS.Blast.Compiler.Stage] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastAnalysis.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastAnalysis.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastAnalysis.StageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastAnalysis.Version] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.CompileFunction(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,NSS.Blast.Compiler.Stage.IMByteCodeList)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.CompileFunction(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,NSS.Blast.Compiler.Stage.IMByteCodeList)] Missing &lt;param name=&quot;code&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.CompileParameter(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Boolean)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.CompileParameter(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Boolean)] Missing &lt;param name=&quot;allow_pop&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.CompileParameters(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.node},System.Int32,System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.CompileParameters(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.node},System.Int32,System.Int32)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.GetOperationOpCode(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastScriptToken)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.StageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.Version] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.has_repeat_in_pattern] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.has_repeat_in_pattern] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.has_repeat_in_replace] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.has_repeat_in_replace] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.match(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Int32,NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern@)] Missing &lt;param name=&quot;result&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.match(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Int32,NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern@)] Missing &lt;param name=&quot;ops&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.match(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Int32,NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern@)] Missing &lt;param name=&quot;i&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.match(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Int32,NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern@)] Missing &lt;param name=&quot;matched_pattern&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.min_match_for_next] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.name] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.next] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.pattern] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.repeat_in_pattern_length] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.repeat_in_pattern_length] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.replace] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.replace_match(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Int32@)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.replace_match(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Int32@)] Missing &lt;param name=&quot;cdata&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.replace_match(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Int32@)] Missing &lt;param name=&quot;code&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.replace_match(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.Stage.IMByteCodeList,System.Int32@)] Missing &lt;param name=&quot;i&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.ToString] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.ToString] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.validate] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastBytecodeOptimizer.optimizer_pattern.validate] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Compiler.Stage.BlastCSCompiler] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastCSCompiler.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastCSCompiler.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastCSCompiler.StageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastCSCompiler.Version] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.Flatten(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.Flatten(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.Flatten(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.Flatten(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)] Missing &lt;param name=&quot;root&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenAssignment(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenAssignment(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenAssignment(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;assignment&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenAssignment(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;flattened_output&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenAssignment(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;push_function&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenAssignment(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;pusher&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenCompound(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenCompound(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenCompound(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@)] Missing &lt;param name=&quot;compound&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenCompound(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@)] Missing &lt;param name=&quot;flattened_output&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenFunction(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenFunction(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenFunction(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;function&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenFunction(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;flattened_output&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenFunction(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;push_function&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenFunction(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@,System.Boolean,NSS.Blast.Compiler.node@)] Missing &lt;param name=&quot;pusher&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenFunctionParameters(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenFunctionParameters(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenFunctionParameters(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@)] Missing &lt;param name=&quot;function&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenFunctionParameters(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@)] Missing &lt;param name=&quot;flattened_output&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenWhileLoop(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenWhileLoop(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenWhileLoop(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)] Missing &lt;param name=&quot;while_root&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastFlatten.StageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastFlatten.Version] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastHPCCompiler.CompileParameter(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,System.Text.StringBuilder)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastHPCCompiler.CompileParameters(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,System.Text.StringBuilder,System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.node},System.Int32,System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastHPCCompiler.CompileParameters(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,System.Text.StringBuilder,System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.node},System.Int32,System.Int32)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastHPCStackResolver.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastHPCStackResolver.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastHPCStackResolver.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastHPCStackResolver.StageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastHPCStackResolver.Version] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastJumpResolver.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastJumpResolver.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastJumpResolver.StageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastJumpResolver.Version] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastOptimizer.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastOptimizer.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastPackaging.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastPackaging.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastParser.StageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastParser.Version] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastPreCompileCleanup.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastPreCompileCleanup.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastPreCompileCleanup.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastPreCompileCleanup.StageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastPreCompileCleanup.Version] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastTransform.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastTransform.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.BlastTransform.Execute(NSS.Blast.Compiler.IBlastCompilationData)] Missing &lt;param name=&quot;data&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastTransform.StageType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.BlastTransform.Version] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCode.#ctor(System.Byte,NSS.Blast.Compiler.Stage.IMJumpLabel)] Missing &lt;param name=&quot;_code&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCode.#ctor(System.Byte,NSS.Blast.Compiler.Stage.IMJumpLabel)] Missing &lt;param name=&quot;label&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCode.AddLabel(NSS.Blast.Compiler.Stage.IMJumpLabel)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCode.AddLabel(NSS.Blast.Compiler.Stage.IMJumpLabel)] Missing &lt;param name=&quot;label&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCode.AddLabel(System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.Stage.IMJumpLabel})] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCode.AddLabel(System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.Stage.IMJumpLabel})] Missing &lt;param name=&quot;labels_to_add&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMByteCode.code] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMByteCode.labels] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMByteCode.op] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCode.ToString] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCode.ToString] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCode.UpdateOpCode(System.Byte)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCode.UpdateOpCode(System.Byte)] Missing &lt;param name=&quot;new_code&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.Add(NSS.Blast.blast_operation,NSS.Blast.Compiler.Stage.IMJumpLabel)] Missing &lt;param name=&quot;op&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.AddRange(NSS.Blast.Compiler.Stage.IMByteCodeList)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.AddRange(NSS.Blast.Compiler.Stage.IMByteCodeList)] Missing &lt;param name=&quot;bcl&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.AddRange(System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.Stage.IMByteCode})] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.AddRange(System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.Stage.IMByteCode})] Missing &lt;param name=&quot;code&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.AddRange(System.Collections.Generic.IEnumerable{System.Byte})] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.AddRange(System.Collections.Generic.IEnumerable{System.Byte})] Missing &lt;param name=&quot;code&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.AddSegment(NSS.Blast.Compiler.Stage.IMByteCodeList)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.AddSegment(NSS.Blast.Compiler.Stage.IMByteCodeList)] Missing &lt;param name=&quot;segment&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMByteCodeList.Count] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.Insert(System.Int32,System.Byte)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.Insert(System.Int32,System.Byte)] Missing &lt;param name=&quot;index&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.Insert(System.Int32,System.Byte)] Missing &lt;param name=&quot;code&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMByteCodeList.IsSegmented] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMByteCodeList.IsZeroTerminated] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMByteCodeList.Item(System.Int32)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMByteCodeList.list] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMByteCodeList.SegmentCount] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.ToBytes] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMByteCodeList.ToBytes] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.#ctor(System.String,NSS.Blast.Compiler.Stage.JumpLabelType)] Missing &lt;param name=&quot;_id&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.#ctor(System.String,NSS.Blast.Compiler.Stage.JumpLabelType)] Missing &lt;param name=&quot;_type&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMJumpLabel.id] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMJumpLabel.is_jump] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMJumpLabel.is_label] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMJumpLabel.is_offset] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.Jump(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.Jump(System.String)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.Jump(System.String)] Missing &lt;param name=&quot;_id&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.Label(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.Label(System.String)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.Label(System.String)] Missing &lt;param name=&quot;_id&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.Offset(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.Offset(System.String)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.Offset(System.String)] Missing &lt;param name=&quot;_id&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.ToString] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Compiler.Stage.IMJumpLabel.ToString] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:NSS.Blast.Compiler.Stage.IMJumpLabel.type] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Compiler.Stage.JumpLabelType] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:NSS.Blast.Interpretor] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.decode62(System.Byte@,System.Byte@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.decode62(System.Byte@,System.Byte@)] Missing &lt;param name=&quot;c&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.decode62(System.Byte@,System.Byte@)] Missing &lt;param name=&quot;vector_size&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.Execute(NSS.Blast.BlastEngineDataPtr)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.Execute(NSS.Blast.BlastEngineDataPtr)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaData(System.Byte*@,System.Byte@,System.Byte@,NSS.Blast.BlastVariableDataType@)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaData(System.Byte*@,System.Byte@,System.Byte@,NSS.Blast.BlastVariableDataType@)] Missing &lt;param name=&quot;metadata&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaData(System.Byte*@,System.Byte@,System.Byte@,NSS.Blast.BlastVariableDataType@)] Missing &lt;param name=&quot;offset&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaData(System.Byte*@,System.Byte@,System.Byte@,NSS.Blast.BlastVariableDataType@)] Missing &lt;param name=&quot;size&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaData(System.Byte*@,System.Byte@,System.Byte@,NSS.Blast.BlastVariableDataType@)] Missing &lt;param name=&quot;type&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaDataSize(System.Byte*@,System.Byte@)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaDataSize(System.Byte*@,System.Byte@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaDataSize(System.Byte*@,System.Byte@)] Missing &lt;param name=&quot;metadata&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaDataSize(System.Byte*@,System.Byte@)] Missing &lt;param name=&quot;offset&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaDataType(System.Byte*@,System.Byte@)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaDataType(System.Byte*@,System.Byte@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaDataType(System.Byte*@,System.Byte@)] Missing &lt;param name=&quot;metadata&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaDataType(System.Byte*@,System.Byte@)] Missing &lt;param name=&quot;offset&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.IsBooleanOperation(NSS.Blast.blast_operation)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.IsBooleanOperation(NSS.Blast.blast_operation)] Missing &lt;param name=&quot;op&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.IsMathematicalOperation(NSS.Blast.blast_operation)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.IsMathematicalOperation(NSS.Blast.blast_operation)] Missing &lt;param name=&quot;op&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.IsMathematicalOrBooleanOperation(NSS.Blast.blast_operation)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.IsMathematicalOrBooleanOperation(NSS.Blast.blast_operation)] Missing &lt;param name=&quot;op&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.peek(System.Int32)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.peek(System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.peek(System.Int32)] Missing &lt;param name=&quot;n&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.pop(System.Int32@)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.pop(System.Int32@)] Missing &lt;param name=&quot;i&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.pop(System.Single@)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.pop(System.Single@)] Missing &lt;param name=&quot;f&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.pop(Unity.Mathematics.float4@)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.pop(Unity.Mathematics.float4@)] Missing &lt;param name=&quot;f&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.pop(Unity.Mathematics.float4@)] Unknown reference link target &#39;T:Unity.Mathematics.float4&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.pop(Unity.Mathematics.int4@)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.pop(Unity.Mathematics.int4@)] Missing &lt;param name=&quot;i&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.pop(Unity.Mathematics.int4@)] Unknown reference link target &#39;T:Unity.Mathematics.int4&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(System.Int32)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(System.Int32)] Missing &lt;param name=&quot;i&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(System.Single)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(System.Single)] Missing &lt;param name=&quot;f&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float2)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float2)] Missing &lt;param name=&quot;f2&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float2)] Unknown reference link target &#39;T:Unity.Mathematics.float2&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float3)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float3)] Missing &lt;param name=&quot;f3&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float3)] Unknown reference link target &#39;T:Unity.Mathematics.float3&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float4)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float4)] Missing &lt;param name=&quot;f4&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.push(Unity.Mathematics.float4)] Unknown reference link target &#39;T:Unity.Mathematics.float4&#39;. [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.Reset(NSS.Blast.BlastEngineData*,NSS.Blast.BlastPackageData)] Missing &lt;param name=&quot;pkg&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.ResumeYield(NSS.Blast.BlastEngineDataPtr)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.ResumeYield(NSS.Blast.BlastEngineDataPtr)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.SetPackage(NSS.Blast.BlastPackageData)] Missing &lt;param name=&quot;pkg&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Interpretor.BlastInterpretor.SetPackage(NSS.Blast.BlastPackageData,System.Byte*,System.Single*,System.Byte*,System.Int32)] Missing &lt;param name=&quot;initial_stack_offset&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:NSS.Blast.Register] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Register.BlastReflect.FindCompileTimeBlastScripts] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Register.BlastReflect.FindHPCJobs] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Register.BlastScriptRegistry.Register(NSS.Blast.BlastScript)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Register.BlastScriptRegistry.Register(NSS.Blast.BlastScript)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Register.BlastScriptRegistry.Register(NSS.Blast.BlastScript)] Missing &lt;param name=&quot;script&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:NSS.Blast.SSMD] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;param name=&quot;environment&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;param name=&quot;ssmddata&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;param name=&quot;ssmd_data_count&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastPackageData@,NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastPackageData@,NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastPackageData@,NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;param name=&quot;packagedata&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastPackageData@,NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;param name=&quot;blast&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastPackageData@,NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;param name=&quot;environment&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastPackageData@,NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;param name=&quot;ssmddata&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(NSS.Blast.BlastPackageData@,NSS.Blast.BlastEngineDataPtr,System.IntPtr,NSS.Blast.BlastSSMDDataStack*,System.Int32)] Missing &lt;param name=&quot;ssmd_data_count&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.SetPackage(NSS.Blast.BlastPackageData@)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.SSMD.BlastSSMDInterpretor.SetPackage(NSS.Blast.BlastPackageData@)] Missing &lt;param name=&quot;pkg&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:NSS.Blast.Standalone] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:NSS.Blast.Standalone.Debug] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Standalone.Debug.Log(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Standalone.Debug.Log(System.String)] Missing &lt;param name=&quot;message&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Standalone.Debug.LogError(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Standalone.Debug.LogError(System.String)] Missing &lt;param name=&quot;error&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Standalone.Debug.LogWarning(System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:NSS.Blast.Standalone.Debug.LogWarning(System.String)] Missing &lt;param name=&quot;warning&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:Unity.Assertions] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Unity.Assertions.Assert] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsFalse(System.Boolean,System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsFalse(System.Boolean,System.String)] Missing &lt;param name=&quot;condition&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsFalse(System.Boolean,System.String)] Missing &lt;param name=&quot;msg&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsNotNull(System.Object,System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsNotNull(System.Object,System.String)] Missing &lt;param name=&quot;condition&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsNotNull(System.Object,System.String)] Missing &lt;param name=&quot;msg&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsNull(System.Object,System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsNull(System.Object,System.String)] Missing &lt;param name=&quot;condition&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsNull(System.Object,System.String)] Missing &lt;param name=&quot;msg&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsTrue(System.Boolean,System.String)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsTrue(System.Boolean,System.String)] Missing &lt;param name=&quot;condition&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Assertions.Assert.IsTrue(System.Boolean,System.String)] Missing &lt;param name=&quot;msg&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:Unity.Burst] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Unity.Burst.FunctionPointer`1] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Unity.Burst.FunctionPointer`1] Missing &lt;typeparam name=&quot;T&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Burst.FunctionPointer`1.#ctor(System.IntPtr)] Missing &lt;param name=&quot;ptr&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:Unity.Burst.FunctionPointer`1.Invoke] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:Unity.Burst.FunctionPointer`1.IsCreated] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:Unity.Burst.FunctionPointer`1.Value] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Unity.Burst.NoAliasAttribute] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:Unity.Burst.Intrinsics] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Unity.Burst.Intrinsics.v128] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:Unity.Burst.Intrinsics.v128.Float0] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:Unity.Burst.Intrinsics.v128.Float1] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:Unity.Burst.Intrinsics.v128.Float2] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [F:Unity.Burst.Intrinsics.v128.Float3] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:Unity.Burst.Intrinsics.X86] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Unity.Burst.Intrinsics.X86.Sse] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Burst.Intrinsics.X86.Sse.mul_ps(Unity.Burst.Intrinsics.v128,Unity.Burst.Intrinsics.v128)] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Burst.Intrinsics.X86.Sse.mul_ps(Unity.Burst.Intrinsics.v128,Unity.Burst.Intrinsics.v128)] Missing &lt;returns&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Burst.Intrinsics.X86.Sse.mul_ps(Unity.Burst.Intrinsics.v128,Unity.Burst.Intrinsics.v128)] Missing &lt;param name=&quot;a&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Burst.Intrinsics.X86.Sse.mul_ps(Unity.Burst.Intrinsics.v128,Unity.Burst.Intrinsics.v128)] Missing &lt;param name=&quot;b&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:Unity.Collections] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Unity.Collections.BurstCompatible] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Unity.Collections.BurstCompileAttribute] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Collections.BurstCompileAttribute.#ctor(Unity.Collections.FloatPrecision,Unity.Collections.FloatMode)] Missing &lt;param name=&quot;floatPrecision&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Unity.Collections.BurstCompileAttribute.#ctor(Unity.Collections.FloatPrecision,Unity.Collections.FloatMode)] Missing &lt;param name=&quot;floatMode&quot;/&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:Unity.Collections.BurstCompileAttribute.CompileSynchronously] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:Unity.Collections.BurstCompileAttribute.Debug] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:Unity.Collections.BurstCompileAttribute.DisableSafetyChecks] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:Unity.Collections.BurstCompileAttribute.FloatMode] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [P:Unity.Collections.BurstCompileAttribute.FloatPrecision] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Unity.Collections.FloatMode] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Unity.Collections.FloatPrecision] Missing &lt;summary&gt; documentation [F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj]
   Processed 953 topic(s)
-  592 warning(s)
   CopyFromIndexComponent: &quot;metadata&quot; in-memory cache entries used: 1 of 15.
   ResolveArtLinksComponent: Copying media files...
   CopyFromIndexComponent: &quot;reflection&quot; in-memory cache entries used: 5 of 15.
   CopyFromIndexComponent: &quot;comments&quot; in-memory cache entries used: 2 of 30.
 Done Building Project &quot;F:\Repo\Nijnstein\Blast\Documentation\Help\Working\BuildTopics.proj&quot; (default targets).
-    Last step completed in 00:00:05,9039
+    Last step completed in 00:00:04,7497
 </buildStep>
 <buildStep step="CombiningIntermediateTocFiles">
 Combining conceptual and API intermediate TOC files...
-    Last step completed in 00:00:00,0025
-</buildStep>
-<buildStep step="ExtractingHtmlInfo">
-Extracting HTML info for HTML Help 1 and/or website...
-[C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe - ExtractHtmlInfo.proj]
-    Last step completed in 00:00:00,2629
+    Last step completed in 00:00:00,0030
 </buildStep>
 <buildStep step="CopyStandardHelpContent">
 Copying standard help content...
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\AlertCaution.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\AlertCaution.png
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\AlertNote.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\AlertNote.png
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\AlertSecurity.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\AlertSecurity.png
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\CFW.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\CFW.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\CodeExample.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\CodeExample.png
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\favicon.ico -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\favicon.ico
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\privclass.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\privclass.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\privdelegate.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\privdelegate.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\privenumeration.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\privenumeration.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\privevent.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\privevent.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\privextension.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\privextension.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\privfield.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\privfield.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\privinterface.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\privinterface.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\privmethod.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\privmethod.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\privproperty.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\privproperty.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\privstructure.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\privstructure.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protclass.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protclass.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protdelegate.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protdelegate.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protenumeration.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protenumeration.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protevent.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protevent.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protextension.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protextension.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protfield.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protfield.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protinterface.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protinterface.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protmethod.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protmethod.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protoperator.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protoperator.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protproperty.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protproperty.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\protstructure.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\protstructure.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\pubclass.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\pubclass.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\pubdelegate.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\pubdelegate.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\pubenumeration.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\pubenumeration.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\pubevent.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\pubevent.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\pubextension.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\pubextension.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\pubfield.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\pubfield.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\pubinterface.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\pubinterface.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\pubmethod.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\pubmethod.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\puboperator.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\puboperator.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\pubproperty.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\pubproperty.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\pubstructure.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\pubstructure.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\SectionCollapsed.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\SectionCollapsed.png
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\SectionExpanded.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\SectionExpanded.png
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\slMobile.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\slMobile.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\static.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\static.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\icons\xna.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\xna.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\scripts\branding.js -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\scripts\branding.js
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-cs-CZ.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-cs-CZ.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-de-DE.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-de-DE.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-en-US.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-en-US.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-es-ES.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-es-ES.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-fr-FR.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-fr-FR.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-Help1.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-Help1.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-HelpViewer.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-HelpViewer.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-it-IT.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-it-IT.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-ja-JP.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-ja-JP.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-ko-KR.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-ko-KR.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-pl-PL.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-pl-PL.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-pt-BR.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-pt-BR.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-ru-RU.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-ru-RU.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-tr-TR.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-tr-TR.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-Website.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-Website.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-zh-CN.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-zh-CN.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding-zh-TW.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding-zh-TW.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\styles\branding.css -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\styles\branding.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\index.html -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\index.html
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\search.html -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\search.html
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\SearchHelp.aspx -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\SearchHelp.aspx
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\SearchHelp.inc.php -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\SearchHelp.inc.php
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\SearchHelp.php -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\SearchHelp.php
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\Web.Config -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\Web.Config
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\html\GeneralError.htm -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\html\GeneralError.htm
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\html\PageNotFound.htm -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\html\PageNotFound.htm
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\icons\Search.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\Search.png
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\icons\TocClose.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\TocClose.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\icons\TocCollapsed.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\TocCollapsed.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\icons\TocExpanded.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\TocExpanded.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\icons\TocOpen.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\icons\TocOpen.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\scripts\branding-Website.js -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\scripts\branding-Website.js
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\scripts\clipboard.min.js -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\scripts\clipboard.min.js
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\VS2013\Web\scripts\jquery-3.5.1.min.js -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Website\scripts\jquery-3.5.1.min.js
-    Last step completed in 00:00:00,1637
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\AlertCaution.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\AlertCaution.png
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\AlertNote.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\AlertNote.png
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\AlertSecurity.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\AlertSecurity.png
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\CFW.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\CFW.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\CodeExample.png -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\CodeExample.png
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\privclass.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\privclass.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\privdelegate.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\privdelegate.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\privenumeration.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\privenumeration.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\privevent.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\privevent.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\privextension.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\privextension.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\privfield.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\privfield.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\privinterface.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\privinterface.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\privmethod.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\privmethod.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\privproperty.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\privproperty.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\privstructure.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\privstructure.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protclass.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protclass.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protdelegate.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protdelegate.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protenumeration.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protenumeration.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protevent.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protevent.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protextension.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protextension.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protfield.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protfield.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protinterface.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protinterface.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protmethod.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protmethod.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protoperator.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protoperator.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protproperty.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protproperty.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\protstructure.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\protstructure.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\pubclass.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\pubclass.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\pubdelegate.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\pubdelegate.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\pubenumeration.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\pubenumeration.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\pubevent.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\pubevent.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\pubextension.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\pubextension.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\pubfield.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\pubfield.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\pubinterface.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\pubinterface.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\pubmethod.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\pubmethod.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\puboperator.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\puboperator.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\pubproperty.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\pubproperty.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\pubstructure.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\pubstructure.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\slMobile.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\slMobile.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\static.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\static.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\media\xna.gif -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\media\xna.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\Components\Markdown\MarkdownContent\_Footer.md -&gt; F:\Repo\Nijnstein\Blast\Documentation\Help\Working\Output\Markdown\_Footer.md
+    Last step completed in 00:00:00,0754
 </buildStep>
-<buildStep step="GenerateFullTextIndex">
-Generating full-text index for the website...
-
-<plugIn name="Lightweight Website Style" behavior="After" priority="1000">
-Adding lightweight search and TOC elements to each topic...
-</plugIn>    Last step completed in 00:00:00,5773
+<buildStep step="GenerateHelpProject">
+Executing informational Generate Help Project build step for plug-ins (not used for Markdown)
+    Last step completed in 00:00:00,0005
 </buildStep>
-<buildStep step="CopyingWebsiteFiles">
-Copying website files to output folder...
-
-Copied 500 files
-Copied 1000 files
-Copied 1291 files for the website content
-    Last step completed in 00:00:00,7202
+<buildStep step="CompilingHelpFile">
+Generating markdown content...
+[C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe - GenerateMarkdownContent.proj]
+  500 topics generated
+  Finished generating 953 topics
+  Copying content to output folder...
+  Copied 500 files
+  Finished copying 996 files
+    Last step completed in 00:00:01,2752
 </buildStep>
 <buildStep step="CleanIntermediates">
 Removing intermediate files...
-    Last step completed in 00:00:00,2341
+    Last step completed in 00:00:00,1865
 </buildStep>
 <buildStep step="Completed">
 
-Build completed successfully at 28-1-2022 12:31:45.  Total time: 00:00:09,6804
+Build completed successfully at 28-1-2022 13:42:35.  Total time: 00:00:08,2128
 
 </buildStep>
 </shfbBuild>

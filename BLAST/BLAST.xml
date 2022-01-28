@@ -4807,6 +4807,12 @@
             - n elements 
             </summary>
         </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_adda_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
+            <summary>
+            add all inputs together 
+            - n elements of equal vector size 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_any_result(System.Int32@,System.Boolean@,System.Boolean@,System.Byte@)">
             <summary>
             a = any(a b c d)
