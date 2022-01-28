@@ -1,8 +1,8 @@
 ﻿#if STANDALONE_VSBUILD
-    #if DEVELOPMENT_BUILD
-        #define HANDLE_DEBUG_OP  
-    #endif
-    using NSS.Blast.Standalone;
+#if DEVELOPMENT_BUILD
+#define HANDLE_DEBUG_OP
+#endif
+using NSS.Blast.Standalone;
 #else 
     using UnityEngine;
 #endif 
@@ -16,7 +16,7 @@ using Unity.Mathematics;
 
 namespace NSS.Blast.Interpretor
 {
-    
+
     /// <summary>
     /// 
     ///   V2 - use state machine instead of get_compound_result and internal grow-vector / operation sequence loop, should reduce load a lot on handling vectors 
@@ -71,10 +71,10 @@ namespace NSS.Blast.Interpretor
         internal unsafe IntPtr caller_ptr;
 
 
-        internal BlastPackageData package; 
+        internal BlastPackageData package;
 
         internal int code_pointer;
-        internal int stack_offset;  
+        internal int stack_offset;
 
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace NSS.Blast.Interpretor
 #pragma warning restore CS1573 // Parameter 'pkg' has no matching param tag in the XML comment for 'BlastInterpretor.Reset(BlastEngineData*, BlastPackageData)' (but other parameters do)
         {
             engine_ptr = blast;
-            SetPackage(pkg); 
+            SetPackage(pkg);
         }
 
         /// <summary>
@@ -131,7 +131,7 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         public void SetPackage(BlastPackageData pkg)
         {
-            package  = pkg;
+            package = pkg;
 
             // the compiler supllies its own pointers to various segments 
             if (pkg.PackageMode != BlastPackageMode.Compiler)
@@ -163,7 +163,7 @@ namespace NSS.Blast.Interpretor
             metadata = _metadata;
 
             code_pointer = 0;
-            stack_offset = initial_stack_offset; 
+            stack_offset = initial_stack_offset;
         }
 
         #endregion
@@ -206,7 +206,8 @@ namespace NSS.Blast.Interpretor
             }
 
             // killing yield.. 
-            /*int */ code_pointer = 0;
+            /*int */
+            code_pointer = 0;
             return execute(blast, environment, caller); // ref package->code_pointer);
         }
 
@@ -278,7 +279,7 @@ namespace NSS.Blast.Interpretor
 
             SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)stack_offset);
 
-            stack_offset += 2; 
+            stack_offset += 2;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -329,13 +330,13 @@ namespace NSS.Blast.Interpretor
         public void pop(out float f)
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastInterpretor.pop(out float)'
         {
-           stack_offset = stack_offset - 1;
+            stack_offset = stack_offset - 1;
 
 #if DEVELOPMENT_BUILD || CHECK_STACK
             if (stack_offset < 0)
             {
                 Debug.LogError($"blast.stack: attempting to pop too much data (1 float) from the stack, offset = {stack_offset}");
-                f = float.NaN; 
+                f = float.NaN;
                 return;
             }
             if (GetMetaDataType(metadata, (byte)stack_offset) != BlastVariableDataType.Numeric)
@@ -344,7 +345,7 @@ namespace NSS.Blast.Interpretor
                 f = float.NaN;
                 return;
             }
-            byte size = GetMetaDataSize(metadata, (byte)stack_offset); 
+            byte size = GetMetaDataSize(metadata, (byte)stack_offset);
             if (size != 1)
             {
                 Debug.LogError($"blast.stack: pop(float) size mismatch, stack contains vectorsize {size} datatype while size 1 is expected");
@@ -373,14 +374,14 @@ namespace NSS.Blast.Interpretor
             if (GetMetaDataType(metadata, (byte)stack_offset) != BlastVariableDataType.ID)
             {
                 Debug.LogError($"blast.stack: pop(int) type mismatch, stack contains Numeric datatype");
-                i = int.MinValue; 
+                i = int.MinValue;
                 return;
             }
             byte size = GetMetaDataSize(metadata, (byte)stack_offset);
             if (size != 1)
             {
                 Debug.LogError($"blast.stack: pop(int) size mismatch, stack contains vectorsize {size} datatype while size 1 is expected");
-                i = int.MinValue; 
+                i = int.MinValue;
                 return;
             }
 #endif
@@ -458,7 +459,7 @@ namespace NSS.Blast.Interpretor
             i.x = idata[stack_offset];
             i.y = idata[stack_offset + 1];
             i.z = idata[stack_offset + 2];
-            i.w = idata[stack_offset + 3];            
+            i.w = idata[stack_offset + 3];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -558,7 +559,7 @@ namespace NSS.Blast.Interpretor
 #endif 
                 // variable acccess
                 // TODO   SHOULD TEST NOT SWITCHING VECTOR ELEMENT ORDER ON STACK OPERATIONS 
-                return  new float2( ((float*)data)[c - opt_id], ((float*)data)[c - opt_id + 1]) ;
+                return new float2(((float*)data)[c - opt_id], ((float*)data)[c - opt_id + 1]);
             }
             else
             if (c == (byte)blast_operation.pop)
@@ -666,9 +667,9 @@ namespace NSS.Blast.Interpretor
                 // variable acccess
                 // TODO   SHOULD TEST NOT SWITCHING VECTOR ELEMENT ORDER ON STACK OPERATIONS 
                 return new float4(
-                    ((float*)data)[c - opt_id], 
-                    ((float*)data)[c - opt_id + 1], 
-                    ((float*)data)[c - opt_id + 2], 
+                    ((float*)data)[c - opt_id],
+                    ((float*)data)[c - opt_id + 1],
+                    ((float*)data)[c - opt_id + 2],
                     ((float*)data)[c - opt_id + 3]);
             }
             else
@@ -765,7 +766,7 @@ namespace NSS.Blast.Interpretor
 
                 // need to advance past vectorsize instead of only 1 that we need to probe 
 
-                stack_offset -= math.select(vector_size, 4, vector_size == 0); 
+                stack_offset -= math.select(vector_size, 4, vector_size == 0);
 
                 return &((float*)data)[stack_offset];
             }
@@ -773,7 +774,7 @@ namespace NSS.Blast.Interpretor
             if (c >= opt_value)
             {
                 type = BlastVariableDataType.Numeric;
-                vector_size = 1; 
+                vector_size = 1;
                 return &engine_ptr->constants[c];
             }
             else
@@ -806,9 +807,9 @@ namespace NSS.Blast.Interpretor
             {
 #if DEVELOPMENT_BUILD || CHECK_STACK
                 // verify type of data / eventhough it is not stack 
-                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id)); 
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
-                if(size != 1 || type != BlastVariableDataType.Numeric)
+                if (size != 1 || type != BlastVariableDataType.Numeric)
                 {
                     Debug.LogError($"blast.stack, pop_or_value -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
@@ -830,7 +831,7 @@ namespace NSS.Blast.Interpretor
                 {
                     Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
                     return float.NaN;
-               }
+                }
 #endif         
                 // stack pop 
                 return ((float*)data)[stack_offset];
@@ -844,10 +845,10 @@ namespace NSS.Blast.Interpretor
                 //int size = GetMetaDataSize(metadata, (byte)(c - opt_value));
                 //if (size != 1 || type != BlastVariableDataType.Numeric)
                 //{
-                    //Standalone.Debug.LogError($"blast.stack, pop_or_value -> constant data mismatch, expecting numeric of size 1, found {type} of size {size} at offset {c - opt_value}");
-                    //return float.NaN;
-               // }
-#endif         
+                //Standalone.Debug.LogError($"blast.stack, pop_or_value -> constant data mismatch, expecting numeric of size 1, found {type} of size {size} at offset {c - opt_value}");
+                //return float.NaN;
+                // }
+#endif
                 // op encoded constant                
                 // //
                 return engine_ptr->constants[c];
@@ -871,7 +872,7 @@ namespace NSS.Blast.Interpretor
             // expect a single pop,  NOT A POPV inside functions that have var length params and vectorsize
             // vector size is always known when used inside vector functions 
             byte c = code[code_pointer];
-            float* fdata = (float*)data; 
+            float* fdata = (float*)data;
 
             if (c >= opt_id)
             {
@@ -904,7 +905,7 @@ namespace NSS.Blast.Interpretor
                     return float.NaN;
                 }
 #endif         
-                float* stack = (float*)data; 
+                float* stack = (float*)data;
                 return new float4(stack[stack_offset + 0], stack[stack_offset + 1], stack[stack_offset + 2], stack[stack_offset + 3]);
             }
             else
@@ -997,7 +998,7 @@ namespace NSS.Blast.Interpretor
         {
             byte b = metadata[offset];
             size = (byte)(b & 0b0000_1111);
-            type = (BlastVariableDataType)(b & 0b1111_0000); 
+            type = (BlastVariableDataType)(b & 0b1111_0000);
         }
 
 
@@ -1055,7 +1056,7 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsMathematicalOrBooleanOperation(blast_operation op)
         {
-            return op >= blast_operation.add && op <= blast_operation.not_equals; 
+            return op >= blast_operation.add && op <= blast_operation.not_equals;
         }
 
         /// <summary>
@@ -1109,7 +1110,7 @@ namespace NSS.Blast.Interpretor
         //
         //    - 1 copy foreach datatype....... generics fail me here
         // 
-        
+
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float4 b, ref bool last_is_op_or_first, ref byte vector_size)
         {
@@ -1274,18 +1275,18 @@ namespace NSS.Blast.Interpretor
                 switch (datatype)
                 {
                     case BlastVariableDataType.ID:
-                        int* idata = (int*)pdata;  
+                        int* idata = (int*)pdata;
                         switch (vector_size)
                         {
-                            case 1:  Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: {idata[0]}, vectorsize: {vector_size}"); break;
-                            case 2:  Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}], vectorsize: {vector_size}"); break;
-                            case 3:  Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}], vectorsize: {vector_size}"); break;
-                            case 4:  Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}], vectorsize: {vector_size}"); break;
-                            case 5:  Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}], vectorsize: {vector_size}"); break;
-                            case 6:  Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}], vectorsize: {vector_size}"); break;
-                            case 7:  Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}, {idata[6]}], vectorsize: {vector_size}"); break;
-                            case 8:  Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}, {idata[6]}, {idata[7]}], vectorsize: {vector_size}"); break;
-                            case 9:  Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}, {idata[6]}, {idata[7]}, {idata[8]}], vectorsize: {vector_size}"); break;
+                            case 1: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: {idata[0]}, vectorsize: {vector_size}"); break;
+                            case 2: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}], vectorsize: {vector_size}"); break;
+                            case 3: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}], vectorsize: {vector_size}"); break;
+                            case 4: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}], vectorsize: {vector_size}"); break;
+                            case 5: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}], vectorsize: {vector_size}"); break;
+                            case 6: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}], vectorsize: {vector_size}"); break;
+                            case 7: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}, {idata[6]}], vectorsize: {vector_size}"); break;
+                            case 8: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}, {idata[6]}, {idata[7]}], vectorsize: {vector_size}"); break;
+                            case 9: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}, {idata[6]}, {idata[7]}, {idata[8]}], vectorsize: {vector_size}"); break;
                             case 10: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}, {idata[6]}, {idata[7]}, {idata[8]}, {idata[9]}], vectorsize: {vector_size}"); break;
                             case 11: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}, {idata[6]}, {idata[7]}, {idata[8]}, {idata[9]}, {idata[10]}], vectorsize: {vector_size}"); break;
                             case 12: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}, {idata[6]}, {idata[7]}, {idata[8]}, {idata[9]}, {idata[10]}, {idata[11]}], vectorsize: {vector_size}"); break;
@@ -1295,7 +1296,7 @@ namespace NSS.Blast.Interpretor
                             case 16: Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, ID: [{idata[0]}, {idata[1]}, {idata[2]}, {idata[3]}, {idata[4]}, {idata[5]}, {idata[6]}, {idata[7]}, {idata[8]}, {idata[9]}, {idata[10]}, {idata[11]}, {idata[12]}, {idata[13]}, {idata[14]}, {idata[15]}], vectorsize: {vector_size}"); break;
                             default:
                                 Debug.LogError($"Blast.Debug(data) - Vectorsize of {vector_size} is not supported in variable/operation with id {op_id} and datatype ID");
-                                break; 
+                                break;
                         }
                         break;
 
@@ -1345,13 +1346,13 @@ namespace NSS.Blast.Interpretor
                         }
                         break;
 
-                    default: 
+                    default:
                         Debug.LogError($"Blast.Debug(data) - Datatype '{datatype}' not supported in variable/operation with id {op_id} and vectorsize {vector_size}");
-                        break; 
+                        break;
                 }
             }
 #endif
-                        }
+        }
 
         /// <summary>
         /// printout an overview of the datasegment/stack (if shared)
@@ -1359,7 +1360,7 @@ namespace NSS.Blast.Interpretor
         void Handle_DebugStack()
         {
 #if DEVELOPMENT_BUILD
-            for(int i = 0; i < stack_offset; i++ )
+            for (int i = 0; i < stack_offset; i++)
             {
                 if (i < package.DataSegmentStackOffset / 4)
                 {
@@ -1410,16 +1411,16 @@ namespace NSS.Blast.Interpretor
                 {
                     // external functions (to blast) always have a fixed amount of parameters 
 #if DEVELOPMENT_BUILD
-                    if(id > (int)ReservedBlastScriptFunctionIds.Offset && p.MinParameterCount != p.MaxParameterCount) 
+                    if (id > (int)ReservedBlastScriptFunctionIds.Offset && p.MinParameterCount != p.MaxParameterCount)
                     {
-                        Debug.LogError($"function {id} min/max parameters should be of equal size"); 
+                        Debug.LogError($"function {id} min/max parameters should be of equal size");
                     }
 #endif
                     code_pointer += p.MinParameterCount;
                     return float4.zero;
                 }
 
-               // Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}");
+                // Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}");
 
                 switch (p.MinParameterCount)
                 {
@@ -1471,7 +1472,7 @@ namespace NSS.Blast.Interpretor
                             code_pointer += 3;
 
                             f4[0] = (int)fp3.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a, b, c);
-                            return v1_eval(f4, ref minus, ref vector_size); 
+                            return v1_eval(f4, ref minus, ref vector_size);
                         }
                         break;
 
@@ -1495,7 +1496,7 @@ namespace NSS.Blast.Interpretor
 #if LOG_ERRORS
                         Debug.LogError($"function id {id}, with paremetercount {p.parameter_count} is not supported yet");
 #endif
-                        break; 
+                        break;
                 }
 
             }
@@ -1513,9 +1514,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region Function Handlers 
+        #region Function Handlers 
 
 
 
@@ -1599,16 +1600,16 @@ namespace NSS.Blast.Interpretor
 
 
 
-#region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
+        #region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
 
-#region get_[min/max/mina/maxa]_result
+        #region get_[min/max/mina/maxa]_result
         /// <summary>
         /// get the maximum value of all arguments of any vectorsize 
         /// </summary>
         void get_maxa_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             code_pointer++;
-            byte c = decode62(in code[code_pointer], ref vector_size); 
+            byte c = decode62(in code[code_pointer], ref vector_size);
 
             BlastVariableDataType datatype = default;
             byte popped_vector_size = 0;
@@ -1621,7 +1622,7 @@ namespace NSS.Blast.Interpretor
             {
                 code_pointer++;
                 c--;
-                
+
                 // we need to pop only once due to how the elements of the vector are organized in the data/stack
                 // - pop_or_value needs one call/float
                 float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out popped_vector_size);
@@ -1630,7 +1631,7 @@ namespace NSS.Blast.Interpretor
                 if (datatype == BlastVariableDataType.ID)
                 {
                     Debug.LogError($"ID datatype in maxa not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
-                    f4.x = float.NaN; 
+                    f4.x = float.NaN;
                     return;
                 }
 #endif
@@ -1672,7 +1673,7 @@ namespace NSS.Blast.Interpretor
             while (c > 0)
             {
                 code_pointer++;
-                c--; 
+                c--;
 
                 // we need to pop only once due to how the elements of the vector are organized in the data/stack
                 // - pop_or_value needs one call/float
@@ -1683,7 +1684,7 @@ namespace NSS.Blast.Interpretor
                 {
                     Debug.LogError("ID datatype in mina not yet implemented");
                     f4.x = float.NaN;
-                    return; 
+                    return;
                 }
 #endif
 
@@ -1734,13 +1735,13 @@ namespace NSS.Blast.Interpretor
 #endif
                                 return;
 
-                            case 2: f4.x = math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer +2 )); break;
+                            case 2: f4.x = math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)); break;
                             case 3: f4.x = math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), pop_f1(code_pointer + 3)); break;
                             case 4: f4.x = math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))); break;
                             case 5: f4.x = math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), pop_f1(code_pointer + 5)); break;
-                            case 6: f4.x = math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), math.max(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))); break; 
-                            case 7: f4.x = math.max(math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)),math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), math.max(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))),pop_f1(code_pointer + 7)); break;
-                            case 8: f4.x = math.max(math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))),  math.max(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))), math.max(pop_f1(code_pointer + 7), pop_f1(code_pointer + 8))); break;
+                            case 6: f4.x = math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), math.max(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))); break;
+                            case 7: f4.x = math.max(math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), math.max(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))), pop_f1(code_pointer + 7)); break;
+                            case 8: f4.x = math.max(math.max(math.max(math.max(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)), math.max(pop_f1(code_pointer + 3), pop_f1(code_pointer + 4))), math.max(pop_f1(code_pointer + 5), pop_f1(code_pointer + 6))), math.max(pop_f1(code_pointer + 7), pop_f1(code_pointer + 8))); break;
                         }
                         code_pointer += c;
                         break;
@@ -1952,9 +1953,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region single input same output math functions 
+        #region single input same output math functions 
 
         /// <summary>
         /// get absolute value of input
@@ -1966,7 +1967,7 @@ namespace NSS.Blast.Interpretor
             code_pointer += 1;
             f4 = float.NaN;
 
-            BlastVariableDataType datatype; 
+            BlastVariableDataType datatype;
             float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
 
 #if DEVELOPMENT_BUILD
@@ -1982,7 +1983,7 @@ namespace NSS.Blast.Interpretor
                 case BlastVectorSizes.float1: f4.x = math.abs(((float*)fdata)[0]); break;
                 case BlastVectorSizes.float2: f4.xy = math.abs(((float2*)fdata)[0]); break;
                 case BlastVectorSizes.float3: f4.xyz = math.abs(((float3*)fdata)[0]); break;
-                case 0:                            
+                case 0:
                 case BlastVectorSizes.float4: f4.xyzw = math.abs(((float4*)fdata)[0]); vector_size = 4; break;
 #if DEVELOPMENT_BUILD
                 default:
@@ -2773,9 +2774,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region fixed input count math functions
+        #region fixed input count math functions
 
         /// <summary>
         /// raise x to power of y 
@@ -2786,12 +2787,12 @@ namespace NSS.Blast.Interpretor
         {
             f4 = float.NaN;
             BlastVariableDataType datatype;
-         
+
             float* d1 = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
 
 #if DEVELOPMENT_BUILD
             BlastVariableDataType datatype_2;
-            byte vector_size_2;          
+            byte vector_size_2;
 
             float* d2 = (float*)pop_with_info(code_pointer + 2, out datatype_2, out vector_size_2);
 
@@ -2800,10 +2801,10 @@ namespace NSS.Blast.Interpretor
                 Debug.LogError($"ID datatype in pow not implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
                 return;
             }
-            if(datatype != datatype_2 || vector_size != vector_size_2)
+            if (datatype != datatype_2 || vector_size != vector_size_2)
             {
                 Debug.LogError($"pow: input parameter datatype|vector_size mismatch, these must be equal. p1 = {datatype}.{vector_size}, p2 = {datatype_2}.{vector_size_2}");
-                return; 
+                return;
             }
 #endif
 
@@ -2891,7 +2892,7 @@ namespace NSS.Blast.Interpretor
 #endif
             }
 
-            code_pointer += 2;      
+            code_pointer += 2;
             vector_size = 1;
         }
 
@@ -2949,9 +2950,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#region fused substract multiply actions
+        #region fused substract multiply actions
 
         /// <summary>
         /// fused multiply add 
@@ -2969,7 +2970,7 @@ namespace NSS.Blast.Interpretor
             // always 3 params, input vector size == output vectorsize
 
 #if DEVELOPMENT_BUILD
-            BlastVariableDataType popped_datatype; 
+            BlastVariableDataType popped_datatype;
             byte popped_vector_size;
 
             void* pm1 = pop_with_info(code_pointer + 1, out datatype, out vector_size);
@@ -2980,10 +2981,10 @@ namespace NSS.Blast.Interpretor
             }
 
             void* pm2 = pop_with_info(code_pointer + 2, out popped_datatype, out popped_vector_size);
-            if (datatype != popped_datatype || vector_size != popped_vector_size) 
+            if (datatype != popped_datatype || vector_size != popped_vector_size)
             {
                 Debug.Log($"fma: [datatype|vectorsize] mismatch, codepointer {code_pointer}, all parameters must share the same datatype, m1 = {datatype}.{vector_size} while m2 = {popped_datatype}.{popped_vector_size}");
-                return; 
+                return;
             }
 
             void* pa1 = pop_with_info(code_pointer + 3, out datatype, out vector_size);
@@ -3001,9 +3002,9 @@ namespace NSS.Blast.Interpretor
                 case BlastVectorSizes.float3: f4.xyz = math.mad(((float3*)pm1)[0], ((float3*)pm2)[0], ((float3*)pa1)[0]); break;
                 case 0:
                 case BlastVectorSizes.float4:
-                    f4 = math.mad(((float4*)pm1)[0], ((float4*)pm2)[0], ((float4*)pa1)[0]); 
-                    vector_size = 4; 
-                    break; 
+                    f4 = math.mad(((float4*)pm1)[0], ((float4*)pm2)[0], ((float4*)pa1)[0]);
+                    vector_size = 4;
+                    break;
             }
 
 #else
@@ -3023,7 +3024,7 @@ namespace NSS.Blast.Interpretor
             }
 
 #endif
-     
+
             code_pointer += 3;
         }
 
@@ -3032,9 +3033,9 @@ namespace NSS.Blast.Interpretor
 
 
 
-#endregion
+        #endregion
 
-#region math utility functions (select, lerp etc) 
+        #region math utility functions (select, lerp etc) 
 
         /// <summary>
         /// 3 inputs, first 2 any type, 3rd type equal or scalar bool
@@ -3129,10 +3130,10 @@ namespace NSS.Blast.Interpretor
         void get_clamp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             BlastVariableDataType datatype_a;
-            f4 = float.NaN; 
+            f4 = float.NaN;
             byte vector_size_mm;
             BlastVariableDataType datatype_mm;
-     
+
             void* p1 = pop_with_info(code_pointer + 2, out datatype_mm, out vector_size_mm);
             void* p2 = pop_with_info(code_pointer + 3, out datatype_a, out vector_size);       // could optimize this to pop_fx in release but not much win
 
@@ -3142,7 +3143,7 @@ namespace NSS.Blast.Interpretor
             {
                 Debug.LogError($"get_clamp_result: parameter type mismatch, p1 = {datatype_mm}.{vector_size_mm}, p2 = {datatype_a}.{vector_size} at codepointer {code_pointer}");
                 return;
-            }                                                                            
+            }
             if (datatype_mm != BlastVariableDataType.Numeric)
             {
                 Debug.LogError($"get_clamp_result: datatype mismatch, only numerics are supported at codepointer {code_pointer}");
@@ -3226,15 +3227,15 @@ namespace NSS.Blast.Interpretor
             code_pointer += 3;
 
 #if DEVELOPMENT_BUILD
-            if(p1_datatype != p2_datatype || vector_size != p2_vector_size)
+            if (p1_datatype != p2_datatype || vector_size != p2_vector_size)
             {
                 Debug.LogError($"lerp: parameter type mismatch, min = {p1_datatype}.{vector_size}, max = {p2_datatype}.{p2_vector_size} at codepointer {code_pointer}, min/max vectorsizes must be equal");
-                return; 
+                return;
             }
-            if(p1_datatype != BlastVariableDataType.Numeric)
+            if (p1_datatype != BlastVariableDataType.Numeric)
             {
                 Debug.LogError($"lerp: ID datatype not supported");
-                return; 
+                return;
             }
             if (vector_size != p3_vector_size && p3_vector_size != 1)
             {
@@ -3242,8 +3243,8 @@ namespace NSS.Blast.Interpretor
                 return;
             }
 #endif
-            
-            if(p3_vector_size == 1)
+
+            if (p3_vector_size == 1)
             {
                 switch ((BlastVectorSizes)vector_size)
                 {
@@ -3322,7 +3323,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD
                     default:
                         Debug.LogError($"slerp: vector_size {vector_size} not supported");
-                        break; 
+                        break;
 #endif
                 }
             }
@@ -3405,9 +3406,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region mula family 
+        #region mula family 
 
 
         /// <summary>
@@ -3774,12 +3775,12 @@ namespace NSS.Blast.Interpretor
                             }
                             break;
                     }
-                    break; 
+                    break;
 
                 case 4:
                 case 0: // actually 4
                     {
-                        vector_size = 4; 
+                        vector_size = 4;
                         switch (c)
                         {
                             case 1:
@@ -3882,62 +3883,87 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
-
-#endregion
-
-
-
-
-
-
-        float4 get_adda_result(ref int code_pointer, ref bool minus, ref byte vector_size)
+        /// <summary>
+        /// add all inputs together 
+        /// - n elements of equal vector size 
+        /// </summary>
+        void get_adda_result(ref int code_pointer, ref byte vector_size, out float4 result)
         {
             code_pointer = code_pointer + 1;
             byte c = code[code_pointer];
 
             // decode 62
-            vector_size = (byte)(c & 0b11);
-            c = (byte)((c & 0b1111_1100) >> 2);
+            c = BlastInterpretor.decode62(in c, ref vector_size);
 
             switch ((BlastVectorSizes)vector_size)
             {
                 case BlastVectorSizes.float1:
                     {
-                        float f = pop_or_value(code_pointer + 1);
+                        float f = pop_f1(code_pointer + 1);
                         for (int i = 2; i <= c; i++)
                         {
-                            f += pop_or_value(code_pointer + i);
+                            f += pop_f1(code_pointer + i);
                         }
                         code_pointer += c;
-                        f = math.select(f, -f, minus);
-                        minus = false;
-                        return f;
+                        result = f;
                     }
+                    break;
+
+                case BlastVectorSizes.float2:
+                    {
+                        float2 f2 = pop_f2(code_pointer + 1);
+                        for (int i = 2; i <= c; i++)
+                        {
+                            f2 += pop_f2(code_pointer + i);
+                        }
+                        code_pointer += c;
+                        result = new float4(f2, 0, 0);
+                    }
+                    break;
+
+                case BlastVectorSizes.float3:
+                    {
+                        float3 f3 = pop_f3(code_pointer + 1);
+                        for (int i = 2; i <= c; i++)
+                        {
+                            f3 += pop_f3(code_pointer + i);
+                        }
+                        code_pointer += c;
+                        result = new float4(f3, 0);
+                    }
+                    break;
 
                 case 0:
                 case BlastVectorSizes.float4:
                     {
-                        float4 f4 = pop_or_value_4(code_pointer + 1);
+                        result = pop_f4(code_pointer + 1);
                         for (int i = 2; i <= c; i++)
                         {
-                            f4 += pop_or_value_4(code_pointer + i);
+                            result += pop_f4(code_pointer + i);
                         }
                         code_pointer += c;
-                        f4 = math.select(f4, -f4, minus);
-                        minus = false;
-                        return f4;
                     }
+                    break;
+
                 default:
                     {
 #if DEVELOPMENT_BUILD
                         Debug.LogError($"get_adda_result: vector size '{vector_size}' not allowed");
 #endif
-                        return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
+                        result = float.NaN;
 
                     }
+                    break;
+
             }
         }
+
+        #endregion
+
+        #endregion
+
+
+
 
         float4 get_suba_result(ref int code_pointer, ref bool minus, ref byte vector_size)
         {
@@ -4422,10 +4448,89 @@ namespace NSS.Blast.Interpretor
 
 
 
-#endregion
+        #endregion
 
-#region ByteCode Execution
+        #region ByteCode Execution
 
+
+    /*    float4 get_function_result(ref int code_pointer, ref byte vector_size, out float4 f4_result)
+        {
+            while (code_pointer < package.CodeSize)
+            {
+                byte op = code[code_pointer];
+
+                switch ((blast_operation)op)
+                {
+                    // math functions 
+                    case blast_operation.abs: get_abs_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.mina: get_mina_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.max: get_max_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.min: get_min_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+                    // math utils 
+                    case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                    case blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+                    // fma and friends 
+                    case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+                    // mula family
+                    case blast_operation.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+
+#pragma warning disable CS1587 // XML comment is not placed on a valid language element
+                    ///
+                    ///  FROM HERE NOT CONVERTED YET TO METADATA USE
+                    /// 
+
+                    case blast_operation.random:
+#pragma warning restore CS1587 // XML comment is not placed on a valid language element
+                        get_random_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
+                        break;
+
+                    case blast_operation.adda:
+                        f4_result = get_adda_result(ref code_pointer, ref minus, ref vector_size);
+                        break;
+
+                    case blast_operation.suba:
+                        f4_result = get_suba_result(ref code_pointer, ref minus, ref vector_size);
+                        break;
+
+                    case blast_operation.diva:
+                        f4_result = get_diva_result(ref code_pointer, ref minus, ref vector_size);
+                        break;
+
+                    case blast_operation.all:
+                        f4_result = get_all_result(ref code_pointer, ref minus, ref not, ref vector_size);
+                        break;
+
+                    case blast_operation.any:
+                        f4_result = get_any_result(ref code_pointer, ref minus, ref not, ref vector_size);
+                        break;
+
+
+
+                }
+            }
+        }      */
 
 
         /// <summary>
@@ -4454,7 +4559,7 @@ namespace NSS.Blast.Interpretor
             float temp = 0;
             float4 f4 = float4.zero;
 
-            byte max_vector_size = 1;       
+            byte max_vector_size = 1;
 
             blast_operation current_operation = blast_operation.nop;
 
@@ -4548,13 +4653,13 @@ namespace NSS.Blast.Interpretor
                             blast_operation next_op = (blast_operation)code[code_pointer + 1];
 
                             if (next_op != blast_operation.nop && (next_op != blast_operation.assign && next_op != blast_operation.assigns))
-                                
+
                             {
                                 // for now restrict ourselves to only accepting operations at this point 
                                 if (IsMathematicalOrBooleanOperation(next_op))
                                 {
                                     // break out of switch before returning, there is more to this operation then known at the moment 
-                                    break; 
+                                    break;
                                 }
                                 else
                                 {
@@ -4562,7 +4667,7 @@ namespace NSS.Blast.Interpretor
                                     Debug.LogWarning($"Possible BUG: encountered non mathematical operation '{next_op}' after compound in statement at codepointer {code_pointer + 1}, expecting nop or assign");
                                 }
                             }
-                        }                                  
+                        }
 
                         vector_size = vector_size > max_vector_size ? vector_size : max_vector_size;
                         return vector_size > 1 ? f4 : new float4(f1, 0, 0, 0);
@@ -4683,7 +4788,7 @@ namespace NSS.Blast.Interpretor
                                 case blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
                                 case blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break; 
+                                case blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break;
 
                                 // fma and friends 
                                 case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -4691,9 +4796,9 @@ namespace NSS.Blast.Interpretor
                                 // mula family
                                 case blast_operation.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); max_vector_size = vector_size; break;
 
-                                
+
 #pragma warning disable CS1587 // XML comment is not placed on a valid language element
-///
+                                ///
                                 ///  FROM HERE NOT CONVERTED YET TO METADATA USE
                                 /// 
 
@@ -4703,7 +4808,7 @@ namespace NSS.Blast.Interpretor
                                     break;
 
                                 case blast_operation.adda:
-                                    f4_result = get_adda_result(ref code_pointer, ref minus, ref vector_size);
+                                    get_adda_result(ref code_pointer, ref vector_size, out f4_result);
                                     break;
 
                                 case blast_operation.suba:
@@ -4722,7 +4827,7 @@ namespace NSS.Blast.Interpretor
                                     f4_result = get_any_result(ref code_pointer, ref minus, ref not, ref vector_size);
                                     break;
 
-                                
+
                                 case blast_operation.pop:
                                     BlastVariableDataType popped_type;
                                     byte popped_vector_size;
@@ -4970,10 +5075,10 @@ namespace NSS.Blast.Interpretor
                                 //
                                 // return now if only interested in the first result 
                                 //
-                                if(return_first_result)
+                                if (return_first_result)
                                 {
                                     code_pointer++; // do advance to after the last token in that what was evaluated
-                                    return f4_result;                                
+                                    return f4_result;
                                 }
 
 
@@ -5013,7 +5118,7 @@ namespace NSS.Blast.Interpretor
                                                 default:
 #if DEVELOPMENT_BUILD
                                                     // these will be in log because of growing a vector from a compound of unknown sizes  
-              //                                      Debug.LogWarning($"execute: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+                                                    //                                      Debug.LogWarning($"execute: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                     break;
                                             }
@@ -5035,7 +5140,7 @@ namespace NSS.Blast.Interpretor
                                                 default:
 #if DEVELOPMENT_BUILD
                                                     // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                   // Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+                                                    // Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                     break;
                                             }
@@ -5044,7 +5149,7 @@ namespace NSS.Blast.Interpretor
                                         break;
 
 
-                                    case 0: 
+                                    case 0:
                                     case BlastVectorSizes.float4:
                                         {
                                             switch ((BlastVectorSizes)max_vector_size)
@@ -5065,7 +5170,7 @@ namespace NSS.Blast.Interpretor
                                                     break;
                                                 default:
 #if DEVELOPMENT_BUILD
-                                  //                  Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+                                                    //                  Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
 #endif
                                                     break;
                                             }
@@ -5084,7 +5189,7 @@ namespace NSS.Blast.Interpretor
 
                                 if (current_operation != blast_operation.nop)
                                 {
-                                   // f1 = f4.x;
+                                    // f1 = f4.x;
                                 }
                             }
                         }
@@ -5153,7 +5258,7 @@ namespace NSS.Blast.Interpretor
             else
             {
                 // else push 1 float of data
-                float* fdata = (float*)data; 
+                float* fdata = (float*)data;
                 push(fdata[code[code_pointer++] - opt_id]);
             }
         }
@@ -5178,7 +5283,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD
                     default:
                         Debug.LogError($"blast.interpretor.pushv: unsupported vectorsize {vector_size} in parameter at codepointer {code_pointer}");
-//                        return (int)BlastError.error_pushv_vector_size_not_supported;
+                        //                        return (int)BlastError.error_pushv_vector_size_not_supported;
                         break;
 #endif
                 }
@@ -5211,7 +5316,7 @@ namespace NSS.Blast.Interpretor
                             Debug.LogError($"burstscript.interpretor error: vectorsize {vector_size} not yet supported on stack push");
                             break;
 #endif
-                           // return (int)BlastError.error_vector_size_not_supported;
+                            // return (int)BlastError.error_vector_size_not_supported;
                     }
                 }
                 else
@@ -5265,7 +5370,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     Debug.LogError("burstscript.interpretor pushf error: variable vector size not yet supported on stack push");
                     //  return (int)BlastError.error_variable_vector_op_not_supported;
-                    break; 
+                    break;
 #endif
             }
         }
@@ -5280,12 +5385,12 @@ namespace NSS.Blast.Interpretor
         /// <returns></returns>
         unsafe int execute([NoAlias]BlastEngineData* blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller)
         {
-            int iterations = 0;                          
+            int iterations = 0;
 
-            engine_ptr = blast; 
+            engine_ptr = blast;
             environment_ptr = environment;
-            caller_ptr = caller; 
-        
+            caller_ptr = caller;
+
             float* fdata = (float*)data;
             float4 f4_register = 0;
 
@@ -5329,21 +5434,21 @@ namespace NSS.Blast.Interpretor
                     // pushv knows more about what it is pushing up the stack, it can do it without running the compound 
                     //
                     case blast_operation.pushv:
-                        pushv(ref code_pointer, ref vector_size, ref f4_register); 
+                        pushv(ref code_pointer, ref vector_size, ref f4_register);
                         break;
 
                     //
                     // push the result of a function directly onto the stack instead of assigning it first or something
                     // 
                     case blast_operation.pushf:
-                        pushf(ref code_pointer, ref vector_size, ref f4_register); 
+                        pushf(ref code_pointer, ref vector_size, ref f4_register);
                         break;
 
                     //
                     // push the result of a function directly onto the stack instead of assigning it first or something
                     //          
                     case blast_operation.pushc:
-                        pushc(ref code_pointer, ref vector_size, ref f4_register); 
+                        pushc(ref code_pointer, ref vector_size, ref f4_register);
                         break;
 
                     case blast_operation.yield:
@@ -5357,23 +5462,28 @@ namespace NSS.Blast.Interpretor
 
                     case blast_operation.begin:
 #if DEVELOPMENT_BUILD
-                            // jumping in from somewhere
-//                          Debug.LogWarning($"burstscript.interpretor warning: scriptop.begin not expected in root at codepointer: {code_pointer}, f4: {f4_register}");
+                        // jumping in from somewhere
+                        //                          Debug.LogWarning($"burstscript.interpretor warning: scriptop.begin not expected in root at codepointer: {code_pointer}, f4: {f4_register}");
 #endif
-                            break; 
+                        break;
 
                     case blast_operation.end: break;
 
+
+                    //
+                    // Assign single value/vector 
+                    // - assignS assigns 1 datapoint to a assignee, from stack or other data 
+                    //
                     case blast_operation.assigns:
                         {
                             // assign 1 val;ue
                             byte assignee_op = code[code_pointer];
                             byte assignee = (byte)(assignee_op - opt_id);
                             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
-                            
+
                             BlastVariableDataType dt_pop;
 
-                            void* pdata = pop_with_info(code_pointer + 1, out dt_pop, out vector_size); 
+                            void* pdata = pop_with_info(code_pointer + 1, out dt_pop, out vector_size);
 
                             switch ((byte)vector_size)
                             {
@@ -5435,10 +5545,22 @@ namespace NSS.Blast.Interpretor
                                     return (int)BlastError.error_unsupported_operation_in_root;
                             }
 
-                            code_pointer += 2; 
+                            code_pointer += 2;
                         }
-                        break; 
+                        break;
 
+
+                    //
+                    // assign the result of a function directly to the assignee
+                    //
+                    //
+                    //case blast_operation.assignf:
+                    //
+                    //    break; 
+
+                    //
+                    // Assign result of compound
+                    //
                     case blast_operation.assign:
                         {
                             // advance 1 if on assign 
@@ -5455,10 +5577,10 @@ namespace NSS.Blast.Interpretor
                             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
                             // correct vectorsize 4 => it is 0 after compressing into 2 bits
-                            
+
                             // -> compounds
                             //  s_assignee = (byte) math.select(4, s_assignee, s_assignee == 0); 
-                            
+
 
                             //
                             // - a mixed sequence - no nested compound
@@ -5500,7 +5622,7 @@ namespace NSS.Blast.Interpretor
                                     if (s_assignee != 2)
                                     {
 #if DEVELOPMENT_BUILD
-                                    Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
+                                        Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -5512,7 +5634,7 @@ namespace NSS.Blast.Interpretor
                                     if (s_assignee != 3)
                                     {
 #if DEVELOPMENT_BUILD
-                                    Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
+                                        Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -5535,22 +5657,22 @@ namespace NSS.Blast.Interpretor
                                     fdata[assignee + 3] = f4_register.w;
                                     break;
 
-                            default:
+                                default:
 #if DEVELOPMENT_BUILD
-                                Debug.LogError($"blast.interpretor: vector size {vector_size} not allowed at codepointer {code_pointer}");
+                                    Debug.LogError($"blast.interpretor: vector size {vector_size} not allowed at codepointer {code_pointer}");
 #endif
-                                return (int)BlastError.error_unsupported_operation_in_root; 
+                                    return (int)BlastError.error_unsupported_operation_in_root;
                             }
 
                         }
                         break;
 
-                        //
-                        // JZ: a condition may contain push commands that should run from the root
-                        // 
-                        //
-                      
-                     
+                    //
+                    // JZ: a condition may contain push commands that should run from the root
+                    // 
+                    //
+
+
                     case blast_operation.jz:
                         {
                             // calc endlocation of 
@@ -5581,7 +5703,7 @@ namespace NSS.Blast.Interpretor
                                 }
                             }
                             while (is_push && code_pointer < package.CodeSize);
-                                                        
+
                             // get result from condition
                             f4_register = get_compound_result(ref code_pointer, ref vector_size);
 
@@ -5644,11 +5766,11 @@ namespace NSS.Blast.Interpretor
                         }
 
 
-                        //
-                        // Extended Op == 255 => next byte encodes an operation not used in switch above (more non standard ops)
-                        //
+                    //
+                    // Extended Op == 255 => next byte encodes an operation not used in switch above (more non standard ops)
+                    //
                     case blast_operation.ex_op:
-                        {                                                                 
+                        {
                             extended_blast_operation exop = (extended_blast_operation)code[code_pointer];
                             switch (exop)
                             {
@@ -5688,7 +5810,7 @@ namespace NSS.Blast.Interpretor
 #endif
                                         code_pointer++;
                                     }
-                                  break; 
+                                    break;
 
                                 default:
                                     {
@@ -5715,13 +5837,12 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
     };
 
 
 
 }
-
 
 

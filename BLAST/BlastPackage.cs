@@ -214,9 +214,10 @@ namespace NSS.Blast
 
         #region Properties deduced from fields 
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastPackageData.CodeSize'
+        /// <summary>
+        /// size of code in bytes, maps to O1 in all package modes 
+        /// </summary>
         public readonly ushort CodeSize
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastPackageData.CodeSize'
         {
             get
             {

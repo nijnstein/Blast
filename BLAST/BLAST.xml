@@ -954,6 +954,11 @@
             Offset 4, intent depends on packagemode
             </summary>
         </member>
+        <member name="P:NSS.Blast.BlastPackageData.CodeSize">
+            <summary>
+            size of code in bytes, maps to O1 in all package modes 
+            </summary>
+        </member>
         <member name="P:NSS.Blast.BlastPackageData.MetadataSize">
             <summary>
             metadata size in bytes, may include alignment bytes in normal and SSMD modes  

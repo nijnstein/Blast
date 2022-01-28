@@ -1,0 +1,1187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<HelpTOC>
+
+  <HelpTOCNode Title="Welcome to the [TODO: Add project name]" Url="html/b84cc328-fe66-4900-9a10-6477fab7b598.htm" />
+  <HelpTOCNode Id="7ffbe1c8-06f6-4a21-bef3-9488182cc658" Title="Version History" Url="html/247455fe-83e9-48c3-9cdf-e5073aae7451.htm">
+    <HelpTOCNode Title="Version 1.0.0.0" Url="html/fc4cf5a7-53d8-471f-95dc-d2e5934d544e.htm" />
+  </HelpTOCNode>
+  <HelpTOCNode Id="0d6c09e8-8af5-4496-bead-448b4031a19b" Title="NSS.Blast" Url="html/88b55311-4a89-0894-e27a-e157e443c7f7.htm">
+    <HelpTOCNode Id="f57a74eb-1dc6-4612-bea1-10752e6035e7" Title="Blast Structure" Url="html/efe93ce5-baaf-ed42-b038-35b4ff074233.htm">
+      <HelpTOCNode Id="f8e235f3-7aa4-429c-b4b2-15562676a1db" Title="Blast Properties" Url="html/313eb197-429e-3c25-1e72-c1ae10991f19.htm">
+        <HelpTOCNode Title="Engine Property " Url="html/c3842ea4-049b-18f8-8d5d-72756963840f.htm" />
+        <HelpTOCNode Title="HPCJobs Property " Url="html/635e39ba-19e1-c17c-eb50-39afeba27311.htm" />
+        <HelpTOCNode Title="IsCreated Property " Url="html/1814ea92-d75d-6b20-e7ba-1ca21f10435e.htm" />
+        <HelpTOCNode Title="Scripts Property " Url="html/928b8adc-074f-1c78-75d2-aef1076a3a5b.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="42b42ed8-a0e7-417c-84bf-a49c33c6a98a" Title="Blast Methods" Url="html/1ffa39f7-bea6-3a75-3ed0-662cdacd223b.htm">
+        <HelpTOCNode Title="CompileIntoDesignTimeRegistry Method " Url="html/fd24aaea-efb3-09df-b561-fa303412bc76.htm" />
+        <HelpTOCNode Id="64d34524-a179-466b-947c-cdaee294d98a" Title="Create Method " Url="html/0aee659a-d134-fa02-5602-926c3ed14883.htm">
+          <HelpTOCNode Title="Create Method (Allocator)" Url="html/04f2ecb2-8175-0d5a-1003-52a00a98ce4d.htm" />
+          <HelpTOCNode Title="Create Method (BlastScriptAPI, Allocator)" Url="html/94b0c4d9-aadc-8463-c225-cfe39e3bcb3c.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="Destroy Method " Url="html/62d2d8a6-cb16-0352-7a81-d09f4b0b9f5f.htm" />
+        <HelpTOCNode Id="390a1bdb-b130-4c94-9e19-9d717d813d7b" Title="Execute Method " Url="html/85bc098d-e09e-797f-5c4e-ddef2b9f4b85.htm">
+          <HelpTOCNode Title="Execute Method (BlastPackageData)" Url="html/ec93d49f-7413-5df0-2b0d-53339f49ee68.htm" />
+          <HelpTOCNode Title="Execute Method (BlastScriptPackage)" Url="html/a1c25d5a-d195-020c-c846-5051afa57650.htm" />
+          <HelpTOCNode Title="Execute Method (BlastPackageData, IntPtr)" Url="html/2574d96d-96c7-6736-a515-e4f320780e51.htm" />
+          <HelpTOCNode Title="Execute Method (BlastScriptPackage, IntPtr)" Url="html/81d0eeea-5bf2-403e-090a-998ec291badf.htm" />
+          <HelpTOCNode Title="Execute Method (BlastPackageData, IntPtr, Int32)" Url="html/7ea191e5-7d0f-d8c3-560c-57cfc8f4bea6.htm" />
+          <HelpTOCNode Title="Execute Method (BlastPackageData, IntPtr, IntPtr)" Url="html/b6498bde-464a-04f1-d89f-4fd52d322f2b.htm" />
+          <HelpTOCNode Title="Execute Method (BlastScriptPackage, IntPtr, Int32)" Url="html/2bc77665-de50-89ee-e6d1-b11887113ecf.htm" />
+          <HelpTOCNode Title="Execute Method (BlastScriptPackage, IntPtr, IntPtr)" Url="html/d7f5c10a-b6ec-af29-d6de-7523d395d567.htm" />
+          <HelpTOCNode Title="Execute Method (BlastEngineDataPtr, BlastPackageData, IntPtr, IntPtr)" Url="html/3005cb50-2e1c-f12e-4a34-ecb1b9ec31b1.htm" />
+          <HelpTOCNode Title="Execute Method (BlastPackageData, IntPtr, IntPtr, Int32)" Url="html/5bd9e575-0815-a7a5-9b70-2a436a6b5ebf.htm" />
+          <HelpTOCNode Title="Execute Method (BlastScriptPackage, IntPtr, IntPtr, Int32)" Url="html/607519de-70af-8141-460d-ae81a45482d0.htm" />
+          <HelpTOCNode Title="Execute Method (BlastEngineDataPtr, BlastPackageData, IntPtr, IntPtr, Int32)" Url="html/78b0c197-3845-ad30-23a4-9dbf62134b91.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="GetBlastOperationFromToken Method " Url="html/4854e405-2857-b405-a35a-34c1342206d9.htm" />
+        <HelpTOCNode Title="GetConstantValue Method " Url="html/d71971f8-c7c0-5605-a3ad-67aabf6c7761.htm" />
+        <HelpTOCNode Title="GetConstantValueOperation Method " Url="html/18c349bb-6926-5efd-c9ea-8efb65bc25af.htm" />
+        <HelpTOCNode Title="GetHPCJob Method " Url="html/cf0ed3c0-b4f8-bf9a-130b-8523c4be0442.htm" />
+        <HelpTOCNode Title="GetNamedSystemConstantValue Method " Url="html/02be27c5-37ec-26a6-47a5-bf1e4aaf7700.htm" />
+        <HelpTOCNode Title="GetReadableByteCode Method " Url="html/da479758-7687-cb0e-39c0-6dd9e218ab76.htm" />
+        <HelpTOCNode Title="Intermediate Method " Url="html/22097a07-de1b-ccdc-5a7c-c6ff17a8cf7a.htm" />
+        <HelpTOCNode Title="IsError Method " Url="html/eb9dcebe-68e5-0cee-ebcf-ee8bc6431861.htm" />
+        <HelpTOCNode Title="IsJumpOperation Method " Url="html/5feb5186-362f-0026-79d6-f137aa21f405.htm" />
+        <HelpTOCNode Title="IsNamedSystemConstant Method " Url="html/5da71137-2846-2b4b-b53a-41f2c9c4312d.htm" />
+        <HelpTOCNode Title="IsSuccess Method " Url="html/a2b09ccf-ea82-bae4-e94a-77da1a34601e.htm" />
+        <HelpTOCNode Id="f2461bc1-e926-4967-bcca-3b63e8145f51" Title="Package Method " Url="html/ef43bafa-8b66-4798-9ffc-28e0d1c8fd45.htm">
+          <HelpTOCNode Title="Package Method (BlastScript, BlastCompilerOptions)" Url="html/96c9e1c2-1bad-c1db-60df-5eb66850831e.htm" />
+          <HelpTOCNode Title="Package Method (String, BlastCompilerOptions)" Url="html/7dcc9877-1db4-88a4-975c-f44490a1ac06.htm" />
+          <HelpTOCNode Title="Package Method (BlastEngineDataPtr, BlastScript, BlastCompilerOptions)" Url="html/a396855a-87fb-ea61-b7df-c9508b1eb411.htm" />
+          <HelpTOCNode Title="Package Method (BlastEngineDataPtr, String, BlastCompilerOptions)" Url="html/cd42ba9d-5d51-cf0b-c50d-491385582996.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="VisualizeTokens Method " Url="html/b426cbc0-78e8-06b4-55fc-5431bf4a98df.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="1ed3277e-ea1c-47bf-b863-69807d80b00d" Title="Blast Fields" Url="html/8a83ff0f-821c-381a-0aec-b4c5de93f3d2.htm">
+        <HelpTOCNode Title="API Field" Url="html/2143d3e9-9a1d-f82f-0ad3-78d1493183ad.htm" />
+        <HelpTOCNode Title="Comment Field" Url="html/0cbf2245-7acb-9338-4d47-6b385ec8922b.htm" />
+        <HelpTOCNode Title="InvalidNumeric Field" Url="html/4c06a49e-e31a-1570-1c70-9834d2f72176.htm" />
+        <HelpTOCNode Title="MaximumFunctionNameLength Field" Url="html/f4423cf6-f3c8-db94-73d7-9a4fc32140d3.htm" />
+        <HelpTOCNode Title="StackFillPattern Field" Url="html/d7db357a-a141-ffc3-f542-54bd257972f6.htm" />
+        <HelpTOCNode Title="Tokens Field" Url="html/b0b67b83-9433-afcf-955b-39f1bf128fe6.htm" />
+        <HelpTOCNode Title="ValueOperations Field" Url="html/4e60e646-7026-ebb5-2f1c-371d74fb3f2d.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="Blast.BlastDelegate_f0 Delegate" Url="html/01b5e370-768a-5007-dfd1-57bad161a930.htm" />
+    <HelpTOCNode Title="Blast.BlastDelegate_f1 Delegate" Url="html/34ebf3f5-0e7f-dc68-8e61-558b73f3ba59.htm" />
+    <HelpTOCNode Title="Blast.BlastDelegate_f2 Delegate" Url="html/9036782c-fc72-4c9f-2573-d12266dd4569.htm" />
+    <HelpTOCNode Title="Blast.BlastDelegate_f3 Delegate" Url="html/d165d2fa-7020-fbd1-f5e9-d7c2e0aaa849.htm" />
+    <HelpTOCNode Title="Blast.BlastDelegate_f4 Delegate" Url="html/0382b2d0-3015-7625-7f5b-bd3e9e86ce8e.htm" />
+    <HelpTOCNode Title="Blast.BlastDelegate_f5 Delegate" Url="html/af183ac9-b968-6286-a734-8d9a8ca51c76.htm" />
+    <HelpTOCNode Title="Blast.BlastDelegate_f6 Delegate" Url="html/7dfe2ec6-4ac2-76c4-4ea1-770e11032494.htm" />
+    <HelpTOCNode Title="Blast.BlastDelegate_f7 Delegate" Url="html/fd4aa2d9-396a-98ef-a6c6-083d9f3bfb8e.htm" />
+    <HelpTOCNode Title="Blast.BlastDelegate_f8 Delegate" Url="html/3a01a0f0-4259-2972-a469-9edffb4c65d9.htm" />
+    <HelpTOCNode Title="Blast.BlastExecute Delegate" Url="html/a32155d2-c1a4-6716-5752-0c3b1a1861b9.htm" />
+    <HelpTOCNode Title="blast_operation Enumeration" Url="html/545d7548-930f-7c02-0adc-5220144448d3.htm" />
+    <HelpTOCNode Id="8e8a0abf-d21a-4a89-87b9-3452cebbc8ca" Title="BlastCompilerOptions Class" Url="html/7f9244e5-318d-a425-9a9c-333054b0d8e6.htm">
+      <HelpTOCNode Id="a5627755-f274-4122-aa26-85b1a3346e80" Title="BlastCompilerOptions Constructor " Url="html/1981b839-9844-9857-7eb5-7d9d9d397d73.htm">
+        <HelpTOCNode Title="BlastCompilerOptions Constructor " Url="html/431094d1-b0fd-a9f7-11c8-12841cbec874.htm" />
+        <HelpTOCNode Title="BlastCompilerOptions Constructor (BlastPackageMode)" Url="html/a06135d2-eb65-3175-5b27-fb432c6f5865.htm" />
+        <HelpTOCNode Title="BlastCompilerOptions Constructor (Int32)" Url="html/4f6280aa-119a-c591-c981-a8248e7a6494.htm" />
+        <HelpTOCNode Title="BlastCompilerOptions Constructor (Int32, BlastPackageMode)" Url="html/827c1ab1-11a5-07fa-06a2-abfcdd3a6867.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="d2be2ed1-f295-4e13-8860-c3cfab78c1c9" Title="BlastCompilerOptions Properties" Url="html/bbb52277-fc22-3c3a-a188-977aed9cbc32.htm">
+        <HelpTOCNode Title="Default Property " Url="html/c52bcd6b-bbae-2244-889c-8a81a68a2b4f.htm" />
+        <HelpTOCNode Title="Entity Property " Url="html/d588268e-fac5-235f-75e1-5f3bff127821.htm" />
+        <HelpTOCNode Title="SSMD Property " Url="html/5550ddcf-c35a-da38-53e3-18ec03a2c7b7.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="8cdaff38-4afa-42b6-b8f3-1bd521973e34" Title="BlastCompilerOptions Methods" Url="html/eaa692a6-b15b-bf03-c016-ba14dff0b1d3.htm">
+        <HelpTOCNode Title="AddDefine Method " Url="html/1760e757-849f-b57e-220b-bd8c76fd921a.htm" />
+        <HelpTOCNode Title="ClearDefines Method " Url="html/5a291774-da7b-d0e1-449f-3da775cb7471.htm" />
+        <HelpTOCNode Title="DisableOptimisations Method " Url="html/f9abf58c-abab-7f3d-a18a-d993b4edf0ce.htm" />
+        <HelpTOCNode Title="EnableOptimisations Method " Url="html/ebd2b6f3-eb63-c14a-a147-5b6bf636df94.htm" />
+        <HelpTOCNode Title="EnableValidation Method " Url="html/c3dca597-18a9-8ef7-c95c-16a095750804.htm" />
+        <HelpTOCNode Title="IsDefined Method " Url="html/186cf513-1ceb-af20-5d5f-57aa1a272bb5.htm" />
+        <HelpTOCNode Title="PackageWithoutStack Method " Url="html/7f0c0ad8-5392-5638-364d-315d0c54c21e.htm" />
+        <HelpTOCNode Title="RemoveDefine Method " Url="html/ff67184a-93c5-8cc4-b80a-73e1e61d5209.htm" />
+        <HelpTOCNode Title="SetAllocator Method " Url="html/aaefaaec-dc08-3d78-8eef-eb664febef14.htm" />
+        <HelpTOCNode Title="SetLanguage Method " Url="html/c10be283-99af-aa48-e8ce-2dc1807cbb87.htm" />
+        <HelpTOCNode Title="SetPackageMode Method " Url="html/14a6b97a-ccd1-3cae-e842-dee69e0815c1.htm" />
+        <HelpTOCNode Title="SetStackSize Method " Url="html/94d246e7-c93a-b090-ab4b-2e34352ec37c.htm" />
+        <HelpTOCNode Title="Silent Method " Url="html/5585855a-7234-0f59-6bfe-c00eb9fb2d54.htm" />
+        <HelpTOCNode Title="Trace Method " Url="html/489a7914-7c67-d0d2-e23f-5a77f00857cf.htm" />
+        <HelpTOCNode Title="TryGetDefine Method " Url="html/1b41c344-148e-49ed-57aa-a05926f1afd5.htm" />
+        <HelpTOCNode Title="Verbose Method " Url="html/1ed552ce-ba7a-b990-76a4-dd1f5110241d.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="e4640e37-ebbc-4080-aea5-ca188554dcb6" Title="BlastCompilerOptions Fields" Url="html/73a041bc-c5a2-c574-fc9d-4ec6cf7d5c19.htm">
+        <HelpTOCNode Title="AutoValidate Field" Url="html/bc375dea-e8cb-a7e6-9d44-fdf454088fe4.htm" />
+        <HelpTOCNode Title="CompileDebug Field" Url="html/e5cc5fb2-a822-c60f-c25f-b22e45581854.htm" />
+        <HelpTOCNode Title="CompileWithSystemConstants Field" Url="html/0d388374-f3dc-976f-cfb0-ca30058a9c0f.htm" />
+        <HelpTOCNode Title="ConstantEpsilon Field" Url="html/e7c33875-6c70-db48-e1cc-f5595fd86965.htm" />
+        <HelpTOCNode Title="ConstantPrecision Field" Url="html/4db1ae3e-0170-44d0-4e64-90ffa8fd92c8.htm" />
+        <HelpTOCNode Title="DefaultStackSize Field" Url="html/d9bd129e-b09d-5a5a-8e3c-50ec1f075e87.htm" />
+        <HelpTOCNode Title="Defines Field" Url="html/aad5f166-f39c-c24c-8939-bf115ee5cf59.htm" />
+        <HelpTOCNode Title="EstimateStackSize Field" Url="html/d1844d6e-c7d5-ade1-fa99-87387e90df7b.htm" />
+        <HelpTOCNode Title="Experimental Field" Url="html/efaaeae2-2fe4-bef2-fa32-649dbd126b4b.htm" />
+        <HelpTOCNode Title="Language Field" Url="html/b592b70e-26b1-759e-8b2a-7de514fba4c6.htm" />
+        <HelpTOCNode Title="Optimize Field" Url="html/f2c57b57-a5a5-6ff5-ac6b-c3a97f4a4f58.htm" />
+        <HelpTOCNode Title="PackageAllocator Field" Url="html/b9b99e59-30f9-25f4-e48c-9858c05cb03b.htm" />
+        <HelpTOCNode Title="PackageMode Field" Url="html/2a2d22fb-d208-4216-84a8-f0a83c67b134.htm" />
+        <HelpTOCNode Title="PackageStack Field" Url="html/3e551e3c-0a4a-e83a-4f06-9578c2804b8c.htm" />
+        <HelpTOCNode Title="ParallelCompilation Field" Url="html/5eb2dcdf-0488-9e12-61b8-17ee2660e140.htm" />
+        <HelpTOCNode Title="SupportYield Field" Url="html/ce5daadc-0006-a5d2-11aa-e884ff20ce1a.htm" />
+        <HelpTOCNode Title="TraceLogging Field" Url="html/79869a72-bfc3-8efd-93ee-8f54b65dbd2a.htm" />
+        <HelpTOCNode Title="VerboseLogging Field" Url="html/e8ae9756-fac6-57eb-28c6-d48763a009d3.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="BlastCompilerStageType Enumeration" Url="html/7f5f748f-970b-5e4a-b29a-8ce9e30903a1.htm" />
+    <HelpTOCNode Id="55e5671f-1845-4fac-ad85-ac5c38c6b9d0" Title="BlastEngineData Structure" Url="html/54e0839f-a7d2-83ae-b999-168019175d84.htm">
+      <HelpTOCNode Id="b25efd74-15a2-4911-a091-22547c968810" Title="BlastEngineData Methods" Url="html/8fdd81d6-0139-1835-fb24-5b9a7cba7dfb.htm">
+        <HelpTOCNode Title="CanBeAValidFunctionId Method " Url="html/8d3ecf4a-3561-50e9-844a-374ca3b94bef.htm" />
+        <HelpTOCNode Id="0842ef05-414b-4fb3-96ed-7471251cadc4" Title="GetFunction Method " Url="html/b6018446-3777-4099-29db-38377ffaab06.htm">
+          <HelpTOCNode Title="GetFunction Method (blast_operation)" Url="html/48f1d3ae-c04d-2115-211a-2abc367d3b2f.htm" />
+          <HelpTOCNode Title="GetFunction Method (String)" Url="html/5cfdad3b-425a-6148-9cb2-05f8495cd0f9.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="IsVariableParamFunction Method " Url="html/64bb225b-b3a3-39d8-a0d8-5d0dd6d3a257.htm" />
+        <HelpTOCNode Title="Seed Method " Url="html/d329fc16-5c00-a995-7463-1fdc3024b940.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="a19173ba-729d-4325-a3c3-b5100ccdfcf8" Title="BlastEngineData Fields" Url="html/aa712aa0-7bc3-8b73-fbc1-46bd48170a44.htm">
+        <HelpTOCNode Title="constants Field" Url="html/f0326e35-c929-3985-a508-7b61fab8e4f9.htm" />
+        <HelpTOCNode Title="FunctionCount Field" Url="html/9ba2b97b-bed2-0713-9c6f-18d457b0080a.htm" />
+        <HelpTOCNode Title="FunctionPointers Field" Url="html/d3f57ece-fb86-2b40-b207-9c04d6356e2f.htm" />
+        <HelpTOCNode Title="Functions Field" Url="html/6369b7c6-0296-d995-3b06-e1c4fa4a97f7.htm" />
+        <HelpTOCNode Title="random Field" Url="html/717683b7-f708-eba6-7df8-aeb8a99901b3.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="38d0d1f9-1291-49a6-929c-9f4fde5ac06a" Title="BlastEngineDataPtr Structure" Url="html/8db5e405-878e-4a0b-b105-f09f3c478935.htm">
+      <HelpTOCNode Id="6871c996-5b4b-4cad-8e8c-3bac338e0806" Title="BlastEngineDataPtr Properties" Url="html/c183b872-0ae3-eab0-1d89-f2a5dd335ba9.htm">
+        <HelpTOCNode Title="Data Property " Url="html/a60f4bfc-c932-2d91-e6b3-d25ec77a154b.htm" />
+        <HelpTOCNode Title="IsCreated Property " Url="html/97a7d306-431c-b2c6-2fc3-e0f32045b8c0.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Title="BlastEngineDataPtr Methods" Url="html/6e7770d3-5d4b-ca9e-cb79-ba5715d485d7.htm" />
+      <HelpTOCNode Id="9b607685-f603-439d-90bf-faf756291f39" Title="BlastEngineDataPtr Type Conversions" Url="html/a066f487-5e9a-3012-81a1-441fcf98ead5.htm">
+        <HelpTOCNode Title="Implicit Conversion (IntPtr to BlastEngineDataPtr)" Url="html/ca61abc4-af49-7851-2ebb-f92708135d05.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="cb314d11-9b35-4033-9a36-054b1ec3a5cb" Title="BlastEngineDataPtr Fields" Url="html/63e3177a-39b8-42f0-64d9-b10993bf75ba.htm">
+        <HelpTOCNode Title="ptr Field" Url="html/c8aa1ed2-05e2-ac25-3af0-4c705da4c902.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="BlastError Enumeration" Url="html/db8cb631-f3f7-e809-8853-bc1b825061a7.htm" />
+    <HelpTOCNode Title="BlastLanguageVersion Enumeration" Url="html/4f594a99-67a1-75fe-1a4d-9d4306528675.htm" />
+    <HelpTOCNode Id="c5084c44-743c-460f-b467-549f42c6a6aa" Title="BlastMetaDataStack Structure" Url="html/77d7e187-319b-74ff-7f94-686db2fbeb22.htm">
+      <HelpTOCNode Title="BlastMetaDataStack Methods" Url="html/9eef7dae-83cc-5413-0483-64cf8fd34948.htm" />
+    </HelpTOCNode>
+    <HelpTOCNode Id="a45b7c9e-c8dd-49fd-81c4-e8cc91bd7eb3" Title="BlastPackageData Structure" Url="html/08d36c75-b5dc-8eaf-5936-daa952653fa2.htm">
+      <HelpTOCNode Id="169fdfbc-bf7b-451a-a87c-5fc0e7547dc4" Title="BlastPackageData Properties" Url="html/b5a99611-6986-ce5c-367c-b3b6c9995db9.htm">
+        <HelpTOCNode Title="AllocatedDataSegmentSize Property " Url="html/d22d73ba-283f-94e4-1b3c-267424094bba.htm" />
+        <HelpTOCNode Title="Code Property " Url="html/6d98b5d5-0e9b-9edb-f424-945ee43a6362.htm" />
+        <HelpTOCNode Title="CodeSegmentSize Property " Url="html/fa4b521b-31b3-7742-0d8b-083ec7b57794.htm" />
+        <HelpTOCNode Title="CodeSize Property " Url="html/404a74c5-9c96-33ba-b1b6-119f99849ec3.htm" />
+        <HelpTOCNode Title="Data Property " Url="html/01a8ff87-7a6b-e188-39e5-03bcd34b3a1e.htm" />
+        <HelpTOCNode Title="DataSegmentPtr Property " Url="html/c37955a3-34ad-eb4d-fd55-c3832fdeebe1.htm" />
+        <HelpTOCNode Title="DataSegmentSize Property " Url="html/e4530571-d4e7-67d5-f068-4eae490ba5f5.htm" />
+        <HelpTOCNode Title="DataSegmentStackOffset Property " Url="html/565a6d8e-4db0-a65e-911c-23fc74f2e58d.htm" />
+        <HelpTOCNode Title="DataSize Property " Url="html/f9e80440-b6d6-b6e2-88ed-48ea6546f1d1.htm" />
+        <HelpTOCNode Title="HasStack Property " Url="html/59151843-4952-7847-2603-52dcea0263ae.htm" />
+        <HelpTOCNode Title="IsAllocated Property " Url="html/e35af469-859e-2547-38bd-b7633ddae2e9.htm" />
+        <HelpTOCNode Title="Metadata Property " Url="html/51b0b368-e9fa-fe0b-1c65-9b40196d99d6.htm" />
+        <HelpTOCNode Title="MetadataPtr Property " Url="html/7fd87a79-c7d0-b124-bc3d-27d79886c8b1.htm" />
+        <HelpTOCNode Title="MetadataSize Property " Url="html/f234ef0d-f4fc-88e5-905a-240f98dae5dc.htm" />
+        <HelpTOCNode Title="SSMDDataSize Property " Url="html/ae316c91-18ec-f3d9-c20f-e684920f4b84.htm" />
+        <HelpTOCNode Title="Stack Property " Url="html/1f54a5ca-cae8-dacc-b058-417acb08d8d9.htm" />
+        <HelpTOCNode Title="StackCapacity Property " Url="html/6e3e81d0-45ff-dc5e-6fe7-97aa39355cf3.htm" />
+        <HelpTOCNode Title="StackSegmentPtr Property " Url="html/45f7af8b-4047-b632-9ef9-9400b5808ed7.htm" />
+        <HelpTOCNode Title="StackSize Property " Url="html/d2405346-2e2e-8ea5-afb6-387ece160a4d.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="bc7b2377-b27f-432b-b5a5-9f4d16a16926" Title="BlastPackageData Methods" Url="html/07f3158f-d225-b371-7998-bb6c22017c17.htm">
+        <HelpTOCNode Id="f8a54872-6dba-4ef9-ab4a-69374885ce55" Title="Clone Method " Url="html/20a74ecb-85d4-fc81-27d5-c853e1a9bb7f.htm">
+          <HelpTOCNode Title="Clone Method " Url="html/fa169307-37be-3a64-3b1c-74e5c35e206b.htm" />
+          <HelpTOCNode Title="Clone Method (Allocator)" Url="html/7196c7b0-ed8b-5ea9-41d5-67f6038328a9.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="762dd62e-e876-4ab8-ae5d-98e38acd13c7" Title="CloneData Method " Url="html/618e3730-09a3-4586-335f-22eea7084ead.htm">
+          <HelpTOCNode Title="CloneData Method (Int32)" Url="html/5818b604-ddfa-1852-2b5c-57d64bd7df01.htm" />
+          <HelpTOCNode Title="CloneData Method (Int32, BlastMetaDataStack*)" Url="html/b098bc47-5aad-9825-6eba-141c4fd7bc56.htm" />
+          <HelpTOCNode Title="CloneData Method (Int32, Allocator)" Url="html/8c2d1d3f-3350-2323-ff81-8e534c4b80a2.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="d0005923-736c-4eb1-ae89-3f19c829da79" Title="CloneDataStack Method " Url="html/b5641736-e689-49e1-ffe1-9cdba898476c.htm">
+          <HelpTOCNode Title="CloneDataStack Method (Int32)" Url="html/d1e1bb16-43cf-92d3-b55c-eb581c5c0dd3.htm" />
+          <HelpTOCNode Title="CloneDataStack Method (Int32, BlastSSMDDataStack*)" Url="html/79b3b6cd-06ba-5cd6-ec0d-9ae7d6691227.htm" />
+          <HelpTOCNode Title="CloneDataStack Method (Int32, Allocator)" Url="html/2ba978b4-b3f7-5864-523e-53a5e2f34216.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="Free Method " Url="html/72fa3099-8e5d-0f25-82b0-c3fe0c86da5b.htm" />
+        <HelpTOCNode Id="3949e6d2-a392-4c9f-9635-a7512f265075" Title="FreeData Method " Url="html/eed07fff-54f4-e569-da2c-a752828853a4.htm">
+          <HelpTOCNode Title="FreeData Method (BlastMetaDataStack*, Allocator)" Url="html/b0ac5972-25fc-a707-7f78-cb99531831e0.htm" />
+          <HelpTOCNode Title="FreeData Method (BlastSSMDDataStack*, Allocator)" Url="html/83648e9a-ad51-32f4-9fae-791209110320.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="342387af-1c7b-4fb7-8c0a-5e371fdb4dc7" Title="BlastPackageData Fields" Url="html/ce255185-7492-d45c-b32a-7da0e23499aa.htm">
+        <HelpTOCNode Title="Allocator Field" Url="html/6d4b110f-1713-2313-5351-6e6e6ac7fddd.htm" />
+        <HelpTOCNode Title="CodeSegmentPtr Field" Url="html/d3f2881b-2b8b-7196-6a04-4f7c9b632174.htm" />
+        <HelpTOCNode Title="Flags Field" Url="html/2c47f058-7552-e3b1-3553-3d104cd1a7ce.htm" />
+        <HelpTOCNode Title="LanguageVersion Field" Url="html/f5b1745d-3a57-6f9d-ebac-834588ccbb4e.htm" />
+        <HelpTOCNode Title="O1 Field" Url="html/1f78c57e-3352-d378-f7c3-49fd091f03f6.htm" />
+        <HelpTOCNode Title="O2 Field" Url="html/26d977e0-4aa3-b78f-cb91-3fc59701c95f.htm" />
+        <HelpTOCNode Title="O3 Field" Url="html/1c805bdc-99ee-483e-567a-72eed5f073cc.htm" />
+        <HelpTOCNode Title="O4 Field" Url="html/a51a9423-6ac4-a6c7-516f-16dde2271240.htm" />
+        <HelpTOCNode Title="P2 Field" Url="html/a9541fb8-97cc-fb77-f498-128db4ebebd0.htm" />
+        <HelpTOCNode Title="PackageMode Field" Url="html/26e49bda-a3cd-a6d6-6de3-8c6abc8fac3e.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="BlastPackageFlags Enumeration" Url="html/17eaa41c-8f3e-dcca-b631-fe268788ad74.htm" />
+    <HelpTOCNode Title="BlastPackageMode Enumeration" Url="html/b20095da-1caa-4284-d39e-afb8ff2da2d0.htm" />
+    <HelpTOCNode Title="BlastRuntimeVersions Enumeration" Url="html/f6c6c4b4-43f6-c6cc-e43a-5542918e7ba3.htm" />
+    <HelpTOCNode Id="644bc0e9-b960-454e-8847-7a71c00ee60c" Title="BlastScript Class" Url="html/701ebde6-515e-1fd5-a11a-526716112a12.htm">
+      <HelpTOCNode Title="BlastScript Constructor " Url="html/e5b73432-a773-197b-c9f9-11f98a4f04d1.htm" />
+      <HelpTOCNode Id="e04bc2d5-73b4-42ca-a406-f4605a2ddb0d" Title="BlastScript Properties" Url="html/e128cf45-b33f-40fb-3cbf-eaf03c7dc4d7.htm">
+        <HelpTOCNode Title="Code Property " Url="html/84a782aa-2aaf-328f-f855-50de3d4d6b20.htm" />
+        <HelpTOCNode Title="Id Property " Url="html/64f8a10f-b9f3-f41e-4cb1-794fe35534fa.htm" />
+        <HelpTOCNode Title="IsPackaged Property " Url="html/1ffd7aa1-6f07-6afb-2ac1-091679e31d45.htm" />
+        <HelpTOCNode Title="IsPrepared Property " Url="html/59b23f7f-c8a0-d50f-6551-9f9cb61f920e.htm" />
+        <HelpTOCNode Title="LanguageVersion Property " Url="html/4b215098-c193-1ec9-e45e-530ef8d13590.htm" />
+        <HelpTOCNode Title="Name Property " Url="html/69c29051-054a-3aef-d131-cbb9838072ea.htm" />
+        <HelpTOCNode Title="Package Property " Url="html/e7782a49-9651-a093-8c5f-f05f98adf119.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="7defd7e3-654e-4a58-bc59-88b7a61fbf5b" Title="BlastScript Methods" Url="html/078787f0-9fb7-ad13-5e44-709143fa2d91.htm">
+        <HelpTOCNode Title="Dispose Method " Url="html/ff3138e4-1804-b463-0624-26a52274fd64.htm" />
+        <HelpTOCNode Title="Execute Method " Url="html/feb1a6f4-26a6-cbd4-b661-6561e987a707.htm" />
+        <HelpTOCNode Title="FromText Method " Url="html/313199bd-f09e-808c-a301-1cbf84f6c8ea.htm" />
+        <HelpTOCNode Title="Prepare Method " Url="html/224f1be6-0270-d026-70af-9b21b66e6033.htm" />
+        <HelpTOCNode Title="ReleasePackage Method " Url="html/a91d4511-e5ff-2d67-9f9e-5372535b42c4.htm" />
+        <HelpTOCNode Title="ToString Method " Url="html/882ef256-ab0b-1945-b621-1ce89e4fd87d.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="2161124e-7207-4400-b887-9cd15475d917" Title="BlastScriptAPI Class" Url="html/e6f5a4bb-3337-aec4-3768-690bdad3c62b.htm">
+      <HelpTOCNode Title="BlastScriptAPI Constructor " Url="html/0ccc527c-b999-1fd0-59cd-1232364856f2.htm" />
+      <HelpTOCNode Id="a7649c8c-1128-49b5-bacb-7f6f21b11510" Title="BlastScriptAPI Properties" Url="html/018b76db-c95b-2367-a01c-17eeabcacb16.htm">
+        <HelpTOCNode Title="FunctionCount Property " Url="html/2cc57b49-a977-7244-c0c9-230f077dea6d.htm" />
+        <HelpTOCNode Title="IsInitialized Property " Url="html/46925b97-5737-6c68-1f95-1b7bac649735.htm" />
+        <HelpTOCNode Title="Name Property " Url="html/414e4dbe-0ee6-1751-a156-43161f8a1dc3.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="cdb3fc4d-1914-473a-8ba5-da5dac53333a" Title="BlastScriptAPI Methods" Url="html/31890053-e2d9-b83b-e2bf-1f8aa0411159.htm">
+        <HelpTOCNode Title="Dispose Method " Url="html/60591324-324a-5e9c-6993-b3f8f3c6d9a2.htm" />
+        <HelpTOCNode Id="378b23f4-0b3b-44cf-b9c8-6e4fa94adafd" Title="GetFunctionById Method " Url="html/99a3d75a-8924-e411-80fc-3e73144f0947.htm">
+          <HelpTOCNode Title="GetFunctionById Method (Int32)" Url="html/84e82515-9ca9-b3de-108a-bd3da4478ab5.htm" />
+          <HelpTOCNode Title="GetFunctionById Method (ReservedBlastScriptFunctionIds)" Url="html/25aa5b3e-6c8f-cb04-2ae9-bea78269a813.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="GetFunctionByName Method " Url="html/f86fa2f4-afa0-128c-78ab-a38c8f5bdf5c.htm" />
+        <HelpTOCNode Title="GetFunctionByOpCode Method " Url="html/06d621f2-df7f-fe0d-b440-341430411728.htm" />
+        <HelpTOCNode Title="GetFunctionDataById Method " Url="html/f9c1ae84-56ba-770a-a931-b55cb6aac76f.htm" />
+        <HelpTOCNode Title="Initialize Method " Url="html/a6d81abb-21cb-1df4-6d56-766d0cfc2b29.htm" />
+        <HelpTOCNode Title="IsVariableParamFunction Method " Url="html/9889f73c-27eb-5f8f-4eb0-e1beeef6ce88.htm" />
+        <HelpTOCNode Id="4d9f1413-6244-4098-97e1-61f66f88bd37" Title="RegisterFunction Method " Url="html/6d3b5541-67f5-c909-a3f9-af407575a2f7.htm">
+          <HelpTOCNode Title="RegisterFunction Method (String, IntPtr, Int32, Int32, Int32)" Url="html/77aeaf78-08ed-386d-0409-2c60cad56383.htm" />
+          <HelpTOCNode Title="RegisterFunction Method (String, Int32, Int32, Int32, Int32, blast_operation)" Url="html/095f23d8-9ec0-4ba4-5bc7-239ee9933e0a.htm" />
+          <HelpTOCNode Title="RegisterFunction Method (String, Int32, Int32, Int32, Int32, extended_blast_operation)" Url="html/8a2f464c-762f-ecae-1c83-d00adb4bcf6f.htm" />
+          <HelpTOCNode Title="RegisterFunction Method (ReservedBlastScriptFunctionIds, String, Int32, Int32, Int32, Int32, blast_operation)" Url="html/c353cabb-a89d-456d-f2ad-4e8a27b53fc2.htm" />
+          <HelpTOCNode Title="RegisterFunction Method (ReservedBlastScriptFunctionIds, String, Int32, Int32, Int32, Int32, extended_blast_operation)" Url="html/a081abea-0b1e-8f3a-2839-c74df67536ca.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="TryGetFunctionCallById Method " Url="html/5028ecdd-4184-5726-2c78-95edeab6e879.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="74ca30a8-fb76-4ef5-806c-e998c023ce4e" Title="BlastScriptAPI Fields" Url="html/c3c50634-c14e-0249-0db7-6ee8e5646ce2.htm">
+        <HelpTOCNode Title="Allocator Field" Url="html/0cc6d233-258c-dfe1-7ab1-8fbb98933846.htm" />
+        <HelpTOCNode Title="FunctionInfo Field" Url="html/c0f49090-67a3-8192-1d56-8ee2ac61f059.htm" />
+        <HelpTOCNode Title="Functions Field" Url="html/1ad81bc5-60fa-90cf-5b17-09b3d2dee667.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="f279e064-67b6-4fe6-8759-d79947eda3ee" Title="BlastScriptFunction Structure" Url="html/4c6d14f4-14ae-a622-3763-13b615f5d263.htm">
+      <HelpTOCNode Id="b6cf1ea4-cf89-4dd7-b078-3914966614dc" Title="BlastScriptFunction Properties" Url="html/4738522b-9fd2-88aa-9a28-c2822a32421a.htm">
+        <HelpTOCNode Title="CanHaveParameters Property " Url="html/4c311250-9b54-7198-2cef-5292ad336fe9.htm" />
+        <HelpTOCNode Title="HasVariableParameterCount Property " Url="html/3b917fa4-78fe-8d21-584c-0e4a61c2b687.htm" />
+        <HelpTOCNode Title="IsExternalCall Property " Url="html/0c4ab298-2766-e370-b7a6-d27dc898e4f3.htm" />
+        <HelpTOCNode Title="IsNotValid Property " Url="html/ae631692-07fa-34e9-c6cc-7a873085ed54.htm" />
+        <HelpTOCNode Title="IsPopVariant Property " Url="html/71049963-e416-e923-55cc-3525c1e4cb6e.htm" />
+        <HelpTOCNode Title="IsPushVariant Property " Url="html/c0e6cf57-81a0-f767-4b4e-3fe0e8609ed8.htm" />
+        <HelpTOCNode Title="IsReserved Property " Url="html/00a66ae1-5419-9e67-ff18-6fa872a1899f.htm" />
+        <HelpTOCNode Title="IsValid Property " Url="html/72523af0-171e-f635-01b4-287d67635f14.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="192fd2d8-9e42-487f-8398-de10cc1e8ae6" Title="BlastScriptFunction Methods" Url="html/08747079-75ea-06e5-48b8-39f2a1bc34c4.htm">
+        <HelpTOCNode Title="Generic(T) Method " Url="html/6efe7905-9fcd-e206-a6be-6f70a5ed68c1.htm" />
+        <HelpTOCNode Title="GetFunctionName Method " Url="html/4cf86f86-6545-89dc-888b-2742faaa5c26.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="f2f1de77-a23c-4e59-8e74-981d92e87d35" Title="BlastScriptFunction Fields" Url="html/b7942939-6580-cc5f-ad30-6094c0d058df.htm">
+        <HelpTOCNode Title="AcceptsVectorSize Field" Url="html/814ec8a3-b38d-d0a1-5ee7-37b516b1da7e.htm" />
+        <HelpTOCNode Title="ExtendedScriptOp Field" Url="html/a64ae303-2829-3fc9-0a87-37a02ae8db3c.htm" />
+        <HelpTOCNode Title="Flags Field" Url="html/e1dd46ff-3d27-cce6-704d-4b6396a57d92.htm" />
+        <HelpTOCNode Title="FunctionId Field" Url="html/2045032c-da98-d060-1355-acc3982598fe.htm" />
+        <HelpTOCNode Title="Match Field" Url="html/621c3e5a-d35f-5646-5ff4-3ec101473e36.htm" />
+        <HelpTOCNode Title="MaxParameterCount Field" Url="html/f28fc7ad-718b-6c88-a529-4f620c72cf88.htm" />
+        <HelpTOCNode Title="MinParameterCount Field" Url="html/0e6a5677-792a-9d51-6580-1fe48dd611b6.htm" />
+        <HelpTOCNode Title="NativeFunctionPointer Field" Url="html/6e4ec964-4fb4-67d9-90b0-58e54779ed4d.htm" />
+        <HelpTOCNode Title="ReturnsVectorSize Field" Url="html/2047edc6-4d5b-7e98-e6a4-7a35278c2567.htm" />
+        <HelpTOCNode Title="ScriptOp Field" Url="html/0b79fbcc-0b5a-f8b5-676e-56fe70bb71ef.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="BlastScriptFunctionFlag Enumeration" Url="html/46efbd59-56df-3309-2f6b-24022c3fe47f.htm" />
+    <HelpTOCNode Id="15fa5245-d075-4d40-b8ba-9c47481427e2" Title="BlastScriptFunctionInfo Class" Url="html/35bc9cb6-da4c-534d-4c2a-2a3eef40d203.htm">
+      <HelpTOCNode Title="BlastScriptFunctionInfo Constructor " Url="html/a61a2445-75ee-d5a0-64df-5df188e61216.htm" />
+      <HelpTOCNode Id="58f0ccc9-e3e8-464a-902d-7cd841ea50df" Title="BlastScriptFunctionInfo Properties" Url="html/31e7ecdc-d229-db90-fcbf-fc61bf49f230.htm">
+        <HelpTOCNode Title="HasVariableParameterCount Property " Url="html/13743af0-18d0-34a2-d4dd-f20c1fee58f7.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="3aba671e-8644-4045-901f-161d8f2c7430" Title="BlastScriptFunctionInfo Methods" Url="html/e94fc1c9-0bfb-77f4-7de4-dc52f0d3957b.htm">
+        <HelpTOCNode Title="ToString Method " Url="html/a64c83af-69fa-f879-083c-00692b609628.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="c592ea34-7e6d-4401-a6cb-2d38e4ba74d3" Title="BlastScriptFunctionInfo Fields" Url="html/5b75e754-3d12-8af9-0883-cff69cf9fd47.htm">
+        <HelpTOCNode Title="CSName Field" Url="html/a45b8222-2349-3582-1d06-851f9e8383a0.htm" />
+        <HelpTOCNode Title="Function Field" Url="html/424e4636-688d-a136-fe04-d014070df53b.htm" />
+        <HelpTOCNode Title="Match Field" Url="html/1af05d39-79d5-7524-50fd-13fe0acbd0a4.htm" />
+        <HelpTOCNode Title="Parameters Field" Url="html/95f82f5e-8a22-c2a3-4844-fa6d0963f6ef.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="3dffaecb-d132-40e7-8a54-e3f39495f0f4" Title="BlastScriptPackage Class" Url="html/334603e0-a0de-2aaa-4007-78f5dcc5dc51.htm">
+      <HelpTOCNode Title="BlastScriptPackage Constructor " Url="html/ceb6dd53-1c21-9fb7-baaf-5feb33116455.htm" />
+      <HelpTOCNode Id="8bc688bb-a86b-4397-b2f5-69fa3f1e8029" Title="BlastScriptPackage Properties" Url="html/00ee6bad-da99-f98f-fd85-f4df4e74360f.htm">
+        <HelpTOCNode Title="Flags Property " Url="html/29e7cfcf-f874-2958-1fe4-5d6f5d908477.htm" />
+        <HelpTOCNode Title="IsAllocated Property " Url="html/a67933c2-0337-8a99-37ee-2f75a85e7669.htm" />
+        <HelpTOCNode Title="IsBurstCompiled Property " Url="html/664b7ddf-4dd6-63fc-27c5-0f0e86fb2a23.htm" />
+        <HelpTOCNode Title="PackageMode Property " Url="html/e16fd7a7-c946-fea6-0909-7c6256b2ab5d.htm" />
+        <HelpTOCNode Title="PackageSize Property " Url="html/0a482c39-8cd5-a523-67b6-1f14ab46c3a3.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="02af7e0c-d2d8-44be-8680-380e62404fef" Title="BlastScriptPackage Methods" Url="html/bad88785-c91d-f3e2-ec92-1b5466b586d4.htm">
+        <HelpTOCNode Title="Destroy Method " Url="html/4f6e6842-52fd-bd32-44e0-092d427eae5c.htm" />
+        <HelpTOCNode Title="Execute Method " Url="html/8da42d7d-e098-13bc-1584-98e8c33f8d7f.htm" />
+        <HelpTOCNode Title="GetCodeSegmentText Method " Url="html/69baa49d-cf29-064a-e47e-bcc55f96ec0b.htm" />
+        <HelpTOCNode Title="GetDataSegmentText Method " Url="html/b9956b5d-2d39-9a12-62f0-99df870ea810.htm" />
+        <HelpTOCNode Title="GetPackageCodeBytesText Method " Url="html/f37327e7-5c41-94a4-c167-13e84cf48ab7.htm" />
+        <HelpTOCNode Title="GetPackageDataBytesText Method " Url="html/2d990087-561e-f69b-32eb-171fdab6fe28.htm" />
+        <HelpTOCNode Title="GetPackageInfoText Method " Url="html/0766aba5-5567-f835-60a4-69ed5c4225d0.htm" />
+        <HelpTOCNode Title="ToString Method " Url="html/cf0a5c95-66a3-7c70-eb0c-c433f2761a25.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="2fa01541-318c-4923-b406-7cd6c5702441" Title="BlastScriptPackage Fields" Url="html/d97c0c48-34b5-1963-aba8-f0d78b1d50be.htm">
+        <HelpTOCNode Title="Bursted Field" Url="html/9a0089be-c750-c145-b537-d93d80915414.htm" />
+        <HelpTOCNode Title="Inputs Field" Url="html/abb37695-58a3-3354-74d8-ba616668810c.htm" />
+        <HelpTOCNode Title="Outputs Field" Url="html/813f099b-8ec0-8dcf-137d-8e17f2e49c41.htm" />
+        <HelpTOCNode Title="Package Field" Url="html/30327771-378e-1288-97bb-626cd92423d9.htm" />
+        <HelpTOCNode Title="VariableOffsets Field" Url="html/cbb2ce87-fe20-957d-cf39-b61b3891ea16.htm" />
+        <HelpTOCNode Title="Variables Field" Url="html/b1737e9d-753b-8df9-8b4a-75697320caf2.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="BlastScriptToken Enumeration" Url="html/62d1b49d-7dce-3574-fe4a-2a823f309f3c.htm" />
+    <HelpTOCNode Id="93096820-4b19-41ca-a90c-c9e33d576a16" Title="BlastScriptTokenDefinition Class" Url="html/c46091ba-5aab-4b9f-04fa-20713e7aaf85.htm">
+      <HelpTOCNode Title="BlastScriptTokenDefinition Constructor " Url="html/965798e1-394d-5fa4-46d1-80079748afcf.htm" />
+      <HelpTOCNode Id="74eeb217-ad91-4f13-ac9d-0d2c5066a5fc" Title="BlastScriptTokenDefinition Properties" Url="html/669077d2-bf47-df54-9470-14fc4a27b172.htm">
+        <HelpTOCNode Title="Description Property " Url="html/68dccf80-2752-ffa4-d59b-dae28703eb6c.htm" />
+        <HelpTOCNode Title="Match Property " Url="html/c2c359a4-1679-90d5-5345-8ad51fd54bee.htm" />
+        <HelpTOCNode Title="Token Property " Url="html/705781eb-521c-08d6-b36b-bc12f512ac33.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Title="BlastScriptTokenDefinition Methods" Url="html/631153ca-074a-e397-55cb-a6f7aa86c408.htm" />
+    </HelpTOCNode>
+    <HelpTOCNode Id="198ceca3-bcd5-47d0-9238-e8784756ffd1" Title="BlastSSMDDataStack Structure" Url="html/0f4f1f7f-e862-bea9-18e1-be0225e19ae1.htm">
+      <HelpTOCNode Title="BlastSSMDDataStack Methods" Url="html/5e7a1d55-9742-9c1c-877e-f725bc1ab9c2.htm" />
+      <HelpTOCNode Id="0cc13dc9-c3df-4521-9c7a-d49f0899861e" Title="BlastSSMDDataStack Fields" Url="html/e90f5c2a-c006-d4ee-7cfa-0074694c40f3.htm">
+        <HelpTOCNode Title="a Field" Url="html/b4ad011b-fe28-9d73-37bd-ef6b1725d3ad.htm" />
+        <HelpTOCNode Title="b Field" Url="html/d78b4eb8-a32d-e4e9-a3ca-f8049248357f.htm" />
+        <HelpTOCNode Title="c Field" Url="html/24377a18-c170-b24a-5cf4-021d28e28918.htm" />
+        <HelpTOCNode Title="d Field" Url="html/095512a4-7b82-b490-b08d-405d1f484a57.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="0ea3865f-4fe7-4b20-96cd-fa87e09deafd" Title="BlastVariable Class" Url="html/f06b3ca6-6fc7-2463-b0e0-c8541bfc9d8d.htm">
+      <HelpTOCNode Title="BlastVariable Constructor " Url="html/0256a538-478b-fd8b-16c1-32578c772be8.htm" />
+      <HelpTOCNode Id="0f9a0683-cd32-4450-a0d9-b5e9ac4e8d04" Title="BlastVariable Methods" Url="html/4f0f9477-1800-93e6-3e5e-f6309ec793ed.htm">
+        <HelpTOCNode Title="ToString Method " Url="html/cc09fb42-d288-943a-8cc5-3f903fa73759.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="fb1718d8-bf20-4fb8-9f9c-514e6e1d7e45" Title="BlastVariable Fields" Url="html/e18eea0d-f289-54b5-7ddb-d4ba313edbb8.htm">
+        <HelpTOCNode Title="DataType Field" Url="html/1f4d8994-27f3-d03d-c544-984081f23872.htm" />
+        <HelpTOCNode Title="Id Field" Url="html/436a900c-e415-e974-bde8-4248d902a858.htm" />
+        <HelpTOCNode Title="IsConstant Field" Url="html/4c16924f-9b06-bf4c-f7a0-f3f30f53ce7e.htm" />
+        <HelpTOCNode Title="IsInput Field" Url="html/2a7ba74d-1b93-469b-e394-ca95f01ad178.htm" />
+        <HelpTOCNode Title="IsOutput Field" Url="html/1d8adc2d-67c2-c07e-7ca7-7d3a9df91495.htm" />
+        <HelpTOCNode Title="IsVector Field" Url="html/a1dc40b1-509f-bc9b-76a7-ce0a54034e49.htm" />
+        <HelpTOCNode Title="Name Field" Url="html/1825fed4-23cb-3e02-a247-4b43d2f2ddd4.htm" />
+        <HelpTOCNode Title="ReferenceCount Field" Url="html/844a5658-406b-56bb-e98f-f419a6bf740b.htm" />
+        <HelpTOCNode Title="VectorSize Field" Url="html/dbf47838-ffd0-1490-a406-aefe933a4bcf.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="BlastVariableDataType Enumeration" Url="html/dc4693d5-27c8-f946-6c9e-5e86e6e06162.htm" />
+    <HelpTOCNode Id="bfabcd41-b56c-47fb-a2c0-acd6414bc901" Title="BlastVariableMapping Class" Url="html/eb361662-785e-bcaa-4025-53c4d56c26e1.htm">
+      <HelpTOCNode Title="BlastVariableMapping Constructor " Url="html/e623173e-0ea8-a7d6-c4e5-1dfc4f68a912.htm" />
+      <HelpTOCNode Id="b925156a-0dd8-42f6-b86e-0751a001bc21" Title="BlastVariableMapping Properties" Url="html/551b0f2a-dc89-4d37-893b-c15d3e0a51f3.htm">
+        <HelpTOCNode Title="DataType Property " Url="html/dd3943e5-ff9f-6cde-bd7e-a8690cd47b1c.htm" />
+        <HelpTOCNode Title="VariableId Property " Url="html/6b1483ce-0982-b453-c557-d7becc096b80.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="56c95eae-bf22-4ecb-b347-457570a61c96" Title="BlastVariableMapping Methods" Url="html/0b6da22c-6bc6-7f8d-a926-8dc56b69920a.htm">
+        <HelpTOCNode Title="ToString Method " Url="html/fef55766-f4cf-1498-593a-2824aa4b83e4.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="d389bc56-5ea4-403f-b067-0400c8ae6e62" Title="BlastVariableMapping Fields" Url="html/1b304d0d-f32d-6d9f-9fc1-6fe36654dd2c.htm">
+        <HelpTOCNode Title="ByteSize Field" Url="html/69367e30-f150-8461-444d-ae5d23039ae4.htm" />
+        <HelpTOCNode Title="Offset Field" Url="html/a5961c2c-47cc-380f-9cce-526f75b58ce9.htm" />
+        <HelpTOCNode Title="Variable Field" Url="html/8d2e8e04-53eb-f564-f0ee-dc5323b63aa6.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="BlastVectorSizes Enumeration" Url="html/f0e0dbae-d8bf-a4fe-8f93-fe61a770c6f2.htm" />
+    <HelpTOCNode Title="BlastVectorTypes Enumeration" Url="html/7354146b-19ee-fb33-5285-cea2a7fcba4c.htm" />
+    <HelpTOCNode Id="ae7267b9-a2ab-412e-a304-68abeebbd79e" Title="CodeUtils Class" Url="html/faa59d0d-887f-fa1e-92e1-0cd328fb0b09.htm">
+      <HelpTOCNode Id="4689dc4b-d5ea-4ed9-966b-21cabb1da456" Title="CodeUtils Methods" Url="html/c26cf04a-2b91-7d3d-3bd3-0801620737cf.htm">
+        <HelpTOCNode Title="AsFloat Method " Url="html/1b9e8405-cf69-eeb3-0cad-990acb9854cb.htm" />
+        <HelpTOCNode Title="GetBytesView Method " Url="html/37a084c0-55ac-7779-8036-ab22b0d9031e.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="64560966-ab63-4c4d-8963-dc5a4cfbd5bf" Title="CompileTimeBlastScript Class" Url="html/5e6bd285-8db9-5d73-afdd-c8ae41b09c82.htm">
+      <HelpTOCNode Title="CompileTimeBlastScript Constructor " Url="html/799de287-fcf6-a3c8-ec1b-d43742e79cef.htm" />
+      <HelpTOCNode Title="CompileTimeBlastScript Properties" Url="html/8e40aa37-e008-7597-b92c-182911c0e1fa.htm" />
+      <HelpTOCNode Title="CompileTimeBlastScript Methods" Url="html/ccd50e66-5470-2dc4-5efd-1fdd260feeeb.htm" />
+    </HelpTOCNode>
+    <HelpTOCNode Id="78dc598d-d997-484f-8992-c1490e258639" Title="CoreAPI Class" Url="html/7bedb79d-3cd2-aac6-6689-f4e89d124dce.htm">
+      <HelpTOCNode Title="CoreAPI Constructor " Url="html/eb4a8003-cddf-469a-72b0-62f8df57ab88.htm" />
+      <HelpTOCNode Title="CoreAPI Properties" Url="html/2a24c5c9-e9ed-57ff-f53d-f62b2ec3a551.htm" />
+      <HelpTOCNode Id="e6e0da94-cf9f-426f-92a3-31f73dc4c5d9" Title="CoreAPI Methods" Url="html/b88528f8-6c18-c8dc-883f-07fd095038a7.htm">
+        <HelpTOCNode Title="RegisterCoreAPI Method " Url="html/25144589-aea2-5f57-48a5-b0c0aefb9e58.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Title="CoreAPI Fields" Url="html/1bc95d13-d10b-9bef-7b07-088f50deeb04.htm" />
+    </HelpTOCNode>
+    <HelpTOCNode Title="extended_blast_operation Enumeration" Url="html/b2678389-6f1b-6b04-ed6f-6ec5f2b602d7.htm" />
+    <HelpTOCNode Id="a04a5be0-5c7c-4ff1-9a95-a6ffbae48f5c" Title="IBlastCompilerStage Interface" Url="html/5d39b495-37f1-8419-2bb1-e39783d99149.htm">
+      <HelpTOCNode Id="6ba307ec-e856-4421-89f1-94bca68cee70" Title="IBlastCompilerStage Properties" Url="html/112c9812-9763-3c46-0518-df04d5c3074a.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/34dd0f44-868b-ff21-e90d-aac63025832d.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/e17931f1-a496-5855-8fd1-d61f61b228de.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="56155451-9ace-4176-b50f-7bb9af8a5a21" Title="IBlastCompilerStage Methods" Url="html/fb1f7359-9452-0a2d-c523-3cbddb793df4.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/4976f5e7-a35c-f819-e1f8-5e0ec7256e40.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="2f159ccb-16f1-4d8c-87f3-14cd3b2867b2" Title="math_extensions Class" Url="html/e2d9c458-0034-a386-53e6-5452dcd03149.htm">
+      <HelpTOCNode Id="faf16374-80ae-4dfa-8dcc-ba15882b5031" Title="math_extensions Methods" Url="html/721c53e7-2ca8-9b9d-5dd6-d88a38460df7.htm">
+        <HelpTOCNode Id="8164ce0a-b418-44f5-9ca8-2f19722fe1d2" Title="RoundUpToPowerOf2 Method " Url="html/28a992bf-0fa7-ccce-0f61-a14759d2001f.htm">
+          <HelpTOCNode Title="RoundUpToPowerOf2 Method (Byte, Byte)" Url="html/c2835dc2-e74b-c0ba-2b90-b90309935ca7.htm" />
+          <HelpTOCNode Title="RoundUpToPowerOf2 Method (Int32, Int32)" Url="html/3e0eabcb-75b0-2750-321c-583c06402dab.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="0f08d931-e959-4eee-a07a-9c5a5c177ee7" Title="NonGenericFunctionPointer Structure" Url="html/62144f50-3747-0833-cbcd-d0598011b5e4.htm">
+      <HelpTOCNode Title="NonGenericFunctionPointer Constructor " Url="html/4e265d02-adbf-64aa-09de-72bea4669f6a.htm" />
+      <HelpTOCNode Id="a184fdfb-c644-469b-a1e3-d98d1c927e85" Title="NonGenericFunctionPointer Methods" Url="html/19260a08-7ecf-1dc9-eaa8-9b1a5ddc4b8b.htm">
+        <HelpTOCNode Title="Generic(T) Method " Url="html/7ecc1035-1ff9-eeaa-8801-e6a2933ac9f2.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="27212cc5-2b2b-49bf-8fcc-87179d21f74d" Title="NonGenericFunctionPointer Fields" Url="html/30f29a7b-da91-8752-24ce-64e4558ee40c.htm">
+        <HelpTOCNode Title="id Field" Url="html/27c23fb4-eed1-d323-70df-86db1d4ffa47.htm" />
+        <HelpTOCNode Title="parameter_count Field" Url="html/859c42ab-b51a-59d6-564b-a49a11be841a.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="ReservedBlastScriptFunctionIds Enumeration" Url="html/bafae58d-fdfd-4aeb-3596-dce4ac8c6534.htm" />
+    <HelpTOCNode Id="0d44a1d1-aae7-4071-a265-66ab88491f9c" Title="UnsafeUtils Structure" Url="html/4ee5a03a-87f0-c42f-5907-c70bcd7e1fc0.htm">
+      <HelpTOCNode Id="bd35e944-2dae-4926-b836-b8e5b4547740" Title="UnsafeUtils Methods" Url="html/c82582c5-7903-37bf-94fa-ba5fc7b07423.htm">
+        <HelpTOCNode Title="Free Method " Url="html/2d7785ff-6117-7fd0-6cc3-99a4327c8e18.htm" />
+        <HelpTOCNode Title="Malloc Method " Url="html/6972d440-1655-4526-b71d-893679ac8f01.htm" />
+        <HelpTOCNode Title="MemClear Method " Url="html/f071eee6-43cf-a78a-ec17-adc6cb664934.htm" />
+        <HelpTOCNode Title="MemCpy Method " Url="html/93e323cb-82be-bd36-7b7e-8f133a940319.htm" />
+        <HelpTOCNode Title="MemCpyReplicate Method " Url="html/7b2cc9bc-c2b0-cf31-585f-5cffc92349d7.htm" />
+        <HelpTOCNode Title="MemSet Method " Url="html/7dabf44e-1af1-82b5-a2fb-027da49b585a.htm" />
+        <HelpTOCNode Title="SizeOf Method " Url="html/84c4af4b-205c-5cbe-cf91-35f652cc9bd9.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="9d77551b-126e-4b04-ab07-112493928b71" Title="NSS.Blast.Cache" Url="html/c89bfa9f-1a8e-fe7f-fb9a-a879eaf72b15.htm">
+    <HelpTOCNode Id="4cdab320-3140-4233-98ff-8d17a6325fd7" Title="blast Structure" Url="html/bb687d34-f2c8-1488-f710-5897452f3b60.htm">
+      <HelpTOCNode Title="blast Methods" Url="html/3404abbc-ac35-2cc0-166f-bc077e36960e.htm" />
+    </HelpTOCNode>
+    <HelpTOCNode Title="BSExecuteDelegate Delegate" Url="html/090d7016-2451-075f-08ab-f4d483b5fd52.htm" />
+    <HelpTOCNode Id="043ce2ac-c195-49b8-99bf-e82e5c827019" Title="IBlastHPCScriptJob Interface" Url="html/359d6993-6fe5-a15e-90cf-96fdef09bc5d.htm">
+      <HelpTOCNode Id="fcc489a9-8f7e-427c-9062-838567bd3919" Title="IBlastHPCScriptJob Properties" Url="html/58239681-27b6-5490-2fa4-802be88c9c47.htm">
+        <HelpTOCNode Title="ScriptId Property " Url="html/2216155e-e401-7898-4927-6ec3619f5b5b.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="7c3d54eb-5c05-4d32-8ebc-6b6b4fd85303" Title="IBlastHPCScriptJob Methods" Url="html/64855bda-f12e-7a4c-537b-1d0c97b7d7c5.htm">
+        <HelpTOCNode Title="GetBSD Method " Url="html/794534c6-9dea-f77e-6ac5-4367c3764214.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="345b2b92-f399-4f71-b883-a0c1f01452e8" Title="NSS.Blast.Compiler" Url="html/26a25caa-f50b-92ad-f15c-dbb9db1493ae.htm">
+    <HelpTOCNode Id="6ec18828-3dd1-489e-bec8-6ed38073caa9" Title="BlastCompiler Class" Url="html/20a7b82b-c1ca-32fd-17a7-d5eb376d77ee.htm">
+      <HelpTOCNode Id="ea88b070-1c2e-4e96-bfa4-e9f8c4c100e9" Title="BlastCompiler Methods" Url="html/3f245ea9-4814-6217-a8ef-0f53bf692b63.htm">
+        <HelpTOCNode Id="c3734e4e-c983-4939-a4bf-7b4cfff41b78" Title="Compile Method " Url="html/295ded63-2aa9-14c8-1fd7-824b53dbf1be.htm">
+          <HelpTOCNode Title="Compile Method (BlastEngineDataPtr, BlastScript, BlastCompilerOptions)" Url="html/363c3f06-0df6-dc83-179e-a37be1507b1c.htm" />
+          <HelpTOCNode Title="Compile Method (BlastEngineDataPtr, String, BlastCompilerOptions)" Url="html/0b2e4b96-0196-4d38-f06a-b1a58474236d.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="CompileCS Method " Url="html/65c9ddf4-ff37-be83-f573-da9269bdbe60.htm" />
+        <HelpTOCNode Title="CompileDataPackage Method " Url="html/9caa4725-45a3-7476-a726-08a01c33085e.htm" />
+        <HelpTOCNode Title="CompileHPC Method " Url="html/723eedd5-0036-176b-5cf3-b502f38869b8.htm" />
+        <HelpTOCNode Title="CompilePackage Method " Url="html/aad79c24-d41d-cb6f-8694-64854dca82cd.htm" />
+        <HelpTOCNode Title="EstimateStackSize Method " Url="html/2bef54eb-d67b-c3e1-054d-a1a1969043e1.htm" />
+        <HelpTOCNode Title="Package Method " Url="html/28e2dede-6470-7bf2-5bd9-e97e3618c782.htm" />
+        <HelpTOCNode Title="Validate Method " Url="html/5491de29-1957-6bb3-6ea5-6553cc1c5238.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="b078ada3-b6ab-4d45-8430-496e3b9d70f5" Title="BlastCompiler Fields" Url="html/150bc617-c4ad-a1d3-aec2-48d3ec1bb8d5.htm">
+        <HelpTOCNode Title="ByteCodeStages Field" Url="html/61cefe4e-3ebc-ee88-d07f-a8094f3d9000.htm" />
+        <HelpTOCNode Title="CSStages Field" Url="html/fcccda66-0598-846e-ea73-7854133c637e.htm" />
+        <HelpTOCNode Title="HPCStages Field" Url="html/24e64a17-f4d4-a04e-3ec2-126619374eb4.htm" />
+        <HelpTOCNode Title="opt_ident Field" Url="html/8b2dc7d6-7a2b-dce0-3b70-97673c8da54b.htm" />
+        <HelpTOCNode Title="opt_value Field" Url="html/b211af41-457d-0d03-ee23-1c0f30ee0b67.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="13941e81-00bb-4fa1-9e38-ca4b646c8d77" Title="BlastIntermediate Structure" Url="html/32900304-967e-b7b4-7743-8a10dd78931b.htm">
+      <HelpTOCNode Id="bc2de878-b864-497e-9f6d-313e18b58238" Title="BlastIntermediate Properties" Url="html/4068f040-8508-6ec9-33a6-107d460acc01.htm">
+        <HelpTOCNode Title="DataByteSize Property " Url="html/8bf8e94c-1d3f-5b52-774d-76841dcb69ff.htm" />
+        <HelpTOCNode Title="DataCount Property " Url="html/de4bd4ac-a80f-63f2-a2a4-2e73fdb45d83.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="a5007ab7-4abd-477d-882c-e1397abf5e69" Title="BlastIntermediate Methods" Url="html/d39a5e58-b4e4-77e4-5060-c0a3c19bdfe4.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/8ea1db06-a3d3-f2fd-4530-2e5f13daed96.htm" />
+        <HelpTOCNode Title="GetDataSegmentElement Method " Url="html/e012afd1-a152-f5d8-94fc-975e6cb97e14.htm" />
+        <HelpTOCNode Title="Validate Method " Url="html/4e289403-008c-691f-b5ed-99abd5faf0a4.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="443fbb85-7a4e-4e4f-8414-14fe6699b549" Title="BlastIntermediate Fields" Url="html/79491c5c-59ce-d026-9260-b9af8dec9fbe.htm">
+        <HelpTOCNode Title="code Field" Url="html/b600729d-69c6-e7da-b60d-a12ae52a77ce.htm" />
+        <HelpTOCNode Title="code_capacity Field" Url="html/321446d6-7e13-66e5-0458-cbb7721a78b1.htm" />
+        <HelpTOCNode Title="code_pointer Field" Url="html/d115736c-a8a6-8e74-0a8b-95fb624179c6.htm" />
+        <HelpTOCNode Title="code_size Field" Url="html/a6a4e6d8-6342-5e0e-d480-73140adb77d1.htm" />
+        <HelpTOCNode Title="data Field" Url="html/df9ce676-9a09-e5b0-3e44-0ca6fe8eb81e.htm" />
+        <HelpTOCNode Title="data_capacity Field" Url="html/db50f46b-565f-c93b-497f-14704b37c353.htm" />
+        <HelpTOCNode Title="data_element_bytesize Field" Url="html/a203d5ba-3b83-988d-8cdc-2d7e3d73f0f2.htm" />
+        <HelpTOCNode Title="Id Field" Url="html/4d938a0f-b97f-e021-4213-084aa1b003f4.htm" />
+        <HelpTOCNode Title="max_stack_size Field" Url="html/b52f5d99-1327-8c4e-b6f6-3aab432c05d2.htm" />
+        <HelpTOCNode Title="metadata Field" Url="html/1b4dd70d-faa4-2645-1467-712f3634a64a.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="dbda6f39-6b7d-40cf-b448-f605c21304f7" Title="CompilationData Class" Url="html/52667f7e-8dc6-6543-e265-fdc90d6834fa.htm">
+      <HelpTOCNode Title="CompilationData Constructor " Url="html/ba8ed062-e594-137a-6e8b-8f7e0a0d64f3.htm" />
+      <HelpTOCNode Id="147d6ab4-adc0-4c08-b5e5-e3fcbf9a24ba" Title="CompilationData Properties" Url="html/333d2f7e-6850-d16a-0fb9-3c08adefb7ff.htm">
+        <HelpTOCNode Title="AST Property " Url="html/e229d7da-2e38-0adc-7499-f28afafcafad.htm" />
+        <HelpTOCNode Title="Blast Property " Url="html/42824f4b-4b38-42ff-7f11-c334b0b6158b.htm" />
+        <HelpTOCNode Title="CanValidate Property " Url="html/2c9e10bc-995f-1541-ac50-ab20af4b9093.htm" />
+        <HelpTOCNode Title="CompilerOptions Property " Url="html/ee725d2b-35f3-6e89-2fbe-cd635676d220.htm" />
+        <HelpTOCNode Title="ConstantVariables Property " Url="html/1f990eaf-91a9-193e-33c4-c1dc928284a3.htm" />
+        <HelpTOCNode Title="Defines Property " Url="html/f9bd547a-c3b6-0d17-0ce3-4b8117f6f06a.htm" />
+        <HelpTOCNode Title="ErrorCount Property " Url="html/0b3eb47e-93ca-7e7c-1815-67023417f6a1.htm" />
+        <HelpTOCNode Title="HasDefines Property " Url="html/8d7693cf-a6a5-a7ab-efa0-5954670d872d.htm" />
+        <HelpTOCNode Title="HasErrors Property " Url="html/36864e75-c781-f59d-9fe8-1eae7d5b0f57.htm" />
+        <HelpTOCNode Title="HasErrorsOrWarnings Property " Url="html/179ddab0-6633-29b1-4d88-217cc8619a83.htm" />
+        <HelpTOCNode Title="HasOffsets Property " Url="html/deab583a-7d02-af10-0e1e-d663d78c8afb.htm" />
+        <HelpTOCNode Title="HasVariables Property " Url="html/ea5307d0-2875-dabf-67bd-dbae7bdfc1a5.htm" />
+        <HelpTOCNode Title="HasWarnings Property " Url="html/25b0cd43-b293-c9ae-2071-351dac935ade.htm" />
+        <HelpTOCNode Title="Inputs Property " Url="html/12469225-1f5f-1a21-eb76-3f44b2560d1c.htm" />
+        <HelpTOCNode Title="IsOK Property " Url="html/480c8fbc-f0c8-e785-5050-6a14547ddacc.htm" />
+        <HelpTOCNode Title="Jumps Property " Url="html/0359785d-048b-5de8-eb29-d1257095a1d4.htm" />
+        <HelpTOCNode Title="LastError Property " Url="html/28da84b7-7378-b520-f7c3-95d0a01bcbc7.htm" />
+        <HelpTOCNode Title="LastErrorMessage Property " Url="html/9f8bb9f2-16f9-11bd-7e59-d6f957e5d85a.htm" />
+        <HelpTOCNode Title="OffsetCount Property " Url="html/d5bf23b7-62d5-bcce-548f-cd747a58e053.htm" />
+        <HelpTOCNode Title="Offsets Property " Url="html/9f06934a-861d-873e-5abf-0672bd54a300.htm" />
+        <HelpTOCNode Title="Outputs Property " Url="html/4a804b72-fd57-0888-d932-590e2d129c28.htm" />
+        <HelpTOCNode Title="Script Property " Url="html/faaaadb1-6f05-8693-237b-eb7ad9468387.htm" />
+        <HelpTOCNode Title="Tokens Property " Url="html/ab519250-fff7-a647-f71d-baaf376d43f6.htm" />
+        <HelpTOCNode Title="Validations Property " Url="html/82c3d7fd-4222-2033-e762-0c98e9377157.htm" />
+        <HelpTOCNode Title="VariableCount Property " Url="html/ddce63e9-28a9-7694-1542-20e0ad9e8ee1.htm" />
+        <HelpTOCNode Title="Variables Property " Url="html/17ed1bce-9bcb-81e2-8a44-3dfab976c348.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/ffbe5ac4-c9e3-c285-6e05-8393190199ac.htm" />
+        <HelpTOCNode Title="WarningCount Property " Url="html/7100f7cd-4fd2-e21c-f91f-8aaa5b78c3f5.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="4a7e3e0a-0bbe-40bc-af90-ccc25c67c953" Title="CompilationData Methods" Url="html/ccc4fcf6-c096-7d60-4000-50ffbfc35bc8.htm">
+        <HelpTOCNode Title="CreateVariable Method " Url="html/c7e59989-48cd-2140-a8c3-025d1af780db.htm" />
+        <HelpTOCNode Title="ExistsVariable Method " Url="html/ccd9a0dc-4089-5d1a-dda4-a392844cd384.htm" />
+        <HelpTOCNode Title="GetHumanReadableBytes Method " Url="html/0c454735-b0ca-4817-70dc-a9463db1a69c.htm" />
+        <HelpTOCNode Title="GetHumanReadableCode Method " Url="html/3561b9be-42ac-d471-9a50-04badbdaec8d.htm" />
+        <HelpTOCNode Title="GetOrCreateVariable Method " Url="html/439823fa-eb59-2394-c7a6-398ac7ffacf4.htm" />
+        <HelpTOCNode Title="GetVariable Method " Url="html/1f041911-26e2-dae0-94cd-de9ef8fb766a.htm" />
+        <HelpTOCNode Title="GetVariableFromOffset Method " Url="html/8b9e5f68-aeaf-fbf7-8603-22e85a48754b.htm" />
+        <HelpTOCNode Id="82a51fb2-da70-4fb3-b3f4-9cfd44492fc6" Title="HasInput Method " Url="html/d84d26e1-6a57-169d-a005-e6385b67a5de.htm">
+          <HelpTOCNode Title="HasInput Method (Int32)" Url="html/5c52c18d-30e2-b299-714c-3badcdb3246c.htm" />
+          <HelpTOCNode Title="HasInput Method (String)" Url="html/f281fa25-9cc6-31b7-412e-5d98e8b67dd0.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="LogError Method " Url="html/beb175c9-d90a-53d4-fb86-76a852e17fba.htm" />
+        <HelpTOCNode Title="LogMessage Method " Url="html/003d2e1e-9f9a-0e26-9e65-56778ccada77.htm" />
+        <HelpTOCNode Title="LogToDo Method " Url="html/a610692b-9355-303a-40a9-a8ed3a0236ab.htm" />
+        <HelpTOCNode Title="LogTrace Method " Url="html/d55e528b-1d22-427a-f462-6468483fd354.htm" />
+        <HelpTOCNode Title="LogWarning Method " Url="html/a1eaf7c8-aa51-baa4-6593-b9238359d3f8.htm" />
+        <HelpTOCNode Title="TryGetDefine Method " Url="html/0421d0b2-835a-3ed5-2453-ee8fdc716fa1.htm" />
+        <HelpTOCNode Title="TryGetInput Method " Url="html/e63705b2-ead7-8595-8cb2-ff2fc896d903.htm" />
+        <HelpTOCNode Title="TryGetOutput Method " Url="html/3e8b04a6-0d71-0e84-23bc-8727d3a0a3eb.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="446ccc82-26b8-45d1-90ee-4e9d94cdcafd" Title="CompilationData Fields" Url="html/9f86187b-dace-81e4-f259-f9505f15d820.htm">
+        <HelpTOCNode Title="code Field" Url="html/d10040e7-726f-4269-e062-867098b9d64e.htm" />
+        <HelpTOCNode Title="CompilerMessages Field" Url="html/2587e4b0-a704-13bf-89f0-87de3e501c8e.htm" />
+        <HelpTOCNode Title="Executable Field" Url="html/3f231dce-4126-da59-c654-6be2fc15615a.htm" />
+        <HelpTOCNode Title="version Field" Url="html/098684ac-5717-705b-477c-dbf93d0bbae9.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="437f15ba-d8df-4393-95db-ee112d256167" Title="CompilationData.Message Class" Url="html/e67b54fe-fb86-7ae8-d46e-8efaf40ec157.htm">
+      <HelpTOCNode Title="CompilationData.Message Constructor " Url="html/b28f43ec-64ee-cf39-9fbf-e46d0986cf33.htm" />
+      <HelpTOCNode Id="a78f3860-b1cc-4226-9d07-095ac36fa763" Title="Message Properties" Url="html/413fc185-a706-6782-20d7-51ebabfda901.htm">
+        <HelpTOCNode Title="IsError Property " Url="html/60ee882c-439f-94b2-0034-d0bbb8cdea25.htm" />
+        <HelpTOCNode Title="IsNormal Property " Url="html/4113d483-c60d-5f52-b61d-42dff99b3b49.htm" />
+        <HelpTOCNode Title="IsTrace Property " Url="html/cedb9ba5-c84c-fed8-a058-f0a308780332.htm" />
+        <HelpTOCNode Title="IsWarning Property " Url="html/cb678e1b-c1a9-0bbc-ae7a-645069e1c7aa.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="118d184f-6994-442b-83a8-3c8cfc84e4ab" Title="Message Methods" Url="html/33e1b36b-5703-88e0-f47d-2686f0df984c.htm">
+        <HelpTOCNode Title="ToString Method " Url="html/473b2827-95ba-9c50-9d23-c75fe0f2fd1c.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="8d21a9b1-4e08-4899-a9a1-f10fa60fcf44" Title="Message Fields" Url="html/834cb4e5-5dc2-b0bd-d2ce-a7bc2cb2641b.htm">
+        <HelpTOCNode Title="CallerMember Field" Url="html/7792ad4d-bdc2-46f0-5664-e2d88da5099f.htm" />
+        <HelpTOCNode Title="Code Field" Url="html/7a6f8320-772d-095d-9398-edb5e718d160.htm" />
+        <HelpTOCNode Title="Content Field" Url="html/9ad699a3-f54b-eb71-c741-8bdb1f1824cd.htm" />
+        <HelpTOCNode Title="LineNumber Field" Url="html/f37f3a9e-e5f3-9bfe-cbe8-670a42c90cae.htm" />
+        <HelpTOCNode Title="Timestamp Field" Url="html/2b674c49-e688-d6ad-ad7e-53e58063cade.htm" />
+        <HelpTOCNode Title="Type Field" Url="html/a3dde6d2-21f8-270e-19ad-1d863a53dc37.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="CompilationData.Message.MessageType Enumeration" Url="html/ffd5cdd4-40dc-84d1-747d-40e06a699332.htm" />
+    <HelpTOCNode Id="46195760-cc90-4c10-bbff-bc9049d18e71" Title="CSCompilationData Class" Url="html/0c6307ba-1f61-647f-cfa4-6d7284dd5ec8.htm">
+      <HelpTOCNode Title="CSCompilationData Constructor " Url="html/6819bb8c-afcf-78f1-9f38-5b732a4e2b0e.htm" />
+      <HelpTOCNode Title="CSCompilationData Properties" Url="html/a273c6c5-64c4-8cae-3f05-72f67e06f4da.htm" />
+      <HelpTOCNode Title="CSCompilationData Methods" Url="html/9666d553-51de-779b-f1af-3ea2aa280d77.htm" />
+      <HelpTOCNode Id="fdc662ea-ff83-4e2a-a08c-3c0fc2783dd3" Title="CSCompilationData Fields" Url="html/67a4d4ca-e566-102a-0084-0e487a4dd4d0.htm">
+        <HelpTOCNode Title="Namespace Field" Url="html/62356d6d-776b-354c-198d-9300b0c094bf.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="fd0c83ba-31ca-45bb-afba-761e7320cba2" Title="CSNamespace Class" Url="html/e2aa1efe-4cdd-2d87-8a39-632f946b078a.htm">
+      <HelpTOCNode Id="02b6f1f1-d0ff-4df1-8df2-a6fcfec7edcb" Title="CSNamespace Methods" Url="html/becb6711-7c7c-fe6f-6227-2972a230d6c2.htm">
+        <HelpTOCNode Title="CombineScriptsIntoNamespace Method " Url="html/dac33fa1-9f73-9b69-ad33-bf45dc9e5677.htm" />
+        <HelpTOCNode Title="MergeScriptIntoNamespace Method " Url="html/673fd358-12bf-42a3-5c6e-507dfb92eec7.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="8237f1cf-d992-4fc2-80bb-81d89f03bc1c" Title="HPCCompilationData Class" Url="html/383f9bef-dc6b-ffde-7f1e-9c11fe9a9708.htm">
+      <HelpTOCNode Title="HPCCompilationData Constructor " Url="html/615f6fc6-cd19-e9f4-8a1e-43ef5acdf7bf.htm" />
+      <HelpTOCNode Title="HPCCompilationData Properties" Url="html/7d1b6319-dac6-b858-566f-1ea09747cefc.htm" />
+      <HelpTOCNode Title="HPCCompilationData Methods" Url="html/ac40107e-34f5-7eff-3fdf-dbec7847fd60.htm" />
+      <HelpTOCNode Id="6eb5d715-2fe3-4870-b87c-7b51815fd405" Title="HPCCompilationData Fields" Url="html/893d9223-2e71-1654-d55a-690dc90b6ef4.htm">
+        <HelpTOCNode Title="HPCCode Field" Url="html/6567c537-0a89-0df7-f296-3e4945b59fcc.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="b043e86d-fffe-4348-bfaa-c106e04be985" Title="HPCNamespace Class" Url="html/38a875bf-70f0-e536-aa61-8946763a62fb.htm">
+      <HelpTOCNode Id="c86f2688-5bbd-4e92-9b73-68e6de1f2a06" Title="HPCNamespace Methods" Url="html/ccbb6f5a-6cee-46d9-b442-af6628904dab.htm">
+        <HelpTOCNode Title="CombineScriptsIntoNamespace Method " Url="html/6d063979-9c45-95b2-770c-403f75a5d3ee.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="00c9020f-3b98-4326-aa0b-440ddae9c343" Title="IBlastCompilationData Interface" Url="html/d2afd70e-15cd-df6e-c1b9-6e1d3e9552bd.htm">
+      <HelpTOCNode Id="ca7fe1cc-29be-416a-a64b-2fb01644d968" Title="IBlastCompilationData Properties" Url="html/7680726f-6b35-7c45-1c81-394a6bc279ea.htm">
+        <HelpTOCNode Title="AST Property " Url="html/227e1f3c-6d9a-bc49-2ba6-f385ae5708a1.htm" />
+        <HelpTOCNode Title="Blast Property " Url="html/4d98a18d-863e-8aed-f757-5fe2e72e2874.htm" />
+        <HelpTOCNode Title="CanValidate Property " Url="html/89bfa349-9528-d7dd-a971-a0e75b3296f5.htm" />
+        <HelpTOCNode Title="CompilerOptions Property " Url="html/6d21a9c2-8d0b-8c2c-4be5-4e84565cace6.htm" />
+        <HelpTOCNode Title="Defines Property " Url="html/520411af-07e0-bc9d-3372-ae014429f6b6.htm" />
+        <HelpTOCNode Title="HasDefines Property " Url="html/7e4b34b2-f833-c416-ab1d-d7c2822b939b.htm" />
+        <HelpTOCNode Title="HasErrors Property " Url="html/040c4f80-0304-f0d4-6ee6-6e2d5b61e048.htm" />
+        <HelpTOCNode Title="HasOffsets Property " Url="html/4188c5be-317a-2520-fb4c-35de810a0e13.htm" />
+        <HelpTOCNode Title="HasVariables Property " Url="html/40dddbd5-ed7c-ca09-75af-1ec7fa74d500.htm" />
+        <HelpTOCNode Title="Inputs Property " Url="html/1a09a144-3c33-1ab4-5bae-9470e88dc727.htm" />
+        <HelpTOCNode Title="IsOK Property " Url="html/0c4a197a-d73f-22a0-103d-1b6133ac9984.htm" />
+        <HelpTOCNode Title="Jumps Property " Url="html/2c087802-03ba-7d73-6c8e-790fecb04bfd.htm" />
+        <HelpTOCNode Title="OffsetCount Property " Url="html/f0aac5f7-854a-69f3-52a5-1646ca43c64b.htm" />
+        <HelpTOCNode Title="Offsets Property " Url="html/0d1e3f8f-eee4-2e5f-0cf2-65d2eaa4daad.htm" />
+        <HelpTOCNode Title="Outputs Property " Url="html/f3389f99-82a4-92c9-a88d-face4cedc760.htm" />
+        <HelpTOCNode Title="Script Property " Url="html/39763fb6-d55e-f5f7-af50-4325cd74d6c6.htm" />
+        <HelpTOCNode Title="Tokens Property " Url="html/f375372b-8bd0-9151-cdad-c432cebb6196.htm" />
+        <HelpTOCNode Title="Validations Property " Url="html/5251bd00-affd-395c-fd4f-542ff13bd1a2.htm" />
+        <HelpTOCNode Title="VariableCount Property " Url="html/44193f79-2cfa-e81a-6ba7-eaafb02a5b5e.htm" />
+        <HelpTOCNode Title="Variables Property " Url="html/32e69740-f608-843a-9795-39a0a86d53c7.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/627df2bc-4c63-2d40-7214-d8e4bbf44eba.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="224b2d9a-372e-4a4b-9834-310df85dd187" Title="IBlastCompilationData Methods" Url="html/7fd61ab8-3c7f-1cda-728f-adf45c9af94c.htm">
+        <HelpTOCNode Title="ExistsVariable Method " Url="html/e6b915e2-bafd-1b3a-bd25-529e71109173.htm" />
+        <HelpTOCNode Title="GetVariable Method " Url="html/a0fa6b0c-936f-823c-e67c-2bc03610dec1.htm" />
+        <HelpTOCNode Title="GetVariableFromOffset Method " Url="html/176cd64b-579d-fed4-7636-20b48a0d107a.htm" />
+        <HelpTOCNode Id="73f385d1-0e65-4d1a-be7e-0d5f06286b15" Title="HasInput Method " Url="html/32a22a60-42b7-966e-9f4b-c229efd34461.htm">
+          <HelpTOCNode Title="HasInput Method (Int32)" Url="html/b02ca5ec-8579-dd54-dbf0-acb2764d1b47.htm" />
+          <HelpTOCNode Title="HasInput Method (String)" Url="html/1926e32b-32d3-dc70-2737-ff0b73aaf30b.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="LogError Method " Url="html/838a53c7-8f40-f732-e76e-7507c92fcd92.htm" />
+        <HelpTOCNode Title="LogToDo Method " Url="html/25c0cea0-9b9e-5f3d-5851-df4112e99268.htm" />
+        <HelpTOCNode Title="LogTrace Method " Url="html/38edf714-b30a-43b9-499d-62e231013d0d.htm" />
+        <HelpTOCNode Title="LogWarning Method " Url="html/9ff35f99-4dfd-78fc-a64d-c08c96c4d3e1.htm" />
+        <HelpTOCNode Title="TryGetDefine Method " Url="html/5573864b-dceb-0cd1-0052-d5f91a2b356c.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="67480eb9-6c2a-4e5e-9bc3-497601a7a612" Title="node Class" Url="html/7dc9b7e9-64ad-f224-ae1a-4e6639739f56.htm">
+      <HelpTOCNode Id="70c3ca5d-74b7-4ec4-afd6-45e52f976a74" Title="node Constructor " Url="html/99f51ecd-c7ba-6552-8a45-cab309bd3b06.htm">
+        <HelpTOCNode Title="node Constructor (node, node[])" Url="html/80b2fdad-af28-1cae-8b86-f92685a19c19.htm" />
+        <HelpTOCNode Title="node Constructor (nodetype, BlastScriptToken)" Url="html/57c7b09a-1f24-a812-63ce-ac5c97bef7f7.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="1276fdff-4783-47db-938d-5380e195580c" Title="node Properties" Url="html/475c6017-cb55-310a-d102-1c0448a91596.htm">
+        <HelpTOCNode Title="AsFloat Property " Url="html/1d648269-a3e8-7b49-2c9b-90b889f4c4c3.htm" />
+        <HelpTOCNode Title="ChildCount Property " Url="html/c6fde704-923b-dc72-7269-065e830d580a.htm" />
+        <HelpTOCNode Title="DependencyCount Property " Url="html/3e77d123-5f5b-10de-c465-a673603c1151.htm" />
+        <HelpTOCNode Title="FirstChild Property " Url="html/ecae910c-f551-4a9d-e8a7-52f5628cd1bd.htm" />
+        <HelpTOCNode Title="HasChildNodes Property " Url="html/2f663667-9ac2-be0e-574f-78b0b6f4d22b.htm" />
+        <HelpTOCNode Title="HasChildren Property " Url="html/5377519b-120f-1a84-aa7c-b2f281215c98.htm" />
+        <HelpTOCNode Title="HasDependencies Property " Url="html/1135ef05-605a-912e-73af-d81fe283f4ff.htm" />
+        <HelpTOCNode Title="HasIdentifier Property " Url="html/9bd5a3c1-400d-9c8b-f0bc-aa486d5a7194.htm" />
+        <HelpTOCNode Title="HasIndexers Property " Url="html/c9362143-bdc2-3da3-1c8c-8b408ec9e94d.htm" />
+        <HelpTOCNode Title="HasOneChild Property " Url="html/87d74510-65a7-980b-0736-588d3c4bccd1.htm" />
+        <HelpTOCNode Title="IsAssignment Property " Url="html/5a71241d-aee9-10cd-4dc3-77b2e8973e93.htm" />
+        <HelpTOCNode Title="IsCompound Property " Url="html/9f287896-174c-47dc-b54a-923af57ed390.htm" />
+        <HelpTOCNode Title="IsFloat Property " Url="html/330b9c59-8c77-f029-f264-8c2054b93222.htm" />
+        <HelpTOCNode Title="IsFunction Property " Url="html/1633584d-038d-8eca-55be-b4a47025b481.htm" />
+        <HelpTOCNode Title="IsLeaf Property " Url="html/07a78f6c-f0a4-55e5-efe9-84d176346c42.htm" />
+        <HelpTOCNode Title="IsOperation Property " Url="html/226ce859-2603-68dd-80d3-2564173428c4.htm" />
+        <HelpTOCNode Title="IsPopFunction Property " Url="html/1ecd6abd-e442-2130-2769-855061d5f581.htm" />
+        <HelpTOCNode Title="IsPushFunction Property " Url="html/e83bb486-7af3-6ab5-8337-46d5fdaed43a.htm" />
+        <HelpTOCNode Title="IsRoot Property " Url="html/7899dfde-9b95-0fba-8f52-888ba4025061.htm" />
+        <HelpTOCNode Title="IsScriptVariable Property " Url="html/f91a9f4a-505e-6324-566a-4edf1af9a610.htm" />
+        <HelpTOCNode Title="IsVector Property " Url="html/f3af7c79-eaa6-a3dd-bf25-9337cdc2963d.htm" />
+        <HelpTOCNode Title="LastChild Property " Url="html/3807888e-4499-55d8-a797-3f1fb667f468.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="3345da02-626a-47b5-8b53-d27ee93b0962" Title="node Methods" Url="html/892306c2-b181-bfc4-2916-f4009f4dcc5f.htm">
+        <HelpTOCNode Title="AppendDependencies Method " Url="html/b47b4997-9e84-9322-c8a7-f7d1ebf8e501.htm" />
+        <HelpTOCNode Title="AppendDependency Method " Url="html/681c1ecc-00ab-6da2-16cd-65d244b4f76b.htm" />
+        <HelpTOCNode Title="CountChildNodes Method " Url="html/04255832-4441-d124-ddf6-c924b7011dd0.htm" />
+        <HelpTOCNode Title="CountChildren Method " Url="html/48d1f5b5-a378-9e0b-6d94-d71eaf66c285.htm" />
+        <HelpTOCNode Id="d905876a-848c-4a44-bc52-dae3b6d112d6" Title="CountChildType Method " Url="html/63de2732-84f3-2f62-29ed-2b86b4b60575.htm">
+          <HelpTOCNode Title="CountChildType Method (nodetype)" Url="html/93505144-c700-853d-facb-2dbadbc43462.htm" />
+          <HelpTOCNode Title="CountChildType Method (nodetype, nodetype)" Url="html/756f17bf-6278-d15b-a8e7-f12aeb425968.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="CountNodes Method " Url="html/6633f220-b452-0806-137f-0cf815ccdf1e.htm" />
+        <HelpTOCNode Title="CountOtherChildren Method " Url="html/a0aaa0cb-d907-b9e5-ee5b-af5aa0ce46cd.htm" />
+        <HelpTOCNode Title="CreateConstantParameter Method " Url="html/d7e26a4b-d99a-863c-0f9b-d1cf944d9f8b.htm" />
+        <HelpTOCNode Title="CreatePopNode Method " Url="html/ff711f99-12a6-b150-bf78-2052de02a534.htm" />
+        <HelpTOCNode Title="CreatePushNode Method " Url="html/414ebcea-3029-e9a4-0b83-bfdcfa1a4b1b.htm" />
+        <HelpTOCNode Title="DeepClone Method " Url="html/33c676dd-b8fc-dfa9-0ebf-9eeb86c9753e.htm" />
+        <HelpTOCNode Id="8d39fb82-d421-4eee-8a09-06e00c5fdf65" Title="encode44 Method " Url="html/cae72d3c-78c8-0794-2849-56bf0ef0dd14.htm">
+          <HelpTOCNode Title="encode44 Method (node)" Url="html/a65f0276-f1ed-3d2a-5704-83ae4d661ac4.htm" />
+          <HelpTOCNode Title="encode44 Method (node, Byte)" Url="html/929f3d2f-3b02-1bd7-cd23-2fce83820dfa.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="EnsureIdentifierIsUniquelySet Method " Url="html/8f8a821a-1a54-ee79-0584-eeeb90c8b484.htm" />
+        <HelpTOCNode Id="85fa7b1c-1966-440a-8d34-e18867e90fc4" Title="FirstConsecutiveOperationSequence Method " Url="html/85f2ffe4-2c53-20dd-bfa8-4737bfb4ddf1.htm">
+          <HelpTOCNode Title="FirstConsecutiveOperationSequence Method (Int32, Int32, blast_operation, Int32, node)" Url="html/3a8be5bb-004c-91f0-39de-6e4e58aa2341.htm" />
+          <HelpTOCNode Title="FirstConsecutiveOperationSequence Method (node, Int32, Int32, blast_operation, Int32, node)" Url="html/56904f85-a4e0-21b3-0ab1-5868875d00f4.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="ba6f985a-6867-4c0f-8803-74a522cc30e2" Title="GetChild Method " Url="html/c179b338-ea64-d1e3-22bd-b5a9b20f00d8.htm">
+          <HelpTOCNode Title="GetChild Method (nodetype)" Url="html/6913a8b5-060e-3075-8b61-ed12ee849e72.htm" />
+          <HelpTOCNode Title="GetChild Method (nodetype, nodetype)" Url="html/8ee24538-4ca1-e635-682a-cf901a1c16cc.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="GetChildren Method " Url="html/d0097615-18d8-ab01-fe87-acc07c1fd0b2.htm" />
+        <HelpTOCNode Title="GetConstantFloat4Value Method " Url="html/0d771e91-0049-b6e0-3e44-56b8c3bb8815.htm" />
+        <HelpTOCNode Title="GetLeafNodes Method " Url="html/2c5f845f-f399-883c-9697-4ca5f8384ed0.htm" />
+        <HelpTOCNode Title="GetMaximumTreeDepth Method " Url="html/6d5677a3-19f5-32cf-b3d9-4089563ab9de.htm" />
+        <HelpTOCNode Title="GetNodeDescription Method " Url="html/3f0c0bb7-fdfc-7f88-0a55-46bea5d7f770.htm" />
+        <HelpTOCNode Title="GetOtherChildren Method " Url="html/b2c7b695-0514-92e9-8780-788c3b0fe98f.htm" />
+        <HelpTOCNode Title="HasSingleCompoundAsChild Method " Url="html/5e9113ec-f344-a766-21c7-915ddf615197.htm" />
+        <HelpTOCNode Title="InsertBeforeThisNodeInParent Method " Url="html/acd01e66-e0d0-cb87-0778-1a88e283d428.htm" />
+        <HelpTOCNode Title="InsertChild Method " Url="html/11fc2769-e519-bbcf-3f9a-721c8a404431.htm" />
+        <HelpTOCNode Title="InsertDependency Method " Url="html/e6f4ab05-64b5-5730-68cd-bbdd7d9bd4b4.htm" />
+        <HelpTOCNode Title="InsertParent Method " Url="html/adf8b1cc-25ac-1999-b1ed-e20618d8bf68.htm" />
+        <HelpTOCNode Id="f912d34a-fd16-428c-ab25-983e045f8887" Title="IsCompoundWithSingleNegationOfValue Method " Url="html/eefd3257-8d65-9a18-5d97-bc738a82e45e.htm">
+          <HelpTOCNode Title="IsCompoundWithSingleNegationOfValue Method " Url="html/eaa4803a-6103-9de3-d709-a565cad0583a.htm" />
+          <HelpTOCNode Title="IsCompoundWithSingleNegationOfValue Method (node)" Url="html/7dc305d9-a6b3-2efd-dd0f-bcef3bbcf593.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="IsFlat Method " Url="html/6978828c-4c70-a74a-9a26-109317317ab0.htm" />
+        <HelpTOCNode Title="IsFlatParameterList Method " Url="html/370b2bb2-33db-ef85-dbaf-bf19f6639cb0.htm" />
+        <HelpTOCNode Id="916fabe6-79ba-44db-9fd2-ec2342630d6a" Title="IsNonNestedVectorDefinition Method " Url="html/d4cba6bd-447a-0b20-828a-41c09e6b60d0.htm">
+          <HelpTOCNode Title="IsNonNestedVectorDefinition Method " Url="html/0f66c9bb-c8f0-4e72-830a-3157cbc1b30c.htm" />
+          <HelpTOCNode Title="IsNonNestedVectorDefinition Method (node)" Url="html/d48c0773-f995-d391-2043-5a233f07b562.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="2e646c88-d04a-41b7-9904-8d2d56cfb7f9" Title="IsOperationList Method " Url="html/39859074-f139-88b0-a3d5-22cd3b5a17e1.htm">
+          <HelpTOCNode Title="IsOperationList Method " Url="html/2cc32d4e-789b-c171-b969-ef0e2b595179.htm" />
+          <HelpTOCNode Title="IsOperationList Method (node)" Url="html/6ac3eef3-3543-5d51-32c8-9c0498aed796.htm" />
+          <HelpTOCNode Title="IsOperationList Method (node, blast_operation)" Url="html/9c709486-31f9-14e2-700f-527a1e10597e.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="IsSingleOperationList Method " Url="html/f5d594eb-3f4f-d68c-edd6-7d8c13748c55.htm" />
+        <HelpTOCNode Id="b69645aa-3356-4606-90a4-a612c4332c74" Title="IsSingleValueOrPop Method " Url="html/4b6c470d-b750-1459-9efe-f8bdd038a2c7.htm">
+          <HelpTOCNode Title="IsSingleValueOrPop Method " Url="html/a69c2de7-f6ac-57d6-c58e-bb2900105ae3.htm" />
+          <HelpTOCNode Title="IsSingleValueOrPop Method (node)" Url="html/fc3f75a8-cfeb-5437-deda-77794940f2bb.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="IsVectorDefinition Method " Url="html/2cc69a70-4998-a862-9c50-10db270c19c6.htm" />
+        <HelpTOCNode Title="ReduceSingularCompounds Method " Url="html/3ec27cfa-4910-0c2f-c0fa-3bca9772e5f7.htm" />
+        <HelpTOCNode Title="SetDependency Method " Url="html/844ef419-74d5-bdf6-e797-02d2a6d837e8.htm" />
+        <HelpTOCNode Title="ToNodeTreeString Method " Url="html/25153c19-0ff4-d838-b71c-2f45dffab0fe.htm" />
+        <HelpTOCNode Title="ToString Method " Url="html/d5088021-ce73-28d0-7f27-f99b04003f84.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="2eef0c8a-4b7b-4789-a744-cc44d550de18" Title="node Fields" Url="html/480eaffc-8042-8235-be91-860216bf0cf1.htm">
+        <HelpTOCNode Title="children Field" Url="html/94b97e63-afdb-5932-fce5-ee22520607ee.htm" />
+        <HelpTOCNode Title="constant_op Field" Url="html/9c3ae6c6-31ec-36a9-67a9-498b920f6915.htm" />
+        <HelpTOCNode Title="depends_on Field" Url="html/191ce9eb-f057-5ad9-5456-b57b35da6dea.htm" />
+        <HelpTOCNode Title="function Field" Url="html/f237e685-20e5-ce7b-5ad1-8028be8efc18.htm" />
+        <HelpTOCNode Title="identifier Field" Url="html/d1308875-c7a7-13ae-d96c-5e1a69e85cd5.htm" />
+        <HelpTOCNode Title="indexers Field" Url="html/7c2edb59-e31d-4f2a-9681-34ba30de5504.htm" />
+        <HelpTOCNode Title="is_constant Field" Url="html/5701099d-812e-9c5d-4edc-e6ce5c2daf98.htm" />
+        <HelpTOCNode Title="linked_pop Field" Url="html/04058465-763c-75d5-7e5d-7e42a6d1c864.htm" />
+        <HelpTOCNode Title="linked_push Field" Url="html/0ee23f8e-5c48-6496-9791-ea2d50ec911a.htm" />
+        <HelpTOCNode Title="parent Field" Url="html/da5c551e-7bf0-6632-4840-ca16a3cea23c.htm" />
+        <HelpTOCNode Title="skip_compilation Field" Url="html/20c9e432-d07f-4486-4ccc-f20d1b8d0e39.htm" />
+        <HelpTOCNode Title="token Field" Url="html/029d8b19-3630-4277-4d74-7c62bef941c9.htm" />
+        <HelpTOCNode Title="type Field" Url="html/d6fa355f-cd03-01a9-b81e-c077cc4c7c01.htm" />
+        <HelpTOCNode Title="variable Field" Url="html/90f9ac08-1341-edeb-199a-d02d23958cae.htm" />
+        <HelpTOCNode Title="vector_size Field" Url="html/665f5277-30e2-8cc3-1f0a-c7a01cf72471.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="nodetype Enumeration" Url="html/e28d8f32-0117-cb7b-5d31-0a3d9a5d6817.htm" />
+  </HelpTOCNode>
+  <HelpTOCNode Id="b5af420e-33ae-4bfd-9629-a03698461985" Title="NSS.Blast.Compiler.Stage" Url="html/f44e629d-16ad-ce78-c6d1-bb239589698b.htm">
+    <HelpTOCNode Id="e66f33b3-c9cd-49a6-ad9a-3ec1f7aa31f8" Title="BlastAnalysis Class" Url="html/c74319be-c910-118d-e036-0535e122171d.htm">
+      <HelpTOCNode Title="BlastAnalysis Constructor " Url="html/0ca4a0f7-c5ac-5498-f795-6e0feafd4b43.htm" />
+      <HelpTOCNode Id="14f64983-3a00-4426-a97e-55d76bc8c3ea" Title="BlastAnalysis Properties" Url="html/3503c751-7105-d282-7f86-c3956adda5fd.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/6725da70-4279-8ee6-cd03-238aa1eb1ca4.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/adf0d3a0-a166-e6a7-63d9-c467cd81ea9d.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="2993d497-c3cb-4540-8eef-79af056d222e" Title="BlastAnalysis Methods" Url="html/e1ac0c92-a929-1a48-13a2-5cfa981e94e3.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/3cb7a034-3671-2745-6fb4-085b36ee90c5.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="59d2efb5-6dcb-46aa-802c-d7a868807292" Title="BlastBytecodeCompiler Class" Url="html/ba8ee778-19e4-b123-879f-391768337e02.htm">
+      <HelpTOCNode Title="BlastBytecodeCompiler Constructor " Url="html/7b17bc27-ed5d-d1e4-d830-0a1091886c18.htm" />
+      <HelpTOCNode Id="0c85e618-bb31-44a2-a930-ad509509e605" Title="BlastBytecodeCompiler Properties" Url="html/a60035ab-6f88-eacf-bb9e-e4abfc462a4e.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/cc36e9a6-1ac3-e5d2-5825-2289ee88eb51.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/b2c626ee-6845-b0b2-4efe-d5408ebab7fd.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="8b36b7fd-1b81-49fe-a4a9-e36007da7a6b" Title="BlastBytecodeCompiler Methods" Url="html/9cb41a24-b4bb-86cc-5292-9379a8c40af0.htm">
+        <HelpTOCNode Title="CompileFunction Method " Url="html/69388934-2d08-6fd7-3a06-46187479225a.htm" />
+        <HelpTOCNode Title="CompileParameter Method " Url="html/7bda47c1-699e-63f1-8958-f1608622b907.htm" />
+        <HelpTOCNode Title="CompileParameters Method " Url="html/b86e4561-d3fd-6b2b-61db-63a95183a2bc.htm" />
+        <HelpTOCNode Title="Execute Method " Url="html/dece8fb8-b91b-bae7-d720-e247f549b7c9.htm" />
+        <HelpTOCNode Title="GetOperationOpCode Method " Url="html/ec2e59dc-c91a-1284-fd20-518a75db72b5.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="e9444608-d79d-4a4a-bcbc-7f960737c278" Title="BlastBytecodeOptimizer Class" Url="html/3c88c385-f617-4ff2-ff74-813cacf02b66.htm">
+      <HelpTOCNode Title="BlastBytecodeOptimizer Constructor " Url="html/914ec239-4f0d-f828-da11-8a3431ec71c6.htm" />
+      <HelpTOCNode Id="ddf920be-2531-444b-9a8f-ad1d42695a2d" Title="BlastBytecodeOptimizer Properties" Url="html/4162018f-3412-0f10-933c-0230eae38ead.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/26372684-46f6-dec1-7957-ffa68ed169dd.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/fd9b88f1-d2a3-261b-03ea-172117376838.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="a88e4cd1-fd38-494f-bb3e-107626dc6a99" Title="BlastBytecodeOptimizer Methods" Url="html/75a003af-4988-902b-2444-d345f3ab106d.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/58649833-5513-a739-8e4d-3bd9f9405998.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="4a3da7a4-5a99-4b36-9404-fc9b6f0ef25c" Title="BlastBytecodeOptimizer.optimizer_pattern Class" Url="html/d5ed229e-e370-7fa2-1e0f-de86cb71337b.htm">
+      <HelpTOCNode Title="BlastBytecodeOptimizer.optimizer_pattern Constructor " Url="html/878c3f74-3990-827a-7552-8ad97777ecb0.htm" />
+      <HelpTOCNode Id="04b926a5-9753-4f6a-85ef-8837bf0b7c8d" Title="optimizer_pattern Methods" Url="html/20b1eb6f-d7f6-4f4a-1d0e-a950790253a1.htm">
+        <HelpTOCNode Title="has_repeat_in_pattern Method " Url="html/edacb79b-d546-7df7-1545-bf547c70bb0a.htm" />
+        <HelpTOCNode Title="has_repeat_in_replace Method " Url="html/2c2a1c2e-a57a-9e2e-5799-29b0ab1b2093.htm" />
+        <HelpTOCNode Title="match Method " Url="html/6f8797e2-6864-9065-d984-1a16dcc64f34.htm" />
+        <HelpTOCNode Title="repeat_in_pattern_length Method " Url="html/418cf5b5-ea15-31de-0411-60d3fd924a3e.htm" />
+        <HelpTOCNode Title="replace_match Method " Url="html/066440f7-00b5-4e58-bde2-fcd8f2e7bb90.htm" />
+        <HelpTOCNode Title="ToString Method " Url="html/539a8895-6586-3446-4b9e-655c0668c112.htm" />
+        <HelpTOCNode Title="validate Method " Url="html/0942c820-e069-0480-5d85-3db73a8f0516.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="f8dea059-0059-44ec-a553-37f01ef08dd7" Title="optimizer_pattern Fields" Url="html/5b0c8325-130d-3d1f-ae5b-d76868b85c1f.htm">
+        <HelpTOCNode Title="min_match_for_next Field" Url="html/30b7852c-2814-eac0-3b90-d4cf306402e2.htm" />
+        <HelpTOCNode Title="name Field" Url="html/12a4006f-db61-b3ff-68ce-38698b3154b2.htm" />
+        <HelpTOCNode Title="next Field" Url="html/041d6732-48e3-5d1c-6f73-12506b1edb1e.htm" />
+        <HelpTOCNode Title="pattern Field" Url="html/3b186ff0-5395-225e-8dad-6fb142dc5a5f.htm" />
+        <HelpTOCNode Title="replace Field" Url="html/8b48814b-183a-daa1-5d5a-179a13de2111.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="8c295f27-79ad-4f9a-ae8f-65f73f62a487" Title="BlastCSCompiler Class" Url="html/54ef9df6-2ab4-520d-56da-087b6c3962ed.htm">
+      <HelpTOCNode Title="BlastCSCompiler Constructor " Url="html/91fd76ab-5bd9-e3ee-67f3-ba4af0c3096d.htm" />
+      <HelpTOCNode Id="5cd1d3e4-1a1b-49cb-85be-2547c4404d89" Title="BlastCSCompiler Properties" Url="html/9477fdb9-c818-0938-f962-bc339f847d71.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/f1a4248a-09ac-0574-561c-59975cd9a86a.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/d03c14d4-e94c-0a4b-6a85-58d8cd390af7.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="b960c82f-555d-43c4-bd68-024022e031b7" Title="BlastCSCompiler Methods" Url="html/fe31ac26-5649-3642-ac0e-faed2748d6ba.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/29de629f-5b21-33af-ff3a-366b4f944d9e.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="29dfa1c7-7900-4f42-898e-e4dce8277248" Title="BlastFlatten Class" Url="html/5e535458-0260-538b-7dfb-a65a5dcfc2c3.htm">
+      <HelpTOCNode Title="BlastFlatten Constructor " Url="html/f382f64c-aba3-7c5a-f9bd-78145f14bb25.htm" />
+      <HelpTOCNode Id="6af3c60d-1fee-4de8-9c0a-766d8d995fad" Title="BlastFlatten Properties" Url="html/c0ab04eb-822a-1324-95cd-c5dd2006b0e9.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/4df039cf-aaa0-66dc-7fa3-f786e4991ddc.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/c3e6e671-a266-45e1-9c00-8c5acd509d21.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="d41d53c4-3112-4789-be2f-d7c0c5791cc8" Title="BlastFlatten Methods" Url="html/343138e4-0df3-ea10-851b-d8514e310183.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/7830cc9a-858e-714d-9409-a90f76fa38c1.htm" />
+        <HelpTOCNode Title="Flatten Method " Url="html/9d6b36cc-26c6-fcf6-9cce-f5dec2e155fe.htm" />
+        <HelpTOCNode Title="FlattenAssignment Method " Url="html/6481fcf4-440a-96d2-8f4b-b5cfb52b90de.htm" />
+        <HelpTOCNode Title="FlattenCompound Method " Url="html/b54e84d9-f678-83d3-5e4f-b84fa5bf84d7.htm" />
+        <HelpTOCNode Title="FlattenFunction Method " Url="html/6d51e7a7-ec8e-0786-fa24-499e53f83bdf.htm" />
+        <HelpTOCNode Title="FlattenFunctionParameters Method " Url="html/f24b9090-f963-a5a1-4791-d0ed991c3a06.htm" />
+        <HelpTOCNode Title="FlattenWhileLoop Method " Url="html/d331c2d8-a7c3-9c0f-5e5c-3247a6cc5ac4.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="886f8d42-1070-430e-b5a7-92a6822e6920" Title="BlastHPCCompiler Class" Url="html/5743761a-d108-af73-0e23-c99904f76a7a.htm">
+      <HelpTOCNode Title="BlastHPCCompiler Constructor " Url="html/03b073a9-dba8-7e70-1e40-77fa1fee0491.htm" />
+      <HelpTOCNode Id="ef715bbe-2ffb-41fe-842c-b1a18993aa88" Title="BlastHPCCompiler Properties" Url="html/edacbdb2-38fe-5b54-4754-c4588388eccf.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/52e04249-81f2-732d-65b7-93bf8a9cfd50.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/a846b088-f126-f493-2729-3286778b34db.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="d804a337-5b3b-4c31-87ef-4efc664839a9" Title="BlastHPCCompiler Methods" Url="html/a1dbb982-7225-aff3-c114-217292c2d827.htm">
+        <HelpTOCNode Title="CompileParameter Method " Url="html/f6503c24-0c24-bdd4-15dc-9f2d1b744f4a.htm" />
+        <HelpTOCNode Title="CompileParameters Method " Url="html/d8e69618-c42f-886a-fb15-b04a8db34d93.htm" />
+        <HelpTOCNode Title="Execute Method " Url="html/d2e14923-f2cf-fa3a-f8b1-7f27267ee374.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="36f991ac-9d5c-47e9-b6ba-068e7859fad6" Title="BlastHPCStackResolver Class" Url="html/79e2f34d-33f4-e300-e23e-847edc51cfde.htm">
+      <HelpTOCNode Title="BlastHPCStackResolver Constructor " Url="html/f5173e27-c39c-d3d3-de89-7cfccdb43e5e.htm" />
+      <HelpTOCNode Id="1a6afef4-029e-48ad-908f-5a4da5491f10" Title="BlastHPCStackResolver Properties" Url="html/7b8022ff-087b-276f-e368-83c3d89a4a3c.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/120e022c-7ec1-cc1a-4aca-b6d84236f300.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/1f704059-4449-452f-a2ad-7f4350189e35.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="40bcec5e-61ca-411e-9d44-6a387fb9ebb8" Title="BlastHPCStackResolver Methods" Url="html/afdb0a7b-2896-1b12-6da2-421c8c83615b.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/0361c2e6-de2e-8c44-997c-b746748bf0bc.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="081fbfac-fc58-4db9-a92a-aa7ad577e534" Title="BlastJumpResolver Class" Url="html/3981929e-54a8-884d-c453-eedb03f40f62.htm">
+      <HelpTOCNode Title="BlastJumpResolver Constructor " Url="html/a5c5a7c7-e956-6f80-341a-47bc32a43f03.htm" />
+      <HelpTOCNode Id="bd3d2364-53a2-4052-a6ba-875c43a1ec73" Title="BlastJumpResolver Properties" Url="html/20e3a946-b51f-d547-15ec-a6f9faaa5e58.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/0f693625-741e-4b16-6152-07148f7d381c.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/6b0e297b-6b6c-47e2-f94a-af0e94d22515.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="940ba117-0045-4767-a0a1-faf7e65f85f0" Title="BlastJumpResolver Methods" Url="html/1ad87a3a-9cf6-2e90-8d3c-05fe0c5f585c.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/f3a75199-62fd-9632-fa9d-82270e5c042e.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="da61f636-7d2c-4448-a1b3-6b742ac17f5a" Title="BlastOptimizer Class" Url="html/a5f85e36-cfea-439a-aec7-821e010e98c0.htm">
+      <HelpTOCNode Title="BlastOptimizer Constructor " Url="html/36436dc1-287b-9c43-707d-17194269e815.htm" />
+      <HelpTOCNode Id="73400a77-5efa-4c58-b4e3-75375fb85b31" Title="BlastOptimizer Properties" Url="html/5f38cecb-1df1-53a1-2fff-adc25834e5f0.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/43de78c6-1101-ba49-d286-c765229308af.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/431ad517-e4e1-b94a-d8a9-1748b1bf06bf.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="2761d335-b10c-475e-8e0f-04c568d0b4ef" Title="BlastOptimizer Methods" Url="html/4d423819-1034-b869-b859-31cc5079c088.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/d90d4c11-c23c-0e87-518d-310afeadfb80.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="08700586-cdb6-4a76-8a9f-50b57676dd33" Title="BlastPackaging Class" Url="html/6291cba1-03b1-a8c2-2e27-71e0126fdbe5.htm">
+      <HelpTOCNode Title="BlastPackaging Constructor " Url="html/788b2031-66b1-a983-3295-5d64837ba56b.htm" />
+      <HelpTOCNode Id="791646fa-701b-4c5a-90e5-30a63c1f06b5" Title="BlastPackaging Properties" Url="html/1f73d906-bf48-3e91-259c-2472e3fff027.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/7b31a87a-cdc6-994d-479a-a80721036944.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/832dd259-07f3-919f-ff3c-fe1000bd8913.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="00e507be-f2b7-42c3-a535-9093f85377ab" Title="BlastPackaging Methods" Url="html/030ec768-db7b-68e0-57b4-50fb38b2a54f.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/69374056-e44d-973e-458c-78368d6eb2bd.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="07aa2c9c-2de6-42b1-900e-1b14c59ed64d" Title="BlastParameterAnalysis Class" Url="html/4965573d-bc84-9577-4468-dd205cad16b3.htm">
+      <HelpTOCNode Title="BlastParameterAnalysis Constructor " Url="html/2536d1fd-9096-7d12-ac1a-ba7a24b5d460.htm" />
+      <HelpTOCNode Id="0a49bffb-9862-47e8-a354-5b8cd6a107e1" Title="BlastParameterAnalysis Properties" Url="html/3ad1656c-9474-db5f-8ad6-7beb9ae8e057.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/0480067e-80b3-6557-7e4b-80cd4df7f6b5.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/1dd6bd4a-ecf0-72f4-b94e-dba071a08b92.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="55124a04-1c3e-4a4b-b3db-41dfb0948559" Title="BlastParameterAnalysis Methods" Url="html/6b28a943-53e6-f66f-ec43-c58b9bb761c0.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/84bfa3ae-66a1-3506-a9c7-ae7e72640cd6.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="2ada956e-a4c0-422a-a580-7b8734f86df3" Title="BlastParser Class" Url="html/6a2dbd8b-003e-e3bf-523b-52ce3fedbded.htm">
+      <HelpTOCNode Title="BlastParser Constructor " Url="html/79ac5b21-1640-61f3-b7a4-f02c092de7f4.htm" />
+      <HelpTOCNode Id="f4f447c5-9bd5-40ac-89ea-a0ac309caf63" Title="BlastParser Properties" Url="html/c632e1ff-332d-aedb-03ff-1484b70d8937.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/48218ca0-8757-1215-4cb7-2414cbd0b56f.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/83d73261-dfdc-0868-a71c-6322f72012bb.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="3bb13151-830c-4522-942a-1954519cf13e" Title="BlastParser Methods" Url="html/3a234c45-8269-f97b-658e-e9c1abaf6303.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/9c9c871b-6c86-80cf-f7a1-9f50d9bf450f.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="a4879241-a7c7-45b2-a233-9ce925d520c9" Title="BlastPreCompileCleanup Class" Url="html/fcbd2374-225f-cd7e-72da-a5e17d324374.htm">
+      <HelpTOCNode Title="BlastPreCompileCleanup Constructor " Url="html/db85dea1-ac97-b679-dee4-a6fb0cd85759.htm" />
+      <HelpTOCNode Id="6c9d2d4c-4a23-4e23-9299-16873abe2b12" Title="BlastPreCompileCleanup Properties" Url="html/3b95708a-ea86-980a-6e0c-fbea3b1a0430.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/00891dec-434c-9b2e-1aa0-e107a68742da.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/a250c930-86c1-b1a0-d7d7-5a36f1d94c03.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="bf6376e8-9ce6-43a1-9526-b66738001ea6" Title="BlastPreCompileCleanup Methods" Url="html/e013574e-e659-813c-4445-385dd8c83a5f.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/2adbb500-9ca3-4b28-cb85-954b3ddc1a78.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="a35b1a17-9d08-4883-889b-5f83a8c78aa8" Title="BlastTokenizer Class" Url="html/bafe70ae-9382-7e0e-c825-a3b1fb9c9f11.htm">
+      <HelpTOCNode Title="BlastTokenizer Constructor " Url="html/7d55e7e8-2616-473e-0140-f39839164947.htm" />
+      <HelpTOCNode Id="f8c382bd-e783-42f9-8690-079733201db9" Title="BlastTokenizer Properties" Url="html/0cb5da17-db67-3ac5-9419-aa270496fd45.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/9ded0a21-5e63-69d4-034b-61ddc42dfae5.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/51f8acf5-34e2-aa65-7021-7ae09bd678bf.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="4cf8be00-4a27-45d2-a2c2-38bd9bb0b892" Title="BlastTokenizer Methods" Url="html/65a78f3b-af50-f399-6df8-26638af35074.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/b6f0e158-4217-8318-2a21-afe600e9d150.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="beaa386a-8a1f-48dd-bcd0-293aa4723e9e" Title="BlastTransform Class" Url="html/b24ea494-df13-8d6e-4502-3249b273744f.htm">
+      <HelpTOCNode Title="BlastTransform Constructor " Url="html/334a433e-02ff-83c3-dceb-79efa04c2d5b.htm" />
+      <HelpTOCNode Id="a6d1bcb4-91dc-465e-8182-e5ffb29ff9fe" Title="BlastTransform Properties" Url="html/0ad32cc7-689d-ad3b-6c26-42ed8bc36c4e.htm">
+        <HelpTOCNode Title="StageType Property " Url="html/07858c73-1eef-6800-c034-8e8e628d02d2.htm" />
+        <HelpTOCNode Title="Version Property " Url="html/ec0a92d2-6611-89b6-b37b-722196858abc.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="b8cfba78-e4df-43ce-96e1-46b208f4cea6" Title="BlastTransform Methods" Url="html/177e0c6c-60f6-cf46-e077-9cf08d3047d1.htm">
+        <HelpTOCNode Title="Execute Method " Url="html/ff519355-d814-875a-44ab-cf9e5c712df9.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="76d983cb-1d15-4ac6-926c-4ce0beb47fd8" Title="IMByteCode Class" Url="html/d6363984-4b10-a4ac-7edd-fcca9b5fcf8f.htm">
+      <HelpTOCNode Title="IMByteCode Constructor " Url="html/e8cfa1b9-2645-49d2-57c7-36938ab77ff3.htm" />
+      <HelpTOCNode Id="7a7334e0-eb88-4826-8172-71298a7058e9" Title="IMByteCode Properties" Url="html/ae034088-cdf7-37fe-f0f8-d426219651f5.htm">
+        <HelpTOCNode Title="code Property " Url="html/f2b01cc8-5f16-d6aa-8557-c1a39e24553c.htm" />
+        <HelpTOCNode Title="labels Property " Url="html/4310a5cc-5105-38ed-a23b-f384c7796b84.htm" />
+        <HelpTOCNode Title="op Property " Url="html/cfb52e81-f777-1680-c011-042600a400fc.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="223a4fa3-621a-44ce-a768-1debcecf579c" Title="IMByteCode Methods" Url="html/09a05147-ead8-0990-4870-e95add45681c.htm">
+        <HelpTOCNode Id="f8337612-32e8-4c8d-958a-609cafc85ba8" Title="AddLabel Method " Url="html/59b113ba-d8ce-c6f4-695d-844ee6f965e1.htm">
+          <HelpTOCNode Title="AddLabel Method (IEnumerable(IMJumpLabel))" Url="html/6e6dd6c3-18e6-6bcf-a0d1-f21984fb0de2.htm" />
+          <HelpTOCNode Title="AddLabel Method (IMJumpLabel)" Url="html/ce406f24-f6be-f717-de81-15b61331a269.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="ToString Method " Url="html/d59e90da-89ad-8607-c3d8-ec7efeb3c725.htm" />
+        <HelpTOCNode Title="UpdateOpCode Method " Url="html/a7c6e475-d2e7-1eeb-143c-ec72ccab8e74.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="44e1f765-abe6-424e-996f-5c938968140c" Title="IMByteCodeList Class" Url="html/58d16a0d-86d3-8bfb-792d-12e6fd1d4482.htm">
+      <HelpTOCNode Title="IMByteCodeList Constructor " Url="html/092c4c22-1c55-e84e-2b93-f637d3a6583e.htm" />
+      <HelpTOCNode Id="ae540d5f-5d8d-47b5-9014-ed008853d1d5" Title="IMByteCodeList Properties" Url="html/55e16bfe-5dca-c2d1-0553-55c2a3a88105.htm">
+        <HelpTOCNode Title="Count Property " Url="html/36efc5a0-c6a5-a9d8-4fe6-f08cd6562699.htm" />
+        <HelpTOCNode Title="IsSegmented Property " Url="html/243d953e-172d-7a65-baac-1275014b88dc.htm" />
+        <HelpTOCNode Title="IsZeroTerminated Property " Url="html/f262adca-3773-54aa-734f-b187c8cf01d9.htm" />
+        <HelpTOCNode Title="Item Property " Url="html/2888c8d9-2aa3-106a-7e86-22d6f308ed11.htm" />
+        <HelpTOCNode Title="list Property " Url="html/192a28d6-19d7-edfa-3cca-774d5639b3ca.htm" />
+        <HelpTOCNode Title="SegmentCount Property " Url="html/7ea7bab3-e4d5-dc1f-37c6-db401396f5af.htm" />
+        <HelpTOCNode Title="segments Property " Url="html/30c4d55b-0fa6-85ce-b6d2-97a93b994d25.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="0729b5ad-a814-4c33-9829-37edc762d372" Title="IMByteCodeList Methods" Url="html/843a4a30-bec6-98d6-bc8a-985bd2021edf.htm">
+        <HelpTOCNode Id="374c4a6c-87d4-403e-bbd8-f6598174e008" Title="Add Method " Url="html/75a79d13-c377-5a95-a29d-04e27e45ffc8.htm">
+          <HelpTOCNode Title="Add Method (blast_operation, IMJumpLabel)" Url="html/353a20b3-2a32-fea2-b4ad-3607fd071ca6.htm" />
+          <HelpTOCNode Title="Add Method (Byte, IMJumpLabel)" Url="html/1b53cdb0-f400-e034-01e0-bac00c0bdf9c.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="62a64a63-bede-40b2-baee-fc32d1dd79ae" Title="AddRange Method " Url="html/ac0b5bec-b9b7-51bd-5247-81e2e18e162e.htm">
+          <HelpTOCNode Title="AddRange Method (IEnumerable(IMByteCode))" Url="html/c85ec32c-bb39-9ae6-071d-840f46e941d8.htm" />
+          <HelpTOCNode Title="AddRange Method (IEnumerable(Byte))" Url="html/13b05bc9-0c0a-2e20-55e3-c1104f36fda6.htm" />
+          <HelpTOCNode Title="AddRange Method (IMByteCodeList)" Url="html/256532ca-9802-6471-0fe0-b685f0ee9034.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="AddSegment Method " Url="html/ab32cad8-bddd-356f-fcc7-0d5209e1bc87.htm" />
+        <HelpTOCNode Title="Insert Method " Url="html/f6aef070-5b33-ef55-0c6f-cc56477f943b.htm" />
+        <HelpTOCNode Title="ReduceSegments Method " Url="html/ffdb2343-26a6-dba5-6fbc-bc0d364e4df4.htm" />
+        <HelpTOCNode Title="ToBytes Method " Url="html/9c4ab84f-419a-9fef-6339-444bb826b45e.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="ace08666-72d1-4d93-a309-7d022652aded" Title="IMJumpLabel Class" Url="html/806b2554-ab2d-13fc-1ee1-1cc66d8052b0.htm">
+      <HelpTOCNode Title="IMJumpLabel Constructor " Url="html/ab7ec7a9-be4e-b80c-3fd7-31af27c5d2fc.htm" />
+      <HelpTOCNode Id="9a46a3f8-4318-4785-8d51-eb31fb11ad98" Title="IMJumpLabel Properties" Url="html/c70d66bf-f3ff-65ea-5315-7be5fa9308a8.htm">
+        <HelpTOCNode Title="id Property " Url="html/2f9f2d68-4cb0-e68c-c317-702c67733c34.htm" />
+        <HelpTOCNode Title="is_jump Property " Url="html/0fccb69d-63ce-42b5-e547-8f00a35eaa62.htm" />
+        <HelpTOCNode Title="is_label Property " Url="html/b7d422ca-f224-fbed-b926-9e5a9c879133.htm" />
+        <HelpTOCNode Title="is_offset Property " Url="html/064349e9-02b9-3948-2b90-d26bad72f67f.htm" />
+        <HelpTOCNode Title="type Property " Url="html/bb414c2f-e8be-ba53-87d2-e1cf798e326f.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="be7c04ca-b7c4-4110-a9fb-19e8401f1d71" Title="IMJumpLabel Methods" Url="html/347701d8-0b97-e87e-6e7e-2edc25fa8252.htm">
+        <HelpTOCNode Title="Jump Method " Url="html/036df1ff-d41d-8d06-a0fc-c13358bde230.htm" />
+        <HelpTOCNode Title="Label Method " Url="html/75c1d73e-6944-91bb-ca8f-d57293439b51.htm" />
+        <HelpTOCNode Title="Offset Method " Url="html/73182f40-a694-7e4c-817c-8e158a883d21.htm" />
+        <HelpTOCNode Title="ToString Method " Url="html/665e9de0-7772-ad3c-a8e1-82d45ad4698d.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="JumpLabelType Enumeration" Url="html/9cd93282-ef7e-e89b-3c83-df72cb34e5b4.htm" />
+  </HelpTOCNode>
+  <HelpTOCNode Id="4a285de5-b088-4939-a812-ef093cd1da7a" Title="NSS.Blast.Interpretor" Url="html/bc1962ef-fc17-4dde-e64c-a350d8f217aa.htm">
+    <HelpTOCNode Id="c8e5cdee-40ad-42ae-959c-7151d84d2f50" Title="BlastInterpretor Structure" Url="html/4de5bd5a-f1bd-8188-7356-ab8a45b847d4.htm">
+      <HelpTOCNode Id="93837f41-a348-441b-b190-ac73007ab5af" Title="BlastInterpretor Methods" Url="html/d4fd4db4-9bd7-e9aa-7c53-a0ad14ed1240.htm">
+        <HelpTOCNode Title="decode62 Method " Url="html/aa45d27f-fb48-04d0-6e48-866604b3c4a1.htm" />
+        <HelpTOCNode Id="677ca83c-ee45-49c4-8708-666b12177b1f" Title="Execute Method " Url="html/c021d2d1-7a19-40ea-3e75-871e112cc62a.htm">
+          <HelpTOCNode Title="Execute Method (BlastEngineDataPtr)" Url="html/4ca2b680-defb-374a-7656-cac0b7b67ba9.htm" />
+          <HelpTOCNode Title="Execute Method (BlastEngineDataPtr, IntPtr, IntPtr)" Url="html/cad48777-6239-1cb2-9f5d-37aeccd56465.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="GetMetaData Method " Url="html/e3f0873a-403b-0434-2462-11ea99b0b9ac.htm" />
+        <HelpTOCNode Title="GetMetaDataSize Method " Url="html/5af05b9e-53b5-21f7-c78f-ab6f86760c0f.htm" />
+        <HelpTOCNode Title="GetMetaDataType Method " Url="html/12073220-ed8b-d2d0-a697-201f64208530.htm" />
+        <HelpTOCNode Title="IsBooleanOperation Method " Url="html/c9c747fc-2980-c0fb-4bcd-4494d033c67f.htm" />
+        <HelpTOCNode Title="IsMathematicalOperation Method " Url="html/114febd2-d81b-729c-d53d-519af95bee85.htm" />
+        <HelpTOCNode Title="IsMathematicalOrBooleanOperation Method " Url="html/a79d2c27-bfa3-2c70-2496-ca3c2dfdd264.htm" />
+        <HelpTOCNode Title="peek Method " Url="html/004133a6-1584-524d-840f-ebebb3a225e9.htm" />
+        <HelpTOCNode Id="9227d1b9-41f7-4761-a634-31be3bd32355" Title="pop Method " Url="html/509c043f-9b06-e178-65a2-a59211fa94f9.htm">
+          <HelpTOCNode Title="pop Method (float4)" Url="html/4ec8e60c-c5b7-a74b-323c-d56582870c3c.htm" />
+          <HelpTOCNode Title="pop Method (Int32)" Url="html/d4fee8da-a722-5254-b132-8c54aa0326be.htm" />
+          <HelpTOCNode Title="pop Method (int4)" Url="html/60d5c547-df12-38d6-b5f4-bd5a5fd0c873.htm" />
+          <HelpTOCNode Title="pop Method (Single)" Url="html/747f2ebf-3254-ad1c-6cc3-f11f3d58816e.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="e9b5aeaa-766a-4d36-8e00-edf8d1f310e7" Title="push Method " Url="html/b6dba309-11ca-8bdc-0222-c706024a924b.htm">
+          <HelpTOCNode Title="push Method (float2)" Url="html/086e8a2e-a833-6cc3-5e11-d77933dfb2bb.htm" />
+          <HelpTOCNode Title="push Method (float3)" Url="html/2644e177-a104-280f-7623-b47662263728.htm" />
+          <HelpTOCNode Title="push Method (float4)" Url="html/5fd1d8fa-4709-6f1c-43cb-09e5b088a207.htm" />
+          <HelpTOCNode Title="push Method (Int32)" Url="html/cdd4f39f-ba16-3dd7-8813-63cbfe2734a3.htm" />
+          <HelpTOCNode Title="push Method (Single)" Url="html/5c246dbe-acd5-47d4-5b20-8e0432bcf092.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="Reset Method " Url="html/7b0eea96-5f1c-cb66-71c6-4788c2e09004.htm" />
+        <HelpTOCNode Id="b3eaea57-d2b4-43ef-a110-5de4a1786bd4" Title="ResumeYield Method " Url="html/522ae3cb-9008-a9fe-de45-15723b8ac931.htm">
+          <HelpTOCNode Title="ResumeYield Method (BlastEngineDataPtr)" Url="html/ddeaa568-ede0-c150-9272-eee5222f7b39.htm" />
+          <HelpTOCNode Title="ResumeYield Method (BlastEngineDataPtr, IntPtr, IntPtr)" Url="html/928d4d43-68f7-716d-adf5-ae0ff3af7496.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="e74c24b7-cbce-4ef3-9500-3d2e8afcfa6c" Title="SetPackage Method " Url="html/fa5e048e-fc6c-926f-a875-4de22e2d7f7e.htm">
+          <HelpTOCNode Title="SetPackage Method (BlastPackageData)" Url="html/ab83896e-136a-b391-eee0-94530008579c.htm" />
+          <HelpTOCNode Title="SetPackage Method (BlastPackageData, Byte*, Single*, Byte*, Int32)" Url="html/8b770eda-200e-7a5c-f3dd-31b71b1c974d.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="5687fd6a-673e-470b-aa3c-e676b78c46fc" Title="BlastInterpretor Fields" Url="html/7bf839f6-c678-d258-5156-95eb6214e980.htm">
+        <HelpTOCNode Title="max_iterations Field" Url="html/9f6ef43d-fae7-4c0b-5da2-101b708e46a8.htm" />
+        <HelpTOCNode Title="opt_id Field" Url="html/6320ac03-49e1-d8a6-2194-de94581a1122.htm" />
+        <HelpTOCNode Title="opt_value Field" Url="html/034c9a8b-72b2-f497-494a-d70df55d402b.htm" />
+        <HelpTOCNode Title="ValidationMode Field" Url="html/91cd43fd-4689-0cfc-5476-7ecef20c23a3.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="1132b1c3-4ba6-49b2-ba3c-d03422878e9a" Title="NSS.Blast.Register" Url="html/702c545c-122f-76de-fb07-7c06df797ee5.htm">
+    <HelpTOCNode Id="fc58592d-7e1e-43a3-a06e-4c77aa2a9061" Title="BlastReflect Class" Url="html/4230ed96-e543-5d13-94e1-170d1261ea18.htm">
+      <HelpTOCNode Id="ff0658ea-78f3-428b-ba61-805fa77baa92" Title="BlastReflect Methods" Url="html/099ecae1-4624-0cf7-48d7-33424caaec12.htm">
+        <HelpTOCNode Title="FindCompileTimeBlastScripts Method " Url="html/6a0ca233-6378-a238-6520-c2efbed0c192.htm" />
+        <HelpTOCNode Title="FindHPCJobs Method " Url="html/1134bf1c-beb2-4549-1d7c-6f0f8f49d2d2.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="5a6687aa-d066-4ab7-b08e-14e79eebb9c0" Title="BlastScriptRegistry Class" Url="html/ce5a41c7-ce9f-1626-a0f1-dc97f6f00962.htm">
+      <HelpTOCNode Id="edc64724-ea9a-498c-8e7f-fbead1aeef30" Title="BlastScriptRegistry Methods" Url="html/75ef7d08-2934-9bc4-c35c-37fafe202d0f.htm">
+        <HelpTOCNode Title="All Method " Url="html/b1786d89-c262-e0c4-6a34-3a5a36dbc4a1.htm" />
+        <HelpTOCNode Id="b40e6ae7-5bc1-4b9c-8933-f57337f24533" Title="Exists Method " Url="html/acf6849d-745e-ac2d-a15c-1e2a69ac85b0.htm">
+          <HelpTOCNode Title="Exists Method (Int32)" Url="html/1ff22aca-a9d9-61f2-222c-2cba9ad3d036.htm" />
+          <HelpTOCNode Title="Exists Method (String)" Url="html/00483d00-f79f-a558-5475-e11840f17b29.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="11ead520-4e30-4fd7-8b4d-44fc20d7b344" Title="Get Method " Url="html/6696a3a4-af9d-8f3d-67e2-77518013dc0b.htm">
+          <HelpTOCNode Title="Get Method (Int32)" Url="html/767b062a-dff3-e882-3bb8-0127004652a3.htm" />
+          <HelpTOCNode Title="Get Method (String)" Url="html/d57caaff-7145-49ac-e351-2429aa0ec712.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="bb5c9e80-0038-4e31-bde5-672f45f0f53a" Title="Register Method " Url="html/09bb5769-0ca4-9198-5389-37658cbff9a3.htm">
+          <HelpTOCNode Title="Register Method (BlastScript)" Url="html/723efa16-3117-5b0e-c570-2e3fd296e215.htm" />
+          <HelpTOCNode Title="Register Method (String, String, Int32)" Url="html/406fc2a9-6417-2802-dfd3-93e43ed0c57a.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="TryGetReferenceId Method " Url="html/7a85a37f-6f9b-9ac5-74ff-301c0d72a3de.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="cbef1669-f958-4662-ab75-3c49975fb491" Title="NSS.Blast.SSMD" Url="html/eb10f50e-de3b-3102-6f32-f499377a393f.htm">
+    <HelpTOCNode Id="fbdf826b-d5a7-48b6-a61c-5b1cead4d3bb" Title="BlastSSMDInterpretor Structure" Url="html/ef6e6c61-2d5c-f7f3-fa24-62f5a07fd3b3.htm">
+      <HelpTOCNode Id="40cc6675-322d-4326-8955-32f2b5134960" Title="BlastSSMDInterpretor Methods" Url="html/82954e74-3a55-820d-7048-f803a55b0b9b.htm">
+        <HelpTOCNode Id="c89b1d75-1362-43f9-bd3f-001bbcd37767" Title="Execute Method " Url="html/3d56b2dd-5d89-ef28-84e4-becc10a47864.htm">
+          <HelpTOCNode Title="Execute Method (BlastEngineDataPtr, IntPtr, BlastSSMDDataStack*, Int32)" Url="html/f28b96ae-2149-073f-f07d-c6d87c7e8ead.htm" />
+          <HelpTOCNode Title="Execute Method (BlastPackageData, BlastEngineDataPtr, IntPtr, BlastSSMDDataStack*, Int32)" Url="html/9c256883-320a-77ae-7568-e1f83546da74.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="OperationIsSSMDHandled Method " Url="html/8adeb855-b4b8-b96f-ad49-95b2b01bbb80.htm" />
+        <HelpTOCNode Title="SetPackage Method " Url="html/5f38dc53-cb1d-659c-1e37-36bdeb7318a1.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="88d9e5ac-c061-4f79-967f-5e7d809f1fbb" Title="NSS.Blast.Standalone" Url="html/527694ae-dd41-3334-e017-544f5a810383.htm">
+    <HelpTOCNode Id="7e4b01e1-8586-44d2-a4d9-7d6ed8080c18" Title="Debug Structure" Url="html/d3322ed8-9bfc-dc56-5fd8-617a346bbf3a.htm">
+      <HelpTOCNode Id="1168e527-9b03-459a-b072-ff72b784b880" Title="Debug Methods" Url="html/fbff7485-0941-6f39-54e5-93fdea7e2f50.htm">
+        <HelpTOCNode Title="Log Method " Url="html/2fc193d5-ee5b-408f-235e-476643364013.htm" />
+        <HelpTOCNode Title="LogError Method " Url="html/bb20914a-e2c4-9004-28cc-59f9e0cb83e7.htm" />
+        <HelpTOCNode Title="LogWarning Method " Url="html/7180505e-ddd5-ab2a-9b88-ad3203e9be31.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="288608ea-d11f-4816-ae8c-3b358a674338" Title="Unity.Assertions" Url="html/136ca6e4-99b4-7511-ccb8-d5585741ced1.htm">
+    <HelpTOCNode Id="e8482e57-8630-43b5-b2c3-186b26946f4d" Title="Assert Class" Url="html/4a9e20cd-9e4c-2893-a45e-67a9ef2023f8.htm">
+      <HelpTOCNode Id="144240db-95db-47db-b895-6d26e74c5c34" Title="Assert Methods" Url="html/c54baabf-e658-dae5-00a8-b33b0ceca8b7.htm">
+        <HelpTOCNode Title="IsFalse Method " Url="html/f9d0e2f4-05d0-28ca-ef07-48e8795cab64.htm" />
+        <HelpTOCNode Title="IsNotNull Method " Url="html/a54e9516-f96f-fb13-1e25-b78f91d61300.htm" />
+        <HelpTOCNode Title="IsNull Method " Url="html/3a2fa295-b04b-5c03-4a5e-e0cf591a01a7.htm" />
+        <HelpTOCNode Title="IsTrue Method " Url="html/a6fe0bc0-a0dd-82ef-d6bc-aaa2b8cedd01.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="9dcfce98-5d90-4ee4-8fb8-4b2c52aaf654" Title="Unity.Burst" Url="html/5a6f45ad-2919-b11a-42a7-d65af235ae07.htm">
+    <HelpTOCNode Id="21aaf08f-a844-46b3-9744-90a19918846a" Title="FunctionPointer(T) Structure" Url="html/466c1d8a-3ce7-5160-3041-0b919747bfe5.htm">
+      <HelpTOCNode Title="FunctionPointer(T) Constructor " Url="html/3fbe1ac7-701d-6275-415e-bb668930603d.htm" />
+      <HelpTOCNode Id="f627b3e4-2de8-4cbc-a173-190cd8224b08" Title="FunctionPointer(T) Properties" Url="html/8bc9266e-0cef-c66e-d7cd-8d4f60bf5f17.htm">
+        <HelpTOCNode Title="Invoke Property " Url="html/af4dfaf6-1175-b14b-e77e-28205affc037.htm" />
+        <HelpTOCNode Title="IsCreated Property " Url="html/cc88b2f9-017c-a03f-e282-9dd333296a64.htm" />
+        <HelpTOCNode Title="Value Property " Url="html/298d6498-cf33-d637-5cf7-2dbd3faab246.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Title="FunctionPointer(T) Methods" Url="html/da85eca3-a2ea-7173-7f9e-1a30c4b99562.htm" />
+    </HelpTOCNode>
+    <HelpTOCNode Id="18356e9e-a569-49d3-99eb-008e8a2f7962" Title="NoAliasAttribute Class" Url="html/65e2a078-1211-18bf-b05c-870c48b02f4c.htm">
+      <HelpTOCNode Title="NoAliasAttribute Constructor " Url="html/c736b4e4-ad32-c46b-2c26-9088a7450de3.htm" />
+      <HelpTOCNode Title="NoAliasAttribute Properties" Url="html/c5faf495-2ad8-9c4d-7d3e-0942796af625.htm" />
+      <HelpTOCNode Title="NoAliasAttribute Methods" Url="html/4673181c-05e0-2255-a778-59f00196b943.htm" />
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="6fff91db-afaa-4eea-b858-82193d5ebcd4" Title="Unity.Burst.Intrinsics" Url="html/09cc6882-0421-9a21-7910-b18b53cbc7d3.htm">
+    <HelpTOCNode Id="ea4eef87-a942-43de-b763-92a10b2db19e" Title="v128 Structure" Url="html/23de2595-00a7-d8a7-bdbf-410653d23e93.htm">
+      <HelpTOCNode Title="v128 Methods" Url="html/0f2bca71-1938-3c73-e5b8-9b44e187bf70.htm" />
+      <HelpTOCNode Id="95d994c0-8649-4bbd-b839-4921809cbd8c" Title="v128 Fields" Url="html/a2e89862-9606-d03c-2e26-efc1ec16fcba.htm">
+        <HelpTOCNode Title="Float0 Field" Url="html/fd39bb74-3803-c211-71d0-5c99e190b674.htm" />
+        <HelpTOCNode Title="Float1 Field" Url="html/33cc99f5-1843-91a9-4746-dd22bcb87e7b.htm" />
+        <HelpTOCNode Title="Float2 Field" Url="html/16060335-3e62-aee2-0504-23be54cdcbdc.htm" />
+        <HelpTOCNode Title="Float3 Field" Url="html/eda4edc8-2b54-73ef-ea2a-9841ba36ebc9.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="027128bf-d3ad-4f9a-a89e-e4e5e0f5175d" Title="Unity.Burst.Intrinsics.X86" Url="html/9f5b8006-2c37-41b0-e4a7-879e2dce2cfd.htm">
+    <HelpTOCNode Id="3209ba67-9c12-44e4-9203-0180f844034d" Title="Sse Class" Url="html/92497378-0283-8a91-be40-acf76e32fe53.htm">
+      <HelpTOCNode Id="18267daa-5cbd-47dc-9a68-b65d8d4fd5d6" Title="Sse Methods" Url="html/87d5836d-0782-8486-20d8-d88220a192d2.htm">
+        <HelpTOCNode Title="mul_ps Method " Url="html/5aa0b264-ae5d-6b0c-ff00-0909238df54b.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="f886a379-41cf-4b59-853c-8ab6a983d3ad" Title="Unity.Collections" Url="html/52449a24-d9ed-2309-6c07-183cca6a562f.htm">
+    <HelpTOCNode Id="888c0d2b-ace1-4011-b914-a18a9a0bb4d2" Title="BurstCompatible Class" Url="html/57c87e36-2714-ff10-bf87-2c5a517f5f00.htm">
+      <HelpTOCNode Title="BurstCompatible Constructor " Url="html/9dbaf388-fe42-c449-9853-54d518d38cfe.htm" />
+      <HelpTOCNode Title="BurstCompatible Properties" Url="html/b56c3ade-60d3-ccf0-7da9-acafe6d2aa70.htm" />
+      <HelpTOCNode Title="BurstCompatible Methods" Url="html/e4534d51-e8a4-81f1-5ae9-1dd86f4a0974.htm" />
+    </HelpTOCNode>
+    <HelpTOCNode Id="023aaada-17ff-44c8-bfd4-15b2de0f183b" Title="BurstCompileAttribute Class" Url="html/be3b64b1-b389-cac2-cf7e-b8e4e8b2f505.htm">
+      <HelpTOCNode Id="f015fc24-e86d-4216-b414-360d545119c3" Title="BurstCompileAttribute Constructor " Url="html/f66f9901-9b5c-0c36-828f-f3c3f41c2bab.htm">
+        <HelpTOCNode Title="BurstCompileAttribute Constructor " Url="html/12770c9f-70fd-94dd-742f-084173edd7c1.htm" />
+        <HelpTOCNode Title="BurstCompileAttribute Constructor (FloatPrecision, FloatMode)" Url="html/fafdb99a-89e0-16f0-ce06-ac03c3aad90d.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="bacb551a-5ec3-4280-9954-0eca18a98332" Title="BurstCompileAttribute Properties" Url="html/e0004043-6111-6183-0247-e75912ce1f52.htm">
+        <HelpTOCNode Title="CompileSynchronously Property " Url="html/66db482f-b45e-1bdd-9a61-503a3667d868.htm" />
+        <HelpTOCNode Title="Debug Property " Url="html/056ffc54-9dd9-4aab-b777-a9e36313576b.htm" />
+        <HelpTOCNode Title="DisableSafetyChecks Property " Url="html/8d9915ec-e270-ef2c-254a-4643c358d2b7.htm" />
+        <HelpTOCNode Title="FloatMode Property " Url="html/7246f5ae-e3ff-da27-8f3a-f06922d9ba23.htm" />
+        <HelpTOCNode Title="FloatPrecision Property " Url="html/5f5060f6-d838-d9e6-4133-ec01335b6bd4.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Title="BurstCompileAttribute Methods" Url="html/831402a3-9221-c990-a0c5-b230d8ae9dd1.htm" />
+    </HelpTOCNode>
+    <HelpTOCNode Title="FloatMode Enumeration" Url="html/ed9e7003-e091-fc37-4bc7-0cdb7af0f35f.htm" />
+    <HelpTOCNode Title="FloatPrecision Enumeration" Url="html/24f4d5ac-93e2-bc47-1330-712a8c5ee1eb.htm" />
+  </HelpTOCNode>
+</HelpTOC>
