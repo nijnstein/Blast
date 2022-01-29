@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Unity.Assertions;
 using Unity.Collections;
+
+#if STANDALONE_VSBUILD
+    using Unity.Assertions;
+#else
+   using UnityEngine.Assertions;
+#endif
 
 namespace NSS.Blast
 {                      
@@ -162,7 +167,7 @@ namespace NSS.Blast
         {
         }
 
-        #region Method chains to setup options 
+#region Method chains to setup options 
 
 
         /// <summary>
@@ -365,7 +370,7 @@ namespace NSS.Blast
             return Defines.Remove(key); 
         }
 
-        #endregion 
+#endregion
     }
 
 }

@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Unity.Assertions;
+
+#if STANDALONE_VSBUILD
+    using Unity.Assertions;
+#else
+using UnityEngine.Assertions;
+#endif
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;

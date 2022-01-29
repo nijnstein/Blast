@@ -228,13 +228,11 @@ namespace NSS.Blast
         }
 
 
-#if STANDALONE_VSBUILD
         /// <summary>
         /// implicit conversion of this to an intptr 
         /// </summary>
         /// <param name="p"></param>
         public static implicit operator BlastEngineDataPtr(IntPtr p) => new BlastEngineDataPtr() { ptr = p };
-#endif    
     }
 
 
@@ -401,11 +399,7 @@ namespace NSS.Blast
             Debug.Log(fsb.ToString());
             fsb = null;
 #endif
-#if !STANDALONE_VSBUILD
-            blast._burst_hpc_once_job = default;
-            blast._burst_once_job = default;
-            blast._burst_once_job.interpretor = default;
-#endif
+
             blast.is_created = true;
             return blast;
         }
@@ -1208,7 +1202,7 @@ namespace NSS.Blast
                 List<string> code = new List<string>();
                 foreach (BlastScript script in scripts)
                 {
-                    HPCCompilationData data = BlastCompiler.CompileHPC(blast, script, options);
+                    HPCCompilationData data = BlastCompiler.CompileHPC(blast.Engine, script, options);
                     if (data.IsOK)
                     {
                         code.Add(data.HPCCode);
@@ -1562,7 +1556,7 @@ namespace NSS.Blast
         #endregion
 
         #region Execute Scripts (UNITY)
-#if !STANDALONE_VSBUILD
+#if !STANDALONE_VSBUILD && FALSE
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
         {

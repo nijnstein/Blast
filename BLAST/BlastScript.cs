@@ -7,9 +7,12 @@ using System.Collections.Generic;
 using System.Linq;
 #if !STANDALONE_VSBUILD
 using System.Runtime.InteropServices.WindowsRuntime;
+using UnityEngine.Assertions;
+#else
+using Unity.Assertions;
+
 #endif
 using System.Threading;
-using Unity.Assertions;
 using UnityEngine;
 
 namespace NSS.Blast

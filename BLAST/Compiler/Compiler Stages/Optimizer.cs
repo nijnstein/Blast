@@ -53,7 +53,6 @@ namespace NSS.Blast.Compiler.Stage
             List<node> parameters = new List<node>();
             List<node> ops = new List<node>();
             BlastScriptFunction function = blast.Data->GetFunction(replacement_function);
-            Assert.IsNotNull(function);
 
             // gather parameters 
             int n_ops = 0;

@@ -45,7 +45,7 @@ namespace NSS.Blast.Jobs
         {
             unsafe
             {
-                exitcode = blaster.Execute(package, (NSS.Blast.BlastEngineData*)engine, environment, (NSS.Blast.BlastSSMDDataStack*)data_buffer, ssmd_datacount);
+                exitcode = blaster.Execute(package, engine, environment, (NSS.Blast.BlastSSMDDataStack*)data_buffer, ssmd_datacount);
             }
         }
 
