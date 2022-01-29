@@ -4553,7 +4553,7 @@ namespace NSS.Blast.Interpretor
         {
             byte param_count = code[code_pointer++];
 
-            vector_size = decode44(param_count, ref vector_size); 
+            param_count = decode44(param_count, ref vector_size); 
 
             if (param_count == 1 && vector_size != param_count)
             {
@@ -4647,6 +4647,27 @@ namespace NSS.Blast.Interpretor
 
 
         /// <summary>
+        /// pop 1 value from input stream 
+        /// </summary>
+        /// <param name="code_pointer"></param>
+        /// <param name="cp"></param>
+        /// <returns></returns>
+        float pop_f1_with_minus(int code_pointer, ref int cp)
+        {
+            if (code[code_pointer] == (byte)blast_operation.substract)
+            {
+                cp++;
+                return -pop_f1(code_pointer + 1); 
+
+            }
+            else
+            {                
+                return pop_f1(code_pointer); 
+            }
+        }
+
+
+        /// <summary>
         /// builds a [n] vector from [1] values 
         /// </summary>
         /// <param name="code_pointer"></param>
@@ -4657,29 +4678,30 @@ namespace NSS.Blast.Interpretor
         {
             // param_count == vector_size and vector_size > 1, compiler enforces it so we should not check it in release 
             // this means that vector is build from multiple data points
+            int cp = 0; 
             switch (vector_size)
             {
                 case 1:
-                    assignee[0] = pop_f1(code_pointer);
-                    code_pointer += 1;
+                    assignee[0] = pop_f1_with_minus(code_pointer, ref cp);
+                    code_pointer += 1 + cp;
                     break;
                 case 2:
-                    assignee[0] = pop_f1(code_pointer);
-                    assignee[1] = pop_f1(code_pointer + 1); 
-                    code_pointer += 2;
+                    assignee[0] = pop_f1_with_minus(code_pointer, ref cp);
+                    assignee[1] = pop_f1_with_minus(code_pointer + 1 + cp, ref cp); 
+                    code_pointer += 2 + cp;
                     break;
                 case 3:
-                    assignee[0] = pop_f1(code_pointer);
-                    assignee[1] = pop_f1(code_pointer + 1);
-                    assignee[2] = pop_f1(code_pointer + 2);
-                    code_pointer += 3;
+                    assignee[0] = pop_f1_with_minus(code_pointer, ref cp);
+                    assignee[1] = pop_f1_with_minus(code_pointer + 1 + cp, ref cp);
+                    assignee[2] = pop_f1_with_minus(code_pointer + 2 + cp, ref cp);
+                    code_pointer += 3 + cp; 
                     break;
                 case 4:
-                    assignee[0] = pop_f1(code_pointer);
-                    assignee[1] = pop_f1(code_pointer + 1);
-                    assignee[2] = pop_f1(code_pointer + 2);
-                    assignee[3] = pop_f1(code_pointer + 3);
-                    code_pointer += 4;
+                    assignee[0] = pop_f1_with_minus(code_pointer, ref cp);
+                    assignee[1] = pop_f1_with_minus(code_pointer + 1 + cp, ref cp);
+                    assignee[2] = pop_f1_with_minus(code_pointer + 2 + cp, ref cp);
+                    assignee[3] = pop_f1_with_minus(code_pointer + 3 + cp, ref cp);
+                    code_pointer += 4 + cp;
                     break;
 
                     default:
@@ -5818,10 +5840,10 @@ namespace NSS.Blast.Interpretor
                             byte assignee = (byte)(assignee_op - opt_id);
                             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
+                            code_pointer++;
                             assignv(ref code_pointer, in s_assignee, &fdata[assignee]);
 
-
-                         // could be needs code_pointer++ not sure its late    
+                            // code_pointer++;  
                         }
                         break; 
 

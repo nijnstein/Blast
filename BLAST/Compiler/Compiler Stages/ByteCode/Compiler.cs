@@ -169,6 +169,29 @@ namespace NSS.Blast.Compiler.Stage
         }
 
         /// <summary>
+        /// Compile a list of parameters as they are typically supplied to a function into a code stream 
+        /// - the parameters are all assumed to be simplex
+        /// </summary>
+        /// <param name="data">compiler data</param>
+        /// <param name="ast_function">ast function node</param>
+        /// <param name="children">child nodes to render, dont need to be children of the node</param>
+        /// <param name="code">the code list to output to</param>
+        /// <returns></returns>
+        static public bool CompileSimplexFunctionParameterList(CompilationData data, node ast_function, List<node> children, IMByteCodeList code)
+        {
+            foreach (node ast_param in children)
+            {
+                if (!CompileParameter(data, ast_param, code))
+                {
+                    data.LogError($"CompileFunction: failed to compile parameter <{ast_param}> of function <{ast_function}> as part of a vector push");
+                    return false;
+                }
+            }
+
+            return true; 
+        }
+
+        /// <summary>
         /// Compile a function and its parameters 
         /// </summary>
         /// <param name="data"></param>
@@ -214,13 +237,11 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             code.Add((byte)blast_operation.pushv);
                             code.Add((byte)node.encode44(ast_function, (byte)ast_function.ChildCount));
-                            foreach (node ast_param in ast_function.children)
+
+                            if(!CompileSimplexFunctionParameterList(data, ast_function, ast_function.children, code))
                             {
-                                if (!CompileParameter(data, ast_param, code))
-                                {
-                                    data.LogError($"CompileFunction: failed to compile parameter <{ast_param}> of function <{ast_function}> as part of a vector push");
-                                    return false;
-                                }
+                                data.LogError($"Compile: error compiling {ast_function.function.ScriptOp} function parameters"); 
+                                return false; 
                             }
                         }
                         else
@@ -232,9 +253,12 @@ namespace NSS.Blast.Compiler.Stage
                                 {
                                     case nodetype.compound:
                                         {
+                                            //
                                             // this grows into a vector via get_compound_result in the interpretor 
-                                            // - for vectors it would be much more performant to use pushv
-
+                                            //
+                                            // - for vectors it would be much more performant to use pushV or assignV
+                                            // - this should not be called anymore, flatten should have taken it out.. 
+                                            //
                                             if (node.IsNonNestedVectorDefinition(ast_param)
                                                &&
                                                 ast_param.vector_size > 1)
@@ -700,7 +724,14 @@ namespace NSS.Blast.Compiler.Stage
                 case nodetype.yield:
                     if (data.CompilerOptions.SupportYield)
                     {
-                        code.Add(blast_operation.yield);
+                        if (data.CompilerOptions.PackageStack)
+                        {
+                            code.Add(blast_operation.yield);
+                        }
+                        else
+                        {
+                            data.LogError("CompileNode: skipped yield opcode, yield is not supported by current conflicting compilation options, yield cannot work without packaging a stack");
+                        }
                     }
                     else
                     {
@@ -822,18 +853,49 @@ namespace NSS.Blast.Compiler.Stage
                         &&
                         (ast_node.FirstChild.type == nodetype.operation && (ast_node.FirstChild.token == BlastScriptToken.Substract || ast_node.FirstChild.token == BlastScriptToken.Not))
                         &&
-                        !ast_node.IsStackFunction
+                        !ast_node.IsStackFunction                                                    
                         &&
                         ast_node.LastChild.type == nodetype.function)
                     {
                         code.Add(ast_node.function.IsExternalCall ? blast_operation.assignfen : blast_operation.assignfn);
                         code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
-                        CompileNode(data, ast_node.FirstChild, code);
-                        if (!data.IsOK)
+                        CompileNode(data, ast_node.FirstChild, code);                                                         
                         {
                             data.LogError($"CompileNode: assignment node: <{ast_node.parent}>.<{ast_node}>, failed to compile negated assignment of function <{ast_node.FirstChild}> into assignf operation");
                             return null;
                         }
+                    }
+                    else
+                    //
+                    // assigning a simple vector built from components 
+                    // - flatten will have removed all nesting at this point, still check it though
+                    //
+                    if (ast_node.is_vector && ast_node.IsSimplexVectorDefinition())
+                    {
+
+                        code.Add((byte)blast_operation.assignv);
+                        code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
+                        
+                        // assingv deduces vectorsize and parametercount at interpretation and assumes compiler has generated correct code 
+                        // code.Add((byte)node.encode44(ast_node, (byte)ast_node.ChildCount));
+
+                        if (!CompileSimplexFunctionParameterList(data, ast_node, ast_node.children, code))
+                        {
+                            data.LogError($"Compile: error compiling {ast_node.function.ScriptOp} function parameters for node <{ast_node.parent}>.<{ast_node}>");
+                            return null;
+                        }
+
+                        // 
+                        // assignV allows the minus symbol directly in the vector definition..... 
+                        // because we flattened that away it cant easily use that feature here 
+                        // 
+                        // TODO: update flattener, allow it to leave the minus in this case 
+                        //       IsSimplexVectorDefinition should then also allow the -compounds 
+                        //       CompileSimplexfunctionParameterList must then also write these in only this situatiion 
+                        //
+                        // 
+                        
+
                     }
                     // default compound assignment 
                     else

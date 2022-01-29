@@ -372,7 +372,8 @@ namespace NSS.Blast.Compiler.Stage
 
             // special cases
             // - assigning single value     => compiler transforms into assignS - done 
-            // - assigning function         => compiler transforms into assignF - TODO this would preferably after refactoring the interpretor
+            // - assigning function         => compiler transforms into assignF|FN|FE|FEN - done
+            // - assigning vector        ?                                       
 
             do
             {

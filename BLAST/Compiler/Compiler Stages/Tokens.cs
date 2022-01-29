@@ -50,17 +50,20 @@
         push,         // stack functions
         pop,
 
+        /// <summary>
+        /// Push a vector to the stack
+        /// </summary>
         pushv,
 
-        peek,
-        peekv,        // == 31   
+        peek,   // remove? 
+        peekv,        //remove?     
 
         pushf,        // push a function's result 
         pushc,        // push result of a compound 
 
         //------------------------
 
-        fma,          // fused multiply add
+        fma,          // fused multiply add => variants ??        could bit encode op sequences.. +-+- etc.  it would save on control code 
 
         adda,         // add all operands together until [nop]
         mula,         // add all operands together until [nop]
@@ -73,10 +76,25 @@
         abs,
         select,       // ternary / math.select      TODO 
 
+
+        /// <summary>
+        /// generate a random number: 
+        /// </summary>
         random,       // 0..1
+
+        /// <summary>
+        /// seed the random number generator 
+        /// </summary>
         seed,         // set seed for random 
 
-        max,
+        /// <summary>
+        /// get max value from operands, returns vector of same size as inputs 
+        /// </summary>
+        max,          
+
+        /// <summary>
+        /// get min value from operands, returns vector of same size as inputs 
+        /// </summary>
         min,
         maxa,
         mina,
@@ -136,8 +154,8 @@
         /// </summary>
         assignv,
 
-        undefined3,
-        undefined4, 
+        undefined3,         
+        undefined4,    
         undefined5, 
         undefined6, 
         undefined7, 

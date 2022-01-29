@@ -1561,6 +1561,17 @@
             <param name="max_validate">max parameter count, error will be raised if more</param>
             <returns></returns>
         </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.CompileSimplexFunctionParameterList(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,System.Collections.Generic.List{NSS.Blast.Compiler.node},NSS.Blast.Compiler.Stage.IMByteCodeList)">
+            <summary>
+            Compile a list of parameters as they are typically supplied to a function into a code stream 
+            - the parameters are all assumed to be simplex
+            </summary>
+            <param name="data">compiler data</param>
+            <param name="ast_function">ast function node</param>
+            <param name="children">child nodes to render, dont need to be children of the node</param>
+            <param name="code">the code list to output to</param>
+            <returns></returns>
+        </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler.CompileFunction(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.node,NSS.Blast.Compiler.Stage.IMByteCodeList)">
             <summary>
             Compile a function and its parameters 
@@ -2837,6 +2848,30 @@
             </summary>
             <param name="nodes">node list to check</param>
             <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.IsSimplexVectorDefinition">
+            <summary>
+            check if the node defines a vector in a 'simple' way: no nesting, assumes vector-sizes in ast are set 
+            <remarks>
+            Performs a check on a node that only returns true if the node is marked as vector by analysis
+            and its code is completely flattened, the vector elements must be a direct child of the node being 
+            checked, there may be no compound in between as that should have been removed by the flatten operation
+            
+            Targets: 
+            
+            <code>
+            a = (1 2); 
+            a = (1 pop 2);
+            a = (a 2 pop 3);
+            </code>
+            
+            It also matches vectors of differing sizes but the vector component count of the parameters/childnodes
+            must equal the vectorsize of the assignee
+            <code>
+            a = (a 2 pop2);   
+            </code>
+            </remarks>
+            </summary>
         </member>
         <member name="M:NSS.Blast.Compiler.node.IsFlat(System.Boolean)">
             <summary>
@@ -4307,6 +4342,31 @@
             
             </summary>
         </member>
+        <member name="F:NSS.Blast.blast_operation.pushv">
+            <summary>
+            Push a vector to the stack
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.random">
+            <summary>
+            generate a random number: 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.seed">
+            <summary>
+            seed the random number generator 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.max">
+            <summary>
+            get max value from operands, returns vector of same size as inputs 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.min">
+            <summary>
+            get min value from operands, returns vector of same size as inputs 
+            </summary>
+        </member>
         <member name="F:NSS.Blast.blast_operation.assigns">
             <summary>
             assign single variable / pop to assignee
@@ -4330,6 +4390,11 @@
         <member name="F:NSS.Blast.blast_operation.assignfen">
             <summary>
             assign negated result of external function call to assignee
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.assignv">
+            <summary>
+            assign a single vector, assignv knows the size of the parameter it writes to so it doesnt need a datapoint for vectorsize 
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastScriptTokenDefinition">
@@ -4498,9 +4563,17 @@
             decode info byte of data, 62 uses the upper 6 bits from the parametercount and the lower 2 for vectorsize, resulting in 64 parameters and size 4 vectors..
             - update to decode44? 16 params max and 16 vec size?
             </summary>
-            <param name="c"></param>
+            <param name="c">input byte</param>
             <param name="vector_size"></param>
-            <returns></returns>
+            <returns>parameter count</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.decode44(System.Byte@,System.Byte@)">
+            <summary>
+            decode info byte of data, 44 uses 4 bytes for each, that is 16 differen vectorsizes and param types or counts 
+            </summary>
+            <param name="c">input byte</param>
+            <param name="vector_size"></param>
+            <returns>parameter count</returns>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.pop_f1(System.Int32@)">
             <summary>
@@ -4847,6 +4920,22 @@
             <summary>
             
             </summary>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.pop_f1_with_minus(System.Int32,System.Int32@)">
+            <summary>
+            pop 1 value from input stream 
+            </summary>
+            <param name="code_pointer"></param>
+            <param name="cp"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.assignv(System.Int32@,System.Byte@,System.Single*@)">
+            <summary>
+            builds a [n] vector from [1] values 
+            </summary>
+            <param name="code_pointer"></param>
+            <param name="vector_size"></param>
+            <param name="assignee"></param>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_function_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
             <summary>

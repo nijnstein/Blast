@@ -1432,6 +1432,76 @@ namespace NSS.Blast.Compiler
         }
 
         /// <summary>
+        /// check if the node defines a vector in a 'simple' way: no nesting, assumes vector-sizes in ast are set 
+        /// <remarks>
+        /// Performs a check on a node that only returns true if the node is marked as vector by analysis
+        /// and its code is completely flattened, the vector elements must be a direct child of the node being 
+        /// checked, there may be no compound in between as that should have been removed by the flatten operation
+        /// 
+        /// Targets: 
+        /// 
+        /// <code>
+        /// a = (1 2); 
+        /// a = (1 pop 2);
+        /// a = (a 2 pop 3);
+        /// </code>
+        /// 
+        /// It also matches vectors of differing sizes but the vector component count of the parameters/childnodes
+        /// must equal the vectorsize of the assignee
+        /// <code>
+        /// a = (a 2 pop2);   
+        /// </code>
+        /// </remarks>
+        /// </summary>
+        public bool IsSimplexVectorDefinition()
+        {
+            if (!is_vector) return false;
+
+            int c_vecsize = 0; // nr of components so far
+            for (int i = 0; i < ChildCount; i++)
+            {
+                node child = children[i];
+                switch(child.type)
+                {
+                    case nodetype.parameter:
+                        if (child.HasChildren) return false;
+                        break; 
+
+                    case nodetype.function:
+                        // only pop is allowed 
+                        if (!child.function.IsPopVariant) return false; 
+                        break; 
+
+                    case nodetype.compound:
+
+                        //
+                        // FLATTEN WILL REMOVE NESTED COMPOUNDS AND PUT THEM IN A PUSH CONSTRUCT 
+                        // - we should allow flatten to keep it in this case, saving a push-pop pair during compilation 
+                        //
+
+                        if (!child.IsSimplexVectorDefinition()) return false; 
+                        break;
+
+                    default: return false; 
+                }
+
+                //
+                // we have to assume this node.vectorsize is analyzed correctly before calling this function
+                // - we dont check, could, but analyser should have taken care of it 
+                // 
+                c_vecsize += child.vector_size;
+
+                if (c_vecsize > vector_size)
+                {
+                    return false; 
+                }
+            }
+
+            // if these match then OK 
+            return c_vecsize == vector_size; 
+        }
+
+        /// <summary>
         /// check if the node is a flat node                       
         /// - contains NO compounds 
         /// - contains no object with children other then a function
