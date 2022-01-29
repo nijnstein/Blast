@@ -4618,6 +4618,11 @@
             WARNING checks if is operation, uses value op enum blast_operation.add until blast_operation.not_equals 
             </summary>
         </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.IsAssignmentOperation(NSS.Blast.blast_operation)">
+            <summary>
+            check if the operation is one of the assignment operations: assing|assigns|assingf|assingfn|assingfen|assingv
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.IsMathematicalOperation(NSS.Blast.blast_operation)">
             <summary>
             WARNING checks if +-*/ uses value op enum!!  
@@ -4627,6 +4632,108 @@
             <summary>
             WARNING checks if boolean operaion, uses value op enum!! 
             </summary>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,System.Byte@,System.Byte@,Unity.Mathematics.float4@,Unity.Mathematics.float4@,System.Byte@)">
+            <summary>
+            handle an operation between 2 values in the form: <c>a = a + b;</c>
+            </summary>
+            <param name="op"></param>
+            <param name="current"></param>
+            <param name="previous"></param>
+            <param name="a"></param>
+            <param name="b"></param>
+            <param name="last_is_op_or_first"></param>
+            <param name="vector_size"></param>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,System.Single@,System.Single@)">
+            <summary>
+            handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
+            </summary>
+            <param name="op">operation to take</param>
+            <param name="a">operand a</param>
+            <param name="b">operand b</param>
+            <returns>result of operation</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,Unity.Mathematics.float2@,System.Single@)">
+            <summary>
+            handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
+            </summary>
+            <param name="op">operation to take</param>
+            <param name="a">operand a</param>
+            <param name="b">operand b</param>
+            <returns>result of operation</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,Unity.Mathematics.float3@,System.Single@)">
+            <summary>
+            handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
+            </summary>
+            <param name="op">operation to take</param>
+            <param name="a">operand a</param>
+            <param name="b">operand b</param>
+            <returns>result of operation</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,Unity.Mathematics.float4@,System.Single@)">
+            <summary>
+            handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
+            </summary>
+            <param name="op">operation to take</param>
+            <param name="a">operand a</param>
+            <param name="b">operand b</param>
+            <returns>result of operation</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,System.Single@,Unity.Mathematics.float2@)">
+            <summary>
+            handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+            </summary>
+            <param name="op">the operation to take</param>
+            <param name="a">left operand</param>
+            <param name="b">right operand</param>
+            <returns>returns result of operation</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,Unity.Mathematics.float2@,Unity.Mathematics.float2@)">
+            <summary>
+            handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+            </summary>
+            <param name="op">the operation to take</param>
+            <param name="a">left operand</param>
+            <param name="b">right operand</param>
+            <returns>returns result of operation</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,System.Single@,Unity.Mathematics.float3@)">
+            <summary>
+            handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+            </summary>
+            <param name="op">the operation to take</param>
+            <param name="a">left operand</param>
+            <param name="b">right operand</param>
+            <returns>returns result of operation</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,Unity.Mathematics.float3@,Unity.Mathematics.float3@)">
+            <summary>
+            handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+            </summary>
+            <param name="op">the operation to take</param>
+            <param name="a">left operand</param>
+            <param name="b">right operand</param>
+            <returns>returns result of operation</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,System.Single@,Unity.Mathematics.float4@)">
+            <summary>
+            handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+            </summary>
+            <param name="op">the operation to take</param>
+            <param name="a">left operand</param>
+            <param name="b">right operand</param>
+            <returns>returns result of operation</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,Unity.Mathematics.float4@,Unity.Mathematics.float4@)">
+            <summary>
+            handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+            </summary>
+            <param name="op">the operation to take</param>
+            <param name="a">left operand</param>
+            <param name="b">right operand</param>
+            <returns>returns result of operation</returns>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.Handle_DebugData(System.Int32,System.Byte,System.Int32,NSS.Blast.BlastVariableDataType,System.Void*)">
             <summary>
@@ -4923,7 +5030,7 @@
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.pop_f1_with_minus(System.Int32,System.Int32@)">
             <summary>
-            pop 1 value from input stream 
+            pop 1 value from input stream, checks if its the minus sign, if so reads next value and negates it, otherwise returns current value 
             </summary>
             <param name="code_pointer"></param>
             <param name="cp"></param>
@@ -4943,16 +5050,13 @@
             although external calls should be directly called when possible
             </summary>
         </member>
-        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_compound_result(System.Int32@,System.Byte@,System.Boolean)">
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_sequence_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
             <summary>
-            recursively handle a compounded statement and return its value
-            - the compiler should flatten execution, this will save a lot on stack allocations but it wont flatten everything 
-            - the compiler should avoid writing bytecode that recursively uses compounds whenever possible 
+            
             </summary>
             <param name="code_pointer"></param>
             <param name="vector_size"></param>
-            <param name="return_first_result">if true, it will return after getting the first result, used for non terminating groups (pushfunction)  </param>
-            <returns></returns>
+            <param name="f4_result"></param>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.execute(NSS.Blast.BlastEngineData*,System.IntPtr,System.IntPtr)">
             <summary>

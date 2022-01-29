@@ -3,6 +3,7 @@
 #define HANDLE_DEBUG_OP
 #endif
 using NSS.Blast.Standalone;
+    using Unity.Assertions;
 #else 
     using UnityEngine;
 #endif 
@@ -1073,6 +1074,10 @@ namespace NSS.Blast.Interpretor
             return op >= blast_operation.add && op <= blast_operation.not_equals;
         }
 
+
+        /// <summary>
+        /// check if the operation is one of the assignment operations: assing|assigns|assingf|assingfn|assingfen|assingv
+        /// </summary>
         public static bool IsAssignmentOperation(blast_operation op)
         {
             return op == blast_operation.assign || op == blast_operation.assigns || op == blast_operation.assignf
@@ -1097,44 +1102,28 @@ namespace NSS.Blast.Interpretor
             return op >= blast_operation.and && op <= blast_operation.not_equals;
         }
 
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool UpdateCurrentVector(ref byte vector_size, float f1, ref float4 f4)
-        {
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float1:
-                    f4.x = f1;
-                    break;
-                case BlastVectorSizes.float2:
-                    break;
-                case BlastVectorSizes.float3:
-                    break;
-                case BlastVectorSizes.float4:
-#if DEVELOPMENT_BUILD
-                    Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
-#endif
-                    return false;
-            }
-            vector_size++;
-            return true;
-        }
+     
 
 
         #endregion
 
         #region Operations Handlers 
 
-        // 
-        // HANDLE OPERATION 
-        //
-        //    - 1 copy foreach datatype....... generics fail me here
-        // 
+
+        /// <summary>
+        /// handle an operation between 2 values in the form: <c>a = a + b;</c>
+        /// </summary>
+        /// <param name="op"></param>
+        /// <param name="current"></param>
+        /// <param name="previous"></param>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="last_is_op_or_first"></param>
+        /// <param name="vector_size"></param>
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float4 b, ref bool last_is_op_or_first, ref byte vector_size)
+        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float4 b, ref byte vector_size)
         {
-            last_is_op_or_first = false;
             switch (op)
             {
                 default:
@@ -1167,10 +1156,384 @@ namespace NSS.Blast.Interpretor
             }
         }
 
+
+        /// <summary>
+        /// handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
+        /// </summary>
+        /// <param name="op">operation to take</param>
+        /// <param name="a">operand a</param>
+        /// <param name="b">operand b</param>
+        /// <returns>result of operation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float3 b, ref bool last_is_op_or_first, ref byte vector_size)
+        static float handle_op(in blast_operation op, in float a, in float b)
         {
-            last_is_op_or_first = false;
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: return b;
+                case blast_operation.add: return a + b;
+                case blast_operation.substract: return a - b;
+                case blast_operation.multiply: return a * b;
+                case blast_operation.divide: return a / b;
+
+                case blast_operation.and: return math.select(0f, 1f, a != 0 && b != 0);
+                case blast_operation.or: return math.select(0f, 1f, a != 0 || b != 0);
+                case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ b != 0);
+
+                case blast_operation.greater: return math.select(0f, 1f, a > b);
+                case blast_operation.smaller: return math.select(0f, 1f, a < b);
+                case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
+                case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
+                case blast_operation.equals: return math.select(0f, 1f, a == b);
+
+                case blast_operation.not:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError("not|substract");
+#endif
+                    return float.NaN;
+            }
+        }
+
+
+        /// <summary>
+        /// handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
+        /// </summary>
+        /// <param name="op">operation to take</param>
+        /// <param name="a">operand a</param>
+        /// <param name="b">operand b</param>
+        /// <returns>result of operation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static float2 handle_op(in blast_operation op, in float2 a, in float b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: return b;
+                case blast_operation.add: return a + b;
+                case blast_operation.substract: return a - b;
+                case blast_operation.multiply: return a * b;
+                case blast_operation.divide: return a / b;
+
+                case blast_operation.and: return math.select(0f, 1f, math.all(a) && b != 0);
+                case blast_operation.or: return math.select(0f, 1f, math.any(a) || b != 0);
+                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ b != 0);  // this isnt really correct but then xor on 3 operands is wierd.. 
+
+                case blast_operation.greater: return math.select(0f, 1f, a > b);
+                case blast_operation.smaller: return math.select(0f, 1f, a < b);
+                case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
+                case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
+                case blast_operation.equals: return math.select(0f, 1f, a == b);
+
+                case blast_operation.not:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError("not|substract");
+#endif
+                    return float.NaN;
+            }
+        }
+
+
+        /// <summary>
+        /// handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
+        /// </summary>
+        /// <param name="op">operation to take</param>
+        /// <param name="a">operand a</param>
+        /// <param name="b">operand b</param>
+        /// <returns>result of operation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static float3 handle_op(in blast_operation op, in float3 a, in float b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: return b;
+                case blast_operation.add: return a + b;
+                case blast_operation.substract: return a - b;
+                case blast_operation.multiply: return a * b;
+                case blast_operation.divide: return a / b;
+
+                case blast_operation.and: return math.select(0f, 1f, math.all(a) && b != 0);
+                case blast_operation.or: return math.select(0f, 1f, math.any(a) || b != 0);
+                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ b != 0);  // this isnt really correct but then xor on 3 operands is wierd.. 
+
+                case blast_operation.greater: return math.select(0f, 1f, a > b);
+                case blast_operation.smaller: return math.select(0f, 1f, a < b);
+                case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
+                case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
+                case blast_operation.equals: return math.select(0f, 1f, a == b);
+
+                case blast_operation.not:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError("not|substract");
+#endif
+                    return float.NaN;
+            }
+        }
+
+        /// <summary>
+        /// handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
+        /// </summary>
+        /// <param name="op">operation to take</param>
+        /// <param name="a">operand a</param>
+        /// <param name="b">operand b</param>
+        /// <returns>result of operation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static float4 handle_op(in blast_operation op, in float4 a, in float b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: return b;
+                case blast_operation.add: return a + b;
+                case blast_operation.substract: return a - b;
+                case blast_operation.multiply: return a * b;
+                case blast_operation.divide: return a / b;
+
+                case blast_operation.and: return math.select(0f, 1f, math.all(a) && b != 0);
+                case blast_operation.or: return math.select(0f, 1f, math.any(a) || b != 0);
+                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ b != 0);  // this isnt really correct but then xor on 3 operands is wierd.. 
+
+                case blast_operation.greater: return math.select(0f, 1f, a > b);
+                case blast_operation.smaller: return math.select(0f, 1f, a < b);
+                case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
+                case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
+                case blast_operation.equals: return math.select(0f, 1f, a == b);
+
+                case blast_operation.not:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError("not|substract");
+#endif
+                    return float.NaN;
+            }
+        }
+
+        /// <summary>
+        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+        /// </summary>
+        /// <param name="op">the operation to take</param>
+        /// <param name="a">left operand</param>
+        /// <param name="b">right operand</param>
+        /// <returns>returns result of operation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static float2 handle_op(in blast_operation op, in float a, in float2 b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: return b;
+                case blast_operation.add: return a + b;
+                case blast_operation.substract: return a - b;
+                case blast_operation.multiply: return a * b;
+                case blast_operation.divide: return a / b;
+
+                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.all(b));
+                case blast_operation.or: return math.select(0f, 1f, a != 0 || math.any(b));
+                case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ math.any(b));
+
+                case blast_operation.greater: return (float2)(a > b);
+                case blast_operation.smaller: return (float2)(a < b);
+                case blast_operation.smaller_equals: return (float2)(a <= b);
+                case blast_operation.greater_equals: return (float2)(a >= b);
+                case blast_operation.equals: return (float2)(a == b);
+
+                case blast_operation.not:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError("not|substract");
+#endif
+                    return float.NaN;
+            }
+        }
+
+        /// <summary>
+        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+        /// </summary>
+        /// <param name="op">the operation to take</param>
+        /// <param name="a">left operand</param>
+        /// <param name="b">right operand</param>
+        /// <returns>returns result of operation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static float2 handle_op(in blast_operation op, in float2 a, in float2 b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: return b;
+                case blast_operation.add: return a + b;
+                case blast_operation.substract: return a - b;
+                case blast_operation.multiply: return a * b;
+                case blast_operation.divide: return a / b;
+
+                case blast_operation.and: return math.select(0f, 1f, math.all(a) && math.all(b));
+                case blast_operation.or: return math.select(0f, 1f, math.any(a) || math.any(b));
+                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ math.any(b));
+
+                case blast_operation.greater: return (float2)(a > b);
+                case blast_operation.smaller: return (float2)(a < b);
+                case blast_operation.smaller_equals: return (float2)(a <= b);
+                case blast_operation.greater_equals: return (float2)(a >= b);
+                case blast_operation.equals: return (float2)(a == b);
+
+                case blast_operation.not:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError("not|substract");
+#endif
+                    return float.NaN;
+            }
+        }
+
+        /// <summary>
+        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+        /// </summary>
+        /// <param name="op">the operation to take</param>
+        /// <param name="a">left operand</param>
+        /// <param name="b">right operand</param>
+        /// <returns>returns result of operation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static float3 handle_op(in blast_operation op, in float a, in float3 b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: return b;
+                case blast_operation.add: return a + b;
+                case blast_operation.substract: return a - b;
+                case blast_operation.multiply: return a * b;
+                case blast_operation.divide: return a / b;
+
+                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.all(b));
+                case blast_operation.or: return math.select(0f, 1f, a != 0 || math.any(b));
+                case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ math.any(b));
+
+                case blast_operation.greater: return (float3)(a > b);
+                case blast_operation.smaller: return (float3)(a < b);
+                case blast_operation.smaller_equals: return (float3)(a <= b);
+                case blast_operation.greater_equals: return (float3)(a >= b);
+                case blast_operation.equals: return (float3)(a == b);
+
+                case blast_operation.not:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError("not|substract");
+#endif
+                    return float.NaN;
+            }
+        }
+
+
+        /// <summary>
+        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+        /// </summary>
+        /// <param name="op">the operation to take</param>
+        /// <param name="a">left operand</param>
+        /// <param name="b">right operand</param>
+        /// <returns>returns result of operation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static float3 handle_op(in blast_operation op, in float3 a, in float3 b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: return b;
+                case blast_operation.add: return a + b;
+                case blast_operation.substract: return a - b;
+                case blast_operation.multiply: return a * b;
+                case blast_operation.divide: return a / b;
+
+                case blast_operation.and: return math.select(0f, 1f, math.all(a) && math.all(b));
+                case blast_operation.or: return math.select(0f, 1f, math.any(a) || math.any(b));
+                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ math.any(b));
+
+                case blast_operation.greater: return (float3)(a > b);
+                case blast_operation.smaller: return (float3)(a < b);
+                case blast_operation.smaller_equals: return (float3)(a <= b);
+                case blast_operation.greater_equals: return (float3)(a >= b);
+                case blast_operation.equals: return (float3)(a == b);
+
+                case blast_operation.not:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError("not|substract");
+#endif
+                    return float.NaN;
+            }
+        }
+
+        /// <summary>
+        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+        /// </summary>
+        /// <param name="op">the operation to take</param>
+        /// <param name="a">left operand</param>
+        /// <param name="b">right operand</param>
+        /// <returns>returns result of operation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static float4 handle_op(in blast_operation op, in float a, in float4 b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: return b;
+                case blast_operation.add: return a + b;
+                case blast_operation.substract: return a - b;
+                case blast_operation.multiply: return a * b;
+                case blast_operation.divide: return a / b;
+
+                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.all(b));
+                case blast_operation.or: return math.select(0f, 1f, a != 0 || math.any(b));
+                case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ math.any(b));
+
+                case blast_operation.greater: return (float4)(a > b);
+                case blast_operation.smaller: return (float4)(a < b);
+                case blast_operation.smaller_equals: return (float4)(a <= b);
+                case blast_operation.greater_equals: return (float4)(a >= b);
+                case blast_operation.equals: return (float4)(a == b);
+
+                case blast_operation.not:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError("not|substract");
+#endif
+                    return float.NaN;
+            }
+        }
+
+
+        /// <summary>
+        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
+        /// </summary>
+        /// <param name="op">the operation to take</param>
+        /// <param name="a">left operand</param>
+        /// <param name="b">right operand</param>
+        /// <returns>returns result of operation</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static float4 handle_op(in blast_operation op, in float4 a, in float4 b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: return b;
+                case blast_operation.add: return a + b;
+                case blast_operation.substract: return a - b;
+                case blast_operation.multiply: return a * b;
+                case blast_operation.divide: return a / b;
+
+                case blast_operation.and: return math.select(0f, 1f, math.all(a) && math.all(b));
+                case blast_operation.or: return math.select(0f, 1f, math.any(a) || math.any(b));
+                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ math.any(b));
+
+                case blast_operation.greater: return (float4)(a > b);
+                case blast_operation.smaller: return (float4)(a < b);
+                case blast_operation.smaller_equals: return (float4)(a <= b);
+                case blast_operation.greater_equals: return (float4)(a >= b);
+                case blast_operation.equals: return (float4)(a == b);
+
+                case blast_operation.not:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError("not|substract");
+#endif
+                    return float.NaN;
+            }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float3 b, ref byte vector_size)
+        {
             switch (op)
             {
                 default:
@@ -1204,9 +1567,8 @@ namespace NSS.Blast.Interpretor
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float2 b, ref bool last_is_op_or_first, ref byte vector_size)
+        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float2 b, ref byte vector_size)
         {
-            last_is_op_or_first = false;
             switch (op)
             {
                 default:
@@ -1240,9 +1602,8 @@ namespace NSS.Blast.Interpretor
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float a, in float b, ref bool last_is_op_or_first, ref byte vector_size)
+        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float a, in float b, ref byte vector_size)
         {
-            last_is_op_or_first = false;
             switch (op)
             {
                 default: return;
@@ -4493,8 +4854,7 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void pushc(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
         {
-            f4_register = get_compound_result(ref code_pointer, ref vector_size, false);
-
+            get_sequence_result(ref code_pointer, ref vector_size, out f4_register); 
             switch (vector_size)
             {
                 case 1: push(f4_register.x); break;
@@ -4517,7 +4877,7 @@ namespace NSS.Blast.Interpretor
                 code_pointer++;
 
                 // push the vector result of a compound 
-                f4_register = get_compound_result(ref code_pointer, ref vector_size);
+                get_sequence_result(ref code_pointer, ref vector_size, out f4_register);
                 switch (vector_size)
                 {
                     case 1:
@@ -4640,6 +5000,27 @@ namespace NSS.Blast.Interpretor
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void pushf(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
+        {
+            get_function_result(ref code_pointer, ref vector_size, out f4_register);
+            code_pointer++;
+
+            switch (vector_size)
+            {
+                case 1: push(f4_register.x); break;
+                case 2: push(f4_register.xy); break;
+                case 3: push(f4_register.xyz); break;
+                case 4: push(f4_register.xyzw); break;
+#if DEVELOPMENT_BUILD
+                            default:
+                                Debug.LogError("burstscript.interpretor pushf error: variable vector size not yet supported on stack push");
+                                //  return (int)BlastError.error_variable_vector_op_not_supported;
+                                break;
+#endif
+            }
+        }
+
         #endregion
 
 
@@ -4647,7 +5028,7 @@ namespace NSS.Blast.Interpretor
 
 
         /// <summary>
-        /// pop 1 value from input stream 
+        /// pop 1 value from input stream, checks if its the minus sign, if so reads next value and negates it, otherwise returns current value 
         /// </summary>
         /// <param name="code_pointer"></param>
         /// <param name="cp"></param>
@@ -4717,9 +5098,6 @@ namespace NSS.Blast.Interpretor
 
 
         #region ByteCode Execution
-
-
-
 
         /// <summary>
         /// get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
@@ -4835,151 +5213,91 @@ namespace NSS.Blast.Interpretor
 
 
         /// <summary>
-        /// recursively handle a compounded statement and return its value
-        /// - the compiler should flatten execution, this will save a lot on stack allocations but it wont flatten everything 
-        /// - the compiler should avoid writing bytecode that recursively uses compounds whenever possible 
+        /// 
         /// </summary>
         /// <param name="code_pointer"></param>
         /// <param name="vector_size"></param>
-        /// <param name="return_first_result">if true, it will return after getting the first result, used for non terminating groups (pushfunction)  </param>
-        /// <returns></returns>
-        float4 get_compound_result(ref int code_pointer, ref byte vector_size, bool return_first_result = false)
+        /// <param name="f4_result"></param>
+        void get_sequence_result(ref int code_pointer, ref byte vector_size, out float4 f4_result)
         {
-            byte op = 0;
-            byte prev_op = 0;
+            byte op = 0, prev_op = 0;
 
-            bool op_is_value = false;
-            bool prev_op_is_value = false;
+            blast_operation current_op = blast_operation.nop;
 
-            bool last_is_op_or_first = true;
-
-            bool minus = false;   // shouldnt we treat these as 1?
             bool not = false;
+            bool minus = false;
 
-            float f1 = 0;
-            float temp = 0;
-            float4 f4 = float4.zero;
+            float4 f4 = float.NaN;
+            f4_result = float.NaN; // not really needed but compiler cannot know controlflow so it thinks the value will be unassigned
 
-            byte max_vector_size = 1;
+            vector_size = 1; // vectors dont shrink in normal operations 
+            byte current_vector_size = 1; 
 
-            blast_operation current_operation = blast_operation.nop;
+            //
+            // each run:
+            // - store value in f4
+            // - if nop op -> f4_result = f4
+            // -    else -> f4_result = f4_result * f4
+
 
             while (code_pointer < package.CodeSize)
             {
-                prev_op = op;
-                prev_op_is_value = op_is_value;
+                bool last_is_bool_or_math_operation = false;
 
                 op = code[code_pointer];
-                op_is_value = op >= opt_value && op != 255;
 
-                max_vector_size = max_vector_size < vector_size ? vector_size : max_vector_size;
+                // process operation, put any value in f4, set current_op if something else
 
-                // increase vectorsize if a consecutive operation, reset to 1 if not, do nothing on nops or ends
-                // results in wierdnes on wierd ops.. should filter those in the analyser if that could occur 
-
-                // determine if growing a vector, ifso update the next element
-                if (op != 0 && op != (byte)blast_operation.end)
-                {
-                    bool grow_vector = false;
-
-                    if (op_is_value && prev_op_is_value)
-                    {
-                        grow_vector = true;
-                    }
-                    else
-                    {
-                        // if the previous op also gave back a value 
-                        if (prev_op_is_value || prev_op == (byte)blast_operation.pop)
-                        {
-                            // we grow vector 
-                            switch ((blast_operation)op)
-                            {
-                                case blast_operation.peek:
-                                    f1 = peek(1) ? 1f : 0f;
-                                    grow_vector = true;
-                                    break;
-
-                                case blast_operation.peekv:
-                                    return (int)BlastError.stack_error_peek;
-
-                                case blast_operation.pop:
-                                    pop(out f1);
-                                    grow_vector = true;
-                                    break;
-
-                                default:
-                                    // reset vector on all other operations 
-                                    vector_size = 1;
-                                    break;
-                            }
-
-                        }
-                    }
-
-                    // update the current vector
-                    if (grow_vector)
-                    {
-                        switch ((BlastVectorSizes)vector_size)
-                        {
-                            case BlastVectorSizes.float1:
-                                f4.x = f1;
-                                break;
-                            case BlastVectorSizes.float2:
-                                break;
-                            case BlastVectorSizes.float3:
-                                break;
-                            case BlastVectorSizes.float4:
-#if LOG_ERRORS
-                                Debug.LogError("interpretor error, expanding vector beyond size 4, this is not supported");
-#endif
-                                return (int)BlastError.error_update_vector_fail;
-                        }
-                        vector_size++;
-                    }
-                }
-
-                // set result to current value 
-                float4 f4_result = f4;
-
-                // switch on an operation to take
                 switch ((blast_operation)op)
                 {
                     case blast_operation.end:
-                        // when assigning this might not be the end, peek next instruction.
-                        //
-                        // - if not a nop or a new assign, then continue reading the compound 
-                        //
-                        if (code_pointer < package.CodeSize - 1)
                         {
-                            blast_operation next_op = (blast_operation)code[code_pointer + 1];
-
-                            if (next_op != blast_operation.nop && !IsAssignmentOperation(next_op))
-
+                            //
+                            //
+                            // !! when assigning this might not be the end, peek next instruction.
+                            //
+                            // - if not a nop or a new assign, then continue reading the compound 
+                            //
+                            if (code_pointer < package.CodeSize - 1)
                             {
-                                // for now restrict ourselves to only accepting operations at this point 
-                                if (IsMathematicalOrBooleanOperation(next_op))
+                                blast_operation next_op = (blast_operation)code[code_pointer + 1];
+
+                                if (next_op != blast_operation.nop && BlastInterpretor.IsAssignmentOperation(next_op)) 
                                 {
-                                    // break out of switch before returning, there is more to this operation then known at the moment 
-                                    break;
-                                }
-                                else
-                                {
-                                    // probably a bug
-                                    Debug.LogWarning($"Possible BUG: encountered non mathematical operation '{next_op}' after compound in statement at codepointer {code_pointer + 1}, expecting nop or assign");
+                                    // for now restrict ourselves to only accepting operations at this point 
+                                    if (IsMathematicalOrBooleanOperation(next_op))
+                                    {
+                                        // break out of switch before returning, there is more to this operation then known at the moment 
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        // most probably a bug, error when the message is usefull
+#if DEVELOPMENT_BUILD
+                                        Debug.LogError($"Possible BUG: encountered non mathematical operation '{next_op}' after compound in statement at codepointer {code_pointer + 1}, expecting nop or assign");
+#else
+                                        Debug.LogWarning($"Possible BUG: encountered non mathematical operation '{next_op}' after compound in statement at codepointer {code_pointer + 1}, expecting nop or assign");
+#endif
+                                    }
                                 }
                             }
+                            return;
                         }
 
-                        vector_size = vector_size > max_vector_size ? vector_size : max_vector_size;
-                        return vector_size > 1 ? f4 : new float4(f1, 0, 0, 0);
-
                     case blast_operation.nop:
-                        // assignments will end with nop and not with end as a compounded statement
-                        // at this point vector_size is decisive for the returned value
-                        code_pointer++;
+                        {
+                            //
+                            // assignments will end with nop and not with end as a compounded statement
+                            // at this point vector_size is decisive for the returned value
+                            //
+                            code_pointer++;
+                            return;
+                        }
 
-                        vector_size = vector_size > max_vector_size ? vector_size : max_vector_size;
-                        return vector_size > 1 ? f4 : new float4(f1, 0, 0, 0);
+                    case blast_operation.ret:
+                        // termination of interpretation
+                        code_pointer = package.CodeSize + 1;
+                        return;
 
                     // arithmetic ops 
                     case blast_operation.add:
@@ -4994,23 +5312,18 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.greater:
                     case blast_operation.greater_equals:
                     case blast_operation.equals:
+                    case blast_operation.not_equals:
                         {
-                            current_operation = (blast_operation)op;
-                            if (prev_op == 0) // nop op -> any - is at start of ops
-                            {
-                                if ((blast_operation)op == blast_operation.substract)
-                                {
-                                    minus = true;
-                                }
-                            }
-
-                            last_is_op_or_first = true;
+                            // handle operation AFTER reading next value
+                            current_op = (blast_operation)op;
+                            last_is_bool_or_math_operation = true; 
                         }
                         break;
 
                     case blast_operation.not:
                         {
-                            if (last_is_op_or_first)
+                            // if the first in a compound or previous was an operation
+                            if (prev_op == 0 || last_is_bool_or_math_operation)
                             {
 #if DEVELOPMENT_BUILD
                                 if (not)
@@ -5022,15 +5335,16 @@ namespace NSS.Blast.Interpretor
                             }
                             else
                             {
-                                current_operation = blast_operation.not;
-                                last_is_op_or_first = true;
+                                current_op = blast_operation.not;
+                                last_is_bool_or_math_operation = true;
                             }
                         }
                         break;
 
                     case blast_operation.substract:
                         {
-                            if (last_is_op_or_first)
+                            // first or after an op 
+                            if (prev_op == 0 || last_is_bool_or_math_operation)
                             {
 #if DEVELOPMENT_BUILD
                                 if (minus)
@@ -5042,450 +5356,397 @@ namespace NSS.Blast.Interpretor
                             }
                             else
                             {
-                                current_operation = blast_operation.substract;
-                                last_is_op_or_first = true;
+                                current_op = blast_operation.substract;
+                                last_is_bool_or_math_operation = true;
                             }
                         }
                         break;
 
+
+                        // in development builds assert on non supported operations
+                        // in release mode skip over crashing into the unknown 
+
+#if DEVELOPMENT_BUILD || TRACE
+                    // jumps are not allowed in compounds 
+                    case blast_operation.jz:
+                    case blast_operation.jnz:
+                    case blast_operation.jump:
+                    case blast_operation.jump_back:
+                        Assert.IsTrue(false, $"BlastInterpretor.GetCompound: jump operation {(blast_operation)op} not allowed in compounds, codepointer = {code_pointer}");
+                        break;
+
+                    // assignments are not allowed in compounds 
+                    case blast_operation.yield: 
+                    case blast_operation.assigns:
+                    case blast_operation.assign:
+                        Assert.IsTrue(false, $"BlastInterpretor.GetCompound: operation {(blast_operation)op} not allowed in compounds, codepointer = {code_pointer}"); 
+                        break;
+
+                    // any stack operation has no business in a compound other then pops
+                    case blast_operation.push:
+                    case blast_operation.pushv:
+                    case blast_operation.peek:
+                    case blast_operation.peekv:
+                    case blast_operation.pushf:
+                    case blast_operation.pushc:
+                        Assert.IsTrue(false, $"BlastInterpretor.GetCompound: stack operation {(blast_operation)op} not allowed in compounds, codepointer = {code_pointer}");
+                        break;
+
+                    case blast_operation.begin:
+                        Assert.IsTrue(false, "should not be nesting compounds... compiler did not do its job wel");
+                        break;
+
+#endif                      
+#if DEVELOPMENT_BUILD || TRACE
+#endif
+
+                    case blast_operation.pop:
+                        {
+                            BlastVariableDataType popped_type;
+                            byte popped_vector_size;
+
+                            void* pdata = pop_with_info(code_pointer, out popped_type, out popped_vector_size);
+                            switch (popped_vector_size)
+                            {
+                                case 0:
+                                case 4: f4 = ((float4*)pdata)[0]; vector_size = 4; break;
+                                case 1: f4.x = ((float*)pdata)[0]; vector_size = 1; break;
+                                case 2: f4.xy = ((float2*)pdata)[0]; vector_size = 2; break;
+                                case 3: f4.xyz = ((float3*)pdata)[0]; vector_size = 3; break;
+                                default:
+#if DEVELOPMENT_BUILD
+                                    Debug.LogError($"BlastInterpretor.GetCompound: codepointer: {code_pointer} => pop vector too large, vectortype {vector_size} not supported");
+#endif
+                                    f4_result = float.NaN; 
+                                    return;
+                            }
+                        }
+                        break;
+
+                    //
+                    // CoreAPI functions mapping to opcodes 
+                    // 
+
+                    // math functions
+                    case blast_operation.abs: get_abs_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.mina: get_mina_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.max: get_max_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.min: get_min_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4); break;
+
+                    // math utils 
+                    case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4); break;
+
+                    // fma and friends 
+                    case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4); break;
+
+                    // mula family
+                    case blast_operation.mula: get_mula_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.adda: get_adda_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.suba: get_suba_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.diva: get_diva_result(ref code_pointer, ref vector_size, out f4); break;
+
+                    // any all 
+                    case blast_operation.all: get_all_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.any: get_any_result(ref code_pointer, ref vector_size, out f4); break;
+
+                    // random 
+                    case blast_operation.random: get_random_result(ref code_pointer, ref vector_size, out f4); break;
+
+
+                    case blast_operation.ex_op:
+                        {
+                            code_pointer++;
+                            extended_blast_operation exop = (extended_blast_operation)code[code_pointer];
+
+                            if (exop == extended_blast_operation.call)
+                            {
+                                // call external function 
+                                CallExternalFunction(ref code_pointer, ref vector_size, out f4);
+                            }
+                            else
+                            {
+                                switch (exop)
+                                {
+                                    case extended_blast_operation.logn: get_log_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.log10: get_log10_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.exp10: get_exp10_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.cross: get_cross_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.exp: get_exp_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.dot: get_dot_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.log2: get_log2_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4); break;
+#if DEVELOPMENT_BUILD
+                                    default:
+                                        Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
+                                        break;
+#endif
+                                }
+                            }
+                        }
+                        break;
+
+#if DEVELOPMENT_BUILD 
+                    case blast_operation.seed:
+                        Assert.IsTrue(false, "NOT IMPLEMENTED YET"); 
+                        break;
+
+                    case blast_operation.undefined3:
+                    case blast_operation.undefined4:
+                    case blast_operation.undefined7:
+                    case blast_operation.undefined8:
+                    case blast_operation.undefined9:
+                        Assert.IsTrue(false, "NOT DEFINED YET");
+                        break;
+#endif 
+
+                    case blast_operation.pi:
+                    case blast_operation.inv_pi:
+                    case blast_operation.epsilon:
+                    case blast_operation.infinity:
+                    case blast_operation.negative_infinity:
+                    case blast_operation.nan:
+                    case blast_operation.min_value:
+                    case blast_operation.value_0:
+                    case blast_operation.value_1:
+                    case blast_operation.value_2:
+                    case blast_operation.value_3:
+                    case blast_operation.value_4:
+                    case blast_operation.value_8:
+                    case blast_operation.value_10:
+                    case blast_operation.value_16:
+                    case blast_operation.value_24:
+                    case blast_operation.value_32:
+                    case blast_operation.value_64:
+                    case blast_operation.value_100:
+                    case blast_operation.value_128:
+                    case blast_operation.value_256:
+                    case blast_operation.value_512:
+                    case blast_operation.value_1000:
+                    case blast_operation.value_1024:
+                    case blast_operation.value_30:
+                    case blast_operation.value_45:
+                    case blast_operation.value_90:
+                    case blast_operation.value_180:
+                    case blast_operation.value_270:
+                    case blast_operation.value_360:
+                    case blast_operation.inv_value_2:
+                    case blast_operation.inv_value_3:
+                    case blast_operation.inv_value_4:
+                    case blast_operation.inv_value_8:
+                    case blast_operation.inv_value_10:
+                    case blast_operation.inv_value_16:
+                    case blast_operation.inv_value_24:
+                    case blast_operation.inv_value_32:
+                    case blast_operation.inv_value_64:
+                    case blast_operation.inv_value_100:
+                    case blast_operation.inv_value_128:
+                    case blast_operation.inv_value_256:
+                    case blast_operation.inv_value_512:
+                    case blast_operation.inv_value_1000:
+                    case blast_operation.inv_value_1024:
+                    case blast_operation.inv_value_30:
+                    case blast_operation.inv_value_45:
+                    case blast_operation.inv_value_90:
+                    case blast_operation.inv_value_180:
+                    case blast_operation.inv_value_270:
+                    case blast_operation.inv_value_360:
+                        {
+                            // read value
+                            switch ((BlastVectorSizes)vector_size)
+                            {
+                                case BlastVectorSizes.float1: f4.x = engine_ptr->constants[op]; break;
+                                case BlastVectorSizes.float2: f4.xy = engine_ptr->constants[op]; break;
+                                case BlastVectorSizes.float3: f4.xyz = engine_ptr->constants[op]; break;
+                                case BlastVectorSizes.float4: f4.xyzw = engine_ptr->constants[op]; break;
+                                default:
+#if DEVELOPMENT_BUILD
+                                        Debug.LogError($"BlastInterpretor.get_sequence_result: codepointer: {code_pointer} => {code[code_pointer]}, error: unsupported vectorsize for setting result from constant");
+#endif
+                                    break;
+                            }
+                        }
+                        break;
+
+
+                    // handle identifiers/variables
                     default:
                         {
-                            // get result for op 
-                            switch ((blast_operation)op)
+                            if (op >= opt_id) // only exop is higher and that is handled earlier so this check is safe 
                             {
-                                case blast_operation.begin:
-                                    ++code_pointer;
-                                    // should not reach here
-#if DEVELOPMENT_BUILD
-                                    // Debug.LogWarning("should not be nesting compounds... compiler did not do its job wel");
-#endif
-                                    f4_result = get_compound_result(ref code_pointer, ref vector_size);
-                                    break;
+                                // lookup identifier value
+                                byte id = (byte)(op - opt_id);
+                                byte this_vector_size = BlastInterpretor.GetMetaDataSize(metadata, id);
 
+                                // and put it in f4 
+                                switch ((BlastVectorSizes)this_vector_size)
+                                {
+                                    case BlastVectorSizes.float1: f4.x = ((float*)data)[id]; break;
+                                    case BlastVectorSizes.float2: f4.xy = new float2(((float*)data)[id], ((float*)data)[id + 1]); break;
+                                    case BlastVectorSizes.float3: f4.xyz = new float3(((float*)data)[id], ((float*)data)[id + 1], ((float*)data)[id + 2]); break;
+                                    case 0: 
+                                    case BlastVectorSizes.float4: f4 = new float4(((float*)data)[id], ((float*)data)[id + 1], ((float*)data)[id + 2], ((float*)data)[id + 3]); break;
+                                }
+                                
 
-                                // math functions 
-                                case blast_operation.abs: get_abs_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.mina: get_mina_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.max: get_max_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.min: get_min_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
-
-                                // math utils 
-                                case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-
-                                // fma and friends 
-                                case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
-
-                                // mula family
-                                case blast_operation.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); max_vector_size = vector_size; break;
-                                case blast_operation.adda: get_adda_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.suba: get_suba_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.diva: get_diva_result(ref code_pointer, ref vector_size, out f4_result); break;
-
-                                // any all 
-                                case blast_operation.all: get_all_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                case blast_operation.any: get_any_result(ref code_pointer, ref vector_size, out f4_result); break;
-
-                                // random 
-                                case blast_operation.random: get_random_result(ref code_pointer, ref vector_size, out f4_result); break;
-
-
-
-                                case blast_operation.pop:
-                                    BlastVariableDataType popped_type;
-                                    byte popped_vector_size;
-
-                                    void* pdata = pop_with_info(code_pointer, out popped_type, out popped_vector_size);
-                                    switch (popped_vector_size)
-                                    {
-                                        case 0:
-                                        case 4: f4_result = ((float4*)pdata)[0]; vector_size = 4; f4_result = math.select(f4_result, -f4_result, minus); break;
-                                        case 1: f4_result.x = ((float*)pdata)[0]; vector_size = 1; f4_result.x = math.select(f4_result.x, -f4_result.x, minus); break;
-                                        case 2: f4_result.xy = ((float2*)pdata)[0]; vector_size = 2; f4_result.xy = math.select(f4_result.xy, -f4_result.xy, minus); break;
-                                        case 3: f4_result.xyz = ((float3*)pdata)[0]; vector_size = 3; f4_result.xyz = math.select(f4_result.xyz, -f4_result.xyz, minus); break;
-                                        default:
-#if DEVELOPMENT_BUILD
-                                            Debug.LogError($"codepointer: {code_pointer} => pop vector too large, vectortype {vector_size} not supported");
-#endif
-                                            return -1;
-                                    }
-
-                                    minus = false;
-                                    break;
-
-                                case blast_operation.ex_op:
-
-                                    code_pointer++;
-                                    extended_blast_operation exop = (extended_blast_operation)code[code_pointer];
-
-                                    if (exop == extended_blast_operation.call)
-                                    {
-                                        // call external function 
-                                        CallExternalFunction(ref code_pointer, ref vector_size, out f4_result);
-                                    }
-                                    else
-                                    {
-                                        switch (exop)
-                                        {
-                                            case extended_blast_operation.logn: get_log_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_blast_operation.log10: get_log10_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_blast_operation.exp10: get_exp10_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_blast_operation.cross: get_cross_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_blast_operation.exp: get_exp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_blast_operation.dot: get_dot_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_blast_operation.log2: get_log2_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
-                                            case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4_result); break;
-#if DEVELOPMENT_BUILD
-                                            default:
-                                                Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
-                                                break;
-#endif
-                                        }
-                                    }
-                                    // prev_op = (byte)script_op.ex_op;
-                                    // prev_op_is_value = false;
-                                    op = (byte)blast_operation.nop;
-                                    op_is_value = true;
-                                    last_is_op_or_first = code_pointer == 0;
-                                    break;
-
-                                case blast_operation.ret:
-                                    code_pointer = package.CodeSize + 1;
-                                    return float4.zero;
-
-                                // 
-                                // this should give us a decent jump-table, saving some conditional jumps later  
-                                //
-                                case blast_operation.pi:
-                                case blast_operation.inv_pi:
-                                case blast_operation.epsilon:
-                                case blast_operation.infinity:
-                                case blast_operation.negative_infinity:
-                                case blast_operation.nan:
-                                case blast_operation.min_value:
-                                case blast_operation.value_0:
-                                case blast_operation.value_1:
-                                case blast_operation.value_2:
-                                case blast_operation.value_3:
-                                case blast_operation.value_4:
-                                case blast_operation.value_8:
-                                case blast_operation.value_10:
-                                case blast_operation.value_16:
-                                case blast_operation.value_24:
-                                case blast_operation.value_32:
-                                case blast_operation.value_64:
-                                case blast_operation.value_100:
-                                case blast_operation.value_128:
-                                case blast_operation.value_256:
-                                case blast_operation.value_512:
-                                case blast_operation.value_1000:
-                                case blast_operation.value_1024:
-                                case blast_operation.value_30:
-                                case blast_operation.value_45:
-                                case blast_operation.value_90:
-                                case blast_operation.value_180:
-                                case blast_operation.value_270:
-                                case blast_operation.value_360:
-                                case blast_operation.inv_value_2:
-                                case blast_operation.inv_value_3:
-                                case blast_operation.inv_value_4:
-                                case blast_operation.inv_value_8:
-                                case blast_operation.inv_value_10:
-                                case blast_operation.inv_value_16:
-                                case blast_operation.inv_value_24:
-                                case blast_operation.inv_value_32:
-                                case blast_operation.inv_value_64:
-                                case blast_operation.inv_value_100:
-                                case blast_operation.inv_value_128:
-                                case blast_operation.inv_value_256:
-                                case blast_operation.inv_value_512:
-                                case blast_operation.inv_value_1000:
-                                case blast_operation.inv_value_1024:
-                                case blast_operation.inv_value_30:
-                                case blast_operation.inv_value_45:
-                                case blast_operation.inv_value_90:
-                                case blast_operation.inv_value_180:
-                                case blast_operation.inv_value_270:
-                                case blast_operation.inv_value_360:
-                                    {
-                                        // index constant 
-                                        temp = engine_ptr->constants[op];
-
-                                        // assume constant is float[1] 
-                                        temp = math.select(temp, -temp, minus);
-                                        minus = false;
-                                        if (last_is_op_or_first)
-                                        {
-                                            //the last thing was an operation or the first thing, set value
-                                            switch ((BlastVectorSizes)vector_size)
-                                            {
-                                                case BlastVectorSizes.float1: f4_result.x = temp; break;
-                                                case BlastVectorSizes.float2: f4_result.xy = temp; break;
-                                                case BlastVectorSizes.float3: f4_result.xyz = temp; break;
-                                                case BlastVectorSizes.float4: f4_result.xyzw = temp; break;
-                                                default:
-#if DEVELOPMENT_BUILD
-                                                    Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector beyond size 4 from constant");
-#endif
-                                                    break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            // growing a vector
-                                            switch ((BlastVectorSizes)vector_size)
-                                            {
-                                                case BlastVectorSizes.float1: f4_result.x = temp; break;
-                                                case BlastVectorSizes.float2: f4_result.y = temp; break;
-                                                case BlastVectorSizes.float3: f4_result.z = temp; break;
-                                                case BlastVectorSizes.float4: f4_result.w = temp; break;
-                                                default:
-#if DEVELOPMENT_BUILD
-                                                    Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector beyond size 4 from constant");
-#endif
-                                                    break;
-                                            }
-                                        }
-                                    }
-                                    break;
-
-                                default:
-                                    {
-                                        if (op >= opt_id)
-                                        {
-                                            // lookup identifier value
-                                            byte id = (byte)(op - opt_id);
-                                            byte this_vector_size = BlastInterpretor.GetMetaDataSize(metadata, id); // this now uses an offsetted index into metadata...   this should work...
-
-                                            if (last_is_op_or_first)
-                                            {
-                                                switch ((BlastVectorSizes)this_vector_size)
-                                                {
-                                                    case BlastVectorSizes.float1:
-                                                        {
-                                                            temp = ((float*)data)[id];
-                                                            f4_result.x = math.select(temp, -temp, minus);
-                                                            minus = false;
-                                                        }
-                                                        break;
-
-                                                    case BlastVectorSizes.float2:
-                                                        {
-                                                            float2 t2 = new float2(((float*)data)[id], ((float*)data)[id + 1]);
-                                                            f4_result.xy = math.select(t2, -t2, minus);
-                                                            minus = false;
-                                                        }
-                                                        break;
-
-                                                    case BlastVectorSizes.float3:
-                                                        {
-                                                            float3 t3 = new float3(((float*)data)[id], ((float*)data)[id + 1], ((float*)data)[id + 2]);
-                                                            f4_result.xyz = math.select(t3, -t3, minus);
-                                                            minus = false;
-                                                        }
-                                                        break;
-                                                    case BlastVectorSizes.float4:
-                                                        {
-                                                            float4 t4 = new float4(((float*)data)[id], ((float*)data)[id + 1], ((float*)data)[id + 2], ((float*)data)[id + 3]);
-                                                            f4_result = math.select(t4, -t4, minus);
-                                                            minus = false;
-                                                        }
-                                                        break;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                // growing a vector
-                                                switch ((BlastVectorSizes)this_vector_size)
-                                                {
-                                                    case BlastVectorSizes.float1:
-                                                        temp = ((float*)data)[id];
-                                                        f4_result[vector_size - 1] = math.select(temp, -temp, minus);
-                                                        minus = false;
-                                                        break;
-                                                    case BlastVectorSizes.float2:
-
-                                                    case BlastVectorSizes.float3:
-                                                    case BlastVectorSizes.float4:
-                                                    default:
-#if DEVELOPMENT_BUILD
-                                                        Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, error: growing vector from other vectors not fully supported");
-#endif
-                                                        break;
-                                                }
-                                            }
-
-                                            vector_size = vector_size > this_vector_size ? vector_size : this_vector_size; // probably massively incorrect but its too late 
-                                        }
-                                        else
-                                        {
-                                            // we receive an operation while expecting a value 
-                                            //
-                                            // if we predict this at the compiler we could use the opcodes value as value constant
-                                            //
-#if DEVELOPMENT_BUILD
-                                            Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(blast_operation)op}");
-#endif
-
-                                            // this should screw stuff up 
-                                            return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                                        }
-                                    }
-                                    break;
+                                vector_size = vector_size > this_vector_size ? vector_size : this_vector_size; // probably massively incorrect but its too late 
                             }
+                            else
                             {
+                                // we receive an operation while expecting a value 
                                 //
-                                // return now if only interested in the first result 
+                                // if we predict this at the compiler we could use the opcodes value as value constant
                                 //
-                                if (return_first_result)
-                                {
-                                    code_pointer++; // do advance to after the last token in that what was evaluated
-                                    return f4_result;
-                                }
-
-
-                                // after an operation with growvector we should stack value
-                                switch ((BlastVectorSizes)vector_size)
-                                {
-                                    case BlastVectorSizes.float1:
-                                        {
-                                            switch ((BlastVectorSizes)max_vector_size)
-                                            {
-                                                case BlastVectorSizes.float1:
-                                                    BlastInterpretor.handle_op(current_operation, op, prev_op, ref f1, f4_result.x, ref last_is_op_or_first, ref vector_size);
-                                                    break;
-                                                case BlastVectorSizes.float2:
-                                                    BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, new float4(f4_result.xx, 0, 0), ref last_is_op_or_first, ref vector_size);
-                                                    break;
-                                                case BlastVectorSizes.float3:
-                                                    BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, new float4(f4_result.xxx, 0), ref last_is_op_or_first, ref vector_size);
-                                                    break;
-                                                case BlastVectorSizes.float4:
-                                                    BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, f4_result.xxxx, ref last_is_op_or_first, ref vector_size);
-                                                    break;
-                                            }
-                                        }
-                                        break;
-
-                                    case BlastVectorSizes.float2:
-                                        {
-                                            switch ((BlastVectorSizes)max_vector_size)
-                                            {
-                                                case BlastVectorSizes.float1:
-                                                    // normal when growing a vector 
-                                                    break;
-                                                case BlastVectorSizes.float2:
-                                                case BlastVectorSizes.float3:
-                                                case BlastVectorSizes.float4:
-                                                default:
 #if DEVELOPMENT_BUILD
-                                                    // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                    //                                      Debug.LogWarning($"execute: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
+                                Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(blast_operation)op}");
 #endif
-                                                    break;
-                                            }
-                                            BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, f4_result.xy, ref last_is_op_or_first, ref vector_size);
-                                        }
-                                        break;
 
-                                    case BlastVectorSizes.float3:
-                                        {
-                                            switch ((BlastVectorSizes)max_vector_size)
-                                            {
-                                                case BlastVectorSizes.float2:
-                                                    // normal when growing a vector
-                                                    break;
-
-                                                case BlastVectorSizes.float1:
-                                                case BlastVectorSizes.float3:
-                                                case BlastVectorSizes.float4:
-                                                default:
-#if DEVELOPMENT_BUILD
-                                                    // these will be in log because of growing a vector from a compound of unknown sizes  
-                                                    // Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
-#endif
-                                                    break;
-                                            }
-                                            BlastInterpretor.handle_op(current_operation, op, prev_op, ref f4, f4_result.xyz, ref last_is_op_or_first, ref vector_size);
-                                        }
-                                        break;
-
-
-                                    case 0:
-                                    case BlastVectorSizes.float4:
-                                        {
-                                            switch ((BlastVectorSizes)max_vector_size)
-                                            {
-                                                case BlastVectorSizes.float1:
-                                                    // have a float 4 but are multiplying with a float1 from earlier
-                                                    f4 = new float4(f1, f1, f1, f1);
-                                                    break;
-                                                case BlastVectorSizes.float2:
-                                                    f4 = new float4(f4.xy, 0, 0);
-                                                    break;
-                                                case BlastVectorSizes.float3:
-                                                    f4 = new float4(f4.xyz, 0);
-                                                    // usually we are growing from float4 to a 4 vector, current op would be nop then 
-                                                    break;
-                                                case BlastVectorSizes.float4:
-                                                    // have a float 4 and one from earlier.
-                                                    break;
-                                                default:
-#if DEVELOPMENT_BUILD
-                                                    //                  Debug.LogWarning($"codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {max_vector_size}");
-#endif
-                                                    break;
-                                            }
-                                            handle_op(current_operation, op, prev_op, ref f4, f4_result, ref last_is_op_or_first, ref vector_size);
-                                        }
-                                        break;
-
-                                    default:
-                                        {
-#if DEVELOPMENT_BUILD
-                                            Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unsupported vector size of {vector_size}");
-#endif
-                                            return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                                        }
-                                }
-
-                                if (current_operation != blast_operation.nop)
-                                {
-                                    // f1 = f4.x;
-                                }
+                                // this should royally screw stuff up 
+                                f4_result = float.NaN;
+                                return; 
                             }
                         }
-                        break;
 
+                        break;
                 }
 
+                //
+                // if not an operation overwrite result
+                //
+                // -> on first value
+                //
+                //
+                if (current_op == 0 && !(minus && prev_op == 0))
+                {
+                    // just set according to vector size
+                    switch((BlastVectorSizes)vector_size)
+                    {
+                        case BlastVectorSizes.float1: f4_result.x = f4.x; current_vector_size = 1; break;
+                        case BlastVectorSizes.float2: f4_result.xy = f4.xy; current_vector_size = 2; break;
+                        case BlastVectorSizes.float3: f4_result.xyz = f4.xyz; current_vector_size = 3; break;
+                        case 0:
+                        case BlastVectorSizes.float4: f4_result = f4; current_vector_size = 4; break;
+                    }
+                }
+                else
+                {
+                    if (!last_is_bool_or_math_operation)
+                    {
+                        switch ((BlastVectorSizes)current_vector_size)
+                        {
+                            case BlastVectorSizes.float1:
 
+                                switch ((BlastVectorSizes)vector_size)
+                                {
+                                    // v1 = v1 + v1 -> no change in vectorsize 
+                                    case BlastVectorSizes.float1: f4_result.x = BlastInterpretor.handle_op(current_op, f4_result.x, f4.x); break;
+                                    case BlastVectorSizes.float2: f4_result.xy = BlastInterpretor.handle_op(current_op, f4_result.x, f4.xy); current_vector_size = 2; break;
+                                    case BlastVectorSizes.float3: f4_result.xyz = BlastInterpretor.handle_op(current_op, f4_result.x, f4.xyz); current_vector_size = 3; break;
+                                    case 0:
+                                    case BlastVectorSizes.float4: f4_result = BlastInterpretor.handle_op(current_op, f4_result.x, f4); current_vector_size = 4; break;
+#if DEVELOPMENT_BUILD
+                                    default:
+                                        Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
+                                        break;
+#endif
+                                }
+                                break;
+
+                            case BlastVectorSizes.float2:
+
+                                switch ((BlastVectorSizes)vector_size)
+                                {
+                                    // adding a float1 to a float2 operation -> results in float2 
+                                    case BlastVectorSizes.float1: f4_result.xy = BlastInterpretor.handle_op(current_op, f4_result.xy, f4.x); vector_size = 2; break;
+                                    case BlastVectorSizes.float2: f4_result.xy = BlastInterpretor.handle_op(current_op, f4_result.xy, f4.xy); break;
+
+#if DEVELOPMENT_BUILD
+                                    default:
+                                        Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
+                                        break;
+#endif
+                                }
+                                break;
+
+                            case BlastVectorSizes.float3:
+
+                                switch ((BlastVectorSizes)vector_size)
+                                {
+                                    case BlastVectorSizes.float1: f4_result.xyz = BlastInterpretor.handle_op(current_op, f4_result.xyz, f4.x); vector_size = 3; break;
+                                    case BlastVectorSizes.float3: f4_result.xyz = BlastInterpretor.handle_op(current_op, f4_result.xyz, f4.xyz); break;
+#if DEVELOPMENT_BUILD
+                                    default:
+                                        Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
+                                        break;
+#endif
+                                }
+                                break;
+
+                            case 0:
+                            case BlastVectorSizes.float4:
+
+                                switch ((BlastVectorSizes)vector_size)
+                                {
+                                    case BlastVectorSizes.float1: f4_result = BlastInterpretor.handle_op(current_op, f4_result, f4.x); current_vector_size = 4; vector_size = 4; break;
+                                    case 0:
+                                    case BlastVectorSizes.float4: f4_result = BlastInterpretor.handle_op(current_op, f4_result, f4); current_vector_size = 4; vector_size = 4; break;
+#if DEVELOPMENT_BUILD
+                                    default:
+                                        Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
+                                        break;
+#endif
+                                }
+                                break;
+
+
+
+
+
+#if DEVELOPMENT_BUILD
+                            default:
+                                Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
+                                break;
+#endif
+
+
+                        }
+                    }
+                }
+
+                // apply minus (if in sequence)...  
+                 f4_result = math.select(f4_result, -f4_result, minus && !last_is_bool_or_math_operation); 
+                 minus = minus && !last_is_bool_or_math_operation;
+
+
+                // reset current operation if last thing was a value 
+                if (!last_is_bool_or_math_operation) current_op = blast_operation.nop;
+
+                // next
+                prev_op = op; 
                 code_pointer++;
+            }
 
-            } // while ()
-            vector_size = vector_size > max_vector_size ? vector_size : max_vector_size;
-            return vector_size > 0 ? f4 : new float4(f1, 0, 0, 0);
+            return;
         }
-
 
 
 
@@ -5554,23 +5815,7 @@ namespace NSS.Blast.Interpretor
                     // push the result of a function directly onto the stack instead of assigning it first or something
                     // 
                     case blast_operation.pushf:
-                        
-                        get_function_result(ref code_pointer, ref vector_size, out f4_register);
-                        code_pointer++; 
-                        
-                        switch (vector_size)
-                        {
-                            case 1: push(f4_register.x); break;
-                            case 2: push(f4_register.xy); break;
-                            case 3: push(f4_register.xyz); break;
-                            case 4: push(f4_register.xyzw); break;
-#if DEVELOPMENT_BUILD
-                            default:
-                                Debug.LogError("burstscript.interpretor pushf error: variable vector size not yet supported on stack push");
-                                //  return (int)BlastError.error_variable_vector_op_not_supported;
-                                break;
-#endif
-                        }
+                        pushf(ref code_pointer, ref vector_size, ref f4_register);
                         break;
 
                     //
@@ -5842,8 +6087,6 @@ namespace NSS.Blast.Interpretor
 
                             code_pointer++;
                             assignv(ref code_pointer, in s_assignee, &fdata[assignee]);
-
-                            // code_pointer++;  
                         }
                         break; 
 
@@ -5892,7 +6135,10 @@ namespace NSS.Blast.Interpretor
                             ////   TODO : compiler should identify if assigning 1 simple value and use different instruction !!!!! 
 
 
-                            f4_register = get_compound_result(ref code_pointer, ref vector_size, false);
+                            //                             f4_register = get_compound_result(ref code_pointer, ref vector_size, false);
+
+                            get_sequence_result(ref code_pointer, ref vector_size, out f4_register);
+
 
                             // set assigned data fields in stack 
                             switch ((byte)vector_size)
@@ -5985,8 +6231,19 @@ namespace NSS.Blast.Interpretor
                                         code_pointer++;
                                         break;
                                     case blast_operation.push:
+                                        code_pointer++;
+                                        push(ref code_pointer, ref vector_size, ref f4_register);
+                                        code_pointer++;
+                                        break;
                                     case blast_operation.pushf:
+                                        code_pointer++;
+                                        pushf(ref code_pointer, ref vector_size, ref f4_register);
+                                        code_pointer++;
+                                        break;
                                     case blast_operation.pushv:
+                                        code_pointer++;
+                                        pushv(ref code_pointer, ref vector_size, ref f4_register);
+                                        code_pointer++;
                                         break;
                                     default:
                                         is_push = false;
@@ -5996,7 +6253,7 @@ namespace NSS.Blast.Interpretor
                             while (is_push && code_pointer < package.CodeSize);
 
                             // get result from condition
-                            f4_register = get_compound_result(ref code_pointer, ref vector_size);
+                            get_sequence_result(ref code_pointer, ref vector_size, out f4_register);
 
                             // jump if zero to else condition or after then when no else 
                             code_pointer = math.select(code_pointer, jump_to, f4_register.x == 0);
@@ -6024,8 +6281,19 @@ namespace NSS.Blast.Interpretor
                                         code_pointer++;
                                         break;
                                     case blast_operation.push:
+                                        code_pointer++;
+                                        push(ref code_pointer, ref vector_size, ref f4_register);
+                                        code_pointer++;
+                                        break;
                                     case blast_operation.pushf:
+                                        code_pointer++;
+                                        pushf(ref code_pointer, ref vector_size, ref f4_register);
+                                        code_pointer++;
+                                        break;
                                     case blast_operation.pushv:
+                                        code_pointer++;
+                                        pushv(ref code_pointer, ref vector_size, ref f4_register);
+                                        code_pointer++;
                                         break;
                                     default:
                                         is_push = false;
@@ -6035,7 +6303,7 @@ namespace NSS.Blast.Interpretor
                             while (is_push && code_pointer < package.CodeSize);
 
                             // get result from condition 
-                            f4_register = get_compound_result(ref code_pointer, ref vector_size);
+                            get_sequence_result(ref code_pointer, ref vector_size, out f4_register);
 
                             // jump if NOT zero to else condition or after then when no else 
                             code_pointer = math.select(code_pointer, jump_to, f4_register.x != 0);
@@ -6067,7 +6335,6 @@ namespace NSS.Blast.Interpretor
                             {
                                 case extended_blast_operation.call:
                                     {
-                                        bool minus = false;
                                         CallExternalFunction(ref code_pointer, ref vector_size, out f4_register);
                                         code_pointer++;
                                     }
@@ -6125,6 +6392,7 @@ namespace NSS.Blast.Interpretor
 
             return (int)BlastError.success;
         }
+                                         
 
 
 #endregion
