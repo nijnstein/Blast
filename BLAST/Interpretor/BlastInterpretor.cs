@@ -5821,7 +5821,7 @@ namespace NSS.Blast.Interpretor
                             assignv(ref code_pointer, in s_assignee, &fdata[assignee]);
 
 
-                            
+                         // could be needs code_pointer++ not sure its late    
                         }
                         break; 
 
