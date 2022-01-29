@@ -244,7 +244,6 @@ namespace NSS.Blast
         /// </summary>
         /// <typeparam name="T">the delegate type</typeparam>
         /// <returns></returns>
-        [BurstDiscard]
         public FunctionPointer<T> Generic<T>()
         {
             return new FunctionPointer<T>(NativeFunctionPointer);
