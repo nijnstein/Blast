@@ -1892,19 +1892,6 @@
             <param name="operation_count">the number of operations to replace if > 0</param>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastOptimizer.OptimizeAssignFunction(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
-             <summary>
-             
-             analyze the assignment and optimize 2 statement types: 
-            
-             1> a = function(parameters);   => assignf a parameters
-             2> b = - function(paramaters); => assignf - a parameters
-             
-             </summary>
-             <param name="data"></param>
-             <param name="node"></param>
-             <returns></returns>
-        </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastOptimizer.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
             <summary>
             Optimize operations expressed by the ast if optimization is enabled through compiler settings 
@@ -2491,6 +2478,11 @@
             True if this is a function 
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.node.IsStackFunction">
+            <summary>
+            true if the function maps to a stack operation: push, pop etc. 
+            </summary>
+        </member>
         <member name="P:NSS.Blast.Compiler.node.IsPushFunction">
             <summary>
             True if this is a function pushing to the stack 
@@ -2926,11 +2918,6 @@
         <member name="M:NSS.Blast.Compiler.node.CountChildType(NSS.Blast.Compiler.nodetype,NSS.Blast.Compiler.nodetype)">
             <summary>
             count all children matching one of 2 types 
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.Compiler.node.HasChildNodes">
-            <summary>
-            True if the node contains children
             </summary>
         </member>
         <member name="P:NSS.Blast.Compiler.node.ChildCount">
@@ -4305,9 +4292,44 @@
             instruction set 
             </summary>
         </member>
+        <member name="F:NSS.Blast.blast_operation.nop">
+            <summary>
+            
+            </summary>
+        </member>
         <member name="F:NSS.Blast.blast_operation.add">
             <summary>
             Operatations from add until not_equals MUST be in sequence for quick matches
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.not">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.assigns">
+            <summary>
+            assign single variable / pop to assignee
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.assignf">
+            <summary>
+            assign function result to assignee
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.assignfe">
+            <summary>
+            assign result of external function call 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.assignfn">
+            <summary>
+            assign negated function result to assignee
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.assignfen">
+            <summary>
+            assign negated result of external function call to assignee
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastScriptTokenDefinition">
@@ -4548,15 +4570,10 @@
             printout an overview of the datasegment/stack (if shared)
             </summary>
         </member>
-        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.CallExternal(System.Int32@,System.Boolean@,System.Byte@,Unity.Mathematics.float4@)">
-            <summary>
-            call an external function pointer 
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.CallExternalFunction(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
+             <summary>
+             call an external function pointer, pointed to by an 8|16|32 bit identifier 
             </summary>
-            <param name="code_pointer"></param>
-            <param name="minus"></param>
-            <param name="vector_size"></param>
-            <param name="f4"></param>
-            <returns></returns>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_maxa_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
             <summary>
@@ -4813,25 +4830,29 @@
             - n elements of equal vector size 
             </summary>
         </member>
-        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_any_result(System.Int32@,System.Boolean@,System.Boolean@,System.Byte@)">
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_any_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
             <summary>
-            a = any(a b c d)
+            a = any(a b c d) 
+            
+            todo -> should update this to early out.. maybe compiler does it already on the || check assembly here
+            
             </summary>
-            <param name="code_pointer"></param>
-            <param name="minus"></param>
-            <param name="not"></param>
-            <param name="vector_size"></param>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_all_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
+            <summary>
+            !any() is a lot cheaper then all() because we can drop out early and may not need to lookup every value /// </summary>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_all_result(System.Int32@,System.Boolean@,System.Boolean@,System.Byte@)">
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_random_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
             <summary>
-            convert all calls to all to !any( == 0) 
-            !any() is a lot cheaper then all() because we can drop out early and may not need to lookup every value /// </summary>
-            <param name="code_pointer"></param>
-            <param name="minus"></param>
-            <param name="not"></param>
-            <param name="vector_size"></param>
-            <returns></returns>
+            
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_function_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
+            <summary>
+            get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
+            although external calls should be directly called when possible
+            </summary>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_compound_result(System.Int32@,System.Byte@,System.Boolean)">
             <summary>

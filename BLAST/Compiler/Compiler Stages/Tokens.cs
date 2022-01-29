@@ -6,6 +6,9 @@
     /// </summary>
     public enum blast_operation : byte
     {
+        /// <summary>
+        /// 
+        /// </summary>
         nop = 0,
         assign = 1,
 
@@ -18,6 +21,10 @@
         multiply = 5,
         and = 6,
         or = 7,
+
+        /// <summary>
+        /// 
+        /// </summary>
         not = 8,
         xor = 9,
 
@@ -99,23 +106,39 @@
         sqrt,
 
 
-        assigns, // assign single value 
+        /// <summary>
+        /// assign single variable / pop to assignee
+        /// </summary>
+        assigns,
 
-        undefined_pow,
+        /// <summary>
+        /// assign function result to assignee
+        /// </summary>
+        assignf, 
 
+        /// <summary>
+        /// assign result of external function call 
+        /// </summary>
+        assignfe,
+
+        /// <summary>
+        /// assign negated function result to assignee
+        /// </summary>
+        assignfn,
+
+        /// <summary>
+        /// assign negated result of external function call to assignee
+        /// </summary>
+        assignfen,
+
+        undefined2,
         undefined3,
-        undefined4,
-
-        undefined7, //distance,
-        undefined8,// distancesq,
-        undefined9,// length,
-        undefined10, //lengthsq,
-        undefined_pop2,     // UNDEFINED ???
-
-        undefined_pop3,     // UNDEFINED ???
-        undefined_pop4,     // UNDEFINED ???
-        undefined3431,
-        undefined1,
+        undefined4, 
+        undefined5, 
+        undefined6, 
+        undefined7, 
+        undefined8,
+        undefined9,
 
         //------------------------
         // constant math values start here at PI

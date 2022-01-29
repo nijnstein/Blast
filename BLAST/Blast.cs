@@ -32,7 +32,6 @@ using System.Runtime.CompilerServices;
 
 
 
-
 namespace NSS.Blast
 {
     /// <summary>
@@ -1351,7 +1350,12 @@ namespace NSS.Blast
                     case blast_operation.nop: sb.Append("\n"); break;
 
                     case blast_operation.assign: sb.Append("assign "); break;
-                    case blast_operation.assigns: sb.Append("assign single"); break;
+                    case blast_operation.assigns: sb.Append("assign s"); break;
+                    case blast_operation.assignf: sb.Append("assign f"); break;
+                    case blast_operation.assignfe: sb.Append("assign fe"); break;
+
+                    case blast_operation.assignfn: sb.Append("assign fn"); break;
+                    case blast_operation.assignfen: sb.Append("assign fen"); break;
 
                     case blast_operation.add: sb.Append("+ "); break;
                     case blast_operation.substract: sb.Append("- "); break;

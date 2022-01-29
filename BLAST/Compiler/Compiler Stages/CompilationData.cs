@@ -523,6 +523,10 @@ namespace NSS.Blast.Compiler
                         case blast_operation.nop: sb.Append("nop "); break;
                         case blast_operation.assign: sb.Append("set "); break;
                         case blast_operation.assigns: sb.Append("sets "); break;
+                        case blast_operation.assignf: sb.Append("setf "); break;
+                        case blast_operation.assignfe: sb.Append("setfe "); break;
+                        case blast_operation.assignfn: sb.Append("setf "); break;
+                        case blast_operation.assignfen: sb.Append("setfen "); break;
                         case blast_operation.add: sb.Append("+ "); break;
                         case blast_operation.substract: sb.Append("- "); break;
                         case blast_operation.multiply: sb.Append("* "); break;

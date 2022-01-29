@@ -2485,7 +2485,7 @@ namespace NSS.Blast.SSMD
                         {
                             blast_operation next_op = (blast_operation)code[code_pointer + 1];
 
-                            if (next_op != blast_operation.nop && next_op != blast_operation.assign && next_op != blast_operation.assigns)
+                            if (next_op != blast_operation.nop && !BlastInterpretor.IsAssignmentOperation(next_op))
                             {
                                 // for now restrict ourselves to only accepting operations at this point 
                                 if (BlastInterpretor.IsMathematicalOrBooleanOperation(next_op))

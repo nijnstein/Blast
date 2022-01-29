@@ -385,8 +385,19 @@ namespace NSS.Blast.Compiler.Stage
                             // must be function 
                             if (ast_function.FirstChild.IsFunction)
                             {
-                                code.Add(blast_operation.pushf);
-                                CompileFunction(data, ast_function.FirstChild, code); 
+                                if (ast_function.FirstChild.function.IsPopVariant)
+                                {
+                                    // pushing result of pop == same as doing nothing 
+                                    // >> this should be considered a bug .. 
+#if DEVELOPMENT_BUILD
+                                    data.LogWarning($"bug in compilation: <{ast_function}>.<{ast_function.FirstChild}>, tries to push a pop operation, somehow the pop was wrongfully flattened out. Its compilation is skipped");
+#endif
+                                }
+                                else
+                                {
+                                    code.Add(blast_operation.pushf);
+                                    CompileFunction(data, ast_function.FirstChild, code);
+                                }
                             }
                             else
                             {
@@ -629,7 +640,7 @@ namespace NSS.Blast.Compiler.Stage
             {
                 // something might inject nops, we dont need to keep them (should not .... todo) 
                 case nodetype.none:
-                    if (ast_node.HasChildNodes)
+                    if (ast_node.HasChildren)
                     {
                         data.LogError($"CompileNode: encountered [nop] node <{ast_node}> with child nodes => this is not allowed without a valid type");
                         return null;
@@ -648,24 +659,24 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         switch (ast_node.token)
                         {
-                            case BlastScriptToken.Nop: code.Add(blast_operation.nop); break;  
-                            case BlastScriptToken.Add: code.Add(blast_operation.add); break; 
-                            case BlastScriptToken.Substract: code.Add(blast_operation.substract); break; 
-                            case BlastScriptToken.Divide: code.Add(blast_operation.divide); break; 
-                            case BlastScriptToken.Multiply:code.Add(blast_operation.multiply); break;
+                            case BlastScriptToken.Nop: code.Add(blast_operation.nop); break;
+                            case BlastScriptToken.Add: code.Add(blast_operation.add); break;
+                            case BlastScriptToken.Substract: code.Add(blast_operation.substract); break;
+                            case BlastScriptToken.Divide: code.Add(blast_operation.divide); break;
+                            case BlastScriptToken.Multiply: code.Add(blast_operation.multiply); break;
                             case BlastScriptToken.Equals: code.Add(blast_operation.equals); break;
                             case BlastScriptToken.SmallerThen: code.Add(blast_operation.smaller); break;
-                            case BlastScriptToken.GreaterThen: code.Add(blast_operation.greater); break; 
-                            case BlastScriptToken.SmallerThenEquals: code.Add(blast_operation.smaller_equals); break;                                
-                            case BlastScriptToken.GreaterThenEquals: code.Add(blast_operation.greater_equals); break; 
-                            case BlastScriptToken.NotEquals: code.Add(blast_operation.not_equals); break; 
+                            case BlastScriptToken.GreaterThen: code.Add(blast_operation.greater); break;
+                            case BlastScriptToken.SmallerThenEquals: code.Add(blast_operation.smaller_equals); break;
+                            case BlastScriptToken.GreaterThenEquals: code.Add(blast_operation.greater_equals); break;
+                            case BlastScriptToken.NotEquals: code.Add(blast_operation.not_equals); break;
                             case BlastScriptToken.And: code.Add(blast_operation.and); break;
                             case BlastScriptToken.Or: code.Add(blast_operation.or); break;
                             case BlastScriptToken.Xor: code.Add(blast_operation.xor); break;
-                            case BlastScriptToken.Not: code.Add(blast_operation.not); break; 
+                            case BlastScriptToken.Not: code.Add(blast_operation.not); break;
                             default:
                                 data.LogError($"CompileNode: encountered an unsupported operation type, node: <{ast_node.parent}><{ast_node}>");
-                                return null; 
+                                return null;
                         }
                     }
                     else
@@ -674,7 +685,7 @@ namespace NSS.Blast.Compiler.Stage
                         return null;
                     }
                     break;
-                
+
                 // unexpected node types: something is wrong 
                 default:
                 // indices should not be attached to child nodes of an ast node
@@ -683,7 +694,7 @@ namespace NSS.Blast.Compiler.Stage
                 case nodetype.switchcase:
                 case nodetype.switchdefault:
                     data.LogError($"CompileNode: encountered an unsupported node type for direct compilation into root, node: <{ast_node}>");
-                    return null; 
+                    return null;
 
                 // only insert yields if supported by options 
                 case nodetype.yield:
@@ -693,17 +704,17 @@ namespace NSS.Blast.Compiler.Stage
                     }
                     else
                     {
-                        data.LogWarning("CompileNode: skipped yield opcode, yield is not supported by current compilation options"); 
+                        data.LogWarning("CompileNode: skipped yield opcode, yield is not supported by current compilation options");
                     }
                     break;
 
                 // function 
                 case nodetype.function:
                     {
-                        if(!ast_node.IsFunction || ast_node.function.FunctionId <= 0)
+                        if (!ast_node.IsFunction || ast_node.function.FunctionId <= 0)
                         {
                             data.LogError($"CompileNode: encountered function node with no function set, node: <{ast_node}>");
-                            return null; 
+                            return null;
                         }
                         if ((ast_node.parent == null || ast_node.parent.type == nodetype.root) && ast_node.function.ReturnsVectorSize > 0)
                         {
@@ -748,7 +759,7 @@ namespace NSS.Blast.Compiler.Stage
                 case nodetype.jump_to:
                     {
                         code.Add(blast_operation.jump, IMJumpLabel.Jump(ast_node.identifier));
-                        code.Add((byte)0, IMJumpLabel.Offset(ast_node.identifier));  
+                        code.Add((byte)0, IMJumpLabel.Offset(ast_node.identifier));
                         break;
                     }
 
@@ -777,7 +788,7 @@ namespace NSS.Blast.Compiler.Stage
                     }
 
                     // assigning a single value or pop?  
-                    if ( ast_node.ChildCount == 1 &&  node.IsSingleValueOrPop(ast_node.FirstChild) )
+                    if (ast_node.ChildCount == 1 && node.IsSingleValueOrPop(ast_node.FirstChild))
                     {
                         //
                         // encode assigns instead of assing, this saves a trip through get_compound and 1 byte closing that compound
@@ -786,12 +797,45 @@ namespace NSS.Blast.Compiler.Stage
                         code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
 
                         // encode variable, constant value or pop instruction 
-                        if(!CompileParameter(data, ast_node.FirstChild, code, true))
+                        if (!CompileParameter(data, ast_node.FirstChild, code, true))
                         {
                             data.LogError($"CompileNode: assignment node: <{ast_node.parent}>.<{ast_node}>, failed to compile single parameter <{ast_node.FirstChild}> into assigns operation");
-                            return null; 
+                            return null;
                         }
                     }
+                    else
+                    // assigning a single function result | and not a stack pusp/pop
+                    if (ast_node.ChildCount == 1 && ast_node.FirstChild.type == nodetype.function && !ast_node.IsStackFunction)
+                    {
+                        code.Add(ast_node.function.IsExternalCall ? blast_operation.assignfe : blast_operation.assignf);
+                        code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
+                        CompileNode(data, ast_node.FirstChild, code);
+                        if (!data.IsOK)
+                        {
+                            data.LogError($"CompileNode: assignment node: <{ast_node.parent}>.<{ast_node}>, failed to compile assignment of function <{ast_node.FirstChild}> into assignf operation"); 
+                            return null;
+                        }
+                    }
+                    else
+                    // assigning a negated / notted function result 
+                    if (ast_node.ChildCount == 2
+                        &&
+                        (ast_node.FirstChild.type == nodetype.operation && (ast_node.FirstChild.token == BlastScriptToken.Substract || ast_node.FirstChild.token == BlastScriptToken.Not))
+                        &&
+                        !ast_node.IsStackFunction
+                        &&
+                        ast_node.LastChild.type == nodetype.function)
+                    {
+                        code.Add(ast_node.function.IsExternalCall ? blast_operation.assignfen : blast_operation.assignfn);
+                        code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
+                        CompileNode(data, ast_node.FirstChild, code);
+                        if (!data.IsOK)
+                        {
+                            data.LogError($"CompileNode: assignment node: <{ast_node.parent}>.<{ast_node}>, failed to compile negated assignment of function <{ast_node.FirstChild}> into assignf operation");
+                            return null;
+                        }
+                    }
+                    // default compound assignment 
                     else
                     {
                         // encode first part of assignment 
@@ -1091,7 +1135,7 @@ namespace NSS.Blast.Compiler.Stage
                         }
                         else
                         {
-                            if (child.HasChildNodes)
+                            if (child.HasChildren)
                             {
                                 BlastError res = case1(child, false);
                                 if (res == BlastError.yield) changed = true;

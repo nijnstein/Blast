@@ -1059,6 +1059,11 @@ namespace NSS.Blast.Interpretor
             return op >= blast_operation.add && op <= blast_operation.not_equals;
         }
 
+        public static bool IsAssignmentOperation(blast_operation op)
+        {
+            return op == blast_operation.assign || op == blast_operation.assigns || op == blast_operation.assignf;
+        }
+
         /// <summary>
         /// WARNING checks if +-*/ uses value op enum!!  
         /// </summary>
@@ -1376,16 +1381,11 @@ namespace NSS.Blast.Interpretor
 
         #endregion
 
-        #region Exeternal Functionpointer calls 
+        #region External Functionpointer calls 
         /// <summary>
-        /// call an external function pointer 
-        /// </summary>
-        /// <param name="code_pointer"></param>
-        /// <param name="minus"></param>
-        /// <param name="vector_size"></param>
-        /// <param name="f4"></param>
-        /// <returns></returns>
-        float4 CallExternal(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
+        /// call an external function pointer, pointed to by an 8|16|32 bit identifier 
+        ///</summary>
+        void CallExternalFunction(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             // get int id from next 4 ops/bytes 
             int id =
@@ -1401,8 +1401,10 @@ namespace NSS.Blast.Interpretor
             code_pointer += 4;
 
             // get function pointer 
+#if DEVELOPMENT_BUILD || TRACE
             if (engine_ptr->CanBeAValidFunctionId(id))
             {
+#endif 
                 BlastScriptFunction p = engine_ptr->Functions[id];
 
                 // get parameter count (expected from script excluding the 3 data pointers: engine, env, caller) 
@@ -1417,10 +1419,32 @@ namespace NSS.Blast.Interpretor
                     }
 #endif
                     code_pointer += p.MinParameterCount;
-                    return float4.zero;
+                    f4 = float.NaN; 
+                    return;
                 }
 
-                // Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}");
+#if DEVELOPMENT_BUILD || TRACE 
+                Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}, parmetercount = {p.MinParameterCount}");
+#endif
+
+
+#if DEVELOPMENT_BUILD || TRACE
+                vector_size = (byte)math.select((int)p.ReturnsVectorSize, p.AcceptsVectorSize, p.ReturnsVectorSize == 0);
+                if (vector_size != 1)
+                {
+                    Debug.LogError($"function {id} a return vector size > 1 is not currently supported in external functions");
+                    f4 = float.NaN; 
+                    return; 
+                }
+                if(p.AcceptsVectorSize != 1)
+                {
+                    Debug.LogError($"function {id} a parameter vector size > 1 is not currently supported in external functions");
+                    f4 = float.NaN;
+                    return;
+                }
+#else 
+                vector_size = 1; 
+#endif 
 
                 switch (p.MinParameterCount)
                 {
@@ -1428,8 +1452,9 @@ namespace NSS.Blast.Interpretor
                         FunctionPointer<Blast.BlastDelegate_f0> fp0 = p.Generic<Blast.BlastDelegate_f0>();
                         if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
                         {
-                            f4[0] = (int)fp0.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr);
-                            return v1_eval(f4, ref minus, ref vector_size);
+                            vector_size = 1; 
+                            f4 = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr);
+                            return;
                         }
                         break;
 
@@ -1437,13 +1462,11 @@ namespace NSS.Blast.Interpretor
                         FunctionPointer<Blast.BlastDelegate_f1> fp1 = p.Generic<Blast.BlastDelegate_f1>();
                         if (fp1.IsCreated && fp1.Value != IntPtr.Zero)
                         {
-                            float a = pop_or_value(code_pointer + 1);
+                            float a = pop_f1(code_pointer + 1);
                             code_pointer++;
 
-                            // Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}, parameters: {a}");
-
-                            f4[0] = (int)fp1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a);
-                            return v1_eval(f4, ref minus, ref vector_size);
+                            f4 = fp1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a);
+                            return;
                         }
                         break;
 
@@ -1451,14 +1474,11 @@ namespace NSS.Blast.Interpretor
                         FunctionPointer<Blast.BlastDelegate_f2> fp2 = p.Generic<Blast.BlastDelegate_f2>();
                         if (fp2.IsCreated && fp2.Value != IntPtr.Zero)
                         {
-                            float a = pop_or_value(code_pointer + 1);
-                            float b = pop_or_value(code_pointer + 2);
+                            float a = pop_f1(code_pointer + 1);
+                            float b = pop_f1(code_pointer + 2);
                             code_pointer += 2;
-
-                            // Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}, parameters: {a}");
-
-                            f4[0] = (int)fp2.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a, b);
-                            return v1_eval(f4, ref minus, ref vector_size);
+                            f4 = fp2.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a, b);
+                            return;
                         }
                         break;
 
@@ -1466,13 +1486,12 @@ namespace NSS.Blast.Interpretor
                         FunctionPointer<Blast.BlastDelegate_f3> fp3 = p.Generic<Blast.BlastDelegate_f3>();
                         if (fp3.IsCreated && fp3.Value != IntPtr.Zero)
                         {
-                            float a = pop_or_value(code_pointer + 1);
-                            float b = pop_or_value(code_pointer + 2);
-                            float c = pop_or_value(code_pointer + 3);
+                            float a = pop_f1(code_pointer + 1);
+                            float b = pop_f1(code_pointer + 2);
+                            float c = pop_f1(code_pointer + 3);
                             code_pointer += 3;
-
-                            f4[0] = (int)fp3.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a, b, c);
-                            return v1_eval(f4, ref minus, ref vector_size);
+                            f4 = fp3.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a, b, c);
+                            return;
                         }
                         break;
 
@@ -1480,129 +1499,41 @@ namespace NSS.Blast.Interpretor
                         FunctionPointer<Blast.BlastDelegate_f4> fp4 = p.Generic<Blast.BlastDelegate_f4>();
                         if (fp4.IsCreated && fp4.Value != IntPtr.Zero)
                         {
-                            float a = pop_or_value(code_pointer + 1);
-                            float b = pop_or_value(code_pointer + 2);
-                            float c = pop_or_value(code_pointer + 3);
-                            float d = pop_or_value(code_pointer + 4);
+                            float a = pop_f1(code_pointer + 1);
+                            float b = pop_f1(code_pointer + 2);
+                            float c = pop_f1(code_pointer + 3);
+                            float d = pop_f1(code_pointer + 4);
                             code_pointer += 4;
-
-                            f4[0] = (int)fp4.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a, b, c, d);
-                            return v1_eval(f4, ref minus, ref vector_size);
+                            f4 = (int)fp4.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a, b, c, d);
+                            return;
                         }
                         break;
 
 
+#if DEVELOPMENT_BUILD || TRACE
                     default:
-#if LOG_ERRORS
-                        Debug.LogError($"function id {id}, with paremetercount {p.parameter_count} is not supported yet");
-#endif
+                        Debug.LogError($"function id {id}, with paremetercount {p.MinParameterCount} is not supported yet");
                         break;
+#endif
                 }
-
+#if DEVELOPMENT_BUILD || TRACE
             }
-#if LOG_ERRORS
+#endif
+
+#if DEVELOPMENT_BUILD || TRACE 
             Debug.LogError($"blast: failed to call function pointer with id: {id}");
 #endif
-            return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-
-            float4 v1_eval(float4 f, ref bool isminus, ref byte vectorsize)
-            {
-                f[0] = math.select(f[0], -f[0], isminus);
-                vectorsize = 1;
-                isminus = false;
-                return f;
-            }
+            f4 = float.NaN;
         }
 
-        #endregion
+#endregion
 
-        #region Function Handlers 
-
-
-
-        float4 get_random_result(ref int code_pointer, ref bool minus, ref byte vector_size, ref float4 f4)
-        {
-            // get vector size from next byte  
-            code_pointer++;
-            byte c = code[code_pointer];
-
-            vector_size = (byte)(c & 0b11);
-            c = (byte)((c & 0b1111_1100) >> 2);
-
-            // for random, c specifies range:
-            // 0 = 0..1  == default
-            // 2 =  2 ops with values after this op    min..max 
-            // 1 = 1 ops   0...max 
-
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case BlastVectorSizes.float1:
-                    switch (c)
-                    {
-                        default:
-                            {
-#if DEVELOPMENT_BUILD
-                                Debug.LogError($"random: range type '{c}' not supported ");
-#endif
-                                minus = false;
-                                return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                            }
-
-                        case 0: f4.x = engine_ptr->random.NextFloat(); break;
-                        case 1: f4.x = engine_ptr->random.NextFloat(pop_or_value(code_pointer + 1)); code_pointer++; break;
-                        case 2: f4.x = engine_ptr->random.NextFloat(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)); code_pointer += 2; break;
-                    }
-                    f4.x = math.select(f4.x, -f4.x, minus);
-                    minus = false;
-                    vector_size = 1;
-                    break;
+#region Function Handlers 
 
 
-                case BlastVectorSizes.float4:
-                case 0:
-                    switch (c)
-                    {
-                        default:
-                            {
-#if DEVELOPMENT_BUILD
-                                Debug.LogError($"random: range type '{c}' not supported ");
-#endif
-                                minus = false;
-                                f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                                return f4;
-                            }
+#region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
 
-                        case 0: f4 = engine_ptr->random.NextFloat4(); break;
-                        case 1: f4 = engine_ptr->random.NextFloat4(pop_or_value(code_pointer + 1)); code_pointer++; break;
-                        case 2: f4 = engine_ptr->random.NextFloat4(pop_or_value(code_pointer + 1), pop_or_value(code_pointer + 2)); code_pointer += 2; break;
-                    }
-                    f4 = math.select(f4, -f4, minus);
-                    minus = false;
-                    vector_size = 4;
-                    break;
-
-                case BlastVectorSizes.float2:
-                case BlastVectorSizes.float3:
-                default:
-                    {
-#if DEVELOPMENT_BUILD
-                        Debug.LogError($"random: vector size '{vector_size}' not supported ");
-#endif
-                        minus = false;
-                        f4 = new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-                        return f4;
-                    }
-            }
-
-            return f4;
-        }
-
-
-
-
-        #region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
-
-        #region get_[min/max/mina/maxa]_result
+#region get_[min/max/mina/maxa]_result
         /// <summary>
         /// get the maximum value of all arguments of any vectorsize 
         /// </summary>
@@ -1953,9 +1884,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
 
-        #region single input same output math functions 
+#region single input same output math functions 
 
         /// <summary>
         /// get absolute value of input
@@ -2774,9 +2705,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
 
-        #region fixed input count math functions
+#region fixed input count math functions
 
         /// <summary>
         /// raise x to power of y 
@@ -2950,9 +2881,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion
+#endregion
 
-        #region fused substract multiply actions
+#region fused substract multiply actions
 
         /// <summary>
         /// fused multiply add 
@@ -3033,9 +2964,9 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #endregion
+#endregion
 
-        #region math utility functions (select, lerp etc) 
+#region math utility functions (select, lerp etc) 
 
         /// <summary>
         /// 3 inputs, first 2 any type, 3rd type equal or scalar bool
@@ -3406,9 +3337,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
 
-        #region mula family 
+#region mula family 
 
 
         /// <summary>
@@ -3870,6 +3801,7 @@ namespace NSS.Blast.Interpretor
                                 break;
                         }
                     }
+                    vector_size = 4; 
                     break;
 
                 default:
@@ -3881,7 +3813,6 @@ namespace NSS.Blast.Interpretor
                     break;
             }
         }
-
 
         /// <summary>
         /// add all inputs together 
@@ -3942,6 +3873,7 @@ namespace NSS.Blast.Interpretor
                             result += pop_f4(code_pointer + i);
                         }
                         code_pointer += c;
+                        vector_size = 4; 
                     }
                     break;
 
@@ -3958,125 +3890,170 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
-
-        #endregion
-
-
-
-
-        float4 get_suba_result(ref int code_pointer, ref bool minus, ref byte vector_size)
+        void get_suba_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             code_pointer = code_pointer + 1;
             byte c = code[code_pointer];
 
-            vector_size = (byte)(c & 0b11);
-            c = (byte)((c & 0b1111_1100) >> 2);
+#if DECODE_44
+            c = BlastInterpretor.decode44in c, ref vector_size);
+#else
+            c = BlastInterpretor.decode62(in c, ref vector_size);
+#endif
 
             switch ((BlastVectorSizes)vector_size)
             {
                 case BlastVectorSizes.float1:
                     {
-                        float f = pop_or_value(code_pointer + 1);
+                        float f = pop_f1(code_pointer + 1);
                         for (int i = 2; i <= c; i++)
                         {
-                            f -= pop_or_value(code_pointer + i);
+                            f -= pop_f1(code_pointer + i);
                         }
                         code_pointer += c;
-                        f = math.select(f, -f, minus);
-                        minus = false;
-                        return f;
+                        f4 = f;
+                        break;
+                    }
+
+                case BlastVectorSizes.float2:
+                    {
+                        float2 f2 = pop_f2(code_pointer + 1);
+                        for (int i = 2; i <= c; i++)
+                        {
+                            f2 -= pop_f2(code_pointer + i);
+                        }
+                        code_pointer += c;
+                        f4 = new float4(f2, 0, 0);
+                        break;
+                    }
+
+                case BlastVectorSizes.float3:
+                    {
+                        float3 f3 = pop_f3(code_pointer + 1);
+                        for (int i = 2; i <= c; i++)
+                        {
+                            f3 -= pop_f3(code_pointer + i);
+                        }
+                        code_pointer += c;
+                        f4 = new float4(f3, 0);
+                        break;
                     }
 
                 case 0:
                 case BlastVectorSizes.float4:
                     {
-                        float4 f4 = pop_or_value_4(code_pointer + 1);
+                        f4 = pop_f4(code_pointer + 1);
                         for (int i = 2; i <= c; i++)
                         {
-                            f4 -= pop_or_value_4(code_pointer + i);
+                            f4 -= pop_f4(code_pointer + i);
                         }
                         code_pointer += c;
-                        f4 = math.select(f4, -f4, minus);
-                        minus = false;
-                        return f4;
+                        vector_size = 4;
+                        break;
                     }
+
                 default:
                     {
 #if DEVELOPMENT_BUILD
                         Debug.LogError($"get_suba_result: vector size '{vector_size}' not allowed");
 #endif
-                        return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-
+                        f4 = float.NaN;
+                        break;
                     }
             }
         }
 
-        float4 get_diva_result(ref int code_pointer, ref bool minus, ref byte vector_size)
+        void get_diva_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             code_pointer = code_pointer + 1;
             byte c = code[code_pointer];
 
-            vector_size = (byte)(c & 0b11);
-            c = (byte)((c & 0b1111_1100) >> 2);
+#if DECODE_44
+            c = BlastInterpretor.decode44(in c, ref vector_size);
+#else
+            c = BlastInterpretor.decode62(in c, ref vector_size);
+#endif
 
             switch ((BlastVectorSizes)vector_size)
             {
                 case BlastVectorSizes.float1:
                     {
-                        float f = pop_or_value(code_pointer + 1);
+                        float f = pop_f1(code_pointer + 1);
                         for (int i = 2; i <= c; i++)
                         {
-                            f /= pop_or_value(code_pointer + i);
+                            f /= pop_f1(code_pointer + i);
                         }
                         code_pointer += c;
-                        f = math.select(f, -f, minus);
-                        minus = false;
-                        return f;
+                        f4 = f;
+                        break;
                     }
+
+                case BlastVectorSizes.float2:
+                    {
+                        float2 f2 = pop_f2(code_pointer + 1);
+                        for (int i = 2; i <= c; i++)
+                        {
+                            f2 /= pop_f2(code_pointer + i);
+                        }
+                        code_pointer += c;
+                        f4 = new float4(f2, 0, 0);
+                        break;
+                    }
+
+                case BlastVectorSizes.float3:
+                    {
+                        float3 f3 = pop_f3(code_pointer + 1);
+                        for (int i = 2; i <= c; i++)
+                        {
+                            f3 /= pop_f3(code_pointer + i);
+                        }
+                        code_pointer += c;
+                        f4 = new float4(f3, 0);
+                        break;
+                    }
+
 
                 case 0:
                 case BlastVectorSizes.float4:
                     {
-                        float4 f4 = pop_or_value_4(code_pointer + 1);
+                        f4 = pop_f4(code_pointer + 1);
                         for (int i = 2; i <= c; i++)
                         {
-                            f4 /= pop_or_value_4(code_pointer + i);
+                            f4 /= pop_f4(code_pointer + i);
                         }
                         code_pointer += c;
-                        f4 = math.select(f4, -f4, minus);
-                        minus = false;
-                        return f4;
+                        vector_size = 4;
+                        break;
                     }
+
                 default:
                     {
 #if DEVELOPMENT_BUILD
                         Debug.LogError($"get_diva_result: vector size '{vector_size}' not allowed");
 #endif
-                        return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
-
+                        f4 = float.NaN;
+                        break;
                     }
             }
         }
 
-
         /// <summary>
-        /// a = any(a b c d)
+        /// a = any(a b c d) 
+        /// 
+        /// todo -> should update this to early out.. maybe compiler does it already on the || check assembly here
+        /// 
         /// </summary>
-        /// <param name="code_pointer"></param>
-        /// <param name="minus"></param>
-        /// <param name="not"></param>
-        /// <param name="vector_size"></param>
-        /// <returns></returns>
-        float4 get_any_result(ref int code_pointer, ref bool minus, ref bool not, ref byte vector_size)
+        void get_any_result(ref int code_pointer, ref byte vector_size, out float4 f)
         {
             code_pointer++;
             byte c = code[code_pointer];
-            float4 f;
 
             //  no way for bytecode optimizor to do this.. 
-            vector_size = (byte)(c & 0b11);
-            c = (byte)((c & 0b111_1100) >> 2);
+#if DECODE_44
+            c = BlastInterpretor.decode44(in c, ref vector_size);
+#else
+            c = BlastInterpretor.decode62(in c, ref vector_size);
+#endif
 
             // this will compile into a jump table (CHECK THIS !!) todo
             switch ((BlastVectorSizes)vector_size)
@@ -4089,78 +4066,146 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD
                                 Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
-                                return 0;
+                                f = float.NaN;
+                                break;
 
                             case 2:
-                                f = math.select(0f, 1f, pop_or_value(code_pointer + 1) != 0 || pop_or_value(code_pointer + 2) != 0);
+                                f = math.select(0f, 1f, pop_f1(code_pointer + 1) != 0 || pop_f1(code_pointer + 2) != 0);
                                 code_pointer += 2;
-                                return f;
+                                break;
 
                             case 3:
-                                f = math.select(0f, 1f,
-                                    pop_or_value(code_pointer + 1) != 0 ||
-                                    pop_or_value(code_pointer + 2) != 0 ||
-                                    pop_or_value(code_pointer + 3) != 0);
+                                f = math.select(0f, 1f, pop_f1(code_pointer + 1) != 0 || pop_f1(code_pointer + 2) != 0 || pop_f1(code_pointer + 3) != 0);
                                 code_pointer += 3;
-                                return f;
+                                break;
 
                             case 4:
-                                f = math.select(0f, 1f,
-                                    pop_or_value(code_pointer + 1) != 0 ||
-                                    pop_or_value(code_pointer + 2) != 0 ||
-                                    pop_or_value(code_pointer + 3) != 0 ||
-                                    pop_or_value(code_pointer + 4) != 0);
+                                f = math.select(0f, 1f, pop_f1(code_pointer + 1) != 0 || pop_f1(code_pointer + 2) != 0 || pop_or_value(code_pointer + 3) != 0 || pop_or_value(code_pointer + 4) != 0);
                                 code_pointer += 4;
-                                return f;
+                                break;
 
                             case 5:
-                                f = math.select(0f, 1f,
-                                    pop_or_value(code_pointer + 1) != 0 ||
-                                    pop_or_value(code_pointer + 2) != 0 ||
-                                    pop_or_value(code_pointer + 3) != 0 ||
-                                    pop_or_value(code_pointer + 4) != 0 ||
-                                    pop_or_value(code_pointer + 5) != 0);
+                                f = math.select(0f, 1f, pop_f1(code_pointer + 1) != 0 || pop_f1(code_pointer + 2) != 0 || pop_f1(code_pointer + 3) != 0 || pop_f1(code_pointer + 4) != 0 || pop_f1(code_pointer + 5) != 0);
                                 code_pointer += 5;
-                                return f;
+                                break;
 
                             case 6:
-                                f = math.select(0f, 1f,
-                                    pop_or_value(code_pointer + 1) != 0 ||
-                                    pop_or_value(code_pointer + 2) != 0 ||
-                                    pop_or_value(code_pointer + 3) != 0 ||
-                                    pop_or_value(code_pointer + 4) != 0 ||
-                                    pop_or_value(code_pointer + 5) != 0 ||
-                                    pop_or_value(code_pointer + 6) != 0);
+                                f = math.select(0f, 1f, pop_f1(code_pointer + 1) != 0 || pop_f1(code_pointer + 2) != 0 || pop_f1(code_pointer + 3) != 0 || pop_f1(code_pointer + 4) != 0 || pop_f1(code_pointer + 5) != 0 || pop_f1(code_pointer + 6) != 0);
                                 code_pointer += 6;
-                                return f;
+                                break;
 
                             case 7:
-                                f = math.select(0f, 1f,
-                                    pop_or_value(code_pointer + 1) != 0 ||
-                                    pop_or_value(code_pointer + 2) != 0 ||
-                                    pop_or_value(code_pointer + 3) != 0 ||
-                                    pop_or_value(code_pointer + 4) != 0 ||
-                                    pop_or_value(code_pointer + 5) != 0 ||
-                                    pop_or_value(code_pointer + 6) != 0 ||
-                                    pop_or_value(code_pointer + 7) != 0);
+                                f = math.select(0f, 1f, pop_f1(code_pointer + 1) != 0 || pop_f1(code_pointer + 2) != 0 || pop_f1(code_pointer + 3) != 0 || pop_f1(code_pointer + 4) != 0 || pop_f1(code_pointer + 5) != 0 || pop_f1(code_pointer + 6) != 0 || pop_f1(code_pointer + 7) != 0);
                                 code_pointer += 7;
-                                return f;
+                                break;
 
                             case 8:
-                                f = math.select(0f, 1f,
-                                    pop_or_value(code_pointer + 1) != 0 ||
-                                    pop_or_value(code_pointer + 2) != 0 ||
-                                    pop_or_value(code_pointer + 3) != 0 ||
-                                    pop_or_value(code_pointer + 4) != 0 ||
-                                    pop_or_value(code_pointer + 5) != 0 ||
-                                    pop_or_value(code_pointer + 6) != 0 ||
-                                    pop_or_value(code_pointer + 7) != 0 ||
-                                    pop_or_value(code_pointer + 8) != 0);
+                                f = math.select(0f, 1f, pop_f1(code_pointer + 1) != 0 || pop_f1(code_pointer + 2) != 0 || pop_f1(code_pointer + 3) != 0 || pop_f1(code_pointer + 4) != 0 || pop_f1(code_pointer + 5) != 0 || pop_f1(code_pointer + 6) != 0 || pop_f1(code_pointer + 7) != 0 || pop_f1(code_pointer + 8) != 0);
                                 code_pointer += 8;
-                                return f;
+                                break;
                         }
+                        break; 
                     }
 
+                case BlastVectorSizes.float2:
+                    {
+                        switch (c)
+                        {
+                            default:
+#if DEVELOPMENT_BUILD
+                                Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+#endif
+                                f = float.NaN;
+                                break;
+
+                            case 2:
+                                f = math.select(0f, 1f, math.any(pop_f2(code_pointer + 1)) || math.any(pop_f2(code_pointer + 2)));
+                                code_pointer += 2;
+                                break;
+
+                            case 3:
+                                f = math.select(0f, 1f, math.any(pop_f2(code_pointer + 1)) || math.any(pop_f2(code_pointer + 2)) || math.any(pop_f2(code_pointer + 3)));
+                                code_pointer += 3;
+                                break;
+
+                            case 4:
+                                f = math.select(0f, 1f, math.any(pop_f2(code_pointer + 1)) || math.any(pop_f2(code_pointer + 2)) || math.any(pop_f2(code_pointer + 3)) || math.any(pop_f2(code_pointer + 4)));
+                                code_pointer += 4;
+                                break;
+
+                            case 5:
+                                f = math.select(0f, 1f, math.any(pop_f2(code_pointer + 1)) || math.any(pop_f2(code_pointer + 2)) || math.any(pop_f2(code_pointer + 3)) || math.any(pop_f2(code_pointer + 4)) || math.any(pop_f2(code_pointer + 5)));
+                                code_pointer += 5;
+                                break;
+
+                            case 6:
+                                f = math.select(0f, 1f, math.any(pop_f2(code_pointer + 1)) || math.any(pop_f2(code_pointer + 2)) || math.any(pop_f2(code_pointer + 3)) || math.any(pop_f2(code_pointer + 4)) || math.any(pop_f2(code_pointer + 5)) || math.any(pop_f2(code_pointer + 6)));
+                                code_pointer += 6;
+                                break;
+
+                            case 7:
+                                f = math.select(0f, 1f, math.any(pop_f2(code_pointer + 1)) || math.any(pop_f2(code_pointer + 2)) || math.any(pop_f2(code_pointer + 3)) || math.any(pop_f2(code_pointer + 4)) || math.any(pop_f2(code_pointer + 5)) || math.any(pop_f2(code_pointer + 6)) || math.any(pop_f2(code_pointer + 7)));
+                                code_pointer += 7;
+                                break;
+
+                            case 8:
+                                f = math.select(0f, 1f, math.any(pop_f2(code_pointer + 1)) || math.any(pop_f2(code_pointer + 2)) || math.any(pop_f2(code_pointer + 3)) || math.any(pop_f2(code_pointer + 4)) || math.any(pop_f2(code_pointer + 5)) || math.any(pop_f2(code_pointer + 6)) || math.any(pop_f2(code_pointer + 7)) || math.any(pop_f2(code_pointer + 8)));
+                                code_pointer += 8;
+                                break;
+                        }
+                        break;
+                    }
+
+                case BlastVectorSizes.float3:
+                    {
+                        switch (c)
+                        {
+                            default:
+#if DEVELOPMENT_BUILD
+                                Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+#endif
+                                f = float.NaN;
+                                break;
+
+                            case 2:
+                                f = math.select(0f, 1f, math.any(pop_f3(code_pointer + 1)) || math.any(pop_f3(code_pointer + 2)));
+                                code_pointer += 2;
+                                break;
+
+                            case 3:
+                                f = math.select(0f, 1f, math.any(pop_f3(code_pointer + 1)) || math.any(pop_f3(code_pointer + 2)) || math.any(pop_f3(code_pointer + 3)));
+                                code_pointer += 3;
+                                break;
+
+                            case 4:
+                                f = math.select(0f, 1f, math.any(pop_f3(code_pointer + 1)) || math.any(pop_f3(code_pointer + 2)) || math.any(pop_f3(code_pointer + 3)) || math.any(pop_f3(code_pointer + 4)));
+                                code_pointer += 4;
+                                break;
+
+                            case 5:
+                                f = math.select(0f, 1f, math.any(pop_f3(code_pointer + 1)) || math.any(pop_f3(code_pointer + 2)) || math.any(pop_f3(code_pointer + 3)) || math.any(pop_f3(code_pointer + 4)) || math.any(pop_f3(code_pointer + 5)));
+                                code_pointer += 5;
+                                break;
+
+                            case 6:
+                                f = math.select(0f, 1f, math.any(pop_f3(code_pointer + 1)) || math.any(pop_f3(code_pointer + 2)) || math.any(pop_f3(code_pointer + 3)) || math.any(pop_f3(code_pointer + 4)) || math.any(pop_f3(code_pointer + 5)) || math.any(pop_f3(code_pointer + 6)));
+                                code_pointer += 6;
+                                break;
+
+                            case 7:
+                                f = math.select(0f, 1f, math.any(pop_f3(code_pointer + 1)) || math.any(pop_f3(code_pointer + 2)) || math.any(pop_f3(code_pointer + 3)) || math.any(pop_f3(code_pointer + 4)) || math.any(pop_f3(code_pointer + 5)) || math.any(pop_f3(code_pointer + 6)) || math.any(pop_f3(code_pointer + 7)));
+                                code_pointer += 7;
+                                break;
+
+                            case 8:
+                                f = math.select(0f, 1f, math.any(pop_f3(code_pointer + 1)) || math.any(pop_f3(code_pointer + 2)) || math.any(pop_f3(code_pointer + 3)) || math.any(pop_f3(code_pointer + 4)) || math.any(pop_f3(code_pointer + 5)) || math.any(pop_f3(code_pointer + 6)) || math.any(pop_f3(code_pointer + 7)) || math.any(pop_f3(code_pointer + 8)));
+                                code_pointer += 8;
+                                break;
+                        }
+                        break;
+                    }
+
+                case 0:
                 case BlastVectorSizes.float4:
                     {
                         switch (c)
@@ -4169,78 +4214,46 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD
                                 Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
-                                return 0;
+                                f = float.NaN;
+                                break;
 
                             case 2:
-                                f.x = math.select(0f, 1f,
-                                    math.any(pop_or_value_4(code_pointer + 1)) ||
-                                    math.any(pop_or_value_4(code_pointer + 2)));
+                                f = math.select(0f, 1f, math.any(pop_f4(code_pointer + 1)) || math.any(pop_f4(code_pointer + 2)));
                                 code_pointer += 2;
-                                return f.x;
+                                break;
 
                             case 3:
-                                f.x = math.select(0f, 1f,
-                                    math.any(pop_or_value_4(code_pointer + 1)) ||
-                                    math.any(pop_or_value_4(code_pointer + 2)) ||
-                                    math.any(pop_or_value_4(code_pointer + 3)));
+                                f = math.select(0f, 1f, math.any(pop_f4(code_pointer + 1)) || math.any(pop_f4(code_pointer + 2)) || math.any(pop_f4(code_pointer + 3)));
                                 code_pointer += 3;
-                                return f.x;
+                                break;
 
                             case 4:
-                                f.x = math.select(0f, 1f,
-                                    math.any(pop_or_value_4(code_pointer + 1)) ||
-                                    math.any(pop_or_value_4(code_pointer + 2)) ||
-                                    math.any(pop_or_value_4(code_pointer + 3)) ||
-                                    math.any(pop_or_value_4(code_pointer + 4)));
+                                f = math.select(0f, 1f, math.any(pop_f4(code_pointer + 1)) || math.any(pop_f4(code_pointer + 2)) || math.any(pop_f4(code_pointer + 3)) || math.any(pop_f4(code_pointer + 4)));
                                 code_pointer += 4;
-                                return f.x;
+                                break;
 
                             case 5:
-                                f.x = math.select(0f, 1f,
-                                    math.any(pop_or_value_4(code_pointer + 1)) ||
-                                    math.any(pop_or_value_4(code_pointer + 2)) ||
-                                    math.any(pop_or_value_4(code_pointer + 3)) ||
-                                    math.any(pop_or_value_4(code_pointer + 4)) ||
-                                    math.any(pop_or_value_4(code_pointer + 5)));
+                                f = math.select(0f, 1f, math.any(pop_f4(code_pointer + 1)) || math.any(pop_f4(code_pointer + 2)) || math.any(pop_f4(code_pointer + 3)) || math.any(pop_f4(code_pointer + 4)) || math.any(pop_f4(code_pointer + 5)));
                                 code_pointer += 5;
-                                return f.x;
+                                break;
 
                             case 6:
-                                f = math.select(0f, 1f,
-                                    math.any(pop_or_value_4(code_pointer + 1)) ||
-                                    math.any(pop_or_value_4(code_pointer + 2)) ||
-                                    math.any(pop_or_value_4(code_pointer + 3)) ||
-                                    math.any(pop_or_value_4(code_pointer + 4)) ||
-                                    math.any(pop_or_value_4(code_pointer + 5)) ||
-                                    math.any(pop_or_value_4(code_pointer + 6)));
+                                f = math.select(0f, 1f, math.any(pop_f4(code_pointer + 1)) || math.any(pop_f4(code_pointer + 2)) || math.any(pop_f4(code_pointer + 3)) || math.any(pop_f4(code_pointer + 4)) || math.any(pop_f4(code_pointer + 5)) || math.any(pop_f4(code_pointer + 6)));
                                 code_pointer += 6;
-                                return f;
+                                break;
 
                             case 7:
-                                f = math.select(0f, 1f,
-                                    math.any(pop_or_value_4(code_pointer + 1)) ||
-                                    math.any(pop_or_value_4(code_pointer + 2)) ||
-                                    math.any(pop_or_value_4(code_pointer + 3)) ||
-                                    math.any(pop_or_value_4(code_pointer + 4)) ||
-                                    math.any(pop_or_value_4(code_pointer + 5)) ||
-                                    math.any(pop_or_value_4(code_pointer + 6)) ||
-                                    math.any(pop_or_value_4(code_pointer + 7)));
+                                f = math.select(0f, 1f, math.any(pop_f4(code_pointer + 1)) || math.any(pop_f4(code_pointer + 2)) || math.any(pop_f4(code_pointer + 3)) || math.any(pop_f4(code_pointer + 4)) || math.any(pop_f4(code_pointer + 5)) || math.any(pop_f4(code_pointer + 6)) || math.any(pop_f4(code_pointer + 7)));
                                 code_pointer += 7;
-                                return f;
+                                break;
 
                             case 8:
-                                f = math.select(0f, 1f,
-                                    math.any(pop_or_value_4(code_pointer + 1)) ||
-                                    math.any(pop_or_value_4(code_pointer + 2)) ||
-                                    math.any(pop_or_value_4(code_pointer + 3)) ||
-                                    math.any(pop_or_value_4(code_pointer + 4)) ||
-                                    math.any(pop_or_value_4(code_pointer + 5)) ||
-                                    math.any(pop_or_value_4(code_pointer + 6)) ||
-                                    math.any(pop_or_value_4(code_pointer + 7)) ||
-                                    math.any(pop_or_value_4(code_pointer + 8)));
+                                f = math.select(0f, 1f, math.any(pop_f4(code_pointer + 1)) || math.any(pop_f4(code_pointer + 2)) || math.any(pop_f4(code_pointer + 3)) || math.any(pop_f4(code_pointer + 4)) || math.any(pop_f4(code_pointer + 5)) || math.any(pop_f4(code_pointer + 6)) || math.any(pop_f4(code_pointer + 7)) || math.any(pop_f4(code_pointer + 8)));
                                 code_pointer += 8;
-                                return f;
+                                break;
                         }
+                        vector_size = 4;
+                        break;
                     }
 
                 default:
@@ -4248,289 +4261,489 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD
                         Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
 #endif
-                        return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
+                        f = float.NaN;
+                        break;
                     }
             }
         }
 
         /// <summary>
-        /// convert all calls to all to !any( == 0) 
         /// !any() is a lot cheaper then all() because we can drop out early and may not need to lookup every value /// </summary>
-        /// <param name="code_pointer"></param>
-        /// <param name="minus"></param>
-        /// <param name="not"></param>
-        /// <param name="vector_size"></param>
         /// <returns></returns>
-        float4 get_all_result(ref int code_pointer, ref bool minus, ref bool not, ref byte vector_size)
+        void get_all_result(ref int code_pointer, ref byte vector_size, out float4 f)
         {
             code_pointer++;
             byte c = code[code_pointer];
 
-            vector_size = (byte)(c & 0b11);
-            c = (byte)((c & 0b111_1100) >> 2);
+#if DECODE_44
+            c = BlastInterpretor.decode44(in c, ref vector_size);
+#else
+            c = BlastInterpretor.decode62(in c, ref vector_size);
+#endif
 
-            float4 f;
+#if DEVELOPMENT_BUILD
+            if(c < 1) 
+            {
+                Debug.LogError($"get_any_result: parameter count '{c}' not supported");
+                f = float.NaN;
+                return;
+            }
+#endif
+
             switch ((BlastVectorSizes)vector_size)
             {
-                case BlastVectorSizes.float1:
-                    {
-                        switch (c)
-                        {
-                            default:
-#if DEVELOPMENT_BUILD
-                                Debug.LogError($"get_all_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
-#endif
-                                return 0;
-
-                            case 2:
-                                f = math.select(0f, 1f, pop_or_value(code_pointer + 1) != 0 && pop_or_value(code_pointer + 2) != 0);
-                                code_pointer += 2;
-                                return f;
-
-                            case 3:
-                                f = math.select(0f, 1f, !(
-                                    pop_or_value(code_pointer + 1) == 0 ||
-                                    pop_or_value(code_pointer + 2) == 0 ||
-                                    pop_or_value(code_pointer + 3) == 0));
-                                code_pointer += 3;
-                                return f;
-
-                            case 4:
-                                f = math.select(0f, 1f, !(
-                                    pop_or_value(code_pointer + 1) == 0 ||
-                                    pop_or_value(code_pointer + 2) == 0 ||
-                                    pop_or_value(code_pointer + 3) == 0 ||
-                                    pop_or_value(code_pointer + 4) == 0));
-                                code_pointer += 4;
-                                return f;
-
-                            case 5:
-                                f = math.select(0f, 1f, !(
-                                    pop_or_value(code_pointer + 1) == 0 ||
-                                    pop_or_value(code_pointer + 2) == 0 ||
-                                    pop_or_value(code_pointer + 3) == 0 ||
-                                    pop_or_value(code_pointer + 4) == 0 ||
-                                    pop_or_value(code_pointer + 5) == 0));
-                                code_pointer += 5;
-                                return f;
-
-                            case 6:
-                                f = math.select(0f, 1f, !(
-                                    pop_or_value(code_pointer + 1) == 0 ||
-                                    pop_or_value(code_pointer + 2) == 0 ||
-                                    pop_or_value(code_pointer + 3) == 0 ||
-                                    pop_or_value(code_pointer + 4) == 0 ||
-                                    pop_or_value(code_pointer + 5) == 0 ||
-                                    pop_or_value(code_pointer + 6) == 0));
-                                code_pointer += 6;
-                                return f;
-
-                            case 7:
-                                f = math.select(0f, 1f, !(
-                                    pop_or_value(code_pointer + 1) == 0 ||
-                                    pop_or_value(code_pointer + 2) == 0 ||
-                                    pop_or_value(code_pointer + 3) == 0 ||
-                                    pop_or_value(code_pointer + 4) == 0 ||
-                                    pop_or_value(code_pointer + 5) == 0 ||
-                                    pop_or_value(code_pointer + 6) == 0 ||
-                                    pop_or_value(code_pointer + 7) == 0));
-                                code_pointer += 7;
-                                return f;
-
-                            case 8:
-                                f = math.select(0f, 1f, !(
-                                    pop_or_value(code_pointer + 1) == 0 ||
-                                    pop_or_value(code_pointer + 2) == 0 ||
-                                    pop_or_value(code_pointer + 3) == 0 ||
-                                    pop_or_value(code_pointer + 4) == 0 ||
-                                    pop_or_value(code_pointer + 5) == 0 ||
-                                    pop_or_value(code_pointer + 6) == 0 ||
-                                    pop_or_value(code_pointer + 7) == 0 ||
-                                    pop_or_value(code_pointer + 8) == 0));
-                                code_pointer += 8;
-                                return f;
-                        }
-                    }
-
-                case BlastVectorSizes.float4:
-                    {
-                        switch (c)
-                        {
-                            default:
-#if DEVELOPMENT_BUILD
-                                Debug.LogError($"get_all_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
-#endif
-                                return 0;
-
-                            case 2:
-                                f = math.select(0f, 1f, !(
-                                    math.all(pop_or_value_4(code_pointer + 1)) ||
-                                    math.all(pop_or_value_4(code_pointer + 2) == 0)));
-                                code_pointer += 2;
-                                return f;
-
-                            case 3:
-                                f = math.select(0f, 1f, !(
-                                    math.all(pop_or_value_4(code_pointer + 1)) ||
-                                    math.all(pop_or_value_4(code_pointer + 2)) ||
-                                    math.all(pop_or_value_4(code_pointer + 3) == 0)));
-                                code_pointer += 3;
-                                return f;
-
-                            case 4:
-                                f = math.select(0f, 1f, !(
-                                    math.all(pop_or_value_4(code_pointer + 1)) ||
-                                    math.all(pop_or_value_4(code_pointer + 2)) ||
-                                    math.all(pop_or_value_4(code_pointer + 3)) ||
-                                    math.all(pop_or_value_4(code_pointer + 4) == 0)));
-                                code_pointer += 4;
-                                return f;
-
-                            case 5:
-                                f = math.select(0f, 1f, !(
-                                    math.all(pop_or_value_4(code_pointer + 1)) ||
-                                    math.all(pop_or_value_4(code_pointer + 2)) ||
-                                    math.all(pop_or_value_4(code_pointer + 3)) ||
-                                    math.all(pop_or_value_4(code_pointer + 4)) ||
-                                    math.all(pop_or_value_4(code_pointer + 5) == 0)));
-                                code_pointer += 5;
-                                return f;
-
-                            case 6:
-                                f = math.select(0f, 1f, !(
-                                    math.all(pop_or_value_4(code_pointer + 1)) ||
-                                    math.all(pop_or_value_4(code_pointer + 2)) ||
-                                    math.all(pop_or_value_4(code_pointer + 3)) ||
-                                    math.all(pop_or_value_4(code_pointer + 4)) ||
-                                    math.all(pop_or_value_4(code_pointer + 5)) ||
-                                    math.all(pop_or_value_4(code_pointer + 6) == 0)));
-                                code_pointer += 6;
-                                return f;
-
-                            case 7:
-                                f = math.select(0f, 1f, !(
-                                    math.all(pop_or_value_4(code_pointer + 1)) ||
-                                    math.all(pop_or_value_4(code_pointer + 2)) ||
-                                    math.all(pop_or_value_4(code_pointer + 3)) ||
-                                    math.all(pop_or_value_4(code_pointer + 4)) ||
-                                    math.all(pop_or_value_4(code_pointer + 5)) ||
-                                    math.all(pop_or_value_4(code_pointer + 6)) ||
-                                    math.all(pop_or_value_4(code_pointer + 7) == 0)));
-                                code_pointer += 7;
-                                return f;
-
-                            case 8:
-                                f = math.select(0f, 1f, !(
-                                    math.all(pop_or_value_4(code_pointer + 1)) ||
-                                    math.all(pop_or_value_4(code_pointer + 2)) ||
-                                    math.all(pop_or_value_4(code_pointer + 3)) ||
-                                    math.all(pop_or_value_4(code_pointer + 4)) ||
-                                    math.all(pop_or_value_4(code_pointer + 5)) ||
-                                    math.all(pop_or_value_4(code_pointer + 6)) ||
-                                    math.all(pop_or_value_4(code_pointer + 7)) ||
-                                    math.all(pop_or_value_4(code_pointer + 8) == 0)));
-                                code_pointer += 8;
-                                return f;
-                        }
-                    }
-
                 default:
                     {
 #if DEVELOPMENT_BUILD
                         Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
 #endif
-                        return new float4(float.NaN, float.NaN, float.NaN, float.NaN);
+                        f = float.NaN;
+                        break;
+                    }
+
+                case BlastVectorSizes.float1:
+                    {
+                        float x = pop_f1(code_pointer + 1);
+
+                        // we can stop reading stuff if x == 0 as all will never be true 
+                        for (int i = 2; i <= c && x != 0; i++)
+                        {
+                            x = pop_f1(code_pointer + i);
+                        }
+                        f = math.select(0, 1, x != 0);
+                        break;
+                    }
+
+                case BlastVectorSizes.float2:
+                    {
+                        float2 xx = pop_f2(code_pointer + 1);
+                        for (int i = 2; i <= c && math.all(xx); i++)
+                        {
+                            xx = pop_f2(code_pointer + 1);
+                        }
+                        f = math.select(0, 1, math.all(xx));
+                        break;
+                    }
+
+                case BlastVectorSizes.float3:
+                    {
+                        float3 xxx = pop_f3(code_pointer + 1);
+                        for (int i = 2; i <= c && math.all(xxx); i++)
+                        {
+                            xxx = pop_f3(code_pointer + 1);
+                        }
+                        f = math.select(0, 1, math.all(xxx));
+                        break;
+                    }
+
+                case 0:
+                case BlastVectorSizes.float4:
+                    {
+                        f = pop_f4(code_pointer + 1);
+                        for (int i = 2; i <= c && math.all(f); i++)
+                        {
+                            f = pop_f4(code_pointer + 1);
+                        }
+                        f = math.select(0, 1, math.all(f));
+                        vector_size = 4; 
+                        break;
+                    }
+            }
+            code_pointer += c;
+        }
+
+
+#endregion
+
+#region random
+
+        /// <summary>
+        /// 
+        /// </summary>
+        void get_random_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            // get vector size from next byte  
+            code_pointer++;
+            byte c = code[code_pointer];
+
+#if DECODE_44
+            c = BlastInterpretor.decode44in c, ref vector_size);
+#else
+            c = BlastInterpretor.decode62(in c, ref vector_size);
+#endif
+
+            // for random, c specifies range:
+            // 0 = 0..1  == default
+            // 2 =  2 ops with values after this op    min..max 
+            // 1 = 1 ops   0...max 
+
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case BlastVectorSizes.float1:
+                    switch (c)
+                    {
+                        default:
+                            {
+#if DEVELOPMENT_BUILD
+                                Debug.LogError($"random: range type '{c}' not supported ");
+#endif
+                                f4 = float.NaN;
+                                break; 
+                            }
+
+                        case 0: f4 = engine_ptr->random.NextFloat(); break;
+                        case 1: f4 = engine_ptr->random.NextFloat(pop_f1(code_pointer + 1)); code_pointer++; break;
+                        case 2: f4 = engine_ptr->random.NextFloat(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)); code_pointer += 2; break;
+                    }
+                    vector_size = 1;
+                    break;
+
+                case BlastVectorSizes.float2:
+                    switch (c)
+                    {
+                        default:
+                            {
+#if DEVELOPMENT_BUILD
+                                Debug.LogError($"random: range type '{c}' not supported ");
+#endif
+                                f4 = float.NaN;
+                                break;
+                            }
+
+                        case 0: f4 = new float4(engine_ptr->random.NextFloat2(), 0, 0); break;
+                        case 1: f4 = new float4(engine_ptr->random.NextFloat2(pop_f2(code_pointer + 1)), 0, 0); code_pointer++; break;
+                        case 2: f4 = new float4(engine_ptr->random.NextFloat2(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), 0, 0); code_pointer += 2; break;
+                    }
+                    vector_size = 2;
+                    break;
+
+
+                case BlastVectorSizes.float3:
+                    switch (c)
+                    {
+                        default:
+                            {
+#if DEVELOPMENT_BUILD
+                                Debug.LogError($"random: range type '{c}' not supported ");
+#endif
+                                f4 = float.NaN;
+                                break;
+                            }
+
+                        case 0: f4 = new float4(engine_ptr->random.NextFloat3(), 0); break;
+                        case 1: f4 = new float4(engine_ptr->random.NextFloat3(pop_f3(code_pointer + 1)), 0); code_pointer++; break;
+                        case 2: f4 = new float4(engine_ptr->random.NextFloat3(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), 0); code_pointer += 2; break;
+                    }
+                    vector_size = 3;
+                    break;
+
+                case BlastVectorSizes.float4:
+                case 0:
+                    switch (c)
+                    {
+                        default:
+                            {
+#if DEVELOPMENT_BUILD
+                                Debug.LogError($"random: range type '{c}' not supported ");
+#endif
+                                f4 = float.NaN;
+                                break;
+                            }
+
+                        case 0: f4 = engine_ptr->random.NextFloat4(); break;
+                        case 1: f4 = engine_ptr->random.NextFloat4(pop_f4(code_pointer + 1)); code_pointer++; break;
+                        case 2: f4 = engine_ptr->random.NextFloat4(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)); code_pointer += 2; break;
+                    }
+                    vector_size = 4;
+                    break;
+
+                default:
+                    {
+#if DEVELOPMENT_BUILD
+                        Debug.LogError($"random: vector size '{vector_size}' not supported ");
+#endif
+                        f4 = float.NaN;
+                        break; 
+                    }
+            }
+        }
+
+
+#endregion
+
+#endregion
+#endregion
+
+#region Push[cfv]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void pushc(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
+        {
+            f4_register = get_compound_result(ref code_pointer, ref vector_size, false);
+
+            switch (vector_size)
+            {
+                case 1: push(f4_register.x); break;
+                case 2: push(f4_register.xy); break;
+                case 3: push(f4_register.xyz); break;
+                case 4: push(f4_register.xyzw); break;
+#if DEVELOPMENT_BUILD
+                default:
+                    Debug.LogError("blastscript.interpretor.pushc error: variable vector size not yet supported on stack push");
+                    break;
+#endif
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void push(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
+        {
+            if (code[code_pointer] == (byte)blast_operation.begin)
+            {
+                code_pointer++;
+
+                // push the vector result of a compound 
+                f4_register = get_compound_result(ref code_pointer, ref vector_size);
+                switch (vector_size)
+                {
+                    case 1:
+                        push(f4_register.x);
+                        break;
+                    case 2:
+                        push(f4_register.xy);
+                        break;
+                    case 3:
+                        push(f4_register.xyz);
+                        break;
+                    case 4:
+                        push(f4_register);
+                        break;
+#if DEVELOPMENT_BUILD
+                    default:
+                        Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push of compound");
+                        break;
+#endif
+                }
+                // code_pointer should index after compound now
+            }
+            else
+            {
+                // else push 1 float of data
+                float* fdata = (float*)data;
+                push(fdata[code[code_pointer++] - opt_id]);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void pushv(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
+        {
+            byte param_count = code[code_pointer++];
+            vector_size = (byte)(param_count & 0b00001111); // vectorsize == lower 4 
+            param_count = (byte)((param_count & 0b11110000) >> 4);  // param_count == upper 4 
+
+            if (param_count == 1 && vector_size != param_count)
+            {
+                // push vector sourced from vector parameter (this is a wierd thing to do but ok.. i have a test with it so it should work)
+                switch (vector_size)
+                {
+                    case 1: push(pop_f1(code_pointer)); break;
+                    case 2: push(pop_f2(code_pointer)); break;
+                    case 3: push(pop_f3(code_pointer)); break;
+                    case 4:
+                    case 0: push(pop_f4(code_pointer)); break;
+#if DEVELOPMENT_BUILD
+                    default:
+                        Debug.LogError($"blast.interpretor.pushv: unsupported vectorsize {vector_size} in parameter at codepointer {code_pointer}");
+                        //                        return (int)BlastError.error_pushv_vector_size_not_supported;
+                        break;
+#endif
+                }
+                code_pointer += 1;
+            }
+            else
+            {
+                if (param_count == 1)
+                {
+                    switch (vector_size)
+                    {
+                        case 1:
+                            push(pop_f1(code_pointer));
+                            code_pointer++;
+                            break;
+                        case 2:
+                            push(pop_f2(code_pointer));
+                            code_pointer++;
+                            break;
+                        case 3:
+                            push(pop_f3(code_pointer));
+                            code_pointer++;
+                            break;
+                        case 4:
+                            push(pop_f4(code_pointer));
+                            code_pointer++;
+                            break;
+#if DEVELOPMENT_BUILD
+                        default:
+                            Debug.LogError($"burstscript.interpretor error: vectorsize {vector_size} not yet supported on stack push");
+                            break;
+#endif
+                            // return (int)BlastError.error_vector_size_not_supported;
+                    }
+                }
+                else
+                {
+#if DEVELOPMENT_BUILD
+                    if (param_count != vector_size)
+                    {
+                        Debug.LogError($"burstscript.interpretor error: codepointer {code_pointer}  pushv => param_count > 1 && vector_size != param_count, this is not allowed. Vectorsize: {vector_size}, Paramcount: {param_count}");
+                        // return (int)BlastError.error_unsupported_operation;
+                    }
+#endif
+                    // param_count == vector_size and vector_size > 1, compiler enforces it so we should not check it in release 
+                    // this means that vector is build from multiple data points
+                    switch (vector_size)
+                    {
+                        case 1:
+                            push(pop_f1(code_pointer));
+                            code_pointer += 1;
+                            break;
+                        case 2:
+                            push(new float2(pop_f1(code_pointer), pop_f1(code_pointer + 1)));
+                            code_pointer += 2;
+                            break;
+                        case 3:
+                            push(new float3(pop_f1(code_pointer), pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)));
+                            code_pointer += 3;
+                            break;
+                        case 4:
+                            push(new float4(pop_f1(code_pointer), pop_f1(code_pointer + 1), pop_f1(code_pointer + 2), pop_f1(code_pointer + 3)));
+                            code_pointer += 4;
+                            break;
+                    }
+                    // we could handle the case of different sized vectors, pushing them into 1 of vectorsize...
+                    // - currently the compiler wont do this and we catch this as an error in debug builds some lines back
+                }
+            }
+        }
+
+#endregion
+
+
+#region ByteCode Execution
+
+
+
+
+        /// <summary>
+        /// get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
+        /// although external calls should be directly called when possible
+        /// </summary>
+        void get_function_result(ref int code_pointer, ref byte vector_size, out float4 f4_result)
+        {
+            //
+            //  THIS IS A COPY OF THE CODE IN GET_COMPOUND, SHOULD TEST IF THE FUNCTION CALL IN COMPOUND EVEN MATTERS ANYMORE.. 
+            //  due to all optimizing and flattening i guess there be few compounds calling functions and when
+            //  they do it not a real problem to have 1 extra indirection 
+            //
+
+            byte op = code[code_pointer];
+
+            switch ((blast_operation)op)
+            {
+                // math functions 
+                case blast_operation.abs: get_abs_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.mina: get_mina_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.max: get_max_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.min: get_min_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+                // math utils 
+                case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+                // fma and friends 
+                case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+                // mul|a family
+                case blast_operation.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.adda: get_adda_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.suba: get_suba_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.diva: get_diva_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+                // random|seed
+                case blast_operation.random: get_random_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.seed: 
+                    f4_result = pop_f1(++code_pointer); 
+                    engine_ptr->Seed(math.asuint(f4_result.x)); 
+                    break;
+                
+                // and|all
+                case blast_operation.all: get_all_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.any: get_any_result(ref code_pointer, ref vector_size, out f4_result); break;
+
+
+                // extended function ops  
+                case blast_operation.ex_op:
+
+                    code_pointer++;
+                    extended_blast_operation exop = (extended_blast_operation)code[code_pointer];
+
+                    if (exop == extended_blast_operation.call)
+                    {
+                        // call external function 
+                        CallExternalFunction(ref code_pointer, ref vector_size, out f4_result);
+                    }
+                    else
+                    {
+                        switch (exop)
+                        {
+                            case extended_blast_operation.logn: get_log_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.log10: get_log10_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.exp10: get_exp10_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.cross: get_cross_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.exp: get_exp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.dot: get_dot_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.log2: get_log2_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            default:
+#if DEVELOPMENT_BUILD
+                                Debug.LogError($"get_function_result: codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
+#endif
+                                f4_result = float.NaN;
+                                break;
+                        }
+                    }
+                    break;
+
+                default:
+                    {
+#if DEVELOPMENT_BUILD
+                        Debug.LogError($"get_function_result: codepointer: {code_pointer} => {code[code_pointer]}, function operation {op} not handled");
+#endif
+                        // undefined results when calling undefined functions 
+                        f4_result = float.NaN;
+                        break;
                     }
             }
 
         }
-
-
-
-
-        #endregion
-
-        #region ByteCode Execution
-
-
-    /*    float4 get_function_result(ref int code_pointer, ref byte vector_size, out float4 f4_result)
-        {
-            while (code_pointer < package.CodeSize)
-            {
-                byte op = code[code_pointer];
-
-                switch ((blast_operation)op)
-                {
-                    // math functions 
-                    case blast_operation.abs: get_abs_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.mina: get_mina_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.max: get_max_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.min: get_min_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
-
-                    // math utils 
-                    case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                    case blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-
-                    // fma and friends 
-                    case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
-
-                    // mula family
-                    case blast_operation.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); break;
-
-
-#pragma warning disable CS1587 // XML comment is not placed on a valid language element
-                    ///
-                    ///  FROM HERE NOT CONVERTED YET TO METADATA USE
-                    /// 
-
-                    case blast_operation.random:
-#pragma warning restore CS1587 // XML comment is not placed on a valid language element
-                        get_random_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                        break;
-
-                    case blast_operation.adda:
-                        f4_result = get_adda_result(ref code_pointer, ref minus, ref vector_size);
-                        break;
-
-                    case blast_operation.suba:
-                        f4_result = get_suba_result(ref code_pointer, ref minus, ref vector_size);
-                        break;
-
-                    case blast_operation.diva:
-                        f4_result = get_diva_result(ref code_pointer, ref minus, ref vector_size);
-                        break;
-
-                    case blast_operation.all:
-                        f4_result = get_all_result(ref code_pointer, ref minus, ref not, ref vector_size);
-                        break;
-
-                    case blast_operation.any:
-                        f4_result = get_any_result(ref code_pointer, ref minus, ref not, ref vector_size);
-                        break;
-
-
-
-                }
-            }
-        }      */
 
 
         /// <summary>
@@ -4652,7 +4865,7 @@ namespace NSS.Blast.Interpretor
                         {
                             blast_operation next_op = (blast_operation)code[code_pointer + 1];
 
-                            if (next_op != blast_operation.nop && (next_op != blast_operation.assign && next_op != blast_operation.assigns))
+                            if (next_op != blast_operation.nop && !IsAssignmentOperation(next_op))
 
                             {
                                 // for now restrict ourselves to only accepting operations at this point 
@@ -4795,37 +5008,17 @@ namespace NSS.Blast.Interpretor
 
                                 // mula family
                                 case blast_operation.mula: get_mula_result(ref code_pointer, ref vector_size, out f4_result); max_vector_size = vector_size; break;
+                                case blast_operation.adda: get_adda_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.suba: get_suba_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.diva: get_diva_result(ref code_pointer, ref vector_size, out f4_result); break;
 
+                                // any all 
+                                case blast_operation.all: get_all_result(ref code_pointer, ref vector_size, out f4_result); break;
+                                case blast_operation.any: get_any_result(ref code_pointer, ref vector_size, out f4_result); break;
 
-#pragma warning disable CS1587 // XML comment is not placed on a valid language element
-                                ///
-                                ///  FROM HERE NOT CONVERTED YET TO METADATA USE
-                                /// 
+                                // random 
+                                case blast_operation.random: get_random_result(ref code_pointer, ref vector_size, out f4_result); break;
 
-                                case blast_operation.random:
-#pragma warning restore CS1587 // XML comment is not placed on a valid language element
-                                    get_random_result(ref code_pointer, ref minus, ref vector_size, ref f4_result);
-                                    break;
-
-                                case blast_operation.adda:
-                                    get_adda_result(ref code_pointer, ref vector_size, out f4_result);
-                                    break;
-
-                                case blast_operation.suba:
-                                    f4_result = get_suba_result(ref code_pointer, ref minus, ref vector_size);
-                                    break;
-
-                                case blast_operation.diva:
-                                    f4_result = get_diva_result(ref code_pointer, ref minus, ref vector_size);
-                                    break;
-
-                                case blast_operation.all:
-                                    f4_result = get_all_result(ref code_pointer, ref minus, ref not, ref vector_size);
-                                    break;
-
-                                case blast_operation.any:
-                                    f4_result = get_any_result(ref code_pointer, ref minus, ref not, ref vector_size);
-                                    break;
 
 
                                 case blast_operation.pop:
@@ -4858,7 +5051,7 @@ namespace NSS.Blast.Interpretor
                                     if (exop == extended_blast_operation.call)
                                     {
                                         // call external function 
-                                        f4_result = CallExternal(ref code_pointer, ref minus, ref vector_size, ref f4);
+                                        CallExternalFunction(ref code_pointer, ref vector_size, out f4_result);
                                     }
                                     else
                                     {
@@ -5205,175 +5398,7 @@ namespace NSS.Blast.Interpretor
             return vector_size > 0 ? f4 : new float4(f1, 0, 0, 0);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void pushc(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
-        {
-            f4_register = get_compound_result(ref code_pointer, ref vector_size, false);
 
-            switch (vector_size)
-            {
-                case 1: push(f4_register.x); break;
-                case 2: push(f4_register.xy); break;
-                case 3: push(f4_register.xyz); break;
-                case 4: push(f4_register.xyzw); break;
-#if DEVELOPMENT_BUILD
-                default:
-                    Debug.LogError("blastscript.interpretor.pushc error: variable vector size not yet supported on stack push");
-                    break;
-#endif
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void push(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
-        {
-            if (code[code_pointer] == (byte)blast_operation.begin)
-            {
-                code_pointer++;
-
-                // push the vector result of a compound 
-                f4_register = get_compound_result(ref code_pointer, ref vector_size);
-                switch (vector_size)
-                {
-                    case 1:
-                        push(f4_register.x);
-                        break;
-                    case 2:
-                        push(f4_register.xy);
-                        break;
-                    case 3:
-                        push(f4_register.xyz);
-                        break;
-                    case 4:
-                        push(f4_register);
-                        break;
-#if DEVELOPMENT_BUILD
-                    default:
-                        Debug.LogError("burstscript.interpretor error: variable vector size not yet supported on stack push of compound");
-                        break;
-#endif
-                }
-                // code_pointer should index after compound now
-            }
-            else
-            {
-                // else push 1 float of data
-                float* fdata = (float*)data;
-                push(fdata[code[code_pointer++] - opt_id]);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void pushv(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
-        {
-            byte param_count = code[code_pointer++];
-            vector_size = (byte)(param_count & 0b00001111); // vectorsize == lower 4 
-            param_count = (byte)((param_count & 0b11110000) >> 4);  // param_count == upper 4 
-
-            if (param_count == 1 && vector_size != param_count)
-            {
-                // push vector sourced from vector parameter (this is a wierd thing to do but ok.. i have a test with it so it should work)
-                switch (vector_size)
-                {
-                    case 1: push(pop_f1(code_pointer)); break;
-                    case 2: push(pop_f2(code_pointer)); break;
-                    case 3: push(pop_f3(code_pointer)); break;
-                    case 4:
-                    case 0: push(pop_f4(code_pointer)); break;
-#if DEVELOPMENT_BUILD
-                    default:
-                        Debug.LogError($"blast.interpretor.pushv: unsupported vectorsize {vector_size} in parameter at codepointer {code_pointer}");
-                        //                        return (int)BlastError.error_pushv_vector_size_not_supported;
-                        break;
-#endif
-                }
-                code_pointer += 1;
-            }
-            else
-            {
-                if (param_count == 1)
-                {
-                    switch (vector_size)
-                    {
-                        case 1:
-                            push(pop_f1(code_pointer));
-                            code_pointer++;
-                            break;
-                        case 2:
-                            push(pop_f2(code_pointer));
-                            code_pointer++;
-                            break;
-                        case 3:
-                            push(pop_f3(code_pointer));
-                            code_pointer++;
-                            break;
-                        case 4:
-                            push(pop_f4(code_pointer));
-                            code_pointer++;
-                            break;
-#if DEVELOPMENT_BUILD
-                        default:
-                            Debug.LogError($"burstscript.interpretor error: vectorsize {vector_size} not yet supported on stack push");
-                            break;
-#endif
-                            // return (int)BlastError.error_vector_size_not_supported;
-                    }
-                }
-                else
-                {
-#if DEVELOPMENT_BUILD
-                    if (param_count != vector_size)
-                    {
-                        Debug.LogError($"burstscript.interpretor error: codepointer {code_pointer}  pushv => param_count > 1 && vector_size != param_count, this is not allowed. Vectorsize: {vector_size}, Paramcount: {param_count}");
-                        // return (int)BlastError.error_unsupported_operation;
-                    }
-#endif
-                    // param_count == vector_size and vector_size > 1, compiler enforces it so we should not check it in release 
-                    // this means that vector is build from multiple data points
-                    switch (vector_size)
-                    {
-                        case 1:
-                            push(pop_f1(code_pointer));
-                            code_pointer += 1;
-                            break;
-                        case 2:
-                            push(new float2(pop_f1(code_pointer), pop_f1(code_pointer + 1)));
-                            code_pointer += 2;
-                            break;
-                        case 3:
-                            push(new float3(pop_f1(code_pointer), pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)));
-                            code_pointer += 3;
-                            break;
-                        case 4:
-                            push(new float4(pop_f1(code_pointer), pop_f1(code_pointer + 1), pop_f1(code_pointer + 2), pop_f1(code_pointer + 3)));
-                            code_pointer += 4;
-                            break;
-                    }
-                    // we could handle the case of different sized vectors, pushing them into 1 of vectorsize...
-                    // - currently the compiler wont do this and we catch this as an error in debug builds some lines back
-                }
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void pushf(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
-        {
-            f4_register = get_compound_result(ref code_pointer, ref vector_size, true);
-
-            switch (vector_size)
-            {
-                case 1: push(f4_register.x); break;
-                case 2: push(f4_register.xy); break;
-                case 3: push(f4_register.xyz); break;
-                case 4: push(f4_register.xyzw); break;
-#if DEVELOPMENT_BUILD
-                default:
-                    Debug.LogError("burstscript.interpretor pushf error: variable vector size not yet supported on stack push");
-                    //  return (int)BlastError.error_variable_vector_op_not_supported;
-                    break;
-#endif
-            }
-        }
 
 
         /// <summary>
@@ -5441,7 +5466,23 @@ namespace NSS.Blast.Interpretor
                     // push the result of a function directly onto the stack instead of assigning it first or something
                     // 
                     case blast_operation.pushf:
-                        pushf(ref code_pointer, ref vector_size, ref f4_register);
+                        
+                        get_function_result(ref code_pointer, ref vector_size, out f4_register);
+                        code_pointer++; 
+                        
+                        switch (vector_size)
+                        {
+                            case 1: push(f4_register.x); break;
+                            case 2: push(f4_register.xy); break;
+                            case 3: push(f4_register.xyz); break;
+                            case 4: push(f4_register.xyzw); break;
+#if DEVELOPMENT_BUILD
+                            default:
+                                Debug.LogError("burstscript.interpretor pushf error: variable vector size not yet supported on stack push");
+                                //  return (int)BlastError.error_variable_vector_op_not_supported;
+                                break;
+#endif
+                        }
                         break;
 
                     //
@@ -5476,7 +5517,7 @@ namespace NSS.Blast.Interpretor
                     //
                     case blast_operation.assigns:
                         {
-                            // assign 1 val;ue
+                            // assign 1 value
                             byte assignee_op = code[code_pointer];
                             byte assignee = (byte)(assignee_op - opt_id);
                             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
@@ -5554,9 +5595,154 @@ namespace NSS.Blast.Interpretor
                     // assign the result of a function directly to the assignee
                     //
                     //
-                    //case blast_operation.assignf:
+                    case blast_operation.assignf:
+                        {
+                            // get assignee 
+                            byte assignee_op = code[code_pointer];
+                            byte assignee = (byte)(assignee_op - opt_id);
+
+#if DEVELOPMENT_BUILD
+                            // check its size?? in debug only, functions return size in vector_size 
+                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+#endif
+
+                            code_pointer++; 
+                            get_function_result(ref code_pointer, ref vector_size, out f4_register);
+                            code_pointer++;
+
+#if DEVELOPMENT_BUILD
+                            // 4 == 0 depending on decoding 
+                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
+                            if (s_assignee != vector_size)
+                            {
+                                Debug.LogError($"blast: assign function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
+                                return (int)BlastError.error_assign_vector_size_mismatch; 
+                            }
+#endif
+                            // set to assignee
+                            switch(vector_size)
+                            {
+                                case 1: fdata[assignee] = f4_register.x; break;
+                                case 2: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; break;
+                                case 3: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; break;
+                                case 4: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; fdata[assignee + 3] = f4_register.w; break;
+                            }
+                        }
+                        break;
+
                     //
-                    //    break; 
+                    // assign the negated result of a function directly to the assignee
+                    //
+                    //
+                    case blast_operation.assignfn:
+                        {
+                            // get assignee 
+                            byte assignee_op = code[code_pointer];
+                            byte assignee = (byte)(assignee_op - opt_id);
+
+#if DEVELOPMENT_BUILD
+                            // check its size?? in debug only, functions return size in vector_size 
+                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+#endif
+
+                            code_pointer++; 
+                            get_function_result(ref code_pointer, ref vector_size, out f4_register);
+                            code_pointer++;
+#if DEVELOPMENT_BUILD
+                            // 4 == 0 depending on decoding 
+                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
+                            if (s_assignee != vector_size)
+                            {
+                                Debug.LogError($"blast: assign negated function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
+                                return (int)BlastError.error_assign_vector_size_mismatch;
+                            }
+#endif
+                            // set to assignee
+                            switch (vector_size)
+                            {
+                                case 1: fdata[assignee] = -f4_register.x; break;
+                                case 2: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; break;
+                                case 3: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; break;
+                                case 4: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; fdata[assignee + 3] = -f4_register.w; break;
+                            }
+                        }
+                        break;
+
+                    // 
+                    // assign the resultof a function directly to the assignee
+                    // 
+                    case blast_operation.assignfe:
+                        {
+                            // get assignee 
+                            byte assignee_op = code[code_pointer];
+                            byte assignee = (byte)(assignee_op - opt_id);
+
+#if DEVELOPMENT_BUILD
+                            // check its size?? in debug only, functions return size in vector_size 
+                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+#endif
+                            code_pointer++; 
+                            CallExternalFunction(ref code_pointer, ref vector_size, out f4_register);
+                            code_pointer++;
+
+#if DEVELOPMENT_BUILD
+                            // 4 == 0 depending on decoding 
+                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
+                            if (s_assignee != vector_size)
+                            {
+                                Debug.LogError($"blast: assign external function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
+                                return (int)BlastError.error_assign_vector_size_mismatch;
+                            }
+#endif
+                            // set to assignee
+                            switch (vector_size)
+                            {
+                                case 1: fdata[assignee] = f4_register.x; break;
+                                case 2: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; break;
+                                case 3: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; break;
+                                case 4: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; fdata[assignee + 3] = f4_register.w; break;
+                            }
+                        }
+                        break;
+
+                    // 
+                    // assign the negated resultof a function directly to the assignee
+                    // 
+                    case blast_operation.assignfen:
+                        {
+                            // get assignee 
+                            byte assignee_op = code[code_pointer];
+                            byte assignee = (byte)(assignee_op - opt_id);
+
+#if DEVELOPMENT_BUILD
+                            // check its size?? in debug only, functions return size in vector_size 
+                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+#endif
+
+                            code_pointer++;
+                            CallExternalFunction(ref code_pointer, ref vector_size, out f4_register);
+                            code_pointer++;
+
+#if DEVELOPMENT_BUILD
+                            // 4 == 0 depending on decoding 
+                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
+                            if (s_assignee != vector_size)
+                            {
+                                Debug.LogError($"blast: assign negated function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
+                                return (int)BlastError.error_assign_vector_size_mismatch;
+                            }
+#endif
+                            // set to assignee
+                            switch (vector_size)
+                            {
+                                case 1: fdata[assignee] = -f4_register.x; break;
+                                case 2: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; break;
+                                case 3: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; break;
+                                case 4: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; fdata[assignee + 3] = -f4_register.w; break;
+                            }
+                        }
+                        break;
+
 
                     //
                     // Assign result of compound
@@ -5776,9 +5962,8 @@ namespace NSS.Blast.Interpretor
                             {
                                 case extended_blast_operation.call:
                                     {
-                                        // call external function, any returned data is neglected on root 
                                         bool minus = false;
-                                        CallExternal(ref code_pointer, ref minus, ref vector_size, ref f4_register);
+                                        CallExternalFunction(ref code_pointer, ref vector_size, out f4_register);
                                         code_pointer++;
                                     }
                                     break;
@@ -5837,7 +6022,7 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion
+#endregion
 
     };
 

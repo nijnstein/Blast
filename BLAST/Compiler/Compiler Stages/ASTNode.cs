@@ -214,6 +214,13 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public bool IsFunction => type == nodetype.function;
 
+
+        /// <summary>
+        /// true if the function maps to a stack operation: push, pop etc. 
+        /// </summary>
+        public bool IsStackFunction => type == nodetype.function && (function.IsPopVariant || function.IsPushVariant); 
+          
+
         /// <summary>
         /// True if this is a function pushing to the stack 
         /// </summary>
@@ -430,7 +437,7 @@ namespace NSS.Blast.Compiler
             {
                 node child = n.children[i];
 
-                if (child.HasChildNodes) continue;  // may still be something resulting in 1 var 
+                if (child.HasChildren) continue;  // may still be something resulting in 1 var 
                 if (child.is_constant || child.IsScriptVariable) continue; // these might be ok
 
                 // this does assume its a vectorsize 1 pop.... 
@@ -1617,11 +1624,6 @@ namespace NSS.Blast.Compiler
         {
             return children == null ? 0 : children.Count(x => x.type == type_a || x.type == type_b);
         }
-
-        /// <summary>
-        /// True if the node contains children
-        /// </summary>
-        public bool HasChildNodes => children != null && children.Count > 0;
 
         /// <summary>
         /// number of child nodes below this node

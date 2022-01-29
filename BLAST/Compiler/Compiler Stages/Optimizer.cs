@@ -150,31 +150,13 @@ namespace NSS.Blast.Compiler.Stage
             return BlastError.success;
         }
 
-
-        /// <summary>
-        /// 
-        /// analyze the assignment and optimize 2 statement types: 
-        ///
-        /// 1> a = function(parameters);   => assignf a parameters
-        /// 2> b = - function(paramaters); => assignf - a parameters
-        /// 
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="node"></param>
-        /// <returns></returns>
-        BlastError OptimizeAssignFunction(IBlastCompilationData data, node node)
-        {
-
-
-
-
-            return BlastError.success;
-        }
-
+         
 
 
         BlastError OptimizeNonVectorAssignment(IBlastCompilationData data, node node)
         {
+            Assert.IsNotNull(node);
+
             const int min_op_count = 2;
   
             if (node.vector_size > 1) return BlastError.success;
@@ -256,7 +238,6 @@ namespace NSS.Blast.Compiler.Stage
             {
                 case nodetype.assignment: 
                     if ((res = OptimizeNonVectorAssignment(data, node)) != BlastError.success) return res;
-                    if ((res = OptimizeAssignFunction(data, node)) != BlastError.success) return res;
                     break; 
 
             }

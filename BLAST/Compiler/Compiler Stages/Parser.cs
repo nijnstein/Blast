@@ -624,7 +624,7 @@ namespace NSS.Blast.Compiler.Stage
                         // get IF condition sequence
                         i = idx_if + 1;
                         node n_condition = parse_sequence(data, ref i, idx_then - 1);
-                        if (n_condition == null || !n_condition.HasChildNodes)
+                        if (n_condition == null || !n_condition.HasChildren)
                         {
                             data.LogError($"parser.parse_statement: failed to parse IF condition or empty condition in statement from {idx_start} to {idx_end}");
                             return null;
@@ -720,7 +720,7 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 // from here read the while condition sequence 
                                 node n_condition = parse_sequence(data, ref idx_condition, i - 1);
-                                if (n_condition == null || !n_condition.HasChildNodes)
+                                if (n_condition == null || !n_condition.HasChildren)
                                 {
                                     data.LogError($"parser.parse_statement: failed to parse WHILE condition or empty condition in statement from {idx_start} to {idx_end}");
                                     return null;
@@ -872,7 +872,7 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             // from here read the switch condition sequence 
                             node n_condition = parse_sequence(data, ref idx_condition, i - 1);
-                            if (n_condition == null || !n_condition.HasChildNodes)
+                            if (n_condition == null || !n_condition.HasChildren)
                             {
                                 data.LogError($"parser.parse_statement: failed to parse switch condition or empty condition in statement from {idx_start} to {idx_end}");
                                 return null;

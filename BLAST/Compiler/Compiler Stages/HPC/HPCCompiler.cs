@@ -334,7 +334,7 @@ namespace NSS.Blast.Compiler.Stage
             {
                 case blast_operation.yield:
                     code.Append("Yield(___bs_stack_root, ___bs_stack_size "); 
-                    if(n.HasChildNodes)
+                    if(n.HasChildren)
                     {
                         code.Append(", ");
                         if (!CompileParameters(data, n, code, n.children, 0, 1))
