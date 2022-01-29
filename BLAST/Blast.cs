@@ -1351,6 +1351,8 @@ namespace NSS.Blast
                     case blast_operation.assignfn: sb.Append("assign fn"); break;
                     case blast_operation.assignfen: sb.Append("assign fen"); break;
 
+                    case blast_operation.assignv: sb.Append("assign vector"); break;
+
                     case blast_operation.add: sb.Append("+ "); break;
                     case blast_operation.substract: sb.Append("- "); break;
                     case blast_operation.multiply: sb.Append("* "); break;

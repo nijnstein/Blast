@@ -527,6 +527,7 @@ namespace NSS.Blast.Compiler
                         case blast_operation.assignfe: sb.Append("setfe "); break;
                         case blast_operation.assignfn: sb.Append("setf "); break;
                         case blast_operation.assignfen: sb.Append("setfen "); break;
+                        case blast_operation.assignv: sb.Append("setv "); break;
                         case blast_operation.add: sb.Append("+ "); break;
                         case blast_operation.substract: sb.Append("- "); break;
                         case blast_operation.multiply: sb.Append("* "); break;

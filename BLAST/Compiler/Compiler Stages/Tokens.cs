@@ -131,7 +131,11 @@
         /// </summary>
         assignfen,
 
-        undefined2,
+        /// <summary>
+        /// assign a single vector, assignv knows the size of the parameter it writes to so it doesnt need a datapoint for vectorsize 
+        /// </summary>
+        assignv,
+
         undefined3,
         undefined4, 
         undefined5, 

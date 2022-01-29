@@ -474,15 +474,29 @@ namespace NSS.Blast.Interpretor
         /// decode info byte of data, 62 uses the upper 6 bits from the parametercount and the lower 2 for vectorsize, resulting in 64 parameters and size 4 vectors..
         /// - update to decode44? 16 params max and 16 vec size?
         /// </summary>
-        /// <param name="c"></param>
+        /// <param name="c">input byte</param>
         /// <param name="vector_size"></param>
-        /// <returns></returns>
+        /// <returns>parameter count</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public byte decode62(in byte c, ref byte vector_size)
         {
             vector_size = (byte)(c & 0b11);
             return (byte)((c & 0b1111_1100) >> 2);
         }
+
+        /// <summary>
+        /// decode info byte of data, 44 uses 4 bytes for each, that is 16 differen vectorsizes and param types or counts 
+        /// </summary>
+        /// <param name="c">input byte</param>
+        /// <param name="vector_size"></param>
+        /// <returns>parameter count</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public byte decode44(in byte c, ref byte vector_size)
+        {
+            vector_size = (byte)(c & 0b1111);
+            return (byte)((c & 0b1111_0000) >> 4);
+        }
+
 
         #region pop_or_value
 
@@ -1061,7 +1075,8 @@ namespace NSS.Blast.Interpretor
 
         public static bool IsAssignmentOperation(blast_operation op)
         {
-            return op == blast_operation.assign || op == blast_operation.assigns || op == blast_operation.assignf;
+            return op == blast_operation.assign || op == blast_operation.assigns || op == blast_operation.assignf
+                || op == blast_operation.assignfn || op == blast_operation.assignfen || op == blast_operation.assignv;
         }
 
         /// <summary>
@@ -4537,8 +4552,8 @@ namespace NSS.Blast.Interpretor
         void pushv(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
         {
             byte param_count = code[code_pointer++];
-            vector_size = (byte)(param_count & 0b00001111); // vectorsize == lower 4 
-            param_count = (byte)((param_count & 0b11110000) >> 4);  // param_count == upper 4 
+
+            vector_size = decode44(param_count, ref vector_size); 
 
             if (param_count == 1 && vector_size != param_count)
             {
@@ -4625,10 +4640,61 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
 
-#region ByteCode Execution
+        #region AssignV Vector 
+
+
+        /// <summary>
+        /// builds a [n] vector from [1] values 
+        /// </summary>
+        /// <param name="code_pointer"></param>
+        /// <param name="vector_size"></param>
+        /// <param name="assignee"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void assignv(ref int code_pointer, in byte vector_size, [NoAlias]in float* assignee)
+        {
+            // param_count == vector_size and vector_size > 1, compiler enforces it so we should not check it in release 
+            // this means that vector is build from multiple data points
+            switch (vector_size)
+            {
+                case 1:
+                    assignee[0] = pop_f1(code_pointer);
+                    code_pointer += 1;
+                    break;
+                case 2:
+                    assignee[0] = pop_f1(code_pointer);
+                    assignee[1] = pop_f1(code_pointer + 1); 
+                    code_pointer += 2;
+                    break;
+                case 3:
+                    assignee[0] = pop_f1(code_pointer);
+                    assignee[1] = pop_f1(code_pointer + 1);
+                    assignee[2] = pop_f1(code_pointer + 2);
+                    code_pointer += 3;
+                    break;
+                case 4:
+                    assignee[0] = pop_f1(code_pointer);
+                    assignee[1] = pop_f1(code_pointer + 1);
+                    assignee[2] = pop_f1(code_pointer + 2);
+                    assignee[3] = pop_f1(code_pointer + 3);
+                    code_pointer += 4;
+                    break;
+
+                    default:
+#if DEVELOPMENT_BUILD
+                        Debug.LogError($"burstscript.interpretor.assignv error: vector size {vector_size} not supported");
+#endif
+                        break;
+            }
+        }
+
+
+        #endregion 
+
+
+        #region ByteCode Execution
 
 
 
@@ -5590,7 +5656,6 @@ namespace NSS.Blast.Interpretor
                         }
                         break;
 
-
                     //
                     // assign the result of a function directly to the assignee
                     //
@@ -5745,7 +5810,25 @@ namespace NSS.Blast.Interpretor
 
 
                     //
-                    // Assign result of compound
+                    // assign a datapoint from vector elements, much like pushv does but then to stack.. lots of almost duplicate code that we dont want control flow for..  
+                    // 
+                    case blast_operation.assignv:
+                        {
+                            byte assignee_op = code[code_pointer];
+                            byte assignee = (byte)(assignee_op - opt_id);
+                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+
+                            assignv(ref code_pointer, in s_assignee, &fdata[assignee]);
+
+
+                            
+                        }
+                        break; 
+
+
+
+                    //
+                    // The one, expensive operation we want to avoid: Assign result of compound
                     //
                     case blast_operation.assign:
                         {
