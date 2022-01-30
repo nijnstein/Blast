@@ -857,7 +857,6 @@ namespace NSS.Blast
             RegisterFunction("maxa", 1, 63, 0, 1, blast_operation.maxa);
             RegisterFunction("select", 3, 3, 0, 0, blast_operation.select);
             RegisterFunction("random", 0, 2, 0, 0, blast_operation.random);
-            RegisterFunction("sqrt", 1, 1, 0, 0, blast_operation.sqrt);
             RegisterFunction("lerp", 3, 3, 0, 0, blast_operation.lerp);
             RegisterFunction("slerp", 3, 3, 4, 4, blast_operation.slerp);
             RegisterFunction("nlerp", 3, 3, 4, 4, blast_operation.nlerp);
@@ -880,7 +879,7 @@ namespace NSS.Blast
             RegisterFunction("rad", 1, 1, 0, 0, blast_operation.radians);
             RegisterFunction("fma", 3, 3, 0, 0, blast_operation.fma);
 
-
+            RegisterFunction("sqrt", 1, 1, 0, 0, extended_blast_operation.sqrt);
             RegisterFunction("rsqrt", 1, 1, 0, 0, extended_blast_operation.rsqrt);
             RegisterFunction("pow", 2, 2, 0, 0, extended_blast_operation.pow);
             RegisterFunction("normalize", 1, 1, 0, 0, blast_operation.normalize);

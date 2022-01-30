@@ -1,130 +1,23 @@
-﻿namespace NSS.Blast
+﻿using System;
+
+namespace NSS.Blast
 {
 
     /// <summary>
-    /// instruction set 
+    /// instruction set bs1
     /// </summary>
     public enum blast_operation : byte
     {
         /// <summary>
-        /// 
+        /// signals end of a stream
         /// </summary>
         nop = 0,
+
+        /// <summary>
+        /// starts reading a stream of opcodes
+        /// </summary>
         assign = 1,
-
-        /// <summary>
-        /// Operatations from add until not_equals MUST be in sequence for quick matches
-        /// </summary>
-        add = 2,
-        substract = 3,
-        divide = 4,
-        multiply = 5,
-        and = 6,
-        or = 7,
-
-        /// <summary>
-        /// 
-        /// </summary>
-        not = 8,
-        xor = 9,
-
-        greater = 10,
-        greater_equals = 11,
-        smaller = 12,
-        smaller_equals,
-        equals,
-        not_equals,
-
-        ret,         // return  
-        yield,       // yield execution back to caller for n frame s
-
-        begin,
-        end,
-
-        jz,           // conditional jump
-        jnz,
-        jump,         // unconditional forward jump
-
-        jump_back,    // unconditional backward jump 
-
-        push,         // stack functions
-        pop,
-
-        /// <summary>
-        /// Push a vector to the stack
-        /// </summary>
-        pushv,
-
-        peek,   // remove? 
-        peekv,        //remove?     
-
-        pushf,        // push a function's result 
-        pushc,        // push result of a compound 
-
-        //------------------------
-
-        fma,          // fused multiply add => variants ??        could bit encode op sequences.. +-+- etc.  it would save on control code 
-
-        adda,         // add all operands together until [nop]
-        mula,         // add all operands together until [nop]
-        diva,         // divide all operands by eachother unitl [nop]
-        suba,         // substract all operands from eachtoer until [nop]
-
-        all,          // math.all => a | b | c | (d ^ e)
-        any,          // math.any
-
-        abs,
-        select,       // ternary / math.select      TODO 
-
-
-        /// <summary>
-        /// generate a random number: 
-        /// </summary>
-        random,       // 0..1
-
-        /// <summary>
-        /// seed the random number generator 
-        /// </summary>
-        seed,         // set seed for random 
-
-        /// <summary>
-        /// get max value from operands, returns vector of same size as inputs 
-        /// </summary>
-        max,          
-
-        /// <summary>
-        /// get min value from operands, returns vector of same size as inputs 
-        /// </summary>
-        min,
-        maxa,
-        mina,
-
-        lerp,
-        slerp,
-        nlerp,
-
-        saturate,         //   return clamp(x, new float3(0.0f), new float3(1.0f));
-        clamp,
-        normalize,
-
-        ceil,
-        floor,
-        frac,
-
-        sin,
-        cos,
-        tan,
-        atan,
-        cosh,
-        sinh,
-
-        degrees,
-        radians,
-
-        sqrt,
-
-
-        /// <summary>
+                /// <summary>
         /// assign single variable / pop to assignee
         /// </summary>
         assigns,
@@ -154,6 +47,257 @@
         /// </summary>
         assignv,
 
+        //
+        // Operations from add until not_equals MUST be in sequence for quick matches
+        //
+
+        /// <summary>
+        /// add 2 operands
+        /// </summary>
+        add,
+
+        /// <summary>
+        /// substract 2 operands, doubles as negative sign 
+        /// </summary>
+        substract,
+
+        /// <summary>
+        /// divide 2 operands
+        /// </summary>
+        divide,
+
+        /// <summary>
+        /// multiply 2 operands 
+        /// </summary>
+        multiply,
+
+        /// <summary>
+        /// boolean and operation
+        /// </summary>
+        and,
+
+        /// <summary>
+        /// boolean or operation
+        /// </summary>
+        or,
+
+        /// <summary>
+        /// boolean not 
+        /// </summary>
+        not,
+
+        /// <summary>
+        /// boolean xor
+        /// </summary>
+        xor,
+
+        /// <summary>
+        /// boolean greater >
+        /// </summary>
+        greater,
+
+        /// <summary>
+        /// boolean greater equals >=
+        /// </summary>
+        greater_equals,
+
+        /// <summary>
+        /// boolean smaller then 
+        /// </summary>
+        smaller,
+
+        /// <summary>
+        /// boolean smaller equals
+        /// </summary>
+        smaller_equals,
+
+        /// <summary>
+        /// boolean equals: = 
+        /// </summary>
+        equals,
+
+        /// <summary>
+        /// boolean inequality: != 
+        /// </summary>
+        not_equals,
+
+        /// <summary>
+        /// return -> terminate script
+        /// </summary>
+        ret,         // return  
+
+        /// <summary>
+        /// Yield script, writing state to stack, must have packaged stack data
+        /// </summary>
+        yield,       // yield execution back to caller for n frame s
+
+        /// <summary>
+        /// begin a compounded sequence
+        /// </summary>
+        [Obsolete]
+        begin,
+
+        /// <summary>
+        /// end a compounded sequence
+        /// </summary>
+        [Obsolete]
+        end,
+
+        /// <summary>
+        /// jump if zero
+        /// </summary>
+        jz,           // conditional jump
+
+        /// <summary>
+        /// jump if not zero
+        /// </summary>
+        jnz,
+
+        /// <summary>
+        /// unconditional jump forward
+        /// </summary>
+        jump,         // unconditional forward jump
+
+        /// <summary>
+        /// unconditional jump backward
+        /// </summary>
+        jump_back,    // unconditional backward jump 
+
+        /// <summary>
+        /// push a value onto the stack
+        /// </summary>
+        push,
+
+        /// <summary>
+        /// pop a value from the stack
+        /// </summary>
+        pop,
+
+        /// <summary>
+        /// Push a vector to the stack
+        /// </summary>
+        pushv,
+
+        /// <summary>
+        /// push the result of a function onto the stack 
+        /// </summary>
+        pushf,        // push a function's result 
+
+        /// <summary>
+        /// push the result of a sequence onto the stack 
+        /// </summary>
+        pushc,        // push result of a compound 
+
+        /// <summary>
+        /// peek stack data 
+        /// </summary>
+        peek,  
+
+        /// <summary>
+        /// peek vector data 
+        /// </summary>
+        [Obsolete]
+        peekv,        
+
+        /// <summary>
+        /// Multiply add: a = m1 * m2 + a1
+        /// </summary>
+        fma,          // fused multiply add => variants ??        could bit encode op sequences.. +-+- etc.  it would save on control code 
+
+        /// <summary>
+        /// add all operands in sequence
+        /// </summary>
+        adda,        
+
+        /// <summary>
+        /// multiply all operands in sequence
+        /// </summary>
+        mula,
+
+        /// <summary>
+        /// divide all operands by eachother in sequence 
+        /// </summary>
+        diva,        
+
+        /// <summary>
+        /// substract all operands from eachother in sequence
+        /// </summary>
+        suba,
+
+        /// <summary>
+        /// returns true if all arguments are true
+        /// </summary>
+        all,
+        
+        /// <summary>
+        /// returns true if any argument is true 
+        /// </summary>
+        any,        
+
+        /// <summary>
+        /// return absolute value of operand
+        /// </summary>
+        abs,
+
+        /// <summary>
+        /// select instruction 
+        /// </summary>
+        [Obsolete]        
+        select,   
+
+        /// <summary>
+        /// generate a random number 
+        /// </summary>
+        random,      
+
+        /// <summary>
+        /// seed the random number generator 
+        /// </summary>
+        seed,       
+
+        /// <summary>
+        /// get max value from operands, returns vector of same size as inputs 
+        /// </summary>
+        max,          
+
+        /// <summary>
+        /// get min value from operands, returns vector of same size as inputs 
+        /// </summary>
+        min,
+
+        /// <summary>
+        /// get max argument from operands returns size 1 vector
+        /// </summary>
+        maxa,
+
+        /// <summary>
+        /// get min argument from operands returns size 1 vector
+        /// </summary>
+        mina,
+
+        lerp,
+        slerp,
+        nlerp,
+
+        saturate,         //   return clamp(x, new float3(0.0f), new float3(1.0f));
+        clamp,
+        normalize,
+
+        ceil,
+        floor,
+        frac,
+
+        sin,
+        cos,
+        tan,
+        atan,
+        cosh,
+        sinh,
+
+        degrees,
+        radians,
+
+        undefined33,
         undefined3,         
         undefined4,    
         undefined5, 
@@ -246,7 +390,7 @@
         log2,
         cross,
         dot,
-
+        sqrt,
         rsqrt,
         pow,
 
@@ -288,6 +432,7 @@
         Comma,
 
         Identifier,     // [a..z][0..9|a..z]*[.|[][a..z][0..9|a..z]*[]]
+
         Indexer,        // .        * using the indexer on a numeric will define its fractional part 
         IndexOpen,      // [
         IndexClose,     // ]

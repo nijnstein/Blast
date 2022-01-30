@@ -16,9 +16,13 @@ namespace NSS.Blast
         /// </summary>
         Tokenizer,
         /// <summary>
-        /// parses the tokens into an ast-tree and identifies identifiers 
+        /// parses the tokens into an ast-tree
         /// </summary>
         Parser,
+        /// <summary>
+        /// identify all identifiers 
+        /// </summary>
+        IdentifierMapping,
         /// <summary>
         /// transform constructs in the ast: switch -> ifthen, while,for, etc -> ifthen 
         /// making later stages having less to worry about 
@@ -69,7 +73,7 @@ namespace NSS.Blast
         /// <summary>
         /// post-compile: package result
         /// </summary>
-        Packaging
+        Packaging,
     }
 
     /// <summary>

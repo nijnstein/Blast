@@ -20,7 +20,7 @@ namespace NSS.Blast
     {
         /// <summary>
         /// Compile all into a single package, code data and stack combined  
-        /// 
+        /// <code>
         /// [----CODE----|----METADATA----|----DATA----|----STACK----]
         ///              1                2            3             4  
         /// 
@@ -30,13 +30,13 @@ namespace NSS.Blast
         /// 2 = data_offset 
         /// 3 = stack_offset 
         /// 4 = package_size  
-        /// 
+        /// </code>
         /// </summary>
         Normal,
 
         /// <summary>
         /// SSMD Package with code and metadata seperate from datastack
-        /// 
+        /// <code>
         /// - SSMD requirement: while data changes, its intent does not so metadata is shared
         /// 
         /// - SSDM in V2/BS2 allows for (nested) branching by setting sync points on non constant jumps: 
@@ -52,13 +52,13 @@ namespace NSS.Blast
         /// 4 = datasegment size 
         /// 
         /// prop stacksize (in elements) => (datasegment size - stack_offset) / 4
-        /// 
+        /// </code>
         /// </summary>
         SSMD,
 
         /// <summary>
         /// Entity Package: the script's code is seperated from all data
-        /// 
+        /// <code>
         /// [----CODE----]      [----METADATA----|----DATA----|----STACK----]
         ///              1                       2            3             4
         /// 
@@ -66,11 +66,12 @@ namespace NSS.Blast
         /// 2 = metadata size 
         /// 3 = stack offset 
         /// 4 = datasegment size 
-        /// 
+        /// </code>
         /// </summary>
         Entity,
 
         /// <summary>
+        /// <code>
         /// package type used by compiler 
         /// 
         /// - THE POINTERS ARE INVALID
@@ -82,7 +83,7 @@ namespace NSS.Blast
         /// 2 = metadata size 
         /// 3 = datasize in bytes / stack offset in bytes 
         /// 4 = datasegment size = stackcapacity = 4 - 3  
-        /// 
+        /// </code>
         /// </summary>
         Compiler
     }
@@ -130,9 +131,21 @@ namespace NSS.Blast
     [BurstCompile]
     unsafe public struct BlastSSMDDataStack {
 #if DEVELOPMENT_BUILD
+        /// <summary>
+        /// fictional - for debug view only
+        /// </summary>
         public float4 a;
+        /// <summary>
+        /// fictional - for debug view only
+        /// </summary>
         public float4 b;
+        /// <summary>
+        /// fictional - for debug view only
+        /// </summary>
         public float4 c;
+        /// <summary>
+        /// fictional - for debug view only
+        /// </summary>
         public float4 d;
 #endif 
     }

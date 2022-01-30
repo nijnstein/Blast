@@ -5124,7 +5124,6 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -5184,6 +5183,7 @@ namespace NSS.Blast.Interpretor
                             case extended_blast_operation.exp: get_exp_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.dot: get_dot_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.log2: get_log2_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4_result); break;
                             default:
@@ -5441,7 +5441,6 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4); break;
@@ -5496,6 +5495,7 @@ namespace NSS.Blast.Interpretor
                                     case extended_blast_operation.exp: get_exp_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.dot: get_dot_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.log2: get_log2_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4); break;
 #if DEVELOPMENT_BUILD

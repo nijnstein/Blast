@@ -593,7 +593,6 @@ namespace NSS.Blast.Compiler
                         case blast_operation.radians: sb.Append("radians "); break;
 
                         case blast_operation.ret: sb.Append("return "); break;
-                        case blast_operation.sqrt: sb.Append("sqrt "); break;
 
                         case blast_operation.value_0: sb.Append("0 "); break;
                         case blast_operation.value_1: sb.Append("1 "); break;
@@ -654,6 +653,7 @@ namespace NSS.Blast.Compiler
                                 case extended_blast_operation.dot: sb.Append("dot "); break;
                                 case extended_blast_operation.debug: sb.Append("debug "); break;
                                 case extended_blast_operation.debugstack: sb.Append("debugstack "); break;
+                                case extended_blast_operation.sqrt: sb.Append("sqrt "); break;
                                 case extended_blast_operation.rsqrt: sb.Append("rsqrt "); break;
                                 case extended_blast_operation.pow: sb.Append("pow "); break;
 

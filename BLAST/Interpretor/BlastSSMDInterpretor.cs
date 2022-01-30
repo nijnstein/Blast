@@ -3,6 +3,7 @@
 #if DEVELOPMENT_BUILD
 #define HANDLE_DEBUG_OP
 #endif
+
 using NSS.Blast.Standalone;
 using Unity.Assertions;
 #else 
@@ -3013,7 +3014,6 @@ namespace NSS.Blast.SSMD
                 case blast_operation.ceil:
                 case blast_operation.floor:
                 case blast_operation.frac:
-                case blast_operation.sqrt:
                 case blast_operation.sin:
                 case blast_operation.cos:
                 case blast_operation.tan:
@@ -3066,6 +3066,7 @@ namespace NSS.Blast.SSMD
                                 case extended_blast_operation.exp: get_exp_result(ref code_pointer, ref vector_size, out f4); break;
                                 case extended_blast_operation.dot: get_dot_result(ref code_pointer, ref vector_size, out f4); break;
                                 case extended_blast_operation.log2: get_log2_result(ref code_pointer, ref vector_size, out f4); break;
+                                case extended_blast_operation.sqrt: get_sqrt_result(
                                 case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4); break;
                                 case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4); break;
                                 */
@@ -3303,7 +3304,6 @@ namespace NSS.Blast.SSMD
                     case blast_operation.ceil:
                     case blast_operation.floor:
                     case blast_operation.frac:
-                    case blast_operation.sqrt:
                     case blast_operation.sin: 
                     case blast_operation.cos: 
                     case blast_operation.tan: 

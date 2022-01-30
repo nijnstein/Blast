@@ -1,7 +1,8 @@
 ﻿
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
-    using Unity.Assertions; 
+using System.Threading;
+using Unity.Assertions; 
 #else
 using UnityEngine;
 #endif
@@ -18,12 +19,18 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastAnalysis : IBlastCompilerStage
     {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastAnalysis.Version'
+        /// <summary>
+        /// version 0.1
+        /// </summary>
         public System.Version Version => new System.Version(0, 1, 0);
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastAnalysis.Version'
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastAnalysis.StageType'
+
+        /// <summary>
+        /// perform basic analysis 
+        /// </summary>
         public BlastCompilerStageType StageType => BlastCompilerStageType.Analysis;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastAnalysis.StageType'
+
+
+
 
         /// <summary>
         /// simplify non-vector non-function compounds by removing nested compounds when operations allow it. 
@@ -483,9 +490,7 @@ namespace NSS.Blast.Compiler.Stage
         /// analyze a node and its children, can be run in parallel on different node roots
         /// </summary>
         /// <param name="n"></param>
-#pragma warning disable CS1573 // Parameter 'data' has no matching param tag in the XML comment for 'BlastAnalysis.analyze_node(IBlastCompilationData, node)' (but other parameters do)
         static void analyze_node(IBlastCompilationData data, node n)
-#pragma warning restore CS1573 // Parameter 'data' has no matching param tag in the XML comment for 'BlastAnalysis.analyze_node(IBlastCompilationData, node)' (but other parameters do)
         {
             if (!n.skip_compilation)
             {
@@ -498,11 +503,7 @@ namespace NSS.Blast.Compiler.Stage
                             refactor_divisions(data, n);
                             simplify_compound_arithmetic(data, n);
                             replace_double_minus(data, n);
-                         
-#pragma warning disable CS1587 // XML comment is not placed on a valid language element
-///   encode_minus_into_identifier_of_vector_part(data, n); 
                         }
-#pragma warning restore CS1587 // XML comment is not placed on a valid language element
                         return;
 
                     case nodetype.function:
@@ -526,6 +527,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="data"></param>
         public int Execute(IBlastCompilationData data)
         {
+
             // run root->leaf analysis that can run in parallel 
 #if MULTITHREADED
             Parallel.ForEach(data->AST.children, child =>
@@ -545,7 +547,7 @@ namespace NSS.Blast.Compiler.Stage
             );
 #endif
 
-            return data.IsOK ? (int)BlastError.success : (int)BlastError.error;
+            return data.IsOK ? (int)BlastError.success : (int)BlastError.error_analyzer;
         }
     }
 }

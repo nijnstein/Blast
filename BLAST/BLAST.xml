@@ -788,6 +788,21 @@
             function not handled in ssmd operation 
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastError.error_pre_compile_cleanup">
+            <summary>
+            error in cleanup stage before compilation 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_analyzer">
+            <summary>
+            error in analyzer
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_mapping_parameters">
+            <summary>
+            analyzer failed to determine all parameter types, vectorsizes and reference counts
+            </summary>
+        </member>
         <member name="T:NSS.Blast.BlastPackageMode">
             <summary>
             Blast script packaging types 
@@ -1337,6 +1352,7 @@
              
              1   - tokenize:            convert code into a list of tokens 
              2   - parse:               parse list of tokens into a tree of nodes 
+             2.1 - variable mapping     map all identifiers
              3   - transform:           transform nodes sequences  
              4.1 - analyse parameters:  determine parameter types and check inputs and outputs
              4.2 - analyse:             analyse nodes, reorder were needed, optimize for execution
@@ -1487,6 +1503,16 @@
             - refactors divisions 
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastAnalysis.Version">
+            <summary>
+            version 0.1
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastAnalysis.StageType">
+            <summary>
+            perform basic analysis 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastAnalysis.simplify_compound_arithmetic(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
             <summary>
             simplify non-vector non-function compounds by removing nested compounds when operations allow it. 
@@ -1524,6 +1550,40 @@
             analyse ast tree and perform corrections/optimizations 
             </summary>
             <param name="data"></param>
+        </member>
+        <member name="T:NSS.Blast.Compiler.Stage.BlastIdentifierMapping">
+            <summary>
+            Parameter Analysis
+            - determine parameter types (float, vectorsize) 
+            - confirm inputs used (warnings if not) and outputs set (not set = error)
+            - validate correct parameter usage
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastIdentifierMapping.Version">
+            <summary>
+            v0.1.0 - initial version
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastIdentifierMapping.StageType">
+            <summary>
+            compiler stage: parameter analysis
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastIdentifierMapping.map_identifiers(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+            <summary>
+            map identifiers to variables
+            - determine if a opcode constant (1,2 , pi and stuff) or just a constant number on the data stack 
+            </summary>
+            <param name="data">compiler data</param>
+            <param name="ast_node">the node to scan including child nodes</param>
+            <returns>true if succeeded / IsOK</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastIdentifierMapping.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
+            <summary>
+             
+            </summary>
+            <param name="data">current compilationdata</param>
+            <returns>0 for success, other exitcode = error</returns>
         </member>
         <member name="T:NSS.Blast.Compiler.Stage.BlastBytecodeCompiler">
             <summary>
@@ -1696,6 +1756,21 @@
             Pre-Compile Cleanup
             - for now only cleans up parameter references 
             </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastPreCompileCleanup.Version">
+            <summary>
+            version 0.1
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastPreCompileCleanup.StageType">
+            <summary>
+            cleanup stage -> mainly cleans up references 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastPreCompileCleanup.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
+            <summary>
+            execute cleanup procedures 
+            </summary>        
         </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastCSCompiler.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
             <summary>
@@ -1994,6 +2069,16 @@
             
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastParser.Version">
+            <summary>
+            version 0.2.1
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastParser.StageType">
+            <summary>
+            parsing stage: transforms token list into a node tree
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastScriptToken,System.Int32,System.Int32@,System.Int32@)">
             <summary>
             scan for the next token of type 
@@ -2168,15 +2253,6 @@
             <param name="idx_start">starting index into tokens </param>
             <param name="idx_max">max index in tokens to scan into</param>
             <returns>exitcode - blasterror</returns>
-        </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.map_identifiers(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
-            <summary>
-            map identifiers to variables
-            - determine if a opcode constant (1,2 , pi and stuff) or just a constant number on the data stack 
-            </summary>
-            <param name="data">compiler data</param>
-            <param name="ast_node">the node to scan including child nodes</param>
-            <returns>true if succeeded / IsOK</returns>
         </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastParser.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
             <summary>
@@ -3526,6 +3602,21 @@
             intermediate bytecode data for use by compiler 
             </summary>
         </member>
+        <member name="F:NSS.Blast.Compiler.BlastIntermediate.data_capacity">
+            <summary>
+            nr of datapoints
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastIntermediate.code_capacity">
+            <summary>
+            max size of bytecode in bytes
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastIntermediate.data_element_bytesize">
+            <summary>
+            
+            </summary>
+        </member>
         <member name="F:NSS.Blast.Compiler.BlastIntermediate.Id">
             <summary>
             unique script id
@@ -3561,9 +3652,21 @@
             input, output and scratch data fields
             </summary>
         </member>
+        <member name="F:NSS.Blast.Compiler.BlastIntermediate.metadata">
+            <summary>
+             max 16n vectors up until (float4x4)   datasize = lower 4 bits + 1
+             - otherwise its a pointer (FUTURE)      
+             - datatype                              datatype = high 4 bits >> 4
+            </summary>
+        </member>
         <member name="P:NSS.Blast.Compiler.BlastIntermediate.DataCount">
             <summary>
             nr of data elements (presumably 32bits so 4bytes/element) - same as data_offset, added for clarity
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.BlastIntermediate.DataByteSize">
+            <summary>
+            data byte size 
             </summary>
         </member>
         <member name="M:NSS.Blast.Compiler.BlastIntermediate.GetDataSegmentElement(System.Int32@)">
@@ -3582,8 +3685,6 @@
             <summary>
             execute the intermediate for validation and stack info 
             </summary>
-            <param name="blast"></param>
-            <returns></returns>
         </member>
         <member name="T:NSS.Blast.BlastCompilerOptions">
             <summary>
@@ -3846,7 +3947,12 @@
         </member>
         <member name="F:NSS.Blast.BlastCompilerStageType.Parser">
             <summary>
-            parses the tokens into an ast-tree and identifies identifiers 
+            parses the tokens into an ast-tree
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastCompilerStageType.IdentifierMapping">
+            <summary>
+            identify all identifiers 
             </summary>
         </member>
         <member name="F:NSS.Blast.BlastCompilerStageType.Transform">
@@ -4334,47 +4440,17 @@
         </member>
         <member name="T:NSS.Blast.blast_operation">
             <summary>
-            instruction set 
+            instruction set bs1
             </summary>
         </member>
         <member name="F:NSS.Blast.blast_operation.nop">
             <summary>
-            
+            signals end of a stream
             </summary>
         </member>
-        <member name="F:NSS.Blast.blast_operation.add">
+        <member name="F:NSS.Blast.blast_operation.assign">
             <summary>
-            Operatations from add until not_equals MUST be in sequence for quick matches
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.blast_operation.not">
-            <summary>
-            
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.blast_operation.pushv">
-            <summary>
-            Push a vector to the stack
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.blast_operation.random">
-            <summary>
-            generate a random number: 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.blast_operation.seed">
-            <summary>
-            seed the random number generator 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.blast_operation.max">
-            <summary>
-            get max value from operands, returns vector of same size as inputs 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.blast_operation.min">
-            <summary>
-            get min value from operands, returns vector of same size as inputs 
+            starts reading a stream of opcodes
             </summary>
         </member>
         <member name="F:NSS.Blast.blast_operation.assigns">
@@ -4405,6 +4481,226 @@
         <member name="F:NSS.Blast.blast_operation.assignv">
             <summary>
             assign a single vector, assignv knows the size of the parameter it writes to so it doesnt need a datapoint for vectorsize 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.add">
+            <summary>
+            add 2 operands
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.substract">
+            <summary>
+            substract 2 operands, doubles as negative sign 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.divide">
+            <summary>
+            divide 2 operands
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.multiply">
+            <summary>
+            multiply 2 operands 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.and">
+            <summary>
+            boolean and operation
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.or">
+            <summary>
+            boolean or operation
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.not">
+            <summary>
+            boolean not 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.xor">
+            <summary>
+            boolean xor
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.greater">
+            <summary>
+            boolean greater >
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.greater_equals">
+            <summary>
+            boolean greater equals >=
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.smaller">
+            <summary>
+            boolean smaller then 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.smaller_equals">
+            <summary>
+            boolean smaller equals
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.equals">
+            <summary>
+            boolean equals: = 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.not_equals">
+            <summary>
+            boolean inequality: != 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.ret">
+            <summary>
+            return -> terminate script
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.yield">
+            <summary>
+            Yield script, writing state to stack, must have packaged stack data
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.begin">
+            <summary>
+            begin a compounded sequence
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.end">
+            <summary>
+            end a compounded sequence
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.jz">
+            <summary>
+            jump if zero
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.jnz">
+            <summary>
+            jump if not zero
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.jump">
+            <summary>
+            unconditional jump forward
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.jump_back">
+            <summary>
+            unconditional jump backward
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.push">
+            <summary>
+            push a value onto the stack
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.pop">
+            <summary>
+            pop a value from the stack
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.pushv">
+            <summary>
+            Push a vector to the stack
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.pushf">
+            <summary>
+            push the result of a function onto the stack 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.pushc">
+            <summary>
+            push the result of a sequence onto the stack 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.peek">
+            <summary>
+            peek stack data 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.peekv">
+            <summary>
+            peek vector data 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.fma">
+            <summary>
+            Multiply add: a = m1 * m2 + a1
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.adda">
+            <summary>
+            add all operands in sequence
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.mula">
+            <summary>
+            multiply all operands in sequence
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.diva">
+            <summary>
+            divide all operands by eachother in sequence 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.suba">
+            <summary>
+            substract all operands from eachother in sequence
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.all">
+            <summary>
+            returns true if all arguments are true
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.any">
+            <summary>
+            returns true if any argument is true 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.abs">
+            <summary>
+            return absolute value of operand
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.select">
+            <summary>
+            select instruction 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.random">
+            <summary>
+            generate a random number 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.seed">
+            <summary>
+            seed the random number generator 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.max">
+            <summary>
+            get max value from operands, returns vector of same size as inputs 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.min">
+            <summary>
+            get min value from operands, returns vector of same size as inputs 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.maxa">
+            <summary>
+            get max argument from operands returns size 1 vector
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.mina">
+            <summary>
+            get min argument from operands returns size 1 vector
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastScriptTokenDefinition">

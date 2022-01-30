@@ -24,6 +24,7 @@ namespace NSS.Blast.Compiler
     /// 
     /// 1   - tokenize:            convert code into a list of tokens 
     /// 2   - parse:               parse list of tokens into a tree of nodes 
+    /// 2.1 - variable mapping     map all identifiers
     /// 3   - transform:           transform nodes sequences  
     /// 4.1 - analyse parameters:  determine parameter types and check inputs and outputs
     /// 4.2 - analyse:             analyse nodes, reorder were needed, optimize for execution
@@ -63,7 +64,10 @@ namespace NSS.Blast.Compiler
             
             // parse nodes from tokens, map out identifiers
             new BlastParser(),
-            
+
+            // map out all parameters
+            new BlastIdentifierMapping(),
+
             // transform constructs into simpler ones
             new BlastTransform(), 
             
@@ -103,6 +107,7 @@ namespace NSS.Blast.Compiler
         {
             new BlastTokenizer(),
             new BlastParser(),
+            new BlastIdentifierMapping(),
             new BlastTransform(),
             new BlastParameterAnalysis(),
             new BlastAnalysis(),
@@ -121,6 +126,7 @@ namespace NSS.Blast.Compiler
         {
             new BlastTokenizer(),
             new BlastParser(),
+            new BlastIdentifierMapping(),
             new BlastTransform(),
             new BlastParameterAnalysis(),
             new BlastAnalysis(),

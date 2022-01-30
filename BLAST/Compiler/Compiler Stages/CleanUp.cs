@@ -10,12 +10,16 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastPreCompileCleanup : IBlastCompilerStage
     {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastPreCompileCleanup.Version'
+
+        /// <summary>
+        /// version 0.1
+        /// </summary>
         public System.Version Version => new System.Version(0, 1, 0);
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastPreCompileCleanup.Version'
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastPreCompileCleanup.StageType'
+
+        /// <summary>
+        /// cleanup stage -> mainly cleans up references 
+        /// </summary>
         public BlastCompilerStageType StageType => BlastCompilerStageType.Cleanup;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastPreCompileCleanup.StageType'
 
         static void remove_dereferenced_parameters(IBlastCompilationData data, node root)
         {
@@ -42,9 +46,11 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastPreCompileCleanup.Execute(IBlastCompilationData)'
+
+        /// <summary>
+        /// execute cleanup procedures 
+        /// </summary>        
         public int Execute(IBlastCompilationData data)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastPreCompileCleanup.Execute(IBlastCompilationData)'
         {
             remove_dereferenced_parameters(data, data.AST);
             return (int)(data.IsOK ? BlastError.success : BlastError.error);

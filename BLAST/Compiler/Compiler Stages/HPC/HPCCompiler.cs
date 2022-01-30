@@ -135,7 +135,6 @@ namespace NSS.Blast.Compiler.Stage
                     case blast_operation.degrees: return "math.degrees"; 
                     case blast_operation.radians: return "math.radians"; 
 
-                    case blast_operation.sqrt: return "math.sqrt";
 
                     case blast_operation.ex_op:
                         switch(function.ExtendedScriptOp)
@@ -147,6 +146,7 @@ namespace NSS.Blast.Compiler.Stage
                             case extended_blast_operation.logn: return "math.logn";
                             case extended_blast_operation.dot: return "math.dot";
                             case extended_blast_operation.cross: return "math.cross";
+                            case extended_blast_operation.sqrt: return "math.sqrt";
                             case extended_blast_operation.rsqrt: return "math.rsqrt";
                             case extended_blast_operation.pow: return "math.pow";
                         }

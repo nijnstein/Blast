@@ -1450,9 +1450,6 @@ namespace NSS.Blast
                         break;
                     case blast_operation.radians:
                         break;
-                    case blast_operation.sqrt:
-                        break;
-
                     case blast_operation.value_0: sb.Append("0 "); break;
                     case blast_operation.value_1: sb.Append("1 "); break;
                     case blast_operation.value_2: sb.Append("2 "); break;
@@ -1510,6 +1507,7 @@ namespace NSS.Blast
                             case extended_blast_operation.cross:
                             case extended_blast_operation.dot:
                             case extended_blast_operation.ex:
+                            case extended_blast_operation.sqrt:
                             case extended_blast_operation.rsqrt:
                             case extended_blast_operation.pow:
                                 sb.Append($"{ex} ");

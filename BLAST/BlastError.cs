@@ -203,6 +203,18 @@
         /// function not handled in ssmd operation 
         /// </summary>
         ssmd_function_not_handled = -47,
+        /// <summary>
+        /// error in cleanup stage before compilation 
+        /// </summary>
+        error_pre_compile_cleanup = -48,
+        /// <summary>
+        /// error in analyzer
+        /// </summary>
+        error_analyzer = -49,
+        /// <summary>
+        /// analyzer failed to determine all parameter types, vectorsizes and reference counts
+        /// </summary>
+        error_mapping_parameters = -50
     }
 
 }
