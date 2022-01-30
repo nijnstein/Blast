@@ -910,11 +910,11 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             // make sure only valid node types are supplied 
                             if (ast_child.ValidateType(data, new nodetype[] {
-                            nodetype.parameter,
-                            nodetype.operation,
-                            nodetype.compound,
-                            nodetype.function
-                        }))
+                                nodetype.parameter,
+                                nodetype.operation,
+                                nodetype.compound,
+                                nodetype.function
+                            }))
                             {
                                 CompileNode(data, ast_child, code);
                                 if (!data.IsOK)

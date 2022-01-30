@@ -778,6 +778,16 @@
             language version not supported in given context
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastError.ssmd_invalid_operation">
+            <summary>
+            invalid operation in ssmd sequence
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.ssmd_function_not_handled">
+            <summary>
+            function not handled in ssmd operation 
+            </summary>
+        </member>
         <member name="T:NSS.Blast.BlastPackageMode">
             <summary>
             Blast script packaging types 
@@ -4642,7 +4652,6 @@
             <param name="previous"></param>
             <param name="a"></param>
             <param name="b"></param>
-            <param name="last_is_op_or_first"></param>
             <param name="vector_size"></param>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.handle_op(NSS.Blast.blast_operation@,System.Single@,System.Single@)">
@@ -5193,6 +5202,26 @@
             <param name="code_pointer"></param>
             <param name="dataindex"></param>
         </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f1_into_with_minus(System.Int32@,System.Byte,System.Int32@)">
+            <summary>
+            pop a float and assign it to dataindex inside a datasegment, if there is a minus sign at the poplocation pop the next and keep the sign
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f2_into_with_minus(System.Int32@,System.Byte,System.Int32@)">
+            <summary>
+            pop a float and assign it to dataindex inside a datasegment, if there is a minus sign at the poplocation pop the next and keep the sign
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f3_into_with_minus(System.Int32@,System.Byte,System.Int32@)">
+            <summary>
+            pop a float and assign it to dataindex inside a datasegment, if there is a minus sign at the poplocation pop the next and keep the sign
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f4_into_with_minus(System.Int32@,System.Byte,System.Int32@)">
+            <summary>
+            pop a float and assign it to dataindex inside a datasegment, if there is a minus sign at the poplocation pop the next and keep the sign
+            </summary>
+        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into``1(System.Int32@,``0*)">
             <summary>
             pop a float[1|2|3|4] value form stack data or constant source and put it in destination 
@@ -5279,7 +5308,39 @@
             </summary>
             <param name="index">data index</param>
         </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_data_from_register_f1_n(System.Int32@)">
+            <summary>
+            set a float1 data location from register location  
+            </summary>
+            <param name="index">data index</param>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f1(Unity.Mathematics.float4*,System.Void**,System.Int32)">
+            <summary>
+            set a dest.x buffer from data[offset]
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f2(Unity.Mathematics.float4*,System.Void**,System.Int32)">
+            <summary>
+            set a dest.xy buffer from data[offset]
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f3(Unity.Mathematics.float4*,System.Void**,System.Int32)">
+            <summary>
+            set a dest.xyz buffer from data[offset]
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f4(Unity.Mathematics.float4*,System.Void**,System.Int32)">
+            <summary>
+            set a dest.xyzw buffer from data[offset]
+            </summary>
+        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_data_from_register_f2(System.Int32@)">
+            <summary>
+            set a float2 data location from register location  
+            </summary>
+            <param name="index">data index</param>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_data_from_register_f2_n(System.Int32@)">
             <summary>
             set a float2 data location from register location  
             </summary>
@@ -5291,7 +5352,19 @@
             </summary>
             <param name="index">data index</param>
         </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_data_from_register_f3_n(System.Int32@)">
+            <summary>
+            set a float3 data location from register location  
+            </summary>
+            <param name="index">data index</param>
+        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_data_from_register_f4(System.Int32@)">
+            <summary>
+            set a float4 data location from register location  
+            </summary>
+            <param name="index">data index</param>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_data_from_register_f4_n(System.Int32@)">
             <summary>
             set a float4 data location from register location  
             </summary>
@@ -5312,39 +5385,9 @@
             set register[n].xyzw from data 
             </summary>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.handle_op_f1_f1(NSS.Blast.blast_operation@,System.Byte@,System.Byte@,System.Single*,Unity.Mathematics.float4*,System.Boolean@,System.Byte@)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.handle_op_f1_f1(NSS.Blast.blast_operation@,Unity.Mathematics.float4*,Unity.Mathematics.float4*,System.Byte@)">
             <summary>
             handle operation a.x and b.x
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.handle_op_f2_f1(NSS.Blast.blast_operation@,System.Byte@,System.Byte@,Unity.Mathematics.float4*,Unity.Mathematics.float4*,System.Boolean@,System.Byte@)">
-            <summary>
-            handle operation a.xy and b.xx
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.handle_op_f3_f1(NSS.Blast.blast_operation@,System.Byte@,System.Byte@,Unity.Mathematics.float4*,Unity.Mathematics.float4*,System.Boolean@,System.Byte@)">
-            <summary>
-            handle operation a.xyz and b.xxx
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.handle_op_f4_f1(NSS.Blast.blast_operation@,System.Byte@,System.Byte@,Unity.Mathematics.float4*,Unity.Mathematics.float4*,System.Boolean@,System.Byte@)">
-            <summary>
-            handle operation a.xyzw and b.xxxx
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.handle_op_f2_f2(NSS.Blast.blast_operation@,System.Byte@,System.Byte@,Unity.Mathematics.float4*,Unity.Mathematics.float4*,System.Boolean@,System.Byte@)">
-            <summary>
-            handle operation a.xy and b.xy
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.handle_op_f3_f3(NSS.Blast.blast_operation@,System.Byte@,System.Byte@,Unity.Mathematics.float4*,Unity.Mathematics.float4*,System.Boolean@,System.Byte@)">
-            <summary>
-            handle operation a.xyz and b.xyz
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.handle_op_f4_f4(NSS.Blast.blast_operation@,System.Byte@,System.Byte@,Unity.Mathematics.float4*,Unity.Mathematics.float4*,System.Boolean@,System.Byte@)">
-            <summary>
-            handle operation a.xyz and b.xyz
             </summary>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_op_a_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*@,NSS.Blast.blast_operation)">
@@ -5366,10 +5409,16 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.GetCompoundResult(System.Void*,System.Int32@,System.Byte@)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.GetFunctionResult(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*@)">
             <summary>
-            process a compound, on function exit write back data to register 
+            get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
+            although external calls should be directly called when possible
             </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.GetSequenceResult(System.Void*,System.Int32@,System.Byte@)">
+            <summary>
+            process a sequence of operations into a new register value 
+            </summary>        
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(System.Byte**,System.Int32,Unity.Mathematics.float4*)">
             <summary>

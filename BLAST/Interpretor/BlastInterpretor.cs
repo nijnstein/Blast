@@ -3,9 +3,10 @@
 #define HANDLE_DEBUG_OP
 #endif
 using NSS.Blast.Standalone;
-    using Unity.Assertions;
+using Unity.Assertions;
 #else 
     using UnityEngine;
+    using UnityEngine.Assertions;
 #endif 
 
 using System;
@@ -1102,7 +1103,7 @@ namespace NSS.Blast.Interpretor
             return op >= blast_operation.and && op <= blast_operation.not_equals;
         }
 
-     
+
 
 
         #endregion
@@ -1118,7 +1119,6 @@ namespace NSS.Blast.Interpretor
         /// <param name="previous"></param>
         /// <param name="a"></param>
         /// <param name="b"></param>
-        /// <param name="last_is_op_or_first"></param>
         /// <param name="vector_size"></param>
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -1214,7 +1214,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: return a * b;
                 case blast_operation.divide: return a / b;
 
-                case blast_operation.and: return math.select(0f, 1f, math.all(a) && b != 0);
+                case blast_operation.and: return math.select(0f, 1f, math.any(a) && b != 0);
                 case blast_operation.or: return math.select(0f, 1f, math.any(a) || b != 0);
                 case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ b != 0);  // this isnt really correct but then xor on 3 operands is wierd.. 
 
@@ -1252,7 +1252,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: return a * b;
                 case blast_operation.divide: return a / b;
 
-                case blast_operation.and: return math.select(0f, 1f, math.all(a) && b != 0);
+                case blast_operation.and: return math.select(0f, 1f, math.any(a) && b != 0);
                 case blast_operation.or: return math.select(0f, 1f, math.any(a) || b != 0);
                 case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ b != 0);  // this isnt really correct but then xor on 3 operands is wierd.. 
 
@@ -1289,7 +1289,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: return a * b;
                 case blast_operation.divide: return a / b;
 
-                case blast_operation.and: return math.select(0f, 1f, math.all(a) && b != 0);
+                case blast_operation.and: return math.select(0f, 1f, math.any(a) && b != 0);
                 case blast_operation.or: return math.select(0f, 1f, math.any(a) || b != 0);
                 case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ b != 0);  // this isnt really correct but then xor on 3 operands is wierd.. 
 
@@ -1326,7 +1326,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: return a * b;
                 case blast_operation.divide: return a / b;
 
-                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.all(b));
+                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.any(b));
                 case blast_operation.or: return math.select(0f, 1f, a != 0 || math.any(b));
                 case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ math.any(b));
 
@@ -1363,7 +1363,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: return a * b;
                 case blast_operation.divide: return a / b;
 
-                case blast_operation.and: return math.select(0f, 1f, math.all(a) && math.all(b));
+                case blast_operation.and: return math.select(0f, 1f, math.any(a) && math.any(b));
                 case blast_operation.or: return math.select(0f, 1f, math.any(a) || math.any(b));
                 case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ math.any(b));
 
@@ -1400,7 +1400,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: return a * b;
                 case blast_operation.divide: return a / b;
 
-                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.all(b));
+                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.any(b));
                 case blast_operation.or: return math.select(0f, 1f, a != 0 || math.any(b));
                 case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ math.any(b));
 
@@ -1438,7 +1438,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: return a * b;
                 case blast_operation.divide: return a / b;
 
-                case blast_operation.and: return math.select(0f, 1f, math.all(a) && math.all(b));
+                case blast_operation.and: return math.select(0f, 1f, math.any(a) && math.any(b));
                 case blast_operation.or: return math.select(0f, 1f, math.any(a) || math.any(b));
                 case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ math.any(b));
 
@@ -1475,7 +1475,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: return a * b;
                 case blast_operation.divide: return a / b;
 
-                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.all(b));
+                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.any(b));
                 case blast_operation.or: return math.select(0f, 1f, a != 0 || math.any(b));
                 case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ math.any(b));
 
@@ -1513,7 +1513,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: return a * b;
                 case blast_operation.divide: return a / b;
 
-                case blast_operation.and: return math.select(0f, 1f, math.all(a) && math.all(b));
+                case blast_operation.and: return math.select(0f, 1f, math.any(a) && math.any(b));
                 case blast_operation.or: return math.select(0f, 1f, math.any(a) || math.any(b));
                 case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ math.any(b));
 
@@ -1548,7 +1548,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: a.xyz = a.xyz * b; return;
                 case blast_operation.divide: a.xyz = a.xyz / b; return;
 
-                case blast_operation.and: a.xyz = math.select(0f, 1f, math.all(a.xyz) && math.all(b)); return;
+                case blast_operation.and: a.xyz = math.select(0f, 1f, math.any(a.xyz) && math.any(b)); return;
                 case blast_operation.or: a.xyz = math.select(0f, 1f, math.any(a.xyz) || math.any(b)); return;
                 case blast_operation.xor: a.xyz = math.select(0f, 1f, math.any(a.xyz) ^ math.any(b)); return;
 
@@ -1583,7 +1583,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.multiply: a.xy = a.xy * b; return;
                 case blast_operation.divide: a.xy = a.xy / b; return;
 
-                case blast_operation.and: a.xy = math.select(0, 1, math.all(a.xy) && math.all(b)); return;
+                case blast_operation.and: a.xy = math.select(0, 1, math.any(a.xy) && math.any(b)); return;
                 case blast_operation.or: a.xy = math.select(0, 1, math.any(a.xy) || math.any(b)); return;
                 case blast_operation.xor: a.xy = math.select(0, 1, math.any(a.xy) ^ math.any(b)); return;
 
@@ -1795,7 +1795,7 @@ namespace NSS.Blast.Interpretor
                     }
 #endif
                     code_pointer += p.MinParameterCount;
-                    f4 = float.NaN; 
+                    f4 = float.NaN;
                     return;
                 }
 
@@ -1809,10 +1809,10 @@ namespace NSS.Blast.Interpretor
                 if (vector_size != 1)
                 {
                     Debug.LogError($"function {id} a return vector size > 1 is not currently supported in external functions");
-                    f4 = float.NaN; 
-                    return; 
+                    f4 = float.NaN;
+                    return;
                 }
-                if(p.AcceptsVectorSize != 1)
+                if (p.AcceptsVectorSize != 1)
                 {
                     Debug.LogError($"function {id} a parameter vector size > 1 is not currently supported in external functions");
                     f4 = float.NaN;
@@ -1828,7 +1828,7 @@ namespace NSS.Blast.Interpretor
                         FunctionPointer<Blast.BlastDelegate_f0> fp0 = p.Generic<Blast.BlastDelegate_f0>();
                         if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
                         {
-                            vector_size = 1; 
+                            vector_size = 1;
                             f4 = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr);
                             return;
                         }
@@ -1902,14 +1902,14 @@ namespace NSS.Blast.Interpretor
             f4 = float.NaN;
         }
 
-#endregion
+        #endregion
 
-#region Function Handlers 
+        #region Function Handlers 
 
 
-#region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
+        #region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
 
-#region get_[min/max/mina/maxa]_result
+        #region get_[min/max/mina/maxa]_result
         /// <summary>
         /// get the maximum value of all arguments of any vectorsize 
         /// </summary>
@@ -2260,9 +2260,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region single input same output math functions 
+        #region single input same output math functions 
 
         /// <summary>
         /// get absolute value of input
@@ -3081,9 +3081,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region fixed input count math functions
+        #region fixed input count math functions
 
         /// <summary>
         /// raise x to power of y 
@@ -3257,9 +3257,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#region fused substract multiply actions
+        #region fused substract multiply actions
 
         /// <summary>
         /// fused multiply add 
@@ -3340,9 +3340,9 @@ namespace NSS.Blast.Interpretor
 
 
 
-#endregion
+        #endregion
 
-#region math utility functions (select, lerp etc) 
+        #region math utility functions (select, lerp etc) 
 
         /// <summary>
         /// 3 inputs, first 2 any type, 3rd type equal or scalar bool
@@ -3713,9 +3713,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region mula family 
+        #region mula family 
 
 
         /// <summary>
@@ -4177,7 +4177,7 @@ namespace NSS.Blast.Interpretor
                                 break;
                         }
                     }
-                    vector_size = 4; 
+                    vector_size = 4;
                     break;
 
                 default:
@@ -4249,7 +4249,7 @@ namespace NSS.Blast.Interpretor
                             result += pop_f4(code_pointer + i);
                         }
                         code_pointer += c;
-                        vector_size = 4; 
+                        vector_size = 4;
                     }
                     break;
 
@@ -4480,7 +4480,7 @@ namespace NSS.Blast.Interpretor
                                 code_pointer += 8;
                                 break;
                         }
-                        break; 
+                        break;
                     }
 
                 case BlastVectorSizes.float2:
@@ -4658,7 +4658,7 @@ namespace NSS.Blast.Interpretor
 #endif
 
 #if DEVELOPMENT_BUILD
-            if(c < 1) 
+            if (c < 1)
             {
                 Debug.LogError($"get_any_result: parameter count '{c}' not supported");
                 f = float.NaN;
@@ -4721,7 +4721,7 @@ namespace NSS.Blast.Interpretor
                             f = pop_f4(code_pointer + 1);
                         }
                         f = math.select(0, 1, math.all(f));
-                        vector_size = 4; 
+                        vector_size = 4;
                         break;
                     }
             }
@@ -4729,9 +4729,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#region random
+        #region random
 
         /// <summary>
         /// 
@@ -4764,7 +4764,7 @@ namespace NSS.Blast.Interpretor
                                 Debug.LogError($"random: range type '{c}' not supported ");
 #endif
                                 f4 = float.NaN;
-                                break; 
+                                break;
                             }
 
                         case 0: f4 = engine_ptr->random.NextFloat(); break;
@@ -4839,22 +4839,22 @@ namespace NSS.Blast.Interpretor
                         Debug.LogError($"random: vector size '{vector_size}' not supported ");
 #endif
                         f4 = float.NaN;
-                        break; 
+                        break;
                     }
             }
         }
 
 
-#endregion
+        #endregion
 
-#endregion
-#endregion
+        #endregion
+        #endregion
 
-#region Push[cfv]
+        #region Push[cfv]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void pushc(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
         {
-            get_sequence_result(ref code_pointer, ref vector_size, out f4_register); 
+            get_sequence_result(ref code_pointer, ref vector_size, out f4_register);
             switch (vector_size)
             {
                 case 1: push(f4_register.x); break;
@@ -4913,7 +4913,7 @@ namespace NSS.Blast.Interpretor
         {
             byte param_count = code[code_pointer++];
 
-            param_count = decode44(param_count, ref vector_size); 
+            param_count = decode44(param_count, ref vector_size);
 
             if (param_count == 1 && vector_size != param_count)
             {
@@ -5013,16 +5013,15 @@ namespace NSS.Blast.Interpretor
                 case 3: push(f4_register.xyz); break;
                 case 4: push(f4_register.xyzw); break;
 #if DEVELOPMENT_BUILD
-                            default:
-                                Debug.LogError("burstscript.interpretor pushf error: variable vector size not yet supported on stack push");
-                                //  return (int)BlastError.error_variable_vector_op_not_supported;
-                                break;
+                default:
+                    Debug.LogError("burstscript.interpretor pushf error: variable vector size not yet supported on stack push");
+                    //  return (int)BlastError.error_variable_vector_op_not_supported;
+                    break;
 #endif
             }
         }
 
         #endregion
-
 
         #region AssignV Vector 
 
@@ -5038,12 +5037,12 @@ namespace NSS.Blast.Interpretor
             if (code[code_pointer] == (byte)blast_operation.substract)
             {
                 cp++;
-                return -pop_f1(code_pointer + 1); 
+                return -pop_f1(code_pointer + 1);
 
             }
             else
-            {                
-                return pop_f1(code_pointer); 
+            {
+                return pop_f1(code_pointer);
             }
         }
 
@@ -5059,7 +5058,7 @@ namespace NSS.Blast.Interpretor
         {
             // param_count == vector_size and vector_size > 1, compiler enforces it so we should not check it in release 
             // this means that vector is build from multiple data points
-            int cp = 0; 
+            int cp = 0;
             switch (vector_size)
             {
                 case 1:
@@ -5068,14 +5067,14 @@ namespace NSS.Blast.Interpretor
                     break;
                 case 2:
                     assignee[0] = pop_f1_with_minus(code_pointer, ref cp);
-                    assignee[1] = pop_f1_with_minus(code_pointer + 1 + cp, ref cp); 
+                    assignee[1] = pop_f1_with_minus(code_pointer + 1 + cp, ref cp);
                     code_pointer += 2 + cp;
                     break;
                 case 3:
                     assignee[0] = pop_f1_with_minus(code_pointer, ref cp);
                     assignee[1] = pop_f1_with_minus(code_pointer + 1 + cp, ref cp);
                     assignee[2] = pop_f1_with_minus(code_pointer + 2 + cp, ref cp);
-                    code_pointer += 3 + cp; 
+                    code_pointer += 3 + cp;
                     break;
                 case 4:
                     assignee[0] = pop_f1_with_minus(code_pointer, ref cp);
@@ -5085,17 +5084,16 @@ namespace NSS.Blast.Interpretor
                     code_pointer += 4 + cp;
                     break;
 
-                    default:
+                default:
 #if DEVELOPMENT_BUILD
-                        Debug.LogError($"burstscript.interpretor.assignv error: vector size {vector_size} not supported");
+                    Debug.LogError($"burstscript.interpretor.assignv error: vector size {vector_size} not supported");
 #endif
-                        break;
+                    break;
             }
         }
 
 
         #endregion 
-
 
         #region ByteCode Execution
 
@@ -5154,11 +5152,11 @@ namespace NSS.Blast.Interpretor
 
                 // random|seed
                 case blast_operation.random: get_random_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.seed: 
-                    f4_result = pop_f1(++code_pointer); 
-                    engine_ptr->Seed(math.asuint(f4_result.x)); 
+                case blast_operation.seed:
+                    f4_result = pop_f1(++code_pointer);
+                    engine_ptr->Seed(math.asuint(f4_result.x));
                     break;
-                
+
                 // and|all
                 case blast_operation.all: get_all_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.any: get_any_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -5231,7 +5229,7 @@ namespace NSS.Blast.Interpretor
             f4_result = float.NaN; // not really needed but compiler cannot know controlflow so it thinks the value will be unassigned
 
             vector_size = 1; // vectors dont shrink in normal operations 
-            byte current_vector_size = 1; 
+            byte current_vector_size = 1;
 
             //
             // each run:
@@ -5262,7 +5260,7 @@ namespace NSS.Blast.Interpretor
                             {
                                 blast_operation next_op = (blast_operation)code[code_pointer + 1];
 
-                                if (next_op != blast_operation.nop && BlastInterpretor.IsAssignmentOperation(next_op)) 
+                                if (next_op != blast_operation.nop && BlastInterpretor.IsAssignmentOperation(next_op))
                                 {
                                     // for now restrict ourselves to only accepting operations at this point 
                                     if (IsMathematicalOrBooleanOperation(next_op))
@@ -5316,7 +5314,7 @@ namespace NSS.Blast.Interpretor
                         {
                             // handle operation AFTER reading next value
                             current_op = (blast_operation)op;
-                            last_is_bool_or_math_operation = true; 
+                            last_is_bool_or_math_operation = true;
                         }
                         break;
 
@@ -5363,8 +5361,8 @@ namespace NSS.Blast.Interpretor
                         break;
 
 
-                        // in development builds assert on non supported operations
-                        // in release mode skip over crashing into the unknown 
+                    // in development builds assert on non supported operations
+                    // in release mode skip over crashing into the unknown 
 
 #if DEVELOPMENT_BUILD || TRACE
                     // jumps are not allowed in compounds 
@@ -5376,10 +5374,15 @@ namespace NSS.Blast.Interpretor
                         break;
 
                     // assignments are not allowed in compounds 
-                    case blast_operation.yield: 
+                    case blast_operation.yield:
                     case blast_operation.assigns:
                     case blast_operation.assign:
-                        Assert.IsTrue(false, $"BlastInterpretor.GetCompound: operation {(blast_operation)op} not allowed in compounds, codepointer = {code_pointer}"); 
+                    case blast_operation.assignf:
+                    case blast_operation.assignfe:
+                    case blast_operation.assignfn:
+                    case blast_operation.assignfen:
+                    case blast_operation.assignv: 
+                        Assert.IsTrue(false, $"BlastInterpretor.GetCompound: operation {(blast_operation)op} not allowed in compounds, codepointer = {code_pointer}");
                         break;
 
                     // any stack operation has no business in a compound other then pops
@@ -5417,7 +5420,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD
                                     Debug.LogError($"BlastInterpretor.GetCompound: codepointer: {code_pointer} => pop vector too large, vectortype {vector_size} not supported");
 #endif
-                                    f4_result = float.NaN; 
+                                    f4_result = float.NaN;
                                     return;
                             }
                         }
@@ -5507,7 +5510,7 @@ namespace NSS.Blast.Interpretor
 
 #if DEVELOPMENT_BUILD 
                     case blast_operation.seed:
-                        Assert.IsTrue(false, "NOT IMPLEMENTED YET"); 
+                        Assert.IsTrue(false, "NOT IMPLEMENTED YET");
                         break;
 
                     case blast_operation.undefined3:
@@ -5580,7 +5583,7 @@ namespace NSS.Blast.Interpretor
                                 case BlastVectorSizes.float4: f4.xyzw = engine_ptr->constants[op]; break;
                                 default:
 #if DEVELOPMENT_BUILD
-                                        Debug.LogError($"BlastInterpretor.get_sequence_result: codepointer: {code_pointer} => {code[code_pointer]}, error: unsupported vectorsize for setting result from constant");
+                                    Debug.LogError($"BlastInterpretor.get_sequence_result: codepointer: {code_pointer} => {code[code_pointer]}, error: unsupported vectorsize for setting result from constant");
 #endif
                                     break;
                             }
@@ -5603,10 +5606,10 @@ namespace NSS.Blast.Interpretor
                                     case BlastVectorSizes.float1: f4.x = ((float*)data)[id]; break;
                                     case BlastVectorSizes.float2: f4.xy = new float2(((float*)data)[id], ((float*)data)[id + 1]); break;
                                     case BlastVectorSizes.float3: f4.xyz = new float3(((float*)data)[id], ((float*)data)[id + 1], ((float*)data)[id + 2]); break;
-                                    case 0: 
+                                    case 0:
                                     case BlastVectorSizes.float4: f4 = new float4(((float*)data)[id], ((float*)data)[id + 1], ((float*)data)[id + 2], ((float*)data)[id + 3]); break;
                                 }
-                                
+
 
                                 vector_size = vector_size > this_vector_size ? vector_size : this_vector_size; // probably massively incorrect but its too late 
                             }
@@ -5622,7 +5625,7 @@ namespace NSS.Blast.Interpretor
 
                                 // this should royally screw stuff up 
                                 f4_result = float.NaN;
-                                return; 
+                                return;
                             }
                         }
 
@@ -5638,7 +5641,7 @@ namespace NSS.Blast.Interpretor
                 if (current_op == 0 && !(minus && prev_op == 0))
                 {
                     // just set according to vector size
-                    switch((BlastVectorSizes)vector_size)
+                    switch ((BlastVectorSizes)vector_size)
                     {
                         case BlastVectorSizes.float1: f4_result.x = f4.x; current_vector_size = 1; break;
                         case BlastVectorSizes.float2: f4_result.xy = f4.xy; current_vector_size = 2; break;
@@ -5733,15 +5736,15 @@ namespace NSS.Blast.Interpretor
                 }
 
                 // apply minus (if in sequence)...  
-                 f4_result = math.select(f4_result, -f4_result, minus && !last_is_bool_or_math_operation); 
-                 minus = minus && !last_is_bool_or_math_operation;
+                f4_result = math.select(f4_result, -f4_result, minus && !last_is_bool_or_math_operation);
+                minus = minus && !last_is_bool_or_math_operation;
 
 
                 // reset current operation if last thing was a value 
                 if (!last_is_bool_or_math_operation) current_op = blast_operation.nop;
 
                 // next
-                prev_op = op; 
+                prev_op = op;
                 code_pointer++;
             }
 
@@ -5938,7 +5941,7 @@ namespace NSS.Blast.Interpretor
                             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
 
-                            code_pointer++; 
+                            code_pointer++;
                             get_function_result(ref code_pointer, ref vector_size, out f4_register);
                             code_pointer++;
 
@@ -5948,11 +5951,11 @@ namespace NSS.Blast.Interpretor
                             if (s_assignee != vector_size)
                             {
                                 Debug.LogError($"blast: assign function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
-                                return (int)BlastError.error_assign_vector_size_mismatch; 
+                                return (int)BlastError.error_assign_vector_size_mismatch;
                             }
 #endif
                             // set to assignee
-                            switch(vector_size)
+                            switch (vector_size)
                             {
                                 case 1: fdata[assignee] = f4_register.x; break;
                                 case 2: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; break;
@@ -5977,7 +5980,7 @@ namespace NSS.Blast.Interpretor
                             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
 
-                            code_pointer++; 
+                            code_pointer++;
                             get_function_result(ref code_pointer, ref vector_size, out f4_register);
                             code_pointer++;
 #if DEVELOPMENT_BUILD
@@ -6013,7 +6016,7 @@ namespace NSS.Blast.Interpretor
                             // check its size?? in debug only, functions return size in vector_size 
                             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
-                            code_pointer++; 
+                            code_pointer++;
                             CallExternalFunction(ref code_pointer, ref vector_size, out f4_register);
                             code_pointer++;
 
@@ -6088,7 +6091,7 @@ namespace NSS.Blast.Interpretor
                             code_pointer++;
                             assignv(ref code_pointer, in s_assignee, &fdata[assignee]);
                         }
-                        break; 
+                        break;
 
 
 
@@ -6392,15 +6395,12 @@ namespace NSS.Blast.Interpretor
 
             return (int)BlastError.success;
         }
-                                         
 
 
-#endregion
+
+        #endregion
 
     };
-
-
-
 }
 
 

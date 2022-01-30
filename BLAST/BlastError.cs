@@ -195,6 +195,14 @@
         /// language version not supported in given context
         /// </summary>
         error_language_version_not_supported = -45,
+        /// <summary>
+        /// invalid operation in ssmd sequence
+        /// </summary>
+        ssmd_invalid_operation = -46,
+        /// <summary>
+        /// function not handled in ssmd operation 
+        /// </summary>
+        ssmd_function_not_handled = -47,
     }
 
 }
