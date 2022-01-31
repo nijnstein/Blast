@@ -989,6 +989,7 @@ namespace NSS.Blast
             RegisterFunction("cos", 1, 1, 0, 0, extended_blast_operation.cos);
             RegisterFunction("tan", 1, 1, 0, 0, extended_blast_operation.tan);
             RegisterFunction("atan", 1, 1, 0, 0, extended_blast_operation.atan);
+            RegisterFunction("atan2", 1, 1, 0, 0, extended_blast_operation.atan2);
             RegisterFunction("cosh", 1, 1, 0, 0, extended_blast_operation.cosh);
             RegisterFunction("sinh", 1, 1, 0, 0, extended_blast_operation.sinh);
             RegisterFunction("degrees", 1, 1, 0, 0, extended_blast_operation.degrees);

@@ -640,6 +640,7 @@ namespace NSS.Blast.Compiler
                                 case extended_blast_operation.cos: sb.Append("cos "); break;
                                 case extended_blast_operation.tan: sb.Append("tan "); break;
                                 case extended_blast_operation.atan: sb.Append("atan "); break;
+                                case extended_blast_operation.atan2: sb.Append("atan2 "); break;
                                 case extended_blast_operation.cosh: sb.Append("cosh "); break;
                                 case extended_blast_operation.sinh: sb.Append("sinh "); break;
 

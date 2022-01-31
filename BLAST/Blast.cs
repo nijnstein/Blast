@@ -1472,8 +1472,9 @@ namespace NSS.Blast
                             case extended_blast_operation.pow:
                             case extended_blast_operation.sin: 
                             case extended_blast_operation.cos: 
-                            case extended_blast_operation.tan: 
-                            case extended_blast_operation.atan: 
+                            case extended_blast_operation.tan:
+                            case extended_blast_operation.atan:
+                            case extended_blast_operation.atan2:
                             case extended_blast_operation.cosh: 
                             case extended_blast_operation.sinh: 
                             case extended_blast_operation.degrees: 

@@ -5536,6 +5536,11 @@
             - vectorsize in == vectorsize out
             </summary>
         </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_atan2_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
+            <summary>
+            get the full arctangengs -pi to +pi radians
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_dot_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
             <summary>
             get dot product of 2 paramaters 
@@ -5616,16 +5621,13 @@
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_any_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
             <summary>
-            a = any(a b c d) 
-            
-            todo -> should update this to early out.. maybe compiler does it already on the || check assembly here
-            
+            a = any(a b c d), vectorsizes must all be equal, output vectorsize == input vectorsize
             </summary>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_all_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
             <summary>
-            !any() is a lot cheaper then all() because we can drop out early and may not need to lookup every value /// </summary>
-            <returns></returns>
+            check if all operands are true ==  != 0,  works vector component wise and thus returns the same vectorsize as input
+            </summary>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_random_result(System.Int32@,System.Byte@,Unity.Mathematics.float4@)">
             <summary>
@@ -5700,6 +5702,12 @@
         <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.metadata">
             <summary>
             metadata segment pointer
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.ValidationMode">
+            <summary>
+            if true, the script is executed in validation mode:
+            - external calls just return 0's
             </summary>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.SetPackage(NSS.Blast.BlastPackageData@)">
@@ -5785,7 +5793,12 @@
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f1_into(System.Int32@,System.Single*)">
             <summary>
-            pop a float1 value form stack data or constant source and put it in destination 
+            pop a float1 value form stack|data|constant source and put it in destination 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f1_into_f4(System.Int32@,Unity.Mathematics.float4*)">
+            <summary>
+            pop an f1 from stack|data|constant and move it into f4.x
             </summary>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into``1(System.Int32@,``0*)">
@@ -5969,6 +5982,20 @@
             handle operation a.x and b.x
             </summary>
         </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_cross_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
+            <summary>
+            only accepts size 3 vectors 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_dot_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
+            <summary>
+            result vector size == 1 in all cases
+            </summary>
+            <param name="temp"></param>
+            <param name="code_pointer"></param>
+            <param name="vector_size"></param>
+            <param name="register"></param>
+        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_select_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
             <summary>
             select first input on a false condition, select the second on a true condition that is put in parameter 3
@@ -5985,6 +6012,42 @@
             
             Assembly sample with vectors: <c>a = select((1 1), (2 2), 1) => setf a select 1 pop pop nop</c>
             </remarks>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_clamp_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
+            <summary>
+            clamp value between operands
+            </summary>
+            <remarks>
+            first min then max => saves 1 memory buffer doing this in sequence (math lib will also do min(max( so this should be equal in performance but turned upside down in flow
+            <code>
+            
+            a = clamp(a, min, max); 
+            
+            </code>
+            </remarks>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_lerp_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
+            <summary>
+            lerp value from min to max 
+            </summary>
+            <remarks>
+            
+            a = lerp(min, max, s); 
+            
+            TODO :     for all 3 input functions:   we should test stackallocs if they are conditional or not
+            - if they are always allocated move every case with stackalloc into its own function ? code explosin without templates/generics
+             
+            </remarks>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_mina_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
+            <summary>
+            get the minimal component from all arguments of any vectorsize
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_maxa_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
+            <summary>
+            get the max component from all arguments of any vectorsize
+            </summary>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_op_a_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*@,NSS.Blast.blast_operation)">
             <summary>
@@ -6006,7 +6069,7 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.GetFunctionResult(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*@)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.GetFunctionResult(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*@,System.Boolean)">
             <summary>
             get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
             although external calls should be directly called when possible

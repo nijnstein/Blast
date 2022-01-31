@@ -417,6 +417,7 @@ namespace NSS.Blast
         cos,
         tan,
         atan,
+        atan2,
         cosh,
         sinh,
 

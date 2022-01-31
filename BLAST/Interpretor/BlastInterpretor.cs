@@ -1888,7 +1888,7 @@ namespace NSS.Blast.Interpretor
 
 #if DEVELOPMENT_BUILD || TRACE
                     default:
-                        Debug.LogError($"function id {id}, with paremetercount {p.MinParameterCount} is not supported yet");
+                        Debug.LogError($"function id {id}, with parametercount {p.MinParameterCount} is not supported yet");
                         break;
 #endif
                 }
@@ -3142,6 +3142,64 @@ namespace NSS.Blast.Interpretor
 
             code_pointer += 2;
         }
+
+
+        /// <summary>
+        /// get the full arctangengs -pi to +pi radians
+        /// </summary>
+        void get_atan2_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            f4 = float.NaN;
+            BlastVariableDataType datatype;
+
+            float* d1 = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
+
+#if DEVELOPMENT_BUILD
+            BlastVariableDataType datatype_2;
+            byte vector_size_2;
+
+            float* d2 = (float*)pop_with_info(code_pointer + 2, out datatype_2, out vector_size_2);
+
+            if (datatype == BlastVariableDataType.ID)
+            {
+                Debug.LogError($"ID datatype in atan2 not implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                return;
+            }
+            if (datatype != datatype_2 || vector_size != vector_size_2)
+            {
+                Debug.LogError($"atan2: input parameter datatype|vector_size mismatch, these must be equal. p1 = {datatype}.{vector_size}, p2 = {datatype_2}.{vector_size_2}");
+                return;
+            }
+#endif
+
+            switch ((BlastVectorSizes)vector_size)
+            {
+                case 0:
+#if DEVELOPMENT_BUILD
+                case BlastVectorSizes.float4: f4 = math.atan2(((float4*)d1)[0], ((float4*)d2)[0]); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.atan2(((float*)d1)[0], ((float*)d2)[0]); break;
+                case BlastVectorSizes.float2: f4.xy = math.atan2(((float2*)d1)[0], ((float2*)d2)[0]); break;
+                case BlastVectorSizes.float3: f4.xyz = math.atan2(((float3*)d1)[0], ((float3*)d2)[0]); break;
+#else
+                // in release build we dont need information on the second parameter 
+                case BlastVectorSizes.float4: f4 = math.atan2(((float4*)d1)[0], pop_f4(code_pointer + 2)); vector_size = 4; break;
+                case BlastVectorSizes.float1: f4.x = math.atan2(((float*)d1)[0], pop_f1(code_pointer + 2)); break;
+                case BlastVectorSizes.float2: f4.xy = math.atan2(((float2*)d1)[0], pop_f2(code_pointer + 2)); break;
+                case BlastVectorSizes.float3: f4.xyz = math.atan2(((float3*)d1)[0], pop_f3(code_pointer + 2)); break;
+#endif
+
+#if DEVELOPMENT_BUILD
+                default:
+                    {
+                        Debug.LogError($"atan2: {datatype} vector size '{vector_size}' not supported ");
+                        break;
+                    }
+#endif
+            }
+
+            code_pointer += 2;
+        }
+
 
         /// <summary>
         /// get dot product of 2 paramaters 
@@ -4411,10 +4469,7 @@ namespace NSS.Blast.Interpretor
         }
 
         /// <summary>
-        /// a = any(a b c d) 
-        /// 
-        /// todo -> should update this to early out.. maybe compiler does it already on the || check assembly here
-        /// 
+        /// a = any(a b c d), vectorsizes must all be equal, output vectorsize == input vectorsize
         /// </summary>
         void get_any_result(ref int code_pointer, ref byte vector_size, out float4 f)
         {
@@ -4437,7 +4492,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if DEVELOPMENT_BUILD
-                                Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                                Debug.LogError($"blast.interpretor.get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 f = float.NaN;
                                 break;
@@ -4486,7 +4541,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if DEVELOPMENT_BUILD
-                                Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                                Debug.LogError($"blast.interpretor.get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 f = float.NaN;
                                 break;
@@ -4535,7 +4590,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if DEVELOPMENT_BUILD
-                                Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                                Debug.LogError($"blast.interpretor.get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 f = float.NaN;
                                 break;
@@ -4585,7 +4640,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if DEVELOPMENT_BUILD
-                                Debug.LogError($"get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                                Debug.LogError($"blast.interpretor.get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
 #endif
                                 f = float.NaN;
                                 break;
@@ -4632,7 +4687,7 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
 #if DEVELOPMENT_BUILD
-                        Debug.LogError($"get_any_result: vector size '{vector_size}' not (yet) supported");
+                        Debug.LogError($"blast.interpretor.get_any_result: vector size '{vector_size}' not (yet) supported");
 #endif
                         f = float.NaN;
                         break;
@@ -4641,10 +4696,11 @@ namespace NSS.Blast.Interpretor
         }
 
         /// <summary>
-        /// !any() is a lot cheaper then all() because we can drop out early and may not need to lookup every value /// </summary>
-        /// <returns></returns>
+        /// check if all operands are true ==  != 0,  works vector component wise and thus returns the same vectorsize as input
+        /// </summary>
         void get_all_result(ref int code_pointer, ref byte vector_size, out float4 f)
         {
+            f = 0f;
             code_pointer++;
             byte c = code[code_pointer];
 
@@ -4676,48 +4732,70 @@ namespace NSS.Blast.Interpretor
 
                 case BlastVectorSizes.float1:
                     {
-                        float x = pop_f1(code_pointer + 1);
-
-                        // we can stop reading stuff if x == 0 as all will never be true 
-                        for (int i = 2; i <= c && x != 0; i++)
+                        f.x = pop_f1(code_pointer + 1) == 0 ? 0f : 1f;
+                        //
+                        //    CANNOT STOP EARLY DUE TO STACK OPERATIONS  
+                        //    TODO   we could only process stack-offset changes in one is zero, doubt if there is much benefit
+                        //                        
+                        for (int i = 2; i <= c /*&& x != 0*/; i++)
                         {
-                            x = pop_f1(code_pointer + i);
+                            f.x = math.select(0f, 1f, pop_f1(code_pointer + i) != 0 && f.x != 0);
                         }
-                        f = math.select(0, 1, x != 0);
                         break;
                     }
 
                 case BlastVectorSizes.float2:
                     {
-                        float2 xx = pop_f2(code_pointer + 1);
-                        for (int i = 2; i <= c && math.all(xx); i++)
+                        bool2 b2 = pop_f2(code_pointer + 1) != 0; 
+                       
+                        for (int i = 2; i <= c; i++)
                         {
-                            xx = pop_f2(code_pointer + 1);
+                            bool2 b22 = pop_f2(code_pointer + 1) != 0;
+                            b2.x = b2.x && b22.x;
+                            b2.y = b2.y && b22.y;
                         }
-                        f = math.select(0, 1, math.all(xx));
+
+                        f.x = math.select(0f, 1f, b2.x);
+                        f.y = math.select(0f, 1f, b2.y);
                         break;
                     }
 
                 case BlastVectorSizes.float3:
                     {
-                        float3 xxx = pop_f3(code_pointer + 1);
-                        for (int i = 2; i <= c && math.all(xxx); i++)
+                        bool3 b3 = pop_f3(code_pointer + 1) != 0;
+
+                        for (int i = 2; i <= c; i++)
                         {
-                            xxx = pop_f3(code_pointer + 1);
+                            bool3 b32 = pop_f3(code_pointer + 1) != 0;
+                            b3.x = b3.x && b32.x;
+                            b3.y = b3.y && b32.y;
+                            b3.z = b3.z && b32.z;
                         }
-                        f = math.select(0, 1, math.all(xxx));
+
+                        f.x = math.select(0f, 1f, b3.x);
+                        f.y = math.select(0f, 1f, b3.y);
+                        f.z = math.select(0f, 1f, b3.z);
                         break;
                     }
 
                 case 0:
                 case BlastVectorSizes.float4:
                     {
-                        f = pop_f4(code_pointer + 1);
-                        for (int i = 2; i <= c && math.all(f); i++)
+                        bool4 b4 = pop_f4(code_pointer + 1) != 0;
+
+                        for (int i = 2; i <= c; i++)
                         {
-                            f = pop_f4(code_pointer + 1);
+                            bool4 b42 = pop_f4(code_pointer + 1) != 0;
+                            b4.x = b4.x && b42.x;
+                            b4.y = b4.y && b42.y;
+                            b4.z = b4.z && b42.z;
+                            b4.w = b4.w && b42.w;
                         }
-                        f = math.select(0, 1, math.all(f));
+
+                        f.x = math.select(0f, 1f, b4.x);
+                        f.y = math.select(0f, 1f, b4.y);
+                        f.z = math.select(0f, 1f, b4.z);
+                        f.w = math.select(0f, 1f, b4.w); 
                         vector_size = 4;
                         break;
                     }
@@ -5172,6 +5250,7 @@ namespace NSS.Blast.Interpretor
                             case extended_blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.atan2: get_atan2_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -5484,6 +5563,7 @@ namespace NSS.Blast.Interpretor
                                     case extended_blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.atan2: get_atan2_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4); break;

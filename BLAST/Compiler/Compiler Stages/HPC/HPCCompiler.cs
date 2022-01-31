@@ -131,6 +131,7 @@ namespace NSS.Blast.Compiler.Stage
                             case extended_blast_operation.cos: return "math.cos";
                             case extended_blast_operation.tan: return "math.tan";
                             case extended_blast_operation.atan: return "math.atan";
+                            case extended_blast_operation.atan2: return "math.atan2";
                             case extended_blast_operation.cosh: return "math.cosh";
                             case extended_blast_operation.sinh: return "math.sinh";
 
