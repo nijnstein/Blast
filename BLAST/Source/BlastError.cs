@@ -222,7 +222,11 @@
         /// <summary>
         /// an attempt was made to use a function that is not known to the script api registry
         /// </summary>
-        error_scriptapi_function_not_registered = -52
+        error_scriptapi_function_not_registered = -52,
+        /// <summary>
+        /// syncbuffer growing to deep, either reduce nesting or increase sync buffer depth
+        /// </summary>
+        error_ssmd_sync_buffer_to_deep = -53
     }
 
 }

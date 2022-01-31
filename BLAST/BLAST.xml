@@ -857,6 +857,11 @@
             an attempt was made to use a function that is not known to the script api registry
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastError.error_ssmd_sync_buffer_to_deep">
+            <summary>
+            syncbuffer growing to deep, either reduce nesting or increase sync buffer depth
+            </summary>
+        </member>
         <member name="T:NSS.Blast.BlastPackageMode">
             <summary>
             Blast script packaging types 
@@ -5094,12 +5099,6 @@
             </summary>
         </member>
         <member name="F:NSS.Blast.Interpretor.BlastInterpretor.ValidationMode">
-             <summary>
-             stack segment pointer
-             </summary>
-            [NoAlias]
-            [NativeDisableUnsafePtrRestriction]
-            internal unsafe float* stack;
             <summary>
             if true, the script is executed in validation mode:
             - external calls just return 0's
@@ -5704,6 +5703,26 @@
             metadata segment pointer
             </summary>
         </member>
+        <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.syncbits">
+            <summary>
+            sync buffer(s)
+            </summary>
+            <remarks>
+            Sync buffers are composed of 1 bit for each datastream and level of nesting, every jump in ssmd mode 
+            generates a new sync buffer level and these may nest until some maximum level <cref>syncbuffer_depth</cref> 
+            
+            </remarks>        
+        </member>
+        <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.syncbuffer_depth">
+            <summary>
+            depth of syncbuffer 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.syncbuffer_level">
+            <summary>
+            current maximum synclevel
+            </summary>
+        </member>
         <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.ValidationMode">
             <summary>
             if true, the script is executed in validation mode:
@@ -6080,12 +6099,13 @@
             process a sequence of operations into a new register value 
             </summary>        
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(System.Byte**,System.Int32,Unity.Mathematics.float4*)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(System.Byte*,System.Byte**,System.Int32,Unity.Mathematics.float4*)">
             <summary>
             main interpretor loop 
             </summary>
+            <param name="syncbuffer"></param>
             <param name="datastack"></param>
-            <param name="ssmd_data_count"></param>
+            <param name="ssmd_data_count">should be divisable by 8</param>
             <param name="f4_register"></param>
             <returns></returns>
         </member>

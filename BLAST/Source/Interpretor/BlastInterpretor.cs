@@ -102,13 +102,6 @@ namespace NSS.Blast.Interpretor
         internal unsafe byte* metadata;
 
         /// <summary>
-        /// stack segment pointer
-        /// </summary>
-        ///[NoAlias]
-        ///[NativeDisableUnsafePtrRestriction]
-        ///internal unsafe float* stack;
-
-        /// <summary>
         /// if true, the script is executed in validation mode:
         /// - external calls just return 0's
         /// </summary>
@@ -209,6 +202,7 @@ namespace NSS.Blast.Interpretor
 
             // killing yield.. 
             /*int */
+            
             code_pointer = 0;
             return execute(blast, environment, caller); // ref package->code_pointer);
         }
