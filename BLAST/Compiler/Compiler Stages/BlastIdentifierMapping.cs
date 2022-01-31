@@ -163,7 +163,7 @@ namespace NSS.Blast.Compiler.Stage
             // we start at the root and walk to each leaf, anything not known should raise an error 
             if (!map_identifiers(data, data.AST))
             {
-                data.LogError($"Blast.Compiler.IdentifierMapping: failed to map all identifiers");
+                data.LogError($"blast.compiler.identifiermapping: failed to map all identifiers");
                 return (int)BlastError.error_mapping_parameters;
             }
 

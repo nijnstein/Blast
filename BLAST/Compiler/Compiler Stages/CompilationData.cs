@@ -572,26 +572,6 @@ namespace NSS.Blast.Compiler
                         case blast_operation.jump: sb.Append("jump "); break;
                         case blast_operation.jump_back: sb.Append("jumpback "); break;
 
-                        case blast_operation.lerp: sb.Append("lerp "); break;
-                        case blast_operation.slerp: sb.Append("slerp "); break;
-
-                        case blast_operation.saturate: sb.Append("saturate "); break;
-                        case blast_operation.clamp: sb.Append("clamp "); break;
-
-                        case blast_operation.ceil: sb.Append("ceil "); break;
-                        case blast_operation.floor: sb.Append("floor "); break;
-                        case blast_operation.frac: sb.Append("frac "); break;
-
-                        case blast_operation.sin: sb.Append("sin "); break;
-                        case blast_operation.cos: sb.Append("cos "); break;
-                        case blast_operation.tan: sb.Append("tan "); break;
-                        case blast_operation.atan: sb.Append("atan "); break;
-                        case blast_operation.cosh: sb.Append("cosh "); break;
-                        case blast_operation.sinh: sb.Append("sinh "); break;
-
-                        case blast_operation.degrees: sb.Append("degrees "); break;
-                        case blast_operation.radians: sb.Append("radians "); break;
-
                         case blast_operation.ret: sb.Append("return "); break;
 
                         case blast_operation.value_0: sb.Append("0 "); break;
@@ -656,6 +636,24 @@ namespace NSS.Blast.Compiler
                                 case extended_blast_operation.sqrt: sb.Append("sqrt "); break;
                                 case extended_blast_operation.rsqrt: sb.Append("rsqrt "); break;
                                 case extended_blast_operation.pow: sb.Append("pow "); break;
+                                case extended_blast_operation.sin: sb.Append("sin "); break;
+                                case extended_blast_operation.cos: sb.Append("cos "); break;
+                                case extended_blast_operation.tan: sb.Append("tan "); break;
+                                case extended_blast_operation.atan: sb.Append("atan "); break;
+                                case extended_blast_operation.cosh: sb.Append("cosh "); break;
+                                case extended_blast_operation.sinh: sb.Append("sinh "); break;
+
+                                case extended_blast_operation.degrees: sb.Append("degrees "); break;
+                                case extended_blast_operation.radians: sb.Append("radians "); break;
+
+                                case extended_blast_operation.lerp: sb.Append("lerp "); break;
+                                case extended_blast_operation.slerp: sb.Append("slerp "); break;
+                                case extended_blast_operation.saturate: sb.Append("saturate "); break;
+                                case extended_blast_operation.clamp: sb.Append("clamp "); break;
+                                case extended_blast_operation.ceil: sb.Append("ceil "); break;
+                                case extended_blast_operation.floor: sb.Append("floor "); break;
+                                case extended_blast_operation.frac: sb.Append("frac "); break;
+
 
                                 case extended_blast_operation.call:
                                     sb.Append("call ");

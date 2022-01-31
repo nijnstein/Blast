@@ -4,6 +4,7 @@ using System.Text;
 
 #if STANDALONE_VSBUILD
     using Unity.Assertions;
+using NSS.Blast.Standalone; 
 #else
 using UnityEngine.Assertions;
 #endif
@@ -361,6 +362,7 @@ namespace NSS.Blast
         /// </summary>
         public int FunctionCount { get { return FunctionInfo == null ? 0 : FunctionInfo.Count; } }
 
+        #region Initialize / Destroy 
         /// <summary>
         /// Constructor for a new blastscriptapi instance, provides native allocator
         /// </summary>
@@ -417,16 +419,28 @@ namespace NSS.Blast
         /// </summary>
         public void Dispose()
         {
-            if(Allocator != Allocator.None)
-            unsafe
+            Destroy(); 
+        }
+        
+        /// <summary>
+        /// destroy native allocations, return to uninitialized state 
+        /// </summary>
+        protected void Destroy()
+        {
+            if (Allocator != Allocator.None)
+                unsafe
                 {
                     if (Functions != null)
                     {
                         UnsafeUtils.Free(Functions, Allocator);
+                        Functions = null;
                     }
                     Allocator = Allocator.None;
                 }
+            IsInitialized = false; 
         }
+
+        #endregion 
 
         #region RegisterFunction overloads
 
@@ -446,6 +460,8 @@ namespace NSS.Blast
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
 
+            if (IsInitialized) Destroy(); 
+
             BlastScriptFunctionInfo info = new BlastScriptFunctionInfo();
             info.Function.FunctionId = (int)id;
 
@@ -455,17 +471,8 @@ namespace NSS.Blast
 
             unsafe
             {
-                info.Match = name;
-                char[] ch = info.Match.Trim().ToLowerInvariant().ToCharArray();
-
-                for (int i = 0; i < ch.Length; i++)
-                {
-                    info.Function.Match[i] = ch[i];
-                }
-                for (int i = ch.Length; i < Blast.MaximumFunctionNameLength; i++)
-                {
-                    info.Function.Match[i] = (char)0;
-                }
+                fixed (char* pch = info.Function.Match)
+                    CodeUtils.FillCharArray(pch, name.ToLower().Trim(), Blast.MaximumFunctionNameLength);
             }
 
             info.Function.Flags = BlastScriptFunctionFlag.Reserved;
@@ -498,6 +505,8 @@ namespace NSS.Blast
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
 
+            if (IsInitialized) Destroy();
+
             BlastScriptFunctionInfo info = new BlastScriptFunctionInfo();
             info.Function.FunctionId = (int)id;
 
@@ -507,17 +516,8 @@ namespace NSS.Blast
 
             unsafe
             {
-                info.Match = name;
-                char[] ch = info.Match.Trim().ToLowerInvariant().ToCharArray();
-
-                for (int i = 0; i < ch.Length; i++)
-                {
-                    info.Function.Match[i] = ch[i];
-                }
-                for (int i = ch.Length; i < Blast.MaximumFunctionNameLength; i++)
-                {
-                    info.Function.Match[i] = (char)0;
-                }
+                fixed (char* pch = info.Function.Match)
+                    CodeUtils.FillCharArray(pch, name.ToLower().Trim(), Blast.MaximumFunctionNameLength);
             }
 
             info.Function.Flags = BlastScriptFunctionFlag.Reserved;
@@ -548,25 +548,17 @@ namespace NSS.Blast
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
 
+            if (IsInitialized) Destroy();
+
             BlastScriptFunctionInfo info = new BlastScriptFunctionInfo();
             info.Function.FunctionId = FunctionInfo.Count;
             FunctionInfo.Add(info);
 
             unsafe
             {
-                info.Match = name;
-                char[] ch = info.Match.Trim().ToLowerInvariant().ToCharArray();
-
-                for (int i = 0; i < ch.Length; i++)
-                {
-                    info.Function.Match[i] = ch[i];
-                }
-                for (int i = ch.Length; i < Blast.MaximumFunctionNameLength; i++)
-                {
-                    info.Function.Match[i] = (char)0;
-                }
+                fixed (char* pch = info.Function.Match)
+                    CodeUtils.FillCharArray(pch, name.ToLower().Trim(), Blast.MaximumFunctionNameLength);
             }
-
 
             info.Function.MinParameterCount = (byte)parameter_count;
             info.Function.MaxParameterCount = (byte)parameter_count; 
@@ -593,25 +585,18 @@ namespace NSS.Blast
         public int RegisterFunction(string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, blast_operation op)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
-            Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long"); 
+            Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
+
+            if (IsInitialized) Destroy();
 
             BlastScriptFunctionInfo info = new BlastScriptFunctionInfo();
             info.Function.FunctionId = FunctionInfo.Count;
-            FunctionInfo.Add(info); 
+            FunctionInfo.Add(info);
 
             unsafe
             {
-                info.Match = name;
-                char[] ch = info.Match.Trim().ToLowerInvariant().ToCharArray();
-
-                for (int i = 0; i < ch.Length; i++)
-                {
-                    info.Function.Match[i] = ch[i];
-                }
-                for (int i = ch.Length; i < Blast.MaximumFunctionNameLength; i++)
-                {
-                    info.Function.Match[i] = (char)0; 
-                }
+                fixed (char* pch = info.Function.Match)
+                    CodeUtils.FillCharArray(pch, name.ToLower().Trim(), Blast.MaximumFunctionNameLength);
             }
 
             info.Function.MinParameterCount = (byte)min_param_count;
@@ -641,25 +626,17 @@ namespace NSS.Blast
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
 
+            if (IsInitialized) Destroy();
+
             BlastScriptFunctionInfo info = new BlastScriptFunctionInfo();
             info.Function.FunctionId = FunctionInfo.Count;
             FunctionInfo.Add(info);
-
-            unsafe
-            {
-                info.Match = name;
-                char[] ch = info.Match.Trim().ToLowerInvariant().ToCharArray();
-
-                for (int i = 0; i < ch.Length; i++)
-                {
-                    info.Function.Match[i] = ch[i];
-                }
-                for (int i = ch.Length; i < Blast.MaximumFunctionNameLength; i++)
-                {
-                    info.Function.Match[i] = (char)0;
-                }
+            
+            unsafe 
+            { 
+                fixed( char* pch = info.Function.Match) 
+                    CodeUtils.FillCharArray(pch, name.ToLower().Trim(), Blast.MaximumFunctionNameLength);
             }
-
 
             info.Function.MinParameterCount = (byte)min_param_count;
             info.Function.MaxParameterCount = (byte)max_param_count;
@@ -672,6 +649,133 @@ namespace NSS.Blast
 
             return info.Function.FunctionId;
         }
+
+        #endregion
+
+        #region Register External Functions
+
+
+        //
+        //  if register after api init:      functions add to end op api list, rebuilds api pointers 
+        // 
+
+
+
+        /// <summary>
+        /// register an external function name within the blast script API, while no functionpointer is supplied 
+        /// the name is registered for later use
+        /// </summary>
+        /// <remarks>
+        /// 
+        /// </remarks>
+        /// <param name="name">the functionname, which is asserted to be unique</param>
+        /// <param name="returns">the variable type returned</param>
+        /// <param name="parameters">a list of parameter names, used for visualization only</param>
+        /// <returns>an unique id for this function</returns>
+        public int RegisterFunction(string name, BlastVariableDataType returns, string[] parameters)
+        {
+            return RegisterFunction(IntPtr.Zero, name, returns, parameters);
+        }
+
+
+        /// <summary>
+        /// register functionpointer as an external call 
+        /// </summary>
+        /// <param name="fp">the function pointer, if null a reservation is still made for the id</param>
+        /// <param name="name">the function name, may not contain tokens or reserved words</param>
+        /// <param name="returns">the returned datatype</param>
+        /// <param name="parameters">array of parameter names, used for visualizations only</param>
+        /// <returns>an unique id for this function, negative errorcodes on error</returns>
+        public int RegisterFunction(IntPtr fp, string name, BlastVariableDataType returns, string[] parameters)
+        {
+            if (IsInitialized) Destroy();
+
+            Assert.IsFalse(string.IsNullOrWhiteSpace(name));
+            Assert.IsNotNull(FunctionInfo); 
+
+            if(FunctionExists(name))
+            {
+#if DEVELOPMENT_BUILD
+                // consider this an error in program flow
+                Debug.LogError($"blast.scriptapi.register: a function with the name '{name}' already exists and thus cannot be registered again.");
+#endif
+                return (int)BlastError.error_scriptapi_function_already_exists; 
+            }
+
+            int id = FunctionInfo.Count;
+
+            BlastScriptFunctionInfo finfo = new BlastScriptFunctionInfo();
+            finfo.Function.FunctionId = id;
+            finfo.Function.NativeFunctionPointer = fp;
+            finfo.Function.Flags = BlastScriptFunctionFlag.NativeFunction;
+            finfo.Function.ScriptOp = blast_operation.ex_op;
+            finfo.Function.ExtendedScriptOp = extended_blast_operation.call;
+
+            finfo.Function.AcceptsVectorSize = 1;
+            finfo.Function.ReturnsVectorSize = 1;
+            finfo.Function.MinParameterCount = (byte)parameters.Length;
+            finfo.Function.MaxParameterCount = (byte)parameters.Length;
+            unsafe
+            {
+                fixed (char* pch = finfo.Function.Match)
+                    CodeUtils.FillCharArray(pch, name.ToLower().Trim(), Blast.MaximumFunctionNameLength);
+            }
+
+
+            finfo.Match = name;
+            finfo.Parameters = parameters;
+
+            FunctionInfo.Add(finfo);
+
+            return finfo.Function.FunctionId;
+        }
+ 
+        /// <summary>
+        /// Update the function pointer belonging to a registration 
+        /// </summary>
+        /// <param name="id">the function's id, it is asserted to exist</param>
+        /// <param name="fp">the function pointer, may update to zero</param>
+        /// <returns>success or error code</returns>
+        public BlastError UpdateRegistration(int id, IntPtr fp)
+        {
+            Assert.IsNotNull(FunctionInfo); 
+
+            BlastScriptFunctionInfo info = GetFunctionById(id);
+
+            // program flow error if not already registred 
+            if(info == null)
+            {
+#if DEVELOPMENT_BUILD
+                Debug.LogError($"blast.scriptapi.updateregistration: a function with the id '{id}' could not be found in the registry.");
+#endif
+                return BlastError.error_scriptapi_function_not_registered; 
+            }
+
+#if TRACE
+            if(fp == IntPtr.Zero)
+            {
+                Debug.LogWarning($"blast.scriptapi.updateregistration: a function with the id '{id}' is updated to a null function pointer, is this intended?");
+            }
+#endif 
+
+            // update function pointer 
+            info.Function.NativeFunctionPointer = fp; 
+
+            if(IsInitialized)
+            {
+                unsafe
+                {
+                    if (id >= 32 || id < FunctionCount) // doesnt hurt to be sure
+                    {
+                        Functions[id] = info.Function;
+                    }
+                }
+            }
+
+            // return success 
+            return BlastError.success; 
+        }
+
 
         #endregion
 
@@ -694,6 +798,21 @@ namespace NSS.Blast
             return null;
         }
 
+        /// <summary>
+        /// check if a function exists by its name 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public bool FunctionExists(string name)
+        {
+            for (int i = 0; i < FunctionInfo.Count; i++)
+                if (string.Compare(name, FunctionInfo[i].Match, true) == 0)
+                {
+                    return true; 
+                }
+
+            return false; 
+        }
 
 
         /// <summary>
@@ -855,36 +974,32 @@ namespace NSS.Blast
             RegisterFunction("max", 2, 63, 0, 0, blast_operation.max);
             RegisterFunction("mina", 1, 63, 0, 1, blast_operation.mina);
             RegisterFunction("maxa", 1, 63, 0, 1, blast_operation.maxa);
-            RegisterFunction("select", 3, 3, 0, 0, blast_operation.select);
-            RegisterFunction("random", 0, 2, 0, 0, blast_operation.random);
-            RegisterFunction("lerp", 3, 3, 0, 0, blast_operation.lerp);
-            RegisterFunction("slerp", 3, 3, 4, 4, blast_operation.slerp);
-            RegisterFunction("nlerp", 3, 3, 4, 4, blast_operation.nlerp);
             RegisterFunction("any", 2, 63, 0, 0, blast_operation.any);
             RegisterFunction("all", 2, 63, 0, 0, blast_operation.all);
             RegisterFunction("adda", 2, 63, 0, 0, blast_operation.adda);
             RegisterFunction("suba", 2, 63, 0, 0, blast_operation.suba);
             RegisterFunction("diva", 2, 63, 0, 0, blast_operation.diva);
             RegisterFunction("mula", 2, 63, 0, 0, blast_operation.mula);
-            RegisterFunction("ceil", 1, 1, 0, 0, blast_operation.ceil);
-            RegisterFunction("floor", 1, 1, 0, 0, blast_operation.floor);
-            RegisterFunction("frac", 1, 1, 0, 0, blast_operation.frac);
-            RegisterFunction("sin", 1, 1, 0, 0, blast_operation.sin);
-            RegisterFunction("cos", 1, 1, 0, 0, blast_operation.cos);
-            RegisterFunction("tan", 1, 1, 0, 0, blast_operation.tan);
-            RegisterFunction("atan", 1, 1, 0, 0, blast_operation.atan);
-            RegisterFunction("cosh", 1, 1, 0, 0, blast_operation.cosh);
-            RegisterFunction("sinh", 1, 1, 0, 0, blast_operation.sinh);
-            RegisterFunction("degrees", 1, 1, 0, 0, blast_operation.degrees);
-            RegisterFunction("rad", 1, 1, 0, 0, blast_operation.radians);
             RegisterFunction("fma", 3, 3, 0, 0, blast_operation.fma);
+
+            RegisterFunction("select", 3, 3, 0, 0, blast_operation.select);
+            RegisterFunction("random", 0, 2, 0, 0, blast_operation.random);
+
+            RegisterFunction("sin", 1, 1, 0, 0, extended_blast_operation.sin);
+            RegisterFunction("cos", 1, 1, 0, 0, extended_blast_operation.cos);
+            RegisterFunction("tan", 1, 1, 0, 0, extended_blast_operation.tan);
+            RegisterFunction("atan", 1, 1, 0, 0, extended_blast_operation.atan);
+            RegisterFunction("cosh", 1, 1, 0, 0, extended_blast_operation.cosh);
+            RegisterFunction("sinh", 1, 1, 0, 0, extended_blast_operation.sinh);
+            RegisterFunction("degrees", 1, 1, 0, 0, extended_blast_operation.degrees);
+            RegisterFunction("rad", 1, 1, 0, 0, extended_blast_operation.radians);
 
             RegisterFunction("sqrt", 1, 1, 0, 0, extended_blast_operation.sqrt);
             RegisterFunction("rsqrt", 1, 1, 0, 0, extended_blast_operation.rsqrt);
             RegisterFunction("pow", 2, 2, 0, 0, extended_blast_operation.pow);
-            RegisterFunction("normalize", 1, 1, 0, 0, blast_operation.normalize);
-            RegisterFunction("saturate", 1, 1, 0, 0, blast_operation.saturate);
-            RegisterFunction("clamp", 3, 3, 0, 0, blast_operation.clamp);
+            RegisterFunction("normalize", 1, 1, 0, 0, extended_blast_operation.normalize);
+            RegisterFunction("saturate", 1, 1, 0, 0, extended_blast_operation.saturate);
+            RegisterFunction("clamp", 3, 3, 0, 0, extended_blast_operation.clamp);
             RegisterFunction("log2", 1, 1, 0, 0, extended_blast_operation.log2);
             RegisterFunction("log10", 1, 1, 0, 0, extended_blast_operation.log10);
             RegisterFunction("log", 1, 1, 0, 0, extended_blast_operation.logn);
@@ -893,6 +1008,12 @@ namespace NSS.Blast
             RegisterFunction("cross", 2, 2, 3, 3, extended_blast_operation.cross);
             RegisterFunction("dot", 2, 2, 0, 1, extended_blast_operation.dot);
 
+            RegisterFunction("ceil", 1, 1, 0, 0, extended_blast_operation.ceil);
+            RegisterFunction("floor", 1, 1, 0, 0, extended_blast_operation.floor);
+            RegisterFunction("frac", 1, 1, 0, 0, extended_blast_operation.frac);
+            RegisterFunction("lerp", 3, 3, 0, 0, extended_blast_operation.lerp);
+            RegisterFunction("slerp", 3, 3, 4, 4, extended_blast_operation.slerp);
+            RegisterFunction("nlerp", 3, 3, 4, 4, extended_blast_operation.nlerp);
             return this;
         }
     }

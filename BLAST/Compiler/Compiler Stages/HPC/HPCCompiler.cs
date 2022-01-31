@@ -113,29 +113,7 @@ namespace NSS.Blast.Compiler.Stage
                     case blast_operation.min: return "blast.min"; 
                     case blast_operation.maxa: return "blast.maxa";
                     case blast_operation.mina: return "blast.mina"; 
-
-                    case blast_operation.lerp: return "math.lerp"; 
-                    case blast_operation.slerp: return "math.slerp";
-                    case blast_operation.clamp: return "math.clamp"; 
-                    case blast_operation.saturate: return "math.saturate"; 
-                    
-                    case blast_operation.normalize: return "math.normalize"; 
-                    
-                    case blast_operation.ceil: return "math.ceil"; 
-                    case blast_operation.floor: return "math.floor"; 
-                    case blast_operation.frac: return "math.frac";
-                    
-                    case blast_operation.sin: return "math.sin";
-                    case blast_operation.cos: return "math.cos"; 
-                    case blast_operation.tan: return "math.tan";
-                    case blast_operation.atan: return "math.atan";
-                    case blast_operation.cosh: return "math.cosh";
-                    case blast_operation.sinh: return "math.sinh";
-                    
-                    case blast_operation.degrees: return "math.degrees"; 
-                    case blast_operation.radians: return "math.radians"; 
-
-
+                   
                     case blast_operation.ex_op:
                         switch(function.ExtendedScriptOp)
                         {
@@ -149,6 +127,26 @@ namespace NSS.Blast.Compiler.Stage
                             case extended_blast_operation.sqrt: return "math.sqrt";
                             case extended_blast_operation.rsqrt: return "math.rsqrt";
                             case extended_blast_operation.pow: return "math.pow";
+                            case extended_blast_operation.sin: return "math.sin";
+                            case extended_blast_operation.cos: return "math.cos";
+                            case extended_blast_operation.tan: return "math.tan";
+                            case extended_blast_operation.atan: return "math.atan";
+                            case extended_blast_operation.cosh: return "math.cosh";
+                            case extended_blast_operation.sinh: return "math.sinh";
+
+                            case extended_blast_operation.degrees: return "math.degrees";
+                            case extended_blast_operation.radians: return "math.radians";
+
+                            case extended_blast_operation.lerp: return "math.lerp";
+                            case extended_blast_operation.slerp: return "math.slerp";
+                            case extended_blast_operation.clamp: return "math.clamp";
+                            case extended_blast_operation.saturate: return "math.saturate";
+
+                            case extended_blast_operation.normalize: return "math.normalize";
+
+                            case extended_blast_operation.ceil: return "math.ceil";
+                            case extended_blast_operation.floor: return "math.floor";
+                            case extended_blast_operation.frac: return "math.frac";
                         }
                         break;
                 }

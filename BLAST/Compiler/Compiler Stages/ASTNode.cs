@@ -1840,10 +1840,11 @@ namespace NSS.Blast.Compiler
             Assert.IsNotNull(node);
             Assert.IsNotNull(children);
 
-            children.Insert(0, node);
-
             if (node.parent != null && node.parent.ChildCount > 0) node.parent.children.Remove(node);
+
+            children.Insert(0, node);
             node.parent = this;
+
 
             return node; 
         }

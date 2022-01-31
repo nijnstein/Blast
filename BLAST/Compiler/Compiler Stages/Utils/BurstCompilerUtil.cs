@@ -70,37 +70,20 @@ namespace NSS.Blast
 
             return StringBuilderCache.GetStringAndRelease(ref sb);
         }
-    }
 
-
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer'
-    public struct NonGenericFunctionPointer
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer'
-    {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.id'
-        public readonly int id;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.id'
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.parameter_count'
-        public readonly int parameter_count; 
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.parameter_count'
-
-        [NativeDisableUnsafePtrRestriction]
-        private readonly IntPtr ptr;
-
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.NonGenericFunctionPointer(IntPtr, int, int)'
-        public NonGenericFunctionPointer(IntPtr ptr, int id, int parameter_count)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.NonGenericFunctionPointer(IntPtr, int, int)'
+        [BurstDiscard]
+        internal static unsafe void FillCharArray(char* pch, string text, int n_max)
         {
-            this.ptr = ptr;
-            this.id = id;
-            this.parameter_count = parameter_count; 
-        }
+            char[] ch = text.ToCharArray();
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.Generic<T>()'
-        public FunctionPointer<T> Generic<T>()
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'NonGenericFunctionPointer.Generic<T>()'
-        {
-            return new FunctionPointer<T>(ptr);
+            for (int i = 0; i < ch.Length; i++)
+            {
+                pch[i] = ch[i];
+            }
+            for (int i = ch.Length; i < n_max; i++)
+            {
+                pch[i] = (char)0;
+            }
         }
     }
 

@@ -137,11 +137,6 @@
             the value used for invalid numerics 
             </summary>
         </member>
-        <member name="F:NSS.Blast.Blast.StackFillPattern">
-            <summary>
-            The fill pattern for stack on initialize, easier to spot bugs if stack is filled with a pattern instead of zeros or random which might have different causes, something bugged setting all bytes to 101 should be very suspicious
-            </summary>
-        </member>
         <member name="F:NSS.Blast.Blast.data">
             <summary>
             Pointer to native memory holding data used during interpretation:
@@ -367,8 +362,33 @@
         </member>
         <member name="F:NSS.Blast.Blast.Tokens">
             <summary>
-            defines tokens that can be used in script
+            defines tokens that can be used in script, not all tokens are referenced here, only those not built on keywords (if then/ switch etc.)
             </summary>
+        </member>
+        <member name="F:NSS.Blast.Blast.ReservedWords">
+            <summary>
+            Reserverd words by BLAST Script 
+            </summary>
+            <remarks>
+            Reserved words are keywords used by blast to identify built in (flow)control operations:
+            <code>
+            
+            Flow control:
+                IF THEN ELSE
+                SWITCH CASE DEFAULT    
+                WHILE | FOR
+                
+            Compiler control:
+                DEFINE 
+                INPUT
+                OUTPUT
+                VALIDATE
+            
+            And any defined function name.
+            
+            </code>
+            
+            </remarks>
         </member>
         <member name="M:NSS.Blast.Blast.IsJumpOperation(NSS.Blast.blast_operation)">
             <summary>
@@ -376,6 +396,30 @@
             </summary>
             <param name="op">operation to check</param>
             <returns>true if a jump</returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.IsOperationSSMDHandled(NSS.Blast.blast_operation)">
+             <summary>
+             returns true for ssmd valid operations: 
+             
+                    add = 2,  
+                    substract = 3,
+                    divide = 4,
+                    multiply = 5,
+                    and = 6,
+                    or = 7,
+                    not = 8,
+                    xor = 9,
+            
+                    greater = 10,
+                    greater_equals = 11,
+                    smaller = 12,
+                    smaller_equals,
+                    equals,
+                    not_equals
+                    
+             </summary>
+             <param name="op">the operation to check</param>
+             <returns>true if handled by the ssmd interpretor</returns>
         </member>
         <member name="M:NSS.Blast.Blast.VisualizeTokens(System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},System.Int32,System.Int32)">
             <summary>
@@ -803,6 +847,16 @@
             analyzer failed to determine all parameter types, vectorsizes and reference counts
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastError.error_scriptapi_function_already_exists">
+            <summary>
+            an attempt was made to register a function with the scriptapi that already exists 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_scriptapi_function_not_registered">
+            <summary>
+            an attempt was made to use a function that is not known to the script api registry
+            </summary>
+        </member>
         <member name="T:NSS.Blast.BlastPackageMode">
             <summary>
             Blast script packaging types 
@@ -811,7 +865,7 @@
         <member name="F:NSS.Blast.BlastPackageMode.Normal">
             <summary>
             Compile all into a single package, code data and stack combined  
-            
+            <code>
             [----CODE----|----METADATA----|----DATA----|----STACK----]
                          1                2            3             4  
             
@@ -821,13 +875,13 @@
             2 = data_offset 
             3 = stack_offset 
             4 = package_size  
-            
+            </code>
             </summary>
         </member>
         <member name="F:NSS.Blast.BlastPackageMode.SSMD">
             <summary>
             SSMD Package with code and metadata seperate from datastack
-            
+            <code>
             - SSMD requirement: while data changes, its intent does not so metadata is shared
             
             - SSDM in V2/BS2 allows for (nested) branching by setting sync points on non constant jumps: 
@@ -843,13 +897,13 @@
             4 = datasegment size 
             
             prop stacksize (in elements) => (datasegment size - stack_offset) / 4
-            
+            </code>
             </summary>
         </member>
         <member name="F:NSS.Blast.BlastPackageMode.Entity">
             <summary>
             Entity Package: the script's code is seperated from all data
-            
+            <code>
             [----CODE----]      [----METADATA----|----DATA----|----STACK----]
                          1                       2            3             4
             
@@ -857,11 +911,12 @@
             2 = metadata size 
             3 = stack offset 
             4 = datasegment size 
-            
+            </code>
             </summary>
         </member>
         <member name="F:NSS.Blast.BlastPackageMode.Compiler">
             <summary>
+            <code>
             package type used by compiler 
             
             - THE POINTERS ARE INVALID
@@ -873,7 +928,7 @@
             2 = metadata size 
             3 = datasize in bytes / stack offset in bytes 
             4 = datasegment size = stackcapacity = 4 - 3  
-            
+            </code>
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastPackageFlags">
@@ -910,6 +965,26 @@
             <summary>
             data for ssmd operation modes: data-stack only
             - only used as pointer, fields handy in debugger
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.a">
+            <summary>
+            fictional - for debug view only
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.b">
+            <summary>
+            fictional - for debug view only
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.c">
+            <summary>
+            fictional - for debug view only
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.d">
+            <summary>
+            fictional - for debug view only
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastPackageData">
@@ -1229,15 +1304,15 @@
             
             </summary>
         </member>
-        <member name="F:NSS.Blast.BlastScriptPackage.Package">
-            <summary>
-            the bytecode package 
-            </summary>
-        </member>
         <member name="F:NSS.Blast.BlastScriptPackage.Bursted">
             <summary>
             A functionpointer to burst transpiled bytecode, possible if the package was known at compile time. 
-            SSMD mode will still use the bytecode package.  
+            SSMD mode will still use the bytecode package. 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptPackage.Package">
+            <summary>
+            the bytecode package 
             </summary>
         </member>
         <member name="P:NSS.Blast.BlastScriptPackage.IsBurstCompiled">
@@ -4306,6 +4381,11 @@
             dispose of any native memory that could be allocated for holding function pointer information 
             </summary>
         </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.Destroy">
+            <summary>
+            destroy native allocations, return to uninitialized state 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(NSS.Blast.ReservedBlastScriptFunctionIds,System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.blast_operation)">
             <summary>
             Register a function with blast
@@ -4367,12 +4447,50 @@
             <param name="op">blast operation used to encode it</param>
             <returns>returns a unique (within the blast instance) function id</returns>
         </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,NSS.Blast.BlastVariableDataType,System.String[])">
+            <summary>
+            register an external function name within the blast script API, while no functionpointer is supplied 
+            the name is registered for later use
+            </summary>
+            <remarks>
+            
+            </remarks>
+            <param name="name">the functionname, which is asserted to be unique</param>
+            <param name="returns">the variable type returned</param>
+            <param name="parameters">a list of parameter names, used for visualization only</param>
+            <returns>an unique id for this function</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.IntPtr,System.String,NSS.Blast.BlastVariableDataType,System.String[])">
+            <summary>
+            register functionpointer as an external call 
+            </summary>
+            <param name="fp">the function pointer, if null a reservation is still made for the id</param>
+            <param name="name">the function name, may not contain tokens or reserved words</param>
+            <param name="returns">the returned datatype</param>
+            <param name="parameters">array of parameter names, used for visualizations only</param>
+            <returns>an unique id for this function, negative errorcodes on error</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.UpdateRegistration(System.Int32,System.IntPtr)">
+            <summary>
+            Update the function pointer belonging to a registration 
+            </summary>
+            <param name="id">the function's id, it is asserted to exist</param>
+            <param name="fp">the function pointer, may update to zero</param>
+            <returns>success or error code</returns>
+        </member>
         <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionByOpCode(NSS.Blast.blast_operation)">
             <summary>
             lookup a function definition that is directly linked to an interpretor operation 
             </summary>
             <param name="op">the operation that should translate to a function used during interpretation</param>
             <returns>a function definition</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.FunctionExists(System.String)">
+            <summary>
+            check if a function exists by its name 
+            </summary>
+            <param name="name"></param>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionByName(System.String)">
             <summary>
@@ -4703,10 +4821,191 @@
             get min argument from operands returns size 1 vector
             </summary>
         </member>
+        <member name="F:NSS.Blast.blast_operation.pi">
+            <summary>
+            PI
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.inv_pi">
+            <summary>
+            Inverse of PI 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.epsilon">
+            <summary>
+            The difference between 1.0f and the next representable f32/single precision number.
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.infinity">
+            <summary>
+            positive infinity value 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.negative_infinity">
+            <summary>
+            negative infinity value
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.nan">
+            <summary>
+            Not a number 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.min_value">
+            <summary>
+            smallest positive value for datatype
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.BlastScriptToken">
+            <summary>
+            The tokens used in languageversions: BS1|BS2|BSSSDM1
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptToken.Nop">
+            <summary>
+            nop instruction 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptToken.Add">
+            <summary>
+            add 2 operands together <c>a = a + b;</c>
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptToken.Substract">
+            <summary>
+            substract 2 operands from eachother <c>a = a - b;</c>
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptToken.Divide">
+            <summary>
+            divide 2 operands: <c>a = a / b;</c>
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptToken.Multiply">
+            <summary>
+            multiply 2 operands: <c>a = a * b;</c>
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptToken.Equals">
+            <summary>
+            boolean equals, returns 1 for true, 0 for false; <c>a = a == b;</c>
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptToken.TernaryOption">
+            <summary>
+            de double colon ':', used in switch statements and ternary operations: 
+            <remarks>
+            <code>
+            a = 1 ? 1 : 0; 
+            switch(a) 
+            (
+                case 1: 
+                (
+                    b = 2;
+                )
+                default: 
+                (  
+                    b = 3;
+                )
+            )    
+            </code>
+            </remarks>
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptToken.Switch">
+            <summary>
+            the switch statement, there must be at least 1 case or 1 default statement. 
+            </summary>
+            <remarks>
+            <code>
+            a = 1 ? 1 : 0; 
+            switch(a) 
+            (
+                case 1: 
+                (
+                    b = 2;
+                )
+                default: 
+                (  
+                    b = 3;
+                )
+            )    
+            </code>
+            </remarks>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptToken.Case">
+            <summary>
+            the case statement, the condition in switch is matched to the value in case, if they match that path is taken
+            </summary>
+            <remarks>
+            <code>
+            a = 1 ? 1 : 0; 
+            switch(a) 
+            (
+                case 1: 
+                (
+                    b = 2;
+                )
+                default: 
+                (  
+                    b = 3;
+                )
+            )    
+            </code>
+            </remarks>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptToken.Default">
+            <summary>
+            the default case, part of the switch statement and chosen when no other case applies 
+            </summary>
+            <remarks>
+            <code>
+            a = 1 ? 1 : 0; 
+            switch(a) 
+            (
+                case 1: 
+                (
+                    b = 2;
+                )
+                default: 
+                (  
+                    b = 3;
+                )
+            )    
+            </code>
+            </remarks>
+        </member>
         <member name="T:NSS.Blast.BlastScriptTokenDefinition">
             <summary>
             definition of a token used in blast script 
             </summary>
+            <remarks>
+            A token definition is used to provide more information on tokens, mainly for debugging, but also for ease
+            of possible future extensions 
+            </remarks>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptTokenDefinition.Token">
+            <summary>
+            the token being defined
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptTokenDefinition.Match">
+            <summary>
+            the character to match to 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptTokenDefinition.Description">
+            <summary>
+            description of token 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptTokenDefinition.#ctor(NSS.Blast.BlastScriptToken,System.Char,System.String)">
+            <summary>
+            token constructor 
+            </summary>
+            <param name="token">token id</param>
+            <param name="match">char to match</param>
+            <param name="description">description of the token</param>
         </member>
         <member name="M:NSS.Blast.CodeUtils.GetBytesView(System.Byte*,System.Int32,System.Int32,System.Boolean)">
             <summary>
@@ -5489,9 +5788,22 @@
             pop a float1 value form stack data or constant source and put it in destination 
             </summary>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into``1(System.Int32@,System.Byte)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into``1(System.Int32@,``0*)">
             <summary>
-            pop a float and assign it to dataindex inside a datasegment 
+            pop a float[1|2|3|4] value form stack data or constant source and put it in destination 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into``1(System.Int32@,System.Byte@)">
+            <summary>
+            pop operation [stack/constant/variabledata] and move it into dataindex 
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="code_pointer"></param>
+            <param name="dataindex"></param>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_stack_fx_into``1(System.Int32@,System.Byte)">
+            <summary>
+            pop a float from stack and assign it to dataindex inside a datasegment 
             - shouldt the compiler just directly assign the dataindex (if possible)
             </summary>
             <typeparam name="T"></typeparam>
@@ -5518,34 +5830,10 @@
             pop a float and assign it to dataindex inside a datasegment, if there is a minus sign at the poplocation pop the next and keep the sign
             </summary>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into``1(System.Int32@,``0*)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.push_pop_f(System.Int32@,System.Int32@)">
             <summary>
-            pop a float[1|2|3|4] value form stack data or constant source and put it in destination 
+            read codebyte, determine data location, pop data and push it on the stack
             </summary>
-        </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.OperationIsSSMDHandled(NSS.Blast.blast_operation)">
-             <summary>
-             returns true for ssmd valid operations: 
-             
-                    add = 2,  
-                    substract = 3,
-                    divide = 4,
-                    multiply = 5,
-                    and = 6,
-                    or = 7,
-                    not = 8,
-                    xor = 9,
-            
-                    greater = 10,
-                    greater_equals = 11,
-                    smaller = 12,
-                    smaller_equals,
-                    equals,
-                    not_equals
-                    
-             </summary>
-             <param name="op">the operation to check</param>
-             <returns>true if handled by the ssmd interpretor</returns>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f1_with_op_into_f1(System.Int32@,System.Single*,System.Single*,NSS.Blast.blast_operation)">
             <summary>
@@ -5666,11 +5954,6 @@
             </summary>
             <param name="index">data index</param>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.push_pop_f(System.Int32@,System.Int32@)">
-            <summary>
-            read codebyte, determine data location, pop data and push it on the stack
-            </summary>
-        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_register_from_data_f1(System.Single*)">
             <summary>
             set register[n].x from data 
@@ -5686,6 +5969,23 @@
             handle operation a.x and b.x
             </summary>
         </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_select_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
+            <summary>
+            select first input on a false condition, select the second on a true condition that is put in parameter 3
+            </summary>
+            <remarks>
+            3 inputs, first 2 any type, 3rd type equal or scalar bool
+            
+            c[x] = select(a[x], b[x], condition[1/x])
+            
+            - input = outputvectorsize
+            - 1 output  
+            
+            Assembly for scalar constants<c>a = select(1, 2, 1) => setf a select 1 2 1 nop</c>
+            
+            Assembly sample with vectors: <c>a = select((1 1), (2 2), 1) => setf a select 1 pop pop nop</c>
+            </remarks>
+        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_op_a_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*@,NSS.Blast.blast_operation)">
             <summary>
             handle a sequence of operations
@@ -5697,6 +5997,7 @@
             <param name="code_pointer">current codepointer</param>
             <param name="vector_size">output vectorsize</param>
             <param name="f4">output data vector</param>
+            <param name="operation">operation to take on the vectors</param>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_fma_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*@)">
             <summary>

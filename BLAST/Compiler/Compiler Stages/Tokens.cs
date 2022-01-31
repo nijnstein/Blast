@@ -275,51 +275,69 @@ namespace NSS.Blast
         /// </summary>
         mina,
 
-        lerp,
-        slerp,
-        nlerp,
 
-        saturate,         //   return clamp(x, new float3(0.0f), new float3(1.0f));
-        clamp,
-        normalize,
+        reserved1,
+        reserved2,
+        reserved3,
+        reserved4,
+        reserved5,
+        reserved6,
+        reserved7,
+        reserved8,
+        reserved9,
+        reserved0,         
+        reserved10,    
+        reserved11, 
+        reserved12, 
+        reserved13, 
+        reserved14,
+        reserved15,
+        reserved16,
+        reserved17,
+        reserved18,
+        reserved19,
+        reserved20,
+        reserved21,
+        reserved22,
+        reserved23,
+        reserved24,
 
-        ceil,
-        floor,
-        frac,
-
-        sin,
-        cos,
-        tan,
-        atan,
-        cosh,
-        sinh,
-
-        degrees,
-        radians,
-
-        undefined33,
-        undefined3,         
-        undefined4,    
-        undefined5, 
-        undefined6, 
-        undefined7, 
-        undefined8,
-        undefined9,
 
         //------------------------
-        // constant math values start here at PI
+        
+        /// <summary>
+        /// PI
+        /// </summary>
         pi,       // = 77
+
+        /// <summary>
+        /// Inverse of PI 
+        /// </summary>
         inv_pi,
 
-        // The difference between 1.0f and the next representable f32/single precision number.
+        /// <summary>
+        /// The difference between 1.0f and the next representable f32/single precision number.
+        /// </summary>
         epsilon,
 
-        // positive infinity value
+        /// <summary>
+        /// positive infinity value 
+        /// </summary>
         infinity,
+        
+        /// <summary>
+        /// negative infinity value
+        /// </summary>
         negative_infinity,
+
+        /// <summary>
+        /// Not a number 
+        /// </summary>
         nan,
 
-        // smallest positive value for datatype
+        /// <summary>
+        /// smallest positive value for datatype
+        /// </summary>
         min_value,
 
         //------------------------
@@ -394,6 +412,27 @@ namespace NSS.Blast
         rsqrt,
         pow,
 
+
+        sin,
+        cos,
+        tan,
+        atan,
+        cosh,
+        sinh,
+
+        degrees,
+        radians,
+
+        lerp,
+        slerp,
+        nlerp,
+        saturate,         //   return clamp(x, new float3(0.0f), new float3(1.0f));
+        clamp,
+        normalize,
+        ceil,
+        floor,
+        frac,
+
         debugstack = 252,
         debug = 253,
         call = 254, // call external
@@ -401,19 +440,63 @@ namespace NSS.Blast
     }
 
 
+    /// <summary>
+    /// The tokens used in languageversions: BS1|BS2|BSSSDM1
+    /// </summary>
     public enum BlastScriptToken : byte
     {
+        /// <summary>
+        /// nop instruction 
+        /// </summary>
         Nop,
 
+        /// <summary>
+        /// add 2 operands together <c>a = a + b;</c>
+        /// </summary>
         Add,
+
+        /// <summary>
+        /// substract 2 operands from eachother <c>a = a - b;</c>
+        /// </summary>
         Substract,
+
+        /// <summary>
+        /// divide 2 operands: <c>a = a / b;</c>
+        /// </summary>
         Divide,
+
+        /// <summary>
+        /// multiply 2 operands: <c>a = a * b;</c>
+        /// </summary>
         Multiply,
+
+        /// <summary>
+        /// boolean equals, returns 1 for true, 0 for false; <c>a = a == b;</c>
+        /// </summary>
         Equals,
 #if SUPPORT_TERNARY
         Ternary,        // ?          
 #endif
-        TernaryOption,  // besides being part of the ternary it also is part of the case statement
+        /// <summary>
+        /// de double colon ':', used in switch statements and ternary operations: 
+        /// <remarks>
+        /// <code>
+        /// a = 1 ? 1 : 0; 
+        /// switch(a) 
+        /// (
+        ///     case 1: 
+        ///     (
+        ///         b = 2;
+        ///     )
+        ///     default: 
+        ///     (  
+        ///         b = 3;
+        ///     )
+        /// )    
+        /// </code>
+        /// </remarks>
+        /// </summary>
+        TernaryOption,
         SmallerThen,
         GreaterThen,
         SmallerThenEquals,
@@ -444,20 +527,100 @@ namespace NSS.Blast
         While,
         For,
 
+        /// <summary>
+        /// the switch statement, there must be at least 1 case or 1 default statement. 
+        /// </summary>
+        /// <remarks>
+        /// <code>
+        /// a = 1 ? 1 : 0; 
+        /// switch(a) 
+        /// (
+        ///     case 1: 
+        ///     (
+        ///         b = 2;
+        ///     )
+        ///     default: 
+        ///     (  
+        ///         b = 3;
+        ///     )
+        /// )    
+        /// </code>
+        /// </remarks>
         Switch,
+
+        /// <summary>
+        /// the case statement, the condition in switch is matched to the value in case, if they match that path is taken
+        /// </summary>
+        /// <remarks>
+        /// <code>
+        /// a = 1 ? 1 : 0; 
+        /// switch(a) 
+        /// (
+        ///     case 1: 
+        ///     (
+        ///         b = 2;
+        ///     )
+        ///     default: 
+        ///     (  
+        ///         b = 3;
+        ///     )
+        /// )    
+        /// </code>
+        /// </remarks>
         Case,
+
+        /// <summary>
+        /// the default case, part of the switch statement and chosen when no other case applies 
+        /// </summary>
+        /// <remarks>
+        /// <code>
+        /// a = 1 ? 1 : 0; 
+        /// switch(a) 
+        /// (
+        ///     case 1: 
+        ///     (
+        ///         b = 2;
+        ///     )
+        ///     default: 
+        ///     (  
+        ///         b = 3;
+        ///     )
+        /// )    
+        /// </code>
+        /// </remarks>
         Default
     }
 
     /// <summary>
     /// definition of a token used in blast script 
     /// </summary>
+    /// <remarks>
+    /// A token definition is used to provide more information on tokens, mainly for debugging, but also for ease
+    /// of possible future extensions 
+    /// </remarks>
     public class BlastScriptTokenDefinition
     {
+        /// <summary>
+        /// the token being defined
+        /// </summary>
         public BlastScriptToken Token { get; set; }
+        
+        /// <summary>
+        /// the character to match to 
+        /// </summary>
         public char Match { get; set; }
 
+        /// <summary>
+        /// description of token 
+        /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// token constructor 
+        /// </summary>
+        /// <param name="token">token id</param>
+        /// <param name="match">char to match</param>
+        /// <param name="description">description of the token</param>
         public BlastScriptTokenDefinition(BlastScriptToken token, char match, string description)
         {
             Token = token;

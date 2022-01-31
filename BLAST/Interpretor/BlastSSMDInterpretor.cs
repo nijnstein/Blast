@@ -353,7 +353,7 @@ namespace NSS.Blast.SSMD
             if (size != 1)
             {
                 Debug.LogError($"blast.ssmd.stack: pop(float) size mismatch, stack contains vectorsize {size} datatype while size 1 is expected");
-                for (int i = 0; i < ssmd_datacount; i++) destination[i] = float.NaN; 
+                for (int i = 0; i < ssmd_datacount; i++) destination[i] = float.NaN;
                 return;
             }
 #endif
@@ -394,7 +394,7 @@ namespace NSS.Blast.SSMD
             }
         }
 
-        void pop_fn_into(in int code_pointer, [NoAlias]float4* destination, bool minus, ref byte vector_size)
+        void pop_fn_into(in int code_pointer, [NoAlias]float4* destination, bool minus, out byte vector_size)
         {
             vector_size = 0;
             byte c = code[code_pointer];
@@ -473,7 +473,7 @@ namespace NSS.Blast.SSMD
                         }
                         break;
 #if DEVELOPMENT_BUILD
-                   default:
+                    default:
                         Debug.LogError($"blast.ssmd.stack, pop_fn_into -> vectorsize not supported, found {type} of size {vector_size} at data offset {c - BlastInterpretor.opt_id}");
                         break;
 #endif
@@ -644,14 +644,204 @@ namespace NSS.Blast.SSMD
         }
 
 
+
         /// <summary>
-        /// pop a float and assign it to dataindex inside a datasegment 
+        /// pop a float[1|2|3|4] value form stack data or constant source and put it in destination 
+        /// </summary>
+        void pop_fx_into<T>(in int code_pointer, [NoAlias]T* destination) where T : unmanaged
+        {
+            int vector_size = sizeof(T) / 4;
+
+            // we get either a pop instruction or an instruction to get a value 
+            byte c = code[code_pointer];
+
+            if (c >= BlastInterpretor.opt_id)
+            {
+#if DEVELOPMENT_BUILD
+                BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
+                int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
+                if (size != vector_size || type != BlastVariableDataType.Numeric)
+                {
+                    Debug.LogError($"blast.ssmd.pop_fx_into<T> -> data mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
+                    return;
+                }
+#endif
+                // variable acccess
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i] = ((T*)data[i])[c - BlastInterpretor.opt_id];
+                }
+            }
+            else
+            if (c == (byte)blast_operation.pop)
+            {
+#if DEVELOPMENT_BUILD
+                BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
+                int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
+                if (size != vector_size || type != BlastVariableDataType.Numeric)
+                {
+                    Debug.LogError($"blast.ssmd.pop_fx_into<T> -> stackdata mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at stack offset {stack_offset}");
+                    return;
+                }
+#endif
+                // stack pop 
+                stack_offset = stack_offset - vector_size;
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i] = ((T*)(void*)&((float*)stack[i])[stack_offset])[0];
+                }
+            }
+            else
+            if (c >= BlastInterpretor.opt_value)
+            {
+                float constant = engine_ptr->constants[c];
+                switch (vector_size)
+                {
+                    case 1: for (int i = 0; i < ssmd_datacount; i++) ((float*)(void*)destination)[i] = constant; break;
+                    case 2: for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)destination)[i].xy = constant; break;
+                    case 3: for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)destination)[i].xyz = constant; break;
+                    case 0:
+                    case 4: for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)destination)[i].xyzw = constant; break;
+                }
+            }
+
+            else
+            {
+                // error or.. constant by operation value.... 
+#if DEVELOPMENT_BUILD
+                Debug.LogError("blast.ssmd.pop_fx_into<T> -> select op by constant value is not supported");
+#endif
+            }
+        }
+
+        /// <summary>
+        /// pop operation [stack/constant/variabledata] and move it into dataindex 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="code_pointer"></param>
+        /// <param name="dataindex"></param>
+        void pop_fx_into<T>(in int code_pointer, in byte dataindex) where T : unmanaged
+        {
+            int vector_size = sizeof(T) / 4;
+
+            // get datatype of destination, it should match T
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, dataindex);
+            int datasize = BlastInterpretor.GetMetaDataSize(metadata, dataindex);
+
+#if DEVELOPMENT_BUILD
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.pop_fx_into -> datatype of data at index {dataindex} is not numeric but {datatype}");
+            }
+            datasize = (byte)math.select(datasize, 4, datasize == 0);
+            if (datasize != (byte)vector_size)
+            {
+                Debug.LogError($"blast.ssmd.pop_fx_into -> datasize of data at index {dataindex} is different from what the caller expects. Data size: {datasize}, caller size: {vector_size}");
+            }
+#endif
+            // we only allow equal vector sizes, compiler should use conversion ops 
+            switch (vector_size)
+            {
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+
+                    blast_operation c = (blast_operation)code[code_pointer];
+                    if (c == blast_operation.pop)
+                    {
+                        //
+                        // STACK operation 
+                        //
+
+                        stack_offset = stack_offset - vector_size;
+
+#if DEVELOPMENT_BUILD
+                        // validate the stack
+                        BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset));
+                        int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset));
+                        if (size != vector_size || type != BlastVariableDataType.Numeric)
+                        {
+                            Debug.LogError($"blast.ssmd.pop_fx_into<T>(assignee = {dataindex}) -> stackdata mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at stack offset {stack_offset}");
+                            return;
+                        }
+#endif
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            ((T*)(void*)&((float*)data[i])[dataindex])[0] = ((T*)(void*)&((float*)stack[i])[stack_offset])[0];
+                        }
+                    }
+                    else
+                    if (c >= blast_operation.id)
+                    {
+                        //
+                        // DATASEG operation
+                        // 
+                        int source_index = (int)c - (int)BlastInterpretor.opt_id;
+                        if (source_index == dataindex)
+                        {
+                            // dont need to move anything .. 
+                            // if this would ever be the case, compiler should be checked
+                            return;
+                        }
+
+#if DEVELOPMENT_BUILD
+                        // validate source index
+                        BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(source_index));
+                        int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(source_index));
+                        if (size != vector_size || type != BlastVariableDataType.Numeric)
+                        {
+                            Debug.LogError($"blast.ssmd.pop_fx_into<T>(assignee = {dataindex}) -> datasegment mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at stack offset {stack_offset}");
+                            return;
+                        }
+#endif
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            ((T*)(void*)&((float*)data[i])[dataindex])[0] = ((T*)(void*)&((float*)data[i])[source_index])[0];
+                        }
+                    }
+                    else
+                    if (c >= blast_operation.pi)
+                    {
+                        //
+                        // CONSTANT operation                         
+                        //
+
+                        // set a vector of max size, and get a pointer to it
+                        // regardless of vector_size(T) we still would write correct value 
+                        float4 constant = engine_ptr->constants[(int)c];
+                        {
+                            for (int i = 0; i < ssmd_datacount; i++)
+                            {
+                                ((T*)(void*)&((float*)data[i])[dataindex])[0] = ((T*)(void*)(&constant))[0];
+                            }
+                        }
+
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD
+                default:
+                    {
+                        Debug.LogError($"blast.ssmd.pop_fx_into<T>(assignee = {dataindex}) -> vectorsize {vector_size} not supported");
+                    }
+                    break;
+#endif                     
+
+            }
+        }
+
+
+
+        /// <summary>
+        /// pop a float from stack and assign it to dataindex inside a datasegment 
         /// - shouldt the compiler just directly assign the dataindex (if possible)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="code_pointer"></param>
         /// <param name="dataindex"></param>
-        void pop_fx_into<T>(in int code_pointer, byte dataindex) where T : unmanaged
+        void pop_stack_fx_into<T>(in int code_pointer, byte dataindex) where T : unmanaged
         {
             int vector_size = sizeof(T) / 4;
 
@@ -663,7 +853,7 @@ namespace NSS.Blast.SSMD
             {
                 Debug.LogError($"blast.ssmd.pop_fx_into -> datatype of data at index {dataindex} is not numeric but {datatype}");
             }
-            datasize = (byte)math.select(datasize, 4, datasize == 0); 
+            datasize = (byte)math.select(datasize, 4, datasize == 0);
             if (datasize != (byte)vector_size)
             {
                 Debug.LogError($"blast.ssmd.pop_fx_into -> datasize of data at index {dataindex} is different from what the caller expects. Data size: {datasize}, caller size: {vector_size}");
@@ -711,7 +901,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// pop a float and assign it to dataindex inside a datasegment, if there is a minus sign at the poplocation pop the next and keep the sign
         /// </summary>
-        void pop_f1_into_with_minus(in int code_pointer, byte dataindex, ref int cp) 
+        void pop_f1_into_with_minus(in int code_pointer, byte dataindex, ref int cp)
         {
             BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, dataindex);
             int datasize = BlastInterpretor.GetMetaDataSize(metadata, dataindex);
@@ -719,12 +909,12 @@ namespace NSS.Blast.SSMD
             // we get either a pop instruction or an instruction to get a value possibly preceded by a minus sign 
             byte c = code[code_pointer];
 
-            bool minus = false; 
+            bool minus = false;
             if (c == (byte)blast_operation.substract)
             {
                 cp++;
                 c = code[code_pointer + 1];
-                minus = true; 
+                minus = true;
             }
 
             if (c >= BlastInterpretor.opt_id)
@@ -789,7 +979,7 @@ namespace NSS.Blast.SSMD
             if (c >= BlastInterpretor.opt_value)
             {
                 float constant = engine_ptr->constants[c];
-                constant = math.select(constant, -constant, minus); 
+                constant = math.select(constant, -constant, minus);
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
                     ((float*)data[i])[dataindex] = constant;
@@ -1122,15 +1312,11 @@ namespace NSS.Blast.SSMD
         }
 
 
-
-
         /// <summary>
-        /// pop a float[1|2|3|4] value form stack data or constant source and put it in destination 
+        /// read codebyte, determine data location, pop data and push it on the stack
         /// </summary>
-        void pop_fx_into<T>(in int code_pointer, [NoAlias]T* destination) where T : unmanaged
+        void push_pop_f(in int code_pointer, in int vector_size)
         {
-            int vector_size = sizeof(T) / 4;
-
             // we get either a pop instruction or an instruction to get a value 
             byte c = code[code_pointer];
 
@@ -1141,14 +1327,57 @@ namespace NSS.Blast.SSMD
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != vector_size || type != BlastVariableDataType.Numeric)
                 {
-                    Debug.LogError($"blast.ssmd.pop_fx_into<T> -> data mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
+                    Debug.LogError($"blast.stack, push_pop_f1 -> data mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
                     return;
                 }
 #endif
-                // variable acccess
-                for (int i = 0; i < ssmd_datacount; i++)
+                // data comes from variable acccess, update each according to vectorsize 
+                switch (vector_size)
                 {
-                    destination[i] = ((T*)data[i])[c - BlastInterpretor.opt_id];
+                    case 0:
+                    case 4:
+                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)stack_offset);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
+                            float* fstack = &((float*)stack[i])[stack_offset];
+
+                            ((float4*)fstack)[0] = ((float4*)(void*)fdata)[0];
+                        }
+                        stack_offset += 4;
+                        break;
+                    case 1:
+                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 1, (byte)stack_offset);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
+                            ((float*)stack[i])[stack_offset] = fdata[0];
+                        }
+                        stack_offset += 1;
+                        break;
+                    case 2:
+                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)stack_offset);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
+                            float* fstack = &((float*)stack[i])[stack_offset];
+
+                            ((float2*)fstack)[0] = ((float2*)(void*)fdata)[0];
+                        }
+                        stack_offset += 2;
+                        break;
+
+                    case 3:
+                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)stack_offset);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
+                            float* fstack = &((float*)stack[i])[stack_offset];
+
+                            ((float3*)fstack)[0] = ((float3*)(void*)fdata)[0];
+                        }
+                        stack_offset += 3;
+                        break;
                 }
             }
             else
@@ -1157,73 +1386,80 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
-                if (size != vector_size || type != BlastVariableDataType.Numeric)
+                if (size != 1 || type != BlastVariableDataType.Numeric)
                 {
-                    Debug.LogError($"blast.ssmd.pop_fx_into<T> -> stackdata mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at stack offset {stack_offset}");
+                    Debug.LogError($"blast.stack, push_pop_f1 -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
                     return;
                 }
 #endif
-                // stack pop 
-                stack_offset = stack_offset - vector_size;
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    destination[i] = ((T*)(void*)&((float*)stack[i])[stack_offset])[0];
-                }
+                // stack pop, vector size is known, but its also pushed back again at same resulting location and bitorders.. 
+                //
+                // -> in this case we do nothing
+                //
             }
             else
             if (c >= BlastInterpretor.opt_value)
             {
                 float constant = engine_ptr->constants[c];
+
                 switch (vector_size)
                 {
-                    case 1: for (int i = 0; i < ssmd_datacount; i++) ((float*)(void*)destination)[i] = constant; break;
-                    case 2: for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)destination)[i].xy = constant; break;
-                    case 3: for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)destination)[i].xyz = constant; break;
                     case 0:
-                    case 4: for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)destination)[i].xyzw = constant; break;
+                    case 4:
+                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)stack_offset);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            ((float*)stack[i])[stack_offset] = constant;
+                            ((float*)stack[i])[stack_offset + 1] = constant;
+                            ((float*)stack[i])[stack_offset + 2] = constant;
+                            ((float*)stack[i])[stack_offset + 3] = constant;
+                        }
+                        stack_offset += 4;
+                        break;
+                    case 1:
+                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 1, (byte)stack_offset);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            ((float*)stack[i])[stack_offset] = constant;
+                        }
+                        stack_offset += 1;
+                        break;
+                    case 2:
+                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)stack_offset);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            ((float*)stack[i])[stack_offset] = constant;
+                            ((float*)stack[i])[stack_offset + 1] = constant;
+                        }
+                        stack_offset += 2;
+                        break;
+
+                    case 3:
+                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)stack_offset);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            ((float*)stack[i])[stack_offset] = constant;
+                            ((float*)stack[i])[stack_offset + 1] = constant;
+                            ((float*)stack[i])[stack_offset + 2] = constant;
+                        }
+                        stack_offset += 3;
+                        break;
                 }
             }
-
             else
             {
-                // error or.. constant by operation value.... 
 #if DEVELOPMENT_BUILD
-                Debug.LogError("blast.ssmd.pop_fx_into<T> -> select op by constant value is not supported");
+                Debug.LogError("push_pop_f -> select op by constant value is not supported");
 #endif
             }
         }
+
 
         #endregion
 
         #region pop_fx_with_op_into_fx
 
 
-        /// <summary>
-        /// returns true for ssmd valid operations: 
-        /// 
-        ///        add = 2,  
-        ///        substract = 3,
-        ///        divide = 4,
-        ///        multiply = 5,
-        ///        and = 6,
-        ///        or = 7,
-        ///        not = 8,
-        ///        xor = 9,
-        ///
-        ///        greater = 10,
-        ///        greater_equals = 11,
-        ///        smaller = 12,
-        ///        smaller_equals,
-        ///        equals,
-        ///        not_equals
-        ///        
-        /// </summary>
-        /// <param name="op">the operation to check</param>
-        /// <returns>true if handled by the ssmd interpretor</returns>
-        static public bool OperationIsSSMDHandled(blast_operation op)
-        {
-            return op >= blast_operation.add && op <= blast_operation.not_equals;
-        }
 
         /// <summary>
         /// pop a float1 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to m11
@@ -1235,10 +1471,10 @@ namespace NSS.Blast.SSMD
         void pop_f1_with_op_into_f1(in int code_pointer, [NoAlias]float* buffer, [NoAlias]float* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD
-            if (!OperationIsSSMDHandled(op))
+            if (!Blast.IsOperationSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {(byte)op}, only + - * / are supported");
-                return; 
+                return;
             }
 #endif
 
@@ -1384,16 +1620,17 @@ namespace NSS.Blast.SSMD
             }
         }
 
+
         /// <summary>
         /// pop a float2 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to output
         /// </summary>
-        void pop_f2_with_op_into_f2(in int code_pointer, float2* buffer, float2* output, blast_operation op)
+        void pop_f2_with_op_into_f2(in int code_pointer, [NoAlias]float2* buffer, [NoAlias]float2* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD
-            if (!OperationIsSSMDHandled(op))
+            if (!Blast.IsOperationSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f2_with_op_into_f2: -> unsupported operation supplied: {(byte)op}, only + - * / are supported");
-                return; 
+                return;
             }
 #endif
 
@@ -1534,10 +1771,10 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// pop a float3 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to output
         /// </summary>
-        void pop_f3_with_op_into_f3(in int code_pointer, float3* buffer, float3* output, blast_operation op)
+        void pop_f3_with_op_into_f3(in int code_pointer, [NoAlias]float3* buffer, [NoAlias]float3* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD
-            if (!OperationIsSSMDHandled(op))
+            if (!Blast.IsOperationSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f3_with_op_into_f3: -> unsupported operation supplied: {op}, only + - * / are supported");
                 return;
@@ -1677,14 +1914,13 @@ namespace NSS.Blast.SSMD
         }
 
 
-
         /// <summary>
         /// pop a float4 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to output
         /// </summary>
-        void pop_f4_with_op_into_f4(in int code_pointer, float4* buffer, float4* output, blast_operation op)
+        void pop_f4_with_op_into_f4(in int code_pointer, [NoAlias]float4* buffer, [NoAlias]float4* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD
-            if (!OperationIsSSMDHandled(op))
+            if (!Blast.IsOperationSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f4_with_op_into_f4: -> unsupported operation supplied: {op}, only + - * / are supported");
                 return;
@@ -1699,7 +1935,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD
                 BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
-                if ((size != 4 && size != 0)  || type != BlastVariableDataType.Numeric)
+                if ((size != 4 && size != 0) || type != BlastVariableDataType.Numeric)
                 {
                     Debug.LogError($"blast.pop_f4_with_op_into_f4: data mismatch, expecting numeric of size 4, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id} with operation: {op}");
                     return;
@@ -1713,7 +1949,7 @@ namespace NSS.Blast.SSMD
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
                             //
-                            // whats faster? casting like this or nicely as float with 2 muls
+                            // whats faster? casting like this or nicely as float with 2 muls  TODO
                             //
                             output[i] = buffer[i] * ((float4*)(void*)&((float*)data[i])[c - BlastInterpretor.opt_id])[0];
                         }
@@ -1824,8 +2060,6 @@ namespace NSS.Blast.SSMD
         }
 
 
-
-
         #endregion
 
         #region pop_fx_with_op_into_f4
@@ -1836,10 +2070,10 @@ namespace NSS.Blast.SSMD
         /// <param name="buffer">temp buffer that may equal output</param>
         /// <param name="output">output buffer that may equal temp buffer</param>
         /// <param name="op">operation to handle</param>
-        void pop_f1_with_op_into_f4(in int code_pointer, float* buffer, float4* output, blast_operation op)
+        void pop_f1_with_op_into_f4(in int code_pointer, [NoAlias]float* buffer, [NoAlias]float4* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD
-            if (op != blast_operation.add && op != blast_operation.multiply && op != blast_operation.substract && op != blast_operation.divide)
+            if (!Blast.IsOperationSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {op}, only + - * / are supported");
                 return;
@@ -1955,12 +2189,12 @@ namespace NSS.Blast.SSMD
         /// <param name="buffer">buffer that may equal output buffer</param>
         /// <param name="output">output buffer</param>
         /// <param name="op">operation to execute on value </param>
-        void pop_f2_with_op_into_f4(in int code_pointer, float2* buffer, float4* output, blast_operation op)
+        void pop_f2_with_op_into_f4(in int code_pointer, [NoAlias]float2* buffer, [NoAlias]float4* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD
-            if (op != blast_operation.add && op != blast_operation.multiply && op != blast_operation.substract && op != blast_operation.divide)
+            if (!Blast.IsOperationSSMDHandled(op))
             {
-                Debug.LogError($"blast.pop_f1_op: -> unsupported operation supplied: {op}, only + - * / are supported");
+                Debug.LogError($"blast.ssmd.pop_f2_with_op_into_f4: -> unsupported operation supplied: {op}, only + - * / are supported");
                 return;
             }
 #endif
@@ -1975,7 +2209,7 @@ namespace NSS.Blast.SSMD
                 int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                 if (size != 2 || type != BlastVariableDataType.Numeric)
                 {
-                    Debug.LogError($"blast.pop_f2_with_op_into_f4: data mismatch, expecting numeric of size 2, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id} with operation: {op}");
+                    Debug.LogError($"blast.ssmd.pop_f2_with_op_into_f4: data mismatch, expecting numeric of size 2, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id} with operation: {op}");
                     return;
                 }
 #endif
@@ -2074,10 +2308,10 @@ namespace NSS.Blast.SSMD
         /// <param name="buffer"></param>
         /// <param name="output"></param>
         /// <param name="op"></param>
-        void pop_f3_with_op_into_f4(in int code_pointer, float3* buffer, float4* output, blast_operation op)
+        void pop_f3_with_op_into_f4(in int code_pointer, [NoAlias]float3* buffer, [NoAlias]float4* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD
-            if (!OperationIsSSMDHandled(op))
+            if (!Blast.IsOperationSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f3_with_op_into_f4: -> unsupported operation supplied: {op}, only + - * / are supported");
                 return;
@@ -2239,7 +2473,7 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void set_from_data_f2([NoAlias]float4* destination, [NoAlias]void** data, int offset)
         {
-            int offsetb = offset + 1; 
+            int offsetb = offset + 1;
             for (int i = 0; i < ssmd_datacount; i++)
             {
                 destination[i].x = ((float*)data[i])[offset];
@@ -2393,151 +2627,9 @@ namespace NSS.Blast.SSMD
         #endregion
 
         /// <summary>
-        /// read codebyte, determine data location, pop data and push it on the stack
-        /// </summary>
-        void push_pop_f(in int code_pointer, in int vector_size)
-        {
-            // we get either a pop instruction or an instruction to get a value 
-            byte c = code[code_pointer];
-
-            if (c >= BlastInterpretor.opt_id)
-            {
-#if DEVELOPMENT_BUILD
-                BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
-                int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
-                if (size != vector_size || type != BlastVariableDataType.Numeric)
-                {
-                    Debug.LogError($"blast.stack, push_pop_f1 -> data mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
-                    return;
-                }
-#endif
-                // data comes from variable acccess, update each according to vectorsize 
-                switch (vector_size)
-                {
-                    case 0:
-                    case 4:
-                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)stack_offset);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
-                            float* fstack = &((float*)stack[i])[stack_offset];
-
-                            ((float4*)fstack)[0] = ((float4*)(void*)fdata)[0];
-                        }
-                        stack_offset += 4;
-                        break;
-                    case 1:
-                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 1, (byte)stack_offset);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
-                            ((float*)stack[i])[stack_offset] = fdata[0];
-                        }
-                        stack_offset += 1;
-                        break;
-                    case 2:
-                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)stack_offset);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
-                            float* fstack = &((float*)stack[i])[stack_offset];
-
-                            ((float2*)fstack)[0] = ((float2*)(void*)fdata)[0];
-                        }
-                        stack_offset += 2;
-                        break;
-
-                    case 3:
-                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)stack_offset);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            float* fdata = &((float*)data[i])[c - BlastInterpretor.opt_id];
-                            float* fstack = &((float*)stack[i])[stack_offset];
-
-                            ((float3*)fstack)[0] = ((float3*)(void*)fdata)[0];
-                        }
-                        stack_offset += 3;
-                        break;
-                }
-            }
-            else
-            if (c == (byte)blast_operation.pop)
-            {
-#if DEVELOPMENT_BUILD
-                BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
-                int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
-                if (size != 1 || type != BlastVariableDataType.Numeric)
-                {
-                    Debug.LogError($"blast.stack, push_pop_f1 -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
-                    return;
-                }
-#endif
-                // stack pop, vector size is known, but its also pushed back again at same resulting location and bitorders.. 
-                //
-                // -> in this case we do nothing
-                //
-            }
-            else
-            if (c >= BlastInterpretor.opt_value)
-            {
-                float constant = engine_ptr->constants[c];
-
-                switch (vector_size)
-                {
-                    case 0:
-                    case 4:
-                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)stack_offset);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            ((float*)stack[i])[stack_offset] = constant;
-                            ((float*)stack[i])[stack_offset + 1] = constant;
-                            ((float*)stack[i])[stack_offset + 2] = constant;
-                            ((float*)stack[i])[stack_offset + 3] = constant;
-                        }
-                        stack_offset += 4;
-                        break;
-                    case 1:
-                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 1, (byte)stack_offset);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            ((float*)stack[i])[stack_offset] = constant;
-                        }
-                        stack_offset += 1;
-                        break;
-                    case 2:
-                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)stack_offset);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            ((float*)stack[i])[stack_offset] = constant;
-                            ((float*)stack[i])[stack_offset + 1] = constant;
-                        }
-                        stack_offset += 2;
-                        break;
-
-                    case 3:
-                        BlastInterpretor.SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)stack_offset);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            ((float*)stack[i])[stack_offset] = constant;
-                            ((float*)stack[i])[stack_offset + 1] = constant;
-                            ((float*)stack[i])[stack_offset + 2] = constant;
-                        }
-                        stack_offset += 3;
-                        break;
-                }
-            }
-            else
-            {
-#if DEVELOPMENT_BUILD
-                Debug.LogError("push_pop_f -> select op by constant value is not supported");
-#endif
-            }
-        }
-
-        /// <summary>
         /// set register[n].x from data 
         /// </summary>
-        void set_register_from_data_f1(float* f1)
+        void set_register_from_data_f1([NoAlias]float* f1)
         {
             for (int i = 0; i < ssmd_datacount; i++)
             {
@@ -2549,7 +2641,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// set register[n].xyzw from data 
         /// </summary>
-        void set_register_from_data_f4(float4* f4)
+        void set_register_from_data_f4([NoAlias]float4* f4)
         {
             UnsafeUtils.MemCpy(register, f4, ssmd_datacount * sizeof(float4));
         }
@@ -2681,7 +2773,6 @@ namespace NSS.Blast.SSMD
                     return;
             }
         }
-
         void handle_op_f2_f1(in blast_operation op, [NoAlias]float4* a, [NoAlias]float4* b, ref byte vector_size)
         {
             vector_size = 2;
@@ -2712,7 +2803,6 @@ namespace NSS.Blast.SSMD
                     return;
             }
         }
-
         void handle_op_f2_f2(in blast_operation op, [NoAlias]float4* a, [NoAlias]float4* b, ref byte vector_size)
         {
             vector_size = 2;
@@ -2743,7 +2833,6 @@ namespace NSS.Blast.SSMD
                     return;
             }
         }
-
         void handle_op_f3_f1(in blast_operation op, [NoAlias]float4* a, [NoAlias]float4* b, ref byte vector_size)
         {
             vector_size = 3;
@@ -2774,7 +2863,6 @@ namespace NSS.Blast.SSMD
                     return;
             }
         }
-
         void handle_op_f3_f3(in blast_operation op, [NoAlias]float4* a, [NoAlias]float4* b, ref byte vector_size)
         {
             vector_size = 3;
@@ -2805,7 +2893,6 @@ namespace NSS.Blast.SSMD
                     return;
             }
         }
-
         void handle_op_f4_f1(in blast_operation op, [NoAlias]float4* a, [NoAlias]float4* b, ref byte vector_size)
         {
             vector_size = 4;
@@ -2836,7 +2923,6 @@ namespace NSS.Blast.SSMD
                     return;
             }
         }
-
         void handle_op_f4_f4(in blast_operation op, [NoAlias]float4* a, [NoAlias]float4* b, ref byte vector_size)
         {
             vector_size = 4;
@@ -2872,6 +2958,1534 @@ namespace NSS.Blast.SSMD
         #endregion
 
         #region Function Handlers 
+
+        #region Single Input functions (abs, sin etc) 
+        
+        //
+        // Although for all of these we could use functionpointers the compiler will have a hard time
+        // vectorizing most inner loops if the use functionpointers instead of the known math library for
+        // which it has buildin support
+        //
+        // -> we could use some form of codegen in future version but these will not really change much i guess
+        //
+
+        void get_abs_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.abs: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.abs(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.abs(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.abs(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.abs(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.abs: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+            code_pointer += 1;
+        }
+
+        void get_ceil_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.ceil: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.ceil(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.ceil(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.ceil(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.ceil(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.ceil: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+        void get_floor_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.floor: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.floor(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.floor(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.floor(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.floor(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.floor: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_frac_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.frac: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.frac(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.frac(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.frac(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.frac(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.frac: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_normalize_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.normalize: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.normalize(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.normalize(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.normalize(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.normalize: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_saturate_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.saturate: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.saturate(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.saturate(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.saturate(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.saturate(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.saturate: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+      
+        void get_log_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.log: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.log(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.log(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.log(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.log(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.log: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+        
+        void get_log2_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.log2: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.log2(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.log2(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.log2(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.log2(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.log2: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+  
+        void get_log10_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.log10: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.log10(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.log10(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.log10(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.log10(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.log10: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_exp10_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.exp10: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.exp10(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.exp10(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.exp10(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.exp10(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.exp10: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_exp_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.exp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.exp(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.exp(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.exp(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.exp(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.exp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_sqrt_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.sqrt: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.sqrt(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.sqrt(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.sqrt(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.sqrt(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.sqrt: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_rsqrt_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.rsqrt: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.rsqrt(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.rsqrt(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.rsqrt(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.rsqrt(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.rsqrt: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        #region Trigonometry
+        void get_sin_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.sin: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.sin(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.sin(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.sin(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.sin(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.sin: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+            code_pointer += 1;
+        }
+
+        void get_cos_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.cos: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.cos(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.cos(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.cos(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.cos(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.cos: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_tan_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.tan: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.tan(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.tan(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.tan(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.tan(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.tan: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_sinh_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.sinh: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.sinh(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.sinh(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.sinh(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.sinh(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.sinh: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+            code_pointer += 1;
+        }
+
+        void get_cosh_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.cosh: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.cosh(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.cosh(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.cosh(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.cosh(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.cosh: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_atan_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.atan: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.atan(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.atan(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.atan(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.atan(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.atan: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_degrees_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.degrees: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.degrees(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.degrees(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.degrees(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.degrees(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.degrees: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_radians_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.radians: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.radians(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.radians(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.radians(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.radians(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.radians: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+        #endregion 
+        #endregion
+
+        /// <summary>
+        /// select first input on a false condition, select the second on a true condition that is put in parameter 3
+        /// </summary>
+        /// <remarks>
+        /// 3 inputs, first 2 any type, 3rd type equal or scalar bool
+        /// 
+        /// c[x] = select(a[x], b[x], condition[1/x])
+        /// 
+        /// - input = outputvectorsize
+        /// - 1 output  
+        /// 
+        /// Assembly for scalar constants<c>a = select(1, 2, 1) => setf a select 1 2 1 nop</c>
+        /// 
+        /// Assembly sample with vectors: <c>a = select((1 1), (2 2), 1) => setf a select 1 pop pop nop</c>
+        /// </remarks>
+        void get_select_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* f4)
+        {
+            // upon entry code_pointer is located on the function operation 
+            BlastVariableDataType datatype;
+            byte vector_size_condition;
+
+            //
+            // need to reorder parameters while compiling for better memory efficienty executing it 
+            // - if we can execute the condition first we can skip reading 1 of the parameters (we do need to 
+            //   move stackpointers though)
+            // - compiler update for SSMD only? or also normal?
+            // 
+
+            // peek vectorsize of first option
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+
+            //
+            // IMPORTANT
+            // stack allocations are moved to the start of the function and are always done,
+            // regardless conditionals, avoid allocating too much memory by calculating the amount needed 
+            // and casting the resulting pointers in each vectorsize-case
+            //
+            int data_byte_size = 4 * ssmd_datacount * vector_size;
+
+            // we could use memory from f4 to store 1 array, but that would probably mess up vectorizing the inner loops
+            byte* local1 = stackalloc byte[data_byte_size];
+            byte* local2 = stackalloc byte[data_byte_size];
+
+            //
+            // allocations could also be avoided, with each combination (constant/pop/var) and each vectorsize of each parameter in a seperate case... 
+            // this will happen a lot as generics is unusable.. codegen? TODO
+            //
+
+            switch (vector_size)
+            {
+
+                case 1:
+
+                    float* o1 = (float*)(void*)local1;
+                    float* o2 = (float*)(void*)local2;
+
+                    pop_f1_into(code_pointer + 1, o1);
+                    pop_f1_into(code_pointer + 2, o2);
+                    pop_f1_into(code_pointer + 3, (float*)temp);
+
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        // not using f4 for storing any operand should allow for the compiler to optimize better
+                        // we could also optimize this by handling 4 at once in a float4.. TODO
+                        f4[i].x = math.select(o1[i], o2[i], ((float*)temp)[i] != 0);
+                    }
+                    break;
+
+
+                case 2:
+                    float2* o21 = (float2*)(void*)local1;
+                    float2* o22 = (float2*)(void*)local2;
+
+                    pop_fx_into<float2>(code_pointer + 1, o21);
+                    pop_fx_into<float2>(code_pointer + 2, o22);
+                    pop_op_meta(code[code_pointer + 3], out datatype, out vector_size_condition);
+
+                    if (vector_size_condition == 1)
+                    {
+                        pop_fx_into<float>(code_pointer + 3, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            f4[i].xy = math.select(o21[i], o22[i], ((float*)temp)[i] != 0);
+                        }
+                    }
+                    else
+                    {
+                        pop_fx_into<float2>(code_pointer + 3, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            f4[i].xy = math.select(o21[i], o22[i], ((float2*)temp)[i] != 0);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    float3* o31 = (float3*)(void*)local1;
+                    float3* o32 = (float3*)(void*)local2;
+
+                    pop_fx_into<float3>(code_pointer + 1, o31);
+                    pop_fx_into<float3>(code_pointer + 2, o32);
+                    pop_op_meta(code[code_pointer + 3], out datatype, out vector_size_condition);
+
+                    if (vector_size_condition == 1)
+                    {
+                        pop_fx_into<float>(code_pointer + 3, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            f4[i].xyz = math.select(o31[i], o32[i], ((float*)temp)[i] != 0);
+                        }
+                    }
+                    else
+                    {
+                        pop_fx_into<float3>(code_pointer + 3, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            f4[i].xyz = math.select(o31[i], o32[i], ((float3*)temp)[i] != 0);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        vector_size = 4;
+
+                        float4* o41 = (float4*)(void*)local1;
+                        float4* o42 = (float4*)(void*)local2;
+
+                        pop_fx_into<float4>(code_pointer + 1, o41);
+                        pop_fx_into<float4>(code_pointer + 2, o42);
+                        pop_op_meta(code[code_pointer + 3], out datatype, out vector_size_condition);
+
+                        if (vector_size_condition == 1)
+                        {
+                            pop_fx_into<float>(code_pointer + 3, (float*)temp);
+                            for (int i = 0; i < ssmd_datacount; i++)
+                            {
+                                f4[i] = math.select(o41[i], o42[i], ((float4*)temp)[i].x != 0);
+                            }
+                        }
+                        else
+                        {
+                            pop_fx_into<float4>(code_pointer + 3, (float4*)temp);
+                            for (int i = 0; i < ssmd_datacount; i++)
+                            {
+                                f4[i] = math.select(o41[i], o42[i], ((float4*)temp)[i] != 0);
+                            }
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.select: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 3;
+        }
+
+
         #region mula etc. 
 
         /// <summary>
@@ -2884,9 +4498,8 @@ namespace NSS.Blast.SSMD
         /// <param name="code_pointer">current codepointer</param>
         /// <param name="vector_size">output vectorsize</param>
         /// <param name="f4">output data vector</param>
-#pragma warning disable CS1573 // Parameter 'operation' has no matching param tag in the XML comment for 'BlastSSMDInterpretor.get_op_a_result(void*, ref int, ref byte, ref float4*, blast_operation)' (but other parameters do)
-        void get_op_a_result(void* temp, ref int code_pointer, ref byte vector_size, ref float4* f4, blast_operation operation)
-#pragma warning restore CS1573 // Parameter 'operation' has no matching param tag in the XML comment for 'BlastSSMDInterpretor.get_op_a_result(void*, ref int, ref byte, ref float4*, blast_operation)' (but other parameters do)
+        /// <param name="operation">operation to take on the vectors</param>
+        void get_op_a_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]ref float4* f4, blast_operation operation)
         {
             // decode parametercount and vectorsize from code in 62 format 
             code_pointer++;
@@ -2907,7 +4520,7 @@ namespace NSS.Blast.SSMD
 
                     for (int j = 1; j < c; j++)
                     {
-                        // pop_f4_with_op_into_f4(code_pointer + j, (float4*)temp, f4, blast_operation.multiply); 
+                        pop_f4_with_op_into_f4(code_pointer + j, (float4*)temp, f4, blast_operation.multiply);
                     }
 
                     code_pointer += c - 1;
@@ -2928,15 +4541,35 @@ namespace NSS.Blast.SSMD
                     break;
 
                 case 2:
+                    code_pointer++;
+                    pop_fx_into<float2>(in code_pointer, (float2*)temp);
+
+                    for (int j = 1; j < c - 1; j++)
+                    {
+                        pop_f2_with_op_into_f2(code_pointer + j, (float2*)temp, (float2*)temp, operation);
+                    }
+
+                    pop_f2_with_op_into_f4(code_pointer + c - 1, (float2*)temp, f4, operation);
+                    code_pointer += c - 1;
                     break;
 
                 case 3:
+                    code_pointer++;
+                    pop_fx_into<float3>(in code_pointer, (float3*)temp);
+
+                    for (int j = 1; j < c - 1; j++)
+                    {
+                        pop_f3_with_op_into_f3(code_pointer + j, (float3*)temp, (float3*)temp, operation);
+                    }
+
+                    pop_f3_with_op_into_f4(code_pointer + c - 1, (float3*)temp, f4, operation);
+                    code_pointer += c - 1;
                     break;
             }
         }
 
 
-        #endregion 
+        #endregion
         #region fused substract multiply actions
 
         /// <summary>
@@ -2944,7 +4577,7 @@ namespace NSS.Blast.SSMD
         /// - always 3 params, input vector size == output vectorsize
         /// </summary>
         /// <returns></returns>
-        void get_fma_result(void* temp, ref int code_pointer, ref byte vector_size, ref float4* f4)
+        void get_fma_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]ref float4* f4)
         {
             BlastVariableDataType datatype;
 
@@ -2991,7 +4624,7 @@ namespace NSS.Blast.SSMD
 
         #endregion
 
-        #region GetSequence and Execute (privates)
+        #region GetFunction|Sequence and Execute (privates)
 
         /// <summary>
         /// get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
@@ -3004,31 +4637,20 @@ namespace NSS.Blast.SSMD
             switch ((blast_operation)op)
             {
                 // math functions
-                case blast_operation.abs:
-                case blast_operation.normalize:
-                case blast_operation.saturate:
+                case blast_operation.abs: get_abs_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+         
                 case blast_operation.maxa:
                 case blast_operation.mina:
                 case blast_operation.max:
                 case blast_operation.min:
-                case blast_operation.ceil:
-                case blast_operation.floor:
-                case blast_operation.frac:
-                case blast_operation.sin:
-                case blast_operation.cos:
-                case blast_operation.tan:
-                case blast_operation.sinh:
-                case blast_operation.cosh:
-                case blast_operation.atan:
-                case blast_operation.degrees:
-                case blast_operation.radians:
 
-                // math utils 
-                case blast_operation.select:
-                case blast_operation.clamp:
-                case blast_operation.lerp:
-                case blast_operation.slerp:
-                case blast_operation.nlerp:
+#if DEVELOPMENT_BUILD
+                    Debug.LogError($"SSMD Interpretor: GetFunctionResult: codepointer: {code_pointer} => {code[code_pointer]}, function {op} not handled yet");
+#endif
+
+                    return (int)BlastError.ssmd_function_not_handled;
+
+                case blast_operation.select: get_select_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                 // fma and friends 
                 case blast_operation.fma: get_fma_result(temp, ref code_pointer, ref vector_size, ref f4_result); break;
@@ -3046,30 +4668,51 @@ namespace NSS.Blast.SSMD
                         if (exop == extended_blast_operation.call)
                         {
 
-                            int res = -1; 
+                            int res = -1;
                             // call external function 
-                           // int res = CallExternalFunction(ref code_pointer, ref vector_size, out f4_result);
+                            // int res = CallExternalFunction(ref code_pointer, ref vector_size, out f4_result);
 #if DEVELOPMENT_BUILD
-                            if(res != 0) Debug.LogError($"SSMD Interpretor: GetFunctionResult: codepointer: {code_pointer} => {code[code_pointer]}, call to external function failed");
+                            if (res != 0) Debug.LogError($"SSMD Interpretor: GetFunctionResult: codepointer: {code_pointer} => {code[code_pointer]}, call to external function failed");
 #endif
-                            return res; 
+                            return res;
                         }
                         else
                         {
                             switch (exop)
                             {
+                                case extended_blast_operation.sqrt: get_sqrt_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.rsqrt: get_rsqrt_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.sin: get_sin_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.cos: get_cos_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.tan: get_tan_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.sinh: get_sinh_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.cosh: get_cosh_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.atan: get_atan_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.degrees: get_degrees_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.radians: get_radians_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.ceil: get_ceil_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.floor: get_floor_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.frac: get_frac_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.normalize: get_normalize_result(temp, ref code_pointer, ref vector_size, f4_result); break; 
+                                case extended_blast_operation.saturate: get_saturate_result(temp, ref code_pointer, ref vector_size, f4_result); break; 
+                                case extended_blast_operation.logn: get_log_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.log10: get_log10_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.log2: get_log2_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.exp10: get_exp10_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.exp: get_exp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                             
+                                    //   case extended_blast_operation.pow: get_pow_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+
                                 /*
-                                case extended_blast_operation.logn: get_log_result(ref code_pointer, ref vector_size, out f4); break;
-                                case extended_blast_operation.log10: get_log10_result(ref code_pointer, ref vector_size, out f4); break;
-                                case extended_blast_operation.exp10: get_exp10_result(ref code_pointer, ref vector_size, out f4); break;
-                                case extended_blast_operation.cross: get_cross_result(ref code_pointer, ref vector_size, out f4); break;
-                                case extended_blast_operation.exp: get_exp_result(ref code_pointer, ref vector_size, out f4); break;
-                                case extended_blast_operation.dot: get_dot_result(ref code_pointer, ref vector_size, out f4); break;
-                                case extended_blast_operation.log2: get_log2_result(ref code_pointer, ref vector_size, out f4); break;
-                                case extended_blast_operation.sqrt: get_sqrt_result(
-                                case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4); break;
-                                case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4); break;
-                                */
+
+                                case extended_blast_operation.cross: get_cross_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                                case extended_blast_operation.dot: get_dot_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+
+                                case extended_blast_operation.clamp:
+                                case extended_blast_operation.lerp:
+                                case extended_blast_operation.slerp:
+                                case extended_blast_operation.nlerp:
+                                        */
                                 default:
 #if DEVELOPMENT_BUILD
                                     Debug.LogError($"SSMD Interpretor: GetFunctionResult: codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
@@ -3085,16 +4728,16 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD
                     Debug.LogError($"SSMD Interpretor: GetFunctionResult: codepointer: {code_pointer} => {code[code_pointer]}, operation {op} not handled");
 #endif
-                    return (int)BlastError.ssmd_function_not_handled; 
+                    return (int)BlastError.ssmd_function_not_handled;
             }
 
-            return (int)BlastError.success; 
+            return (int)BlastError.success;
         }
 
         /// <summary>
         /// process a sequence of operations into a new register value 
         /// </summary>        
-        int GetSequenceResult(void* temp, ref int code_pointer, ref byte vector_size)
+        int GetSequenceResult([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
         {
             byte op = 0, prev_op = 0;
 
@@ -3103,7 +4746,7 @@ namespace NSS.Blast.SSMD
             bool not = false;
             bool minus = false;
 
-            float4* f4 = (float4*)temp; 
+            float4* f4 = (float4*)temp;
             float4* f4_result = register; // here we accumelate the resulting value in 
 
             vector_size = 1; // vectors dont shrink in normal operations 
@@ -3270,13 +4913,13 @@ namespace NSS.Blast.SSMD
                         Assert.IsTrue(false, "should not be nesting compounds... compiler did not do its job wel");
                         break;
 
-#endif                      
+#endif
 #if DEVELOPMENT_BUILD || TRACE
 #endif
 
                     case blast_operation.pop:
                         {
-                            pop_fn_into(code_pointer, f4, minus, ref vector_size);
+                            pop_fn_into(code_pointer, f4, minus, out vector_size);
                             minus = false;
 
 #if DEVELOPMENT_BUILD
@@ -3285,70 +4928,35 @@ namespace NSS.Blast.SSMD
                                 Debug.LogError($"BlastInterpretor.GetCompound: codepointer: {code_pointer} => pop vector too large, vectortype {vector_size} not supported");
                                 return (int)BlastError.ssmd_error_unsupported_vector_size;
                             }
-#endif                       
+#endif
                         }
                         break;
 
                     //
                     // CoreAPI functions mapping to opcodes 
                     // 
-
-                    // math functions
-                    case blast_operation.abs: 
-                    case blast_operation.normalize:
-                    case blast_operation.saturate:
-                    case blast_operation.maxa: 
+                    case blast_operation.abs:
+                    case blast_operation.maxa:
                     case blast_operation.mina:
                     case blast_operation.max:
                     case blast_operation.min:
-                    case blast_operation.ceil:
-                    case blast_operation.floor:
-                    case blast_operation.frac:
-                    case blast_operation.sin: 
-                    case blast_operation.cos: 
-                    case blast_operation.tan: 
-                    case blast_operation.sinh:
-                    case blast_operation.cosh:
-                    case blast_operation.atan:
-                    case blast_operation.degrees:
-                    case blast_operation.radians:
-
-                    // math utils 
                     case blast_operation.select:
-                    case blast_operation.clamp:
-                    case blast_operation.lerp:
-                    case blast_operation.slerp:
-                    case blast_operation.nlerp:
-
-                    // fma and friends 
                     case blast_operation.fma:
-
-                    case blast_operation.mula: 
-                    case blast_operation.adda: 
-                    case blast_operation.suba: 
+                    case blast_operation.mula:
+                    case blast_operation.adda:
+                    case blast_operation.suba:
                     case blast_operation.diva:
-                    // any all 
                     case blast_operation.all:
                     case blast_operation.any:
-
-                    // random 
                     case blast_operation.random:
                     case blast_operation.ex_op: GetFunctionResult(temp, ref code_pointer, ref vector_size, ref f4_result); break;
 
 
-#if DEVELOPMENT_BUILD 
+#if DEVELOPMENT_BUILD
                     case blast_operation.seed:
                         Assert.IsTrue(false, "NOT IMPLEMENTED YET");
                         break;
-
-                    case blast_operation.undefined3:
-                    case blast_operation.undefined4:
-                    case blast_operation.undefined7:
-                    case blast_operation.undefined8:
-                    case blast_operation.undefined9:
-                        Assert.IsTrue(false, "NOT DEFINED YET");
-                        break;
-#endif 
+#endif
 
                     case blast_operation.pi:
                     case blast_operation.inv_pi:
@@ -3415,7 +5023,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD
                                 default:
                                     Debug.LogError($"SSMD Interpretor, set constantvalue, codepointer: {code_pointer} => {code[code_pointer]}, error: vectorsize {vector_size} not supported");
-                                    return (int)BlastError.ssmd_error_unsupported_vector_size; 
+                                    return (int)BlastError.ssmd_error_unsupported_vector_size;
 #endif
                             }
                         }
@@ -3432,7 +5040,7 @@ namespace NSS.Blast.SSMD
                                 byte this_vector_size = BlastInterpretor.GetMetaDataSize(metadata, id);
 
                                 // and put it in f4 
-                                
+
 
                                 switch ((BlastVectorSizes)this_vector_size)
                                 {
@@ -3511,7 +5119,7 @@ namespace NSS.Blast.SSMD
                                     case BlastVectorSizes.float3:
                                         handle_op_f1_f3(current_op, f4_result, f4, ref vector_size);
                                         break;
-                                    case BlastVectorSizes.float4:                                     
+                                    case BlastVectorSizes.float4:
                                         handle_op_f1_f4(current_op, f4_result, f4, ref vector_size);
                                         break;
 #if DEVELOPMENT_BUILD
@@ -3580,7 +5188,7 @@ namespace NSS.Blast.SSMD
                 }
 
                 // apply minus (if in sequence and not already applied)...  
-                if(minus && !last_is_bool_or_math_operation)
+                if (minus && !last_is_bool_or_math_operation)
                 {
                     switch ((BlastVectorSizes)vector_size)
                     {
@@ -3914,12 +5522,12 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"SSMD Interpretor: assign function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
                 return BlastError.error_assign_vector_size_mismatch;
             }
-#endif       
-            set_data_from_register(vector_size, assignee, minus); 
+#endif
+            set_data_from_register(vector_size, assignee, minus);
             return BlastError.success;
         }
 
-  
+
 
         BlastError assignfe(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp, bool minus)
         {
@@ -3934,7 +5542,7 @@ namespace NSS.Blast.SSMD
             code_pointer++;
 
             Debug.LogError("exteranl  todo");
-           // CallExternalFunction(temp, ref code_pointer, ref vector_size, ref register);
+            // CallExternalFunction(temp, ref code_pointer, ref vector_size, ref register);
             code_pointer++;
 
 #if DEVELOPMENT_BUILD
@@ -3989,11 +5597,11 @@ namespace NSS.Blast.SSMD
                     break;
             }
 
-            return BlastError.success; 
+            return BlastError.success;
         }
 
 
-        #endregion 
+        #endregion
 
 
         /// <summary>
@@ -4003,7 +5611,7 @@ namespace NSS.Blast.SSMD
         /// <param name="ssmd_data_count"></param>
         /// <param name="f4_register"></param>
         /// <returns></returns>
-        int Execute([NoAlias]byte** datastack, int ssmd_data_count, float4* f4_register)
+        int Execute([NoAlias]byte** datastack, int ssmd_data_count, [NoAlias]float4* f4_register)
         {
             data = (void**)datastack;
             ssmd_datacount = ssmd_data_count;
@@ -4020,7 +5628,7 @@ namespace NSS.Blast.SSMD
                 // allocate local stack 
                 byte* p = stackalloc byte[package.StackSize * ssmd_datacount];
 
-                // generate a list of datasegment pointers on the stack:
+                // generate a list of stacksegment pointers on the stack:
                 byte** stack_indices = stackalloc byte*[ssmd_datacount];
 
                 for (int i = 0; i < ssmd_data_count;
@@ -4140,9 +5748,9 @@ namespace NSS.Blast.SSMD
                                                                         // write contents of stack to the debug stream as a detailed report; 
                                                                         // write contents of a data element to the debug stream 
                                                                         code_pointer++;
-                                #if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD
                                                                         Handle_DebugStack();
-                                #endif
+#endif
                                                                     }
                                                                     break;
 
@@ -4157,9 +5765,9 @@ namespace NSS.Blast.SSMD
                                                                         // even if not in debug, if the command is encoded any stack op needs to be popped 
                                                                         void* pdata = pop_with_info(code_pointer, out datatype, out vector_size);
 
-                                #if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD
                                                                         Handle_DebugData(code_pointer, vector_size, op_id, datatype, pdata);
-                                #endif
+#endif
                                                                         code_pointer++;
                                                                     }
                                                                     break;

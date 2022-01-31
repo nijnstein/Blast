@@ -3352,20 +3352,23 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         void get_select_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
-            BlastVariableDataType datatype;
+            BlastVariableDataType datatype, datatype2;
             BlastVariableDataType datatype_condition;
-            byte vsize_condition;
+            byte vsize_condition, vsize2;
 
-            void* p1 = pop_with_info(code_pointer + 1, out datatype_condition, out vsize_condition);
 
-            // we could skip popping the second with information on release builds
-            void* p2 = pop_with_info(code_pointer + 2, out datatype, out vector_size);
+            void* p1 = pop_with_info(code_pointer + 1, out datatype, out vector_size);
+
+            // we cant skip popping the second with information on release builds because out stackpointer could stray
+            void* p2 = pop_with_info(code_pointer + 2, out datatype2, out vsize2);
+
+            void* pcondition = pop_with_info(code_pointer + 3, out datatype_condition, out vsize_condition);
 
             // instead of init to NaN we init to float p1 (even if its wrong)
             f4 = ((float*)p1)[0];
 
 #if DEVELOPMENT_BUILD
-            if (datatype != datatype_condition || vector_size != vsize_condition)
+            if (datatype != datatype2 || vector_size != vsize2)
             {
                 Debug.LogError($"get_select_result: parameter type mismatch, p1 = {datatype}.{vector_size}, p2 = {datatype_condition}.{vsize_condition} at codepointer {code_pointer}");
                 return;
@@ -3375,19 +3378,13 @@ namespace NSS.Blast.Interpretor
                 Debug.LogError($"get_select_result: datatype mismatch, only numerics are supported at codepointer {code_pointer}");
                 return;
             }
-#endif
-
-            void* pcondition = pop_with_info(code_pointer + 3, out datatype_condition, out vsize_condition);
-
-            code_pointer += 3;
-
-#if DEVELOPMENT_BUILD
             if (vector_size != vsize_condition && vsize_condition != 1)
             {
                 Debug.LogError($"get_select_result: condition parameter type mismatch, p1 = {datatype}.{vector_size}, p2 = {datatype_condition}.{vsize_condition} at codepointer {code_pointer}, vectorsizes must be equal or conditional must have size 1");
                 return;
             }
 #endif
+            code_pointer += 3;
 
             if (vsize_condition == 1)
             {
@@ -5115,30 +5112,13 @@ namespace NSS.Blast.Interpretor
             {
                 // math functions 
                 case blast_operation.abs: get_abs_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.mina: get_mina_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.max: get_max_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.min: get_min_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
 
                 // math utils 
                 case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break;
 
                 // fma and friends 
                 case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -5186,6 +5166,23 @@ namespace NSS.Blast.Interpretor
                             case extended_blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4_result); break;
                             default:
 #if DEVELOPMENT_BUILD
                                 Debug.LogError($"get_function_result: codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
@@ -5432,30 +5429,13 @@ namespace NSS.Blast.Interpretor
 
                     // math functions
                     case blast_operation.abs: get_abs_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.maxa: get_maxa_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.mina: get_mina_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.max: get_max_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.min: get_min_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4); break;
 
                     // math utils 
                     case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4); break;
 
                     // fma and friends 
                     case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4); break;
@@ -5498,6 +5478,24 @@ namespace NSS.Blast.Interpretor
                                     case extended_blast_operation.sqrt: get_sqrt_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.rsqrt: get_rsqrt_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.pow: get_pow_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.sin: get_sin_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.cos: get_cos_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.tan: get_tan_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.sinh: get_sinh_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.cosh: get_cosh_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.atan: get_atan_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.degrees: get_degrees_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.radians: get_rad_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.ceil: get_ceil_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.floor: get_floor_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.frac: get_frac_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.normalize: get_normalize_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.saturate: get_saturate_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4); break;
+                                    case extended_blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4); break;
+
 #if DEVELOPMENT_BUILD
                                     default:
                                         Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
@@ -5511,14 +5509,6 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD 
                     case blast_operation.seed:
                         Assert.IsTrue(false, "NOT IMPLEMENTED YET");
-                        break;
-
-                    case blast_operation.undefined3:
-                    case blast_operation.undefined4:
-                    case blast_operation.undefined7:
-                    case blast_operation.undefined8:
-                    case blast_operation.undefined9:
-                        Assert.IsTrue(false, "NOT DEFINED YET");
                         break;
 #endif 
 

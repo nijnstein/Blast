@@ -249,7 +249,7 @@ namespace NSS.Blast
         /// <param name="data">environment data</param>
         /// <param name="caller">caller data</param>
         /// <returns></returns>
-        public delegate int BlastExecute(int scriptid, float* p_stack, IntPtr data, IntPtr caller);
+        public delegate int BlastExecute(int scriptid, [NoAlias]float* p_stack, [NoAlias]IntPtr data, [NoAlias]IntPtr caller);
 
 
 #pragma warning disable CS1591 
@@ -278,12 +278,7 @@ namespace NSS.Blast
         /// the value used for invalid numerics 
         /// </summary>
         public const float InvalidNumeric = float.NaN;
-
-        /// <summary>
-        /// The fill pattern for stack on initialize, easier to spot bugs if stack is filled with a pattern instead of zeros or random which might have different causes, something bugged setting all bytes to 101 should be very suspicious
-        /// </summary>
-        public const byte StackFillPattern = 101;
-
+                        
         /// <summary>
         /// Pointer to native memory holding data used during interpretation:
         /// - function pointers
@@ -949,9 +944,9 @@ namespace NSS.Blast
         #region Tokens 
 
         /// <summary>
-        /// defines tokens that can be used in script
+        /// defines tokens that can be used in script, not all tokens are referenced here, only those not built on keywords (if then/ switch etc.)
         /// </summary>
-        static public List<BlastScriptTokenDefinition> Tokens = new List<BlastScriptTokenDefinition>()
+        static public BlastScriptTokenDefinition[] Tokens = new BlastScriptTokenDefinition[] 
         {
             new BlastScriptTokenDefinition(BlastScriptToken.Add, '+', "adds 2 operands together, supports all datatypes"),
             new BlastScriptTokenDefinition(BlastScriptToken.Substract, '-', "substracts right operand from left, supports all datatypes"),
@@ -982,6 +977,39 @@ namespace NSS.Blast
         };
 
         /// <summary>
+        /// Reserverd words by BLAST Script 
+        /// </summary>
+        /// <remarks>
+        /// Reserved words are keywords used by blast to identify built in (flow)control operations:
+        /// <code>
+        /// 
+        /// Flow control:
+        ///     IF THEN ELSE
+        ///     SWITCH CASE DEFAULT    
+        ///     WHILE | FOR
+        ///     
+        /// Compiler control:
+        ///     DEFINE 
+        ///     INPUT
+        ///     OUTPUT
+        ///     VALIDATE
+        /// 
+        /// And any defined function name.
+        /// 
+        /// </code>
+        /// 
+        /// </remarks>
+        static public string[] ReservedWords = new string[]
+        {
+           "if", "then", "else",
+           "while",
+           "switch",
+           "case",
+           "default",
+           "for"
+        };
+
+        /// <summary>
         /// check if the operation is a jump (jz, jnz, jump, jump_back)
         /// </summary>
         /// <param name="op">operation to check</param>
@@ -990,6 +1018,35 @@ namespace NSS.Blast
         public static bool IsJumpOperation(blast_operation op)
         {
             return op == blast_operation.jump || op == blast_operation.jump_back || op == blast_operation.jz || op == blast_operation.jnz;
+        }
+
+
+        /// <summary>
+        /// returns true for ssmd valid operations: 
+        /// 
+        ///        add = 2,  
+        ///        substract = 3,
+        ///        divide = 4,
+        ///        multiply = 5,
+        ///        and = 6,
+        ///        or = 7,
+        ///        not = 8,
+        ///        xor = 9,
+        ///
+        ///        greater = 10,
+        ///        greater_equals = 11,
+        ///        smaller = 12,
+        ///        smaller_equals,
+        ///        equals,
+        ///        not_equals
+        ///        
+        /// </summary>
+        /// <param name="op">the operation to check</param>
+        /// <returns>true if handled by the ssmd interpretor</returns>
+        [BurstCompile]
+        static public bool IsOperationSSMDHandled(blast_operation op)
+        {
+            return op >= blast_operation.add && op <= blast_operation.not_equals;
         }
 
 
@@ -1092,12 +1149,9 @@ namespace NSS.Blast
             return false;
         }
 
-
-
-
         #endregion
 
-        #region Compiletime Function Pointers 
+        #region Blast Script API:   Compiletime Function Pointers 
 
         /// <summary>
         /// the current set of script accessible functions, check OwnScriptAPIMemory to see if this instance of blast is the owner of the memory used in the API
@@ -1109,68 +1163,6 @@ namespace NSS.Blast
         /// </summary>
         private bool OwnScriptAPIMemory; 
 
-       /*
-        /// <summary>
-        /// register functionpointer as an external call / reserve id 
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="returns"></param>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        [BurstDiscard]
-        static public int RegisterFunction(string name, BlastVariableDataType returns, string[] parameters)
-        {
-            return RegisterFunction(default(NonGenericFunctionPointer), name, returns, parameters);
-        }
-
-
-        /// <summary>
-        /// register functionpointer as an external call 
-        /// </summary>
-        /// <param name="fp"></param>
-        /// <param name="name"></param>
-        /// <param name="returns"></param>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        [BurstDiscard]
-        static public int RegisterFunction(NonGenericFunctionPointer fp, string name, BlastVariableDataType returns, string[] parameters)
-        {
-            Assert.IsNotNull(FunctionCalls);
-
-            ExternalFunctionCall call = GetFunctionCallByName(name);
-            if (call != null)
-            {
-                // upgrade function pointer 
-                call.FunctionPointer = fp;
-
-                // Assert.IsTrue(false, $"external function call with name '{name}' already registrered");
-                return call.ScriptFunction.FunctionId;
-            }
-
-            int id = GetMaxFunctionId() + 1;
-            int parameter_count = parameters == null ? 0 : parameters.Length;
-
-            // create the external function call 
-            call = new ExternalFunctionCall(name, 1, fp);
-
-            // attach it to a script function definition 
-            call.ScriptFunction = new ScriptFunctionDefinition
-            (
-                id, name,
-                parameter_count, parameter_count,
-                0, 0,
-                extended_blast_operation.call,
-                call,
-                parameters
-            );
-
-            // add to registred function list 
-            Functions.Add(call.ScriptFunction);
-            FunctionCalls.Add(call);
-
-            return call.ScriptFunction.FunctionId;
-        }
-                        */
 
         #endregion
 
@@ -1418,38 +1410,6 @@ namespace NSS.Blast
                         break;
                     case blast_operation.mina:
                         break;
-                    case blast_operation.lerp:
-                        break;
-                    case blast_operation.slerp:
-                        break;
-                    case blast_operation.saturate:
-                        break;
-                    case blast_operation.clamp:
-                        break;
-                    case blast_operation.normalize:
-                        break;
-                    case blast_operation.ceil:
-                        break;
-                    case blast_operation.floor:
-                        break;
-                    case blast_operation.frac:
-                        break;
-                    case blast_operation.sin:
-                        break;
-                    case blast_operation.cos:
-                        break;
-                    case blast_operation.tan:
-                        break;
-                    case blast_operation.atan:
-                        break;
-                    case blast_operation.cosh:
-                        break;
-                    case blast_operation.sinh:
-                        break;
-                    case blast_operation.degrees:
-                        break;
-                    case blast_operation.radians:
-                        break;
                     case blast_operation.value_0: sb.Append("0 "); break;
                     case blast_operation.value_1: sb.Append("1 "); break;
                     case blast_operation.value_2: sb.Append("2 "); break;
@@ -1510,6 +1470,22 @@ namespace NSS.Blast
                             case extended_blast_operation.sqrt:
                             case extended_blast_operation.rsqrt:
                             case extended_blast_operation.pow:
+                            case extended_blast_operation.sin: 
+                            case extended_blast_operation.cos: 
+                            case extended_blast_operation.tan: 
+                            case extended_blast_operation.atan: 
+                            case extended_blast_operation.cosh: 
+                            case extended_blast_operation.sinh: 
+                            case extended_blast_operation.degrees: 
+                            case extended_blast_operation.radians:
+                            case extended_blast_operation.lerp:
+                            case extended_blast_operation.slerp:
+                            case extended_blast_operation.saturate:
+                            case extended_blast_operation.clamp:
+                            case extended_blast_operation.normalize:
+                            case extended_blast_operation.ceil:
+                            case extended_blast_operation.floor:
+                            case extended_blast_operation.frac:
                                 sb.Append($"{ex} ");
                                 break;
 

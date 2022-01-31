@@ -214,7 +214,15 @@
         /// <summary>
         /// analyzer failed to determine all parameter types, vectorsizes and reference counts
         /// </summary>
-        error_mapping_parameters = -50
+        error_mapping_parameters = -50,
+        /// <summary>
+        /// an attempt was made to register a function with the scriptapi that already exists 
+        /// </summary>
+        error_scriptapi_function_already_exists = -51,
+        /// <summary>
+        /// an attempt was made to use a function that is not known to the script api registry
+        /// </summary>
+        error_scriptapi_function_not_registered = -52
     }
 
 }

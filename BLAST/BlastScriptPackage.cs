@@ -27,15 +27,15 @@ namespace NSS.Blast
     public class BlastScriptPackage
     {
         /// <summary>
+        /// A functionpointer to burst transpiled bytecode, possible if the package was known at compile time. 
+        /// SSMD mode will still use the bytecode package. 
+        /// </summary>
+        public IntPtr Bursted;
+
+        /// <summary>
         /// the bytecode package 
         /// </summary>
         public BlastPackageData Package;
-
-        /// <summary>
-        /// A functionpointer to burst transpiled bytecode, possible if the package was known at compile time. 
-        /// SSMD mode will still use the bytecode package.  
-        /// </summary>
-        public NonGenericFunctionPointer Bursted;
 
         /// <summary>
         /// True if this package has also been burstcompiled and can be executed with a native function pointer 
