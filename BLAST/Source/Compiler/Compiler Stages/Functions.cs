@@ -6,6 +6,7 @@ using System.Text;
     using Unity.Assertions;
 using NSS.Blast.Standalone; 
 #else
+using UnityEngine;
 using UnityEngine.Assertions;
 #endif
 using Unity.Burst;
