@@ -1,4 +1,9 @@
-﻿#if STANDALONE_VSBUILD
+﻿//##########################################################################################################
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
+// Unauthorized copying of this file, via any medium is strictly prohibited                                #
+// Proprietary and confidential                                                                            #
+//##########################################################################################################
+#if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
 #else
     using UnityEngine;
@@ -171,7 +176,12 @@ namespace NSS.Blast
         public IntPtr P2;
         //-- 16 bytes
 
+
         /// <summary>
+        /// Script packaging mode
+        /// </summary>
+        /// <remarks>
+        /// <code>
         /// Packaging mode 
         /// 
         /// NORMAL: 
@@ -185,7 +195,8 @@ namespace NSS.Blast
         /// ENTITY:
         ///         [----CODE----]      [----METADATA----]     [----DATA----|----STACK----]
         ///                      1                       2                  3             4
-        /// </summary>
+        /// </code>
+        /// </remarks>
         public BlastPackageMode PackageMode;
 
         /// <summary>

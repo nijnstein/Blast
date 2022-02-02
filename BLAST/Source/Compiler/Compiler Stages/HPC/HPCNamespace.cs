@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿//##########################################################################################################
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
+// Unauthorized copying of this file, via any medium is strictly prohibited                                #
+// Proprietary and confidential                                                                            #
+//##########################################################################################################
+using System.Collections.Generic;
 using System.Text;
 
 namespace NSS.Blast.Compiler

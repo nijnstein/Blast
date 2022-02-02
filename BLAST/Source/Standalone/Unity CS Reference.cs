@@ -1,4 +1,9 @@
-﻿#if STANDALONE_VSBUILD
+﻿//##########################################################################################################
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
+// Unauthorized copying of this file, via any medium is strictly prohibited                                #
+// Proprietary and confidential                                                                            #
+//##########################################################################################################
+#if STANDALONE_VSBUILD
 
 using System;
 

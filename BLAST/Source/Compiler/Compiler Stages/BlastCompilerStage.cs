@@ -1,4 +1,9 @@
-﻿using NSS.Blast.Compiler;
+﻿//##########################################################################################################
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
+// Unauthorized copying of this file, via any medium is strictly prohibited                                #
+// Proprietary and confidential                                                                            #
+//##########################################################################################################
+using NSS.Blast.Compiler;
 
 namespace NSS.Blast
 {

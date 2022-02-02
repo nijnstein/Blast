@@ -1,4 +1,9 @@
-﻿#if STANDALONE_VSBUILD
+﻿//##########################################################################################################
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
+// Unauthorized copying of this file, via any medium is strictly prohibited                                #
+// Proprietary and confidential                                                                            #
+//##########################################################################################################
+#if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
     using Unity.Assertions; 
 #else
@@ -96,8 +101,11 @@ namespace NSS.Blast.Compiler.Stage
             {
                 switch (function.ScriptOp)
                 {
-                    case blast_operation.ret: return "return"; 
+                    case blast_operation.ret: return "return";
                     case blast_operation.fma: return "blast.fma";
+                    case blast_operation.fmod: return "blast.fmod";
+                    case blast_operation.csum: return "blast.csum";
+                    case blast_operation.trunc: return "blast.trunc";
                     case blast_operation.adda: return "blast.adda"; 
                     case blast_operation.mula: return "blast.mula"; 
                     case blast_operation.diva: return "blast.diva"; 
@@ -148,6 +156,13 @@ namespace NSS.Blast.Compiler.Stage
                             case extended_blast_operation.ceil: return "math.ceil";
                             case extended_blast_operation.floor: return "math.floor";
                             case extended_blast_operation.frac: return "math.frac";
+
+                            case extended_blast_operation.remap: return "math.remap"; 
+                            case extended_blast_operation.unlerp: return "math.unlerp"; 
+                            case extended_blast_operation.ceillog2: return "math.ceillog2"; 
+                            case extended_blast_operation.floorlog2: return "math.floorlog2"; 
+                            case extended_blast_operation.ceilpow2: return "math.ceilpow2"; 
+
                         }
                         break;
                 }

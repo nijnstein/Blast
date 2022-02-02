@@ -3,6 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <PackageIcon>blast icon.png</PackageIcon>
+    <Company>NijnStein Software</Company>
+    <Product>BLAST Script</Product>
+    <Authors>Rob Lemmens</Authors>
+    <Copyright>© Rob Lemmmens 2022</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

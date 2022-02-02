@@ -1,4 +1,8 @@
-﻿
+﻿//##########################################################################################################
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
+// Unauthorized copying of this file, via any medium is strictly prohibited                                #
+// Proprietary and confidential                                                                            #
+//##########################################################################################################
 #if STANDALONE_VSBUILD
 #if DEVELOPMENT_BUILD
 #define HANDLE_DEBUG_OP
@@ -3665,6 +3669,204 @@ namespace NSS.Blast.SSMD
             code_pointer += 1;
         }
 
+        void get_ceillog2_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.ceillog2: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.ceillog2((int)((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.ceillog2((int2)((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.ceillog2((int3)((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        vector_size = 4;
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.ceillog2((int4)((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.ceillog2: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_ceilpow2_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.ceilpow2: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.ceilpow2((int)((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.ceilpow2((int2)((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.ceilpow2((int3)((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        vector_size = 4;
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.ceilpow2((int4)((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.ceilpow2: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_trunc_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.trunc: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.trunc(((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.trunc(((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.trunc(((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        vector_size = 4;
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.trunc(((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.trunc: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
         void get_floor_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
         {
             BlastVariableDataType datatype;
@@ -3724,6 +3926,72 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
                 default:
                     Debug.LogError($"blast.ssmd.interpretor.floor: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 1;
+        }
+
+        void get_floorlog2_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.floorlog2: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.floorlog2((int)((float*)temp)[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.floorlog2((int2)((float2*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.floorlog2((int3)((float3*)temp)[0]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        vector_size = 4;
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.floorlog2((int4)((float4*)temp)[0]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.floorlog2: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
                     break;
 #endif
             }
@@ -4990,7 +5258,96 @@ namespace NSS.Blast.SSMD
         #endregion
         #endregion
 
-        #region Dual input functions: math.pow
+        #region Dual input functions: math.pow fmod cross etc. 
+
+        void get_fmod_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.fmod: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        float* fpa = (float*)temp;
+                        float* fpb = &fpa[ssmd_datacount];
+
+                        pop_f1_into(code_pointer + 1, fpa);
+                        pop_f1_into(code_pointer + 2, fpb);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.fmod(fpa[i], fpb[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        float2* fpa = (float2*)temp;
+                        float2* fpb = &fpa[ssmd_datacount];
+
+                        pop_fx_into<float2>(code_pointer + 1, fpa);
+                        pop_fx_into<float2>(code_pointer + 2, fpb);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.fmod(fpa[i], fpb[i]);
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        float3* fpa = (float3*)temp;
+                        float3* fpb = stackalloc float3[ssmd_datacount]; // TODO test if this does not result in 2 x allocation in every case.,,..
+
+                        pop_fx_into<float3>(code_pointer + 1, fpa);
+                        pop_fx_into<float3>(code_pointer + 2, fpb);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.fmod(fpa[i], fpb[i]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        vector_size = 4;
+
+                        float4* fpa = (float4*)temp;
+                        float4* fpb = stackalloc float4[ssmd_datacount]; // TODO test if this does not result in 2 x allocation in every case.,,..
+
+                        pop_fx_into<float4>(code_pointer + 1, fpa);
+                        pop_fx_into<float4>(code_pointer + 1, fpb);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.fmod(fpa[i], fpb[i]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.fmod: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 2;
+        }
+
 
         void get_pow_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
         {
@@ -5548,9 +5905,9 @@ namespace NSS.Blast.SSMD
                         float* fp_min = &fpa[ssmd_datacount];
                         float* fp_max = &fp_min[ssmd_datacount];
 
-                        pop_f1_into(code_pointer + 1, fpa);
-                        pop_f1_into(code_pointer + 2, fp_min);
-                        pop_f1_into(code_pointer + 3, fp_max);
+                        pop_f1_into(code_pointer + 1, fp_min);
+                        pop_f1_into(code_pointer + 2, fp_max);
+                        pop_f1_into(code_pointer + 3, fpa);
 
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
@@ -5565,9 +5922,9 @@ namespace NSS.Blast.SSMD
                         float2* fp_min = &fpa[ssmd_datacount];
                         float2* fp_max = stackalloc float2[ssmd_datacount];
 
-                        pop_fx_into<float2>(code_pointer + 1, fpa);
-                        pop_fx_into<float2>(code_pointer + 2, fp_min);
-                        pop_fx_into<float2>(code_pointer + 3, fp_max);
+                        pop_fx_into<float2>(code_pointer + 1, fp_min);
+                        pop_fx_into<float2>(code_pointer + 2, fp_max);
+                        pop_fx_into<float2>(code_pointer + 3, fpa);
 
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
@@ -5583,9 +5940,9 @@ namespace NSS.Blast.SSMD
                         float3* fp_min = stackalloc float3[ssmd_datacount];
                         float3* fp_max = stackalloc float3[ssmd_datacount];
 
-                        pop_fx_into<float3>(code_pointer + 1, fpa);
-                        pop_fx_into<float3>(code_pointer + 2, fp_min);
-                        pop_fx_into<float3>(code_pointer + 3, fp_max);
+                        pop_fx_into<float3>(code_pointer + 1, fp_min);
+                        pop_fx_into<float3>(code_pointer + 2, fp_max);
+                        pop_fx_into<float3>(code_pointer + 3, fpa);
 
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
@@ -5601,9 +5958,9 @@ namespace NSS.Blast.SSMD
                         float4* fp_min = stackalloc float4[ssmd_datacount];
                         float4* fp_max = f4; // only on equal vectorsize can we reuse output buffer because of how we overwrite our values writing to the output if the source is smaller in size
 
-                        pop_fx_into<float4>(code_pointer + 1, fpa);
-                        pop_fx_into<float4>(code_pointer + 2, fp_min);
-                        pop_fx_into<float4>(code_pointer + 3, fp_max);
+                        pop_fx_into<float4>(code_pointer + 1, fp_min);
+                        pop_fx_into<float4>(code_pointer + 2, fp_max);
+                        pop_fx_into<float4>(code_pointer + 3, fpa);
 
                         for (int i = 0; i < ssmd_datacount; i++)
                         {
@@ -5621,6 +5978,203 @@ namespace NSS.Blast.SSMD
 
             code_pointer += 3;
         }
+
+
+        /// <summary>
+        /// undo lerp 
+        /// </summary>
+        void get_unlerp_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.unlerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        // in case of v1 there is no memory problem 
+                        float* fpa = (float*)temp;
+                        float* fp_min = &fpa[ssmd_datacount];
+                        float* fp_max = &fp_min[ssmd_datacount];
+
+                        pop_f1_into(code_pointer + 1, fp_min);
+                        pop_f1_into(code_pointer + 2, fp_max);
+                        pop_f1_into(code_pointer + 3, fpa);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = math.unlerp(fp_min[i], fp_max[i], fpa[i]);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        float2* fpa = (float2*)temp;
+                        float2* fp_min = &fpa[ssmd_datacount];
+                        float2* fp_max = stackalloc float2[ssmd_datacount];
+
+                        pop_fx_into<float2>(code_pointer + 1, fp_min);
+                        pop_fx_into<float2>(code_pointer + 2, fp_max);
+                        pop_fx_into<float2>(code_pointer + 3, fpa);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xy = math.unlerp(fp_min[i], fp_max[i], fpa[i]);
+                        }
+
+                    }
+                    break;
+
+                case 3:
+                    {
+                        float3* fpa = (float3*)temp;
+                        float3* fp_min = stackalloc float3[ssmd_datacount];
+                        float3* fp_max = stackalloc float3[ssmd_datacount];
+
+                        pop_fx_into<float3>(code_pointer + 1, fp_min);
+                        pop_fx_into<float3>(code_pointer + 2, fp_max);
+                        pop_fx_into<float3>(code_pointer + 3, fpa);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].xyz = math.unlerp(fp_min[i], fp_max[i], fpa[i]);
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        float4* fpa = (float4*)temp;
+                        float4* fp_min = stackalloc float4[ssmd_datacount];
+                        float4* fp_max = f4; // only on equal vectorsize can we reuse output buffer because of how we overwrite our values writing to the output if the source is smaller in size
+
+                        pop_fx_into<float4>(code_pointer + 1, fp_min);
+                        pop_fx_into<float4>(code_pointer + 2, fp_max);
+                        pop_fx_into<float4>(code_pointer + 3, fpa);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.unlerp(fp_min[i], fp_max[i], fpa[i]);
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.unlerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 3;
+        }
+
+
+        /// <summary>
+        /// sperical lerp on quaternions 
+        /// </summary>
+        void get_slerp_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.slerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+ 
+                case 0:
+                case 4:
+                    {
+                        float* fpa = stackalloc float[ssmd_datacount]; 
+                        float4* fp_min = (float4*)temp; 
+                        float4* fp_max = f4; // only on equal vectorsize can we reuse output buffer because of how we overwrite our values writing to the output if the source is smaller in size
+
+                        pop_fx_into<float4>(code_pointer + 1, fp_min);
+                        pop_fx_into<float4>(code_pointer + 2, fp_max);
+                        pop_fx_into<float>(code_pointer + 3, fpa);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.slerp((quaternion)fp_min[i], (quaternion)fp_max[i], fpa[i]).value;
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.slerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 3;
+        }
+
+        /// <summary>
+        /// normalized lerp on quaternions
+        /// </summary>
+        void get_nlerp_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.nlerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+
+                case 0:
+                case 4:
+                    {
+                        float* fpa = stackalloc float[ssmd_datacount];
+                        float4* fp_min = (float4*)temp;
+                        float4* fp_max = f4; // only on equal vectorsize can we reuse output buffer because of how we overwrite our values writing to the output if the source is smaller in size
+
+                        pop_fx_into<float4>(code_pointer + 1, fp_min);
+                        pop_fx_into<float4>(code_pointer + 2, fp_max);
+                        pop_fx_into<float>(code_pointer + 3, fpa);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i] = math.nlerp((quaternion)fp_min[i], (quaternion)fp_max[i], fpa[i]).value;
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.nlerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+
+            code_pointer += 3;
+        }
+
+
 
 
         #endregion
@@ -5857,6 +6411,77 @@ namespace NSS.Blast.SSMD
 
 
         /// <summary>
+        /// get component sum of all arguments of any vectorsize
+        /// </summary>
+        /// <param name="temp"></param>
+        /// <param name="code_pointer"></param>
+        /// <param name="vector_size"></param>
+        /// <param name="f4"></param>
+        void get_csum_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* f4)
+        {
+            code_pointer++;
+            byte c = BlastInterpretor.decode62(in code[code_pointer], ref vector_size);
+
+            // regardless, output vectorsize is always 1
+            vector_size = 1;
+            BlastVariableDataType datatype = default;
+            byte popped_vector_size = 0;
+       
+            // c == nr of parameters ...  
+            // run the rest of the parameters
+            while (c > 0)
+            {
+                code_pointer++;
+                c--;
+
+                pop_op_meta(code[code_pointer], out datatype, out popped_vector_size);
+                switch (popped_vector_size)
+                {
+                    case 0:
+                    case 4:
+                        pop_fx_into<float4>(code_pointer, (float4*)temp);
+
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            f4[i].x += math.csum(((float4*)temp)[i]);
+                        }
+                        break;
+
+                    case 1:
+                        pop_fx_into<float>(code_pointer, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            f4[i].x += ((float*)temp)[i];
+                        }
+                        break;
+
+                    case 2:
+                        pop_fx_into<float2>(code_pointer, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            f4[i].x += math.csum(((float2*)temp)[i]);
+                        }
+                        break;
+
+                    case 3:
+                        pop_fx_into<float3>(code_pointer, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            f4[i].x += math.csum(((float3*)temp)[i]);
+                        }
+                        break;
+#if DEVELOPMENT_BUILD || TRACE
+                    default:
+                        Debug.LogError($"blast.ssmd.interpretor.csum: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                        break;
+#endif
+                }
+            }
+        }
+
+
+
+        /// <summary>
         /// handle a sequence of operations
         /// - mula e62 p1 p2 .. pn
         /// - every parameter must be of same vector size 
@@ -5988,7 +6613,6 @@ namespace NSS.Blast.SSMD
         }
 
         #endregion
-
 
         #endregion
 
@@ -6197,9 +6821,11 @@ namespace NSS.Blast.SSMD
             {
                 // math functions
                 case blast_operation.abs: get_abs_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                case blast_operation.trunc: get_trunc_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                 case blast_operation.maxa: get_maxa_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                 case blast_operation.mina: get_mina_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                case blast_operation.csum: get_csum_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                 case blast_operation.max: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.max); break;
                 case blast_operation.min: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.min); break;
@@ -6207,9 +6833,8 @@ namespace NSS.Blast.SSMD
                 case blast_operation.any: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.or); break;
 
                 case blast_operation.select: get_select_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-
-                // fma and friends 
                 case blast_operation.fma: get_fma_result(temp, ref code_pointer, ref vector_size, ref f4_result); break;
+                case blast_operation.fmod: get_fmod_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                 case blast_operation.mula: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.multiply); break;
                 case blast_operation.adda: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.add); break;
@@ -6247,6 +6872,9 @@ namespace NSS.Blast.SSMD
                             case extended_blast_operation.log2: get_log2_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                             case extended_blast_operation.exp10: get_exp10_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                             case extended_blast_operation.exp: get_exp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.ceillog2: get_ceillog2_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.ceilpow2: get_ceilpow2_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.floorlog2: get_floorlog2_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                             // dual inputs 
                             case extended_blast_operation.pow: get_pow_result(temp, ref code_pointer, ref vector_size, f4_result); break;
@@ -6257,8 +6885,16 @@ namespace NSS.Blast.SSMD
                             // tripple inputs                 
                             case extended_blast_operation.clamp: get_clamp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                             case extended_blast_operation.lerp: get_lerp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            //case extended_blast_operation.slerp: get_slerp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            //case extended_blast_operation.nlerp: get_nlerp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.unlerp: get_unlerp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.slerp: get_slerp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.nlerp: get_nlerp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+
+                            // five inputs 
+                            // 
+                            //  -> build an indexer of ssmd_datacount wide with all dataroots so we can move that like a card over our data? so we dont need to copy 5!!! buffers ... 
+                            // 
+                            // case extended_blast_operation.remap: get_remap_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+
 
                             case extended_blast_operation.debugstack:
                                 {
@@ -6523,6 +7159,9 @@ namespace NSS.Blast.SSMD
                     case blast_operation.min:
                     case blast_operation.select:
                     case blast_operation.fma:
+                    case blast_operation.fmod:
+                    case blast_operation.csum:
+                    case blast_operation.trunc:
                     case blast_operation.mula:
                     case blast_operation.adda:
                     case blast_operation.suba:
@@ -7314,6 +7953,11 @@ namespace NSS.Blast.SSMD
                     case blast_operation.jump_back:
                         code_pointer = code_pointer - code[code_pointer];
                         break;
+
+                    // fixed long-jump, singed (forward && backward)
+                    case blast_operation.long_jump:
+                        code_pointer = code_pointer - (short)(code[code_pointer] << 8 + code[code_pointer + 1]);
+                        break;    
 
                     //
                     // conditional jumps -> generate a sync point after evaluation of condition 

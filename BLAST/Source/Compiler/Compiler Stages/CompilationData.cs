@@ -1,4 +1,9 @@
-﻿using NSS.Blast.Compiler.Stage;
+﻿//##########################################################################################################
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
+// Unauthorized copying of this file, via any medium is strictly prohibited                                #
+// Proprietary and confidential                                                                            #
+//##########################################################################################################
+using NSS.Blast.Compiler.Stage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -510,7 +515,8 @@ namespace NSS.Blast.Compiler
                 if (prev == blast_operation.jump ||
                     prev == blast_operation.jump_back ||
                     prev == blast_operation.jz ||
-                    prev == blast_operation.jnz)
+                    prev == blast_operation.jnz || 
+                    prev == blast_operation.long_jump)
                 {
                     sb.Append(((byte)op).ToString() + " ");
 
@@ -545,6 +551,11 @@ namespace NSS.Blast.Compiler
                         case blast_operation.equals: sb.Append("= "); break;
                         case blast_operation.not_equals: sb.Append("!= "); break;
                         case blast_operation.fma: sb.Append("fma "); break;
+                        case blast_operation.fmod: sb.Append("fmod "); break;
+
+                        case blast_operation.csum: sb.Append("csum "); break;
+                        case blast_operation.trunc: sb.Append("trunc "); break;
+
                         case blast_operation.adda: sb.Append("adda "); break;
                         case blast_operation.mula: sb.Append("mula "); break;
                         case blast_operation.diva: sb.Append("diva "); break;
@@ -571,6 +582,7 @@ namespace NSS.Blast.Compiler
                         case blast_operation.jnz: sb.Append("jnz "); break;
                         case blast_operation.jump: sb.Append("jump "); break;
                         case blast_operation.jump_back: sb.Append("jumpback "); break;
+                        case blast_operation.long_jump: sb.Append("jumplong "); break; 
 
                         case blast_operation.ret: sb.Append("return "); break;
 
@@ -654,6 +666,11 @@ namespace NSS.Blast.Compiler
                                 case extended_blast_operation.ceil: sb.Append("ceil "); break;
                                 case extended_blast_operation.floor: sb.Append("floor "); break;
                                 case extended_blast_operation.frac: sb.Append("frac "); break;
+                                case extended_blast_operation.remap: sb.Append("remap "); break;
+                                case extended_blast_operation.unlerp: sb.Append("unlerp "); break; 
+                                case extended_blast_operation.ceillog2: sb.Append("ceillog2 "); break; 
+                                case extended_blast_operation.floorlog2: sb.Append("floorlog2 "); break; 
+                                case extended_blast_operation.ceilpow2: sb.Append("ceilpow2 "); break; 
 
 
                                 case extended_blast_operation.call:

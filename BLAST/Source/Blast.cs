@@ -1,4 +1,8 @@
-﻿
+﻿//##########################################################################################################
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
+// Unauthorized copying of this file, via any medium is strictly prohibited                                #
+// Proprietary and confidential                                                                            #
+//##########################################################################################################
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -1017,9 +1021,19 @@ namespace NSS.Blast
         [BurstCompile]
         public static bool IsJumpOperation(blast_operation op)
         {
-            return op == blast_operation.jump || op == blast_operation.jump_back || op == blast_operation.jz || op == blast_operation.jnz;
+            return op == blast_operation.jump || op == blast_operation.jump_back || op == blast_operation.jz || op == blast_operation.jnz || op == blast_operation.long_jump;
         }
 
+        /// <summary>
+        /// check if the operation is a jump (jz, jnz, jump, jump_back)
+        /// </summary>
+        /// <param name="op">operation to check</param>
+        /// <returns>true if a jump</returns>
+        [BurstCompile]
+        public static bool IsConstantJumpOperation(blast_operation op)
+        {
+            return op == blast_operation.jump || op == blast_operation.jump_back || op == blast_operation.long_jump;
+        }
 
         /// <summary>
         /// returns true for ssmd valid operations: 
@@ -1371,6 +1385,7 @@ namespace NSS.Blast
 
                     case blast_operation.jump: sb.Append("jump "); break;
                     case blast_operation.jump_back: sb.Append("jumpback "); break;
+                    case blast_operation.long_jump: sb.Append("jumplong "); break;
 
                     case blast_operation.push: sb.Append("push "); break;
                     case blast_operation.pop: sb.Append("pop "); break;
@@ -1382,6 +1397,10 @@ namespace NSS.Blast
 
                     case blast_operation.fma:
                         break;
+                    case blast_operation.fmod: sb.Append("fmod "); break;
+                    case blast_operation.csum: sb.Append("csum "); break;
+                    case blast_operation.trunc: sb.Append("trunc "); break; 
+
                     case blast_operation.adda:
                         break;
                     case blast_operation.mula:
@@ -1487,6 +1506,11 @@ namespace NSS.Blast
                             case extended_blast_operation.ceil:
                             case extended_blast_operation.floor:
                             case extended_blast_operation.frac:
+                            case extended_blast_operation.remap:
+                            case extended_blast_operation.unlerp:
+                            case extended_blast_operation.ceillog2:
+                            case extended_blast_operation.floorlog2:
+                            case extended_blast_operation.ceilpow2: 
                                 sb.Append($"{ex} ");
                                 break;
 

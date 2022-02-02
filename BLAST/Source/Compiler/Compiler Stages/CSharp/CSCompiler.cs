@@ -1,4 +1,9 @@
-﻿#if NET_4_6 && (UNITY_STANDALONE_VSBUILD_WIN || UNITY_EDITOR_WIN)
+﻿//##########################################################################################################
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
+// Unauthorized copying of this file, via any medium is strictly prohibited                                #
+// Proprietary and confidential                                                                            #
+//##########################################################################################################
+#if NET_4_6 && (UNITY_STANDALONE_VSBUILD_WIN || UNITY_EDITOR_WIN)
 #define CSC
 #endif
 #if STANDALONE_VSBUILD

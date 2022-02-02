@@ -1,4 +1,9 @@
-﻿using System;
+﻿//##########################################################################################################
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
+// Unauthorized copying of this file, via any medium is strictly prohibited                                #
+// Proprietary and confidential                                                                            #
+//##########################################################################################################
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -982,6 +987,9 @@ namespace NSS.Blast
             RegisterFunction("diva", 2, 63, 0, 0, blast_operation.diva);
             RegisterFunction("mula", 2, 63, 0, 0, blast_operation.mula);
             RegisterFunction("fma", 3, 3, 0, 0, blast_operation.fma);
+            RegisterFunction("fmod", 2, 2, 0, 0, blast_operation.fmod);
+            RegisterFunction("trunc", 1, 63, 0, 0, blast_operation.trunc);
+            RegisterFunction("csum", 1, 63, 0, 0, blast_operation.csum);
 
             RegisterFunction("select", 3, 3, 0, 0, blast_operation.select);
             RegisterFunction("random", 0, 2, 0, 0, blast_operation.random);
@@ -1016,6 +1024,14 @@ namespace NSS.Blast
             RegisterFunction("lerp", 3, 3, 0, 0, extended_blast_operation.lerp);
             RegisterFunction("slerp", 3, 3, 4, 4, extended_blast_operation.slerp);
             RegisterFunction("nlerp", 3, 3, 4, 4, extended_blast_operation.nlerp);
+
+            RegisterFunction("unlerp", 3, 3, 0, 0, extended_blast_operation.unlerp);
+            RegisterFunction("remap", 5, 5, 0, 0, extended_blast_operation.remap);
+            RegisterFunction("ceillog2", 1, 1, 0, 0, extended_blast_operation.ceillog2);
+            RegisterFunction("floorlog2", 1, 1, 0, 0, extended_blast_operation.floorlog2);
+            RegisterFunction("ceilpow2", 1, 1, 0, 0, extended_blast_operation.ceilpow2);
+
+
             return this;
         }
     }
