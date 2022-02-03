@@ -1,7 +1,7 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 using System;
 using Unity.Mathematics;
@@ -1210,7 +1210,31 @@ namespace NSS.Blast
         /// <summary>
         /// inline function definition has a malformed body compound
         /// </summary>
-        error_inlinefunction_body_syntax = -55
+        error_inlinefunction_body_syntax = -55,
+        /// <summary>
+        /// inline function declaration is malformed (probably malformed function name)
+        /// </summary>
+        error_inlinefunction_declaration_syntax = -57,
+        /// <summary>
+        /// inline function already exists
+        /// </summary>
+        error_inlinefunction_already_exists = -58,
+        /// <summary>
+        /// inline function definition doesnt exist/couldnt be found
+        /// </summary>
+        error_inlinefunction_doenst_exist = -59,
+        /// <summary>
+        /// error re-mapping parameter list during inlining of function 
+        /// </summary>
+        error_inlinefunction_parameters = -60,
+        /// <summary>
+        /// error: inlined functions may not allocate memory/declare variables 
+        /// </summary>
+        error_inlinefunction_may_not_declare_variables = -61,
+        /// <summary>
+        /// error failed to remap identifiers in inlined function segment  
+        /// </summary>
+        error_inlinefunction_failed_to_remap_identifiers = -62
     }
 
 }

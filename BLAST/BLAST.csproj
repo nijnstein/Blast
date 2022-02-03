@@ -7,6 +7,8 @@
     <Product>BLAST Script</Product>
     <Authors>Rob Lemmens</Authors>
     <Copyright>© Rob Lemmmens 2022</Copyright>
+    <ApplicationIcon>blast_icon_large.ico</ApplicationIcon>
+    <Description />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

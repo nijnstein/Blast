@@ -1,7 +1,7 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
@@ -496,6 +496,10 @@ namespace NSS.Blast.Compiler.Stage
                 //    a123[3].x
                 //    a123[a - 3].x[2].x
                 //
+                // 
+                //  OR INLINE FUNCTIONS 
+                //
+                //
                 // whitespace is allowed in between indexers when not numeric 
                 // parser will parse identifier into compounds if needed
                 // tokenizer will keep it simple and will only read numerics (as it can be determined by the starting digit of the identifier)
@@ -597,6 +601,10 @@ namespace NSS.Blast.Compiler.Stage
 
                                 case "for":
                                     tokens.Add(new Tuple<BlastScriptToken, string>(BlastScriptToken.For, identifier));
+                                    break;
+
+                                case "function":
+                                    tokens.Add(new Tuple<BlastScriptToken, string>(BlastScriptToken.Function, identifier));
                                     break; 
 
                                 default:

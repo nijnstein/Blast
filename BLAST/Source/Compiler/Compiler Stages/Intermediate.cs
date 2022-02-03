@@ -1,7 +1,7 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 using NSS.Blast.Interpretor;
 using System;

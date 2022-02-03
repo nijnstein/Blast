@@ -1,13 +1,15 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.Assertions;
 using Unity.Mathematics;
 
 namespace NSS.Blast.Compiler.Stage
@@ -38,16 +40,17 @@ namespace NSS.Blast.Compiler.Stage
         /// scan for the next token of type 
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="tokens">token list to search in</param>
         /// <param name="token">token to look for</param>
         /// <param name="idx">idx to start looking from</param>
         /// <param name="max">max idx to look into</param>
         /// <param name="i1">idx of token</param>
         /// <returns>true if found</returns>
-        bool find_next(IBlastCompilationData data, BlastScriptToken token, int idx, in int max, out int i1)
+        bool find_next(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, BlastScriptToken token, int idx, in int max, out int i1)
         {
             while (idx <= max)
             {
-                if (data.Tokens[idx].Item1 != token)
+                if (tokens[idx].Item1 != token)
                 {
                     // as its more likely to not match to token take this branch first 
                     idx++;
@@ -95,20 +98,21 @@ namespace NSS.Blast.Compiler.Stage
         /// search for the next token skipping over compounds 
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="tokens">token list to use</param>
         /// <param name="token">token to look for</param>
         /// <param name="idx">idx to start looking from</param>
         /// <param name="max">max idx to look into</param>
         /// <param name="i1">idx of token</param>
         /// <param name="accept_eof"></param>
         /// <returns>true if found</returns>
-        bool find_next_skip_compound(IBlastCompilationData data, BlastScriptToken token, int idx, in int max, out int i1, bool accept_eof = false)
+        bool find_next_skip_compound(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, BlastScriptToken token, int idx, in int max, out int i1, bool accept_eof = false)
         {
             int size = max - idx;
             int open = 0;
 
             while (idx <= max)
             {
-                BlastScriptToken t = data.Tokens[idx].Item1;
+                BlastScriptToken t = tokens[idx].Item1;
 
                 if (t == BlastScriptToken.OpenParenthesis)
                 {
@@ -161,20 +165,22 @@ namespace NSS.Blast.Compiler.Stage
         /// search for the next token skipping over compounds 
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="tokenlist"></param>
         /// <param name="tokens">token to look for</param>
         /// <param name="idx">idx to start looking from</param>
         /// <param name="max">max idx to look into</param>
         /// <param name="i1">idx of token</param>
         /// <param name="accept_eof"></param>
         /// <returns>true if found</returns>
-        bool find_next_skip_compound(IBlastCompilationData data, BlastScriptToken[] tokens, int idx, in int max, out int i1, bool accept_eof = false)
+        bool find_next_skip_compound(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokenlist, BlastScriptToken[] tokens, int idx, in int max, out int i1, bool accept_eof = false)
         {
+            // HMMZ     should remove this copy TODO 
             int size = max - idx;
             int open = 0;
 
             while (idx <= max)
             {
-                BlastScriptToken t = data.Tokens[idx].Item1;
+                BlastScriptToken t = tokenlist[idx].Item1;
 
                 if (t == BlastScriptToken.OpenParenthesis)
                 {
@@ -226,6 +232,7 @@ namespace NSS.Blast.Compiler.Stage
         /// find next token from idx 
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="tokens"></param>
         /// <param name="token"></param>
         /// <param name="idx">idx to start looking from</param>
         /// <param name="max">max index to check into</param>
@@ -233,17 +240,17 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="skip_over_compounds">skip over ( ) not counting any token inside the (compound)</param>
         /// <param name="accept_eof">accept eof as succesfull end of search</param>
         /// <returns></returns>
-        bool find_next(IBlastCompilationData data, BlastScriptToken token, int idx, in int max, out int i1, bool skip_over_compounds = true, bool accept_eof = true)
+        bool find_next(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, BlastScriptToken token, int idx, in int max, out int i1, bool skip_over_compounds = true, bool accept_eof = true)
         {
             bool found;
 
             if (skip_over_compounds)
             {
-                found = find_next_skip_compound(data, token, idx, max, out i1, accept_eof);
+                found = find_next_skip_compound(data, tokens, token, idx, max, out i1, accept_eof);
             }
             else
             {
-                found = find_next(data, token, idx, max, out i1, false, accept_eof);
+                found = find_next(data, tokens, token, idx, max, out i1, false, accept_eof);
             }
 
             // accepting eof?? 
@@ -260,23 +267,24 @@ namespace NSS.Blast.Compiler.Stage
         /// find next match in token array 
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="tokenlist"></param>
         /// <param name="tokens"></param>
         /// <param name="idx">idx to start looking from</param>
         /// <param name="max">max index to check into</param>
         /// <param name="i1">token location or -1 if not found</param>
         /// <param name="skip_over_compounds">skip over ( ) not counting any token inside the (compound)</param>
         /// <param name="accept_eof">accept eof as succesfull end of search</param>        /// <returns></returns>
-        bool find_next(IBlastCompilationData data, BlastScriptToken[] tokens, int idx, in int max, out int i1, bool skip_over_compounds = true, bool accept_eof = true)
+        bool find_next(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokenlist, BlastScriptToken[] tokens, int idx, in int max, out int i1, bool skip_over_compounds = true, bool accept_eof = true)
         {
             bool found;
 
             if (skip_over_compounds)
             {
-                found = find_next_skip_compound(data, tokens, idx, max, out i1, accept_eof);
+                found = find_next_skip_compound(data, tokenlist, tokens, idx, max, out i1, accept_eof);
             }
             else
             {
-                found = find_next(data, tokens, idx, max, out i1, false, accept_eof);
+                found = find_next(data, tokenlist, tokens, idx, max, out i1, false, accept_eof);
             }
 
             // accepting eof?? 
@@ -294,10 +302,11 @@ namespace NSS.Blast.Compiler.Stage
         /// skip the closure () starting with idx at the (, if true ends with idx at position after ) 
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="tokens"></param>
         /// <param name="idx"></param>
         /// <param name="idx_max"></param>
         /// <returns></returns>
-        bool skip_closure(IBlastCompilationData data, ref int idx, int idx_max)
+        bool skip_closure(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, ref int idx, int idx_max)
         {
             if (idx > idx_max || data.Tokens[idx].Item1 != BlastScriptToken.OpenParenthesis)
             {
@@ -306,7 +315,7 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // find IF closure )
-            if (!find_next(data, BlastScriptToken.CloseParenthesis, idx + 1, idx_max, out idx, true, false))
+            if (!find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx + 1, idx_max, out idx, true, false))
             {
                 data.LogError($"parser.skip_closure: malformed parenthesis");
                 return false;
@@ -329,11 +338,12 @@ namespace NSS.Blast.Compiler.Stage
         /// scan token tree and find start and end index of next statement in token list
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="tokens"></param>
         /// <param name="idx">current index into token list</param>
         /// <param name="idx_max"></param>
         /// <param name="i1">start index of next statement</param>
         /// <param name="i2">end index of next statement</param>
-        bool find_next_statement(IBlastCompilationData data, ref int idx, int idx_max, out int i1, out int i2)
+        bool find_next_statement(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, ref int idx, int idx_max, out int i1, out int i2)
         {
             i1 = i2 = -1;
             if (!(idx <= idx_max))
@@ -351,7 +361,7 @@ namespace NSS.Blast.Compiler.Stage
             //bool end_on_id = false;
             while (idx <= idx_max && i1 < 0)
             {
-                switch (data.Tokens[idx].Item1)
+                switch (tokens[idx].Item1)
                 {
                     case BlastScriptToken.DotComma:
                         data.LogWarning($"parser.FindNextStatement: skipping ';'");
@@ -382,7 +392,7 @@ namespace NSS.Blast.Compiler.Stage
 
                     default:
                         // error: token not valid in currenct context
-                        data.LogError($"parser.FindNextStatement: found invalid token '{data.Tokens[idx].Item1}' while looking for statement start.");
+                        data.LogError($"parser.FindNextStatement: found invalid token '{tokens[idx].Item1}' while looking for statement start.");
                         i1 = i2 = -1;
                         idx = idx_max + 1;
                         return false;
@@ -397,7 +407,7 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // depending on the starting token of the statement we can end up with different flows 
-            switch (data.Tokens[i1].Item1)
+            switch (tokens[i1].Item1)
             {
 
                 case BlastScriptToken.Identifier:
@@ -408,7 +418,7 @@ namespace NSS.Blast.Compiler.Stage
                     // - a statement wont ever start with a -
                     // - a statement can contain (compounds)
 
-                    if (find_next(data, new BlastScriptToken[] { BlastScriptToken.DotComma, BlastScriptToken.CloseParenthesis }, i1 + 1, idx_max, out i2, true, true))
+                    if (find_next(data, tokens, new BlastScriptToken[] { BlastScriptToken.DotComma, BlastScriptToken.CloseParenthesis }, i1 + 1, idx_max, out i2, true, true))
                     {
                         // read the currentindex past the last part of the statement which is now
                         // contained in tokens[i1-i2]  
@@ -417,11 +427,11 @@ namespace NSS.Blast.Compiler.Stage
                         // allow ;) read past the parenthesiss
                         if (idx > 0
                             &&
-                            idx < data.Tokens.Count - 1
+                            idx < tokens.Count - 1
                             &&
-                            data.Tokens[idx - 1].Item1 == BlastScriptToken.DotComma
+                            tokens[idx - 1].Item1 == BlastScriptToken.DotComma
                             &&
-                            data.Tokens[idx].Item1 == BlastScriptToken.CloseParenthesis)
+                            tokens[idx].Item1 == BlastScriptToken.CloseParenthesis)
                         {
                             idx++;
                         }
@@ -437,14 +447,14 @@ namespace NSS.Blast.Compiler.Stage
 
                     // next token should open IF closure with (
                     idx++;
-                    if (idx > idx_max || data.Tokens[idx].Item1 != BlastScriptToken.OpenParenthesis)
+                    if (idx > idx_max || tokens[idx].Item1 != BlastScriptToken.OpenParenthesis)
                     {
-                        data.LogError($"parser.FindNextStatement: expecting parenthesis () after IF but found {data.Tokens[idx].Item1}");
+                        data.LogError($"parser.FindNextStatement: expecting parenthesis () after IF but found {tokens[idx].Item1}");
                         return false;
                     }
 
                     // find IF closure )
-                    if (!find_next(data, BlastScriptToken.CloseParenthesis, idx + 1, data.Tokens.Count - 1, out idx, true, false))
+                    if (!find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx + 1, tokens.Count - 1, out idx, true, false))
                     {
                         data.LogError($"parser.FindNextStatement: malformed parenthesis in IF condition");
                         return false;
@@ -454,19 +464,19 @@ namespace NSS.Blast.Compiler.Stage
 
                     // at i + 1 we either have THEN OR ELSE we could accept a statement..... 
                     idx++;
-                    if (idx <= idx_max && data.Tokens[idx].Item1 == BlastScriptToken.Then)
+                    if (idx <= idx_max && tokens[idx].Item1 == BlastScriptToken.Then)
                     {
                         have_then_or_else = true;
                         idx++;
                         // skip the closure 
-                        if (!skip_closure(data, ref idx, idx_max)) return false;
+                        if (!skip_closure(data, tokens, ref idx, idx_max)) return false;
                     }
-                    if (idx <= idx_max && data.Tokens[idx].Item1 == BlastScriptToken.Else)
+                    if (idx <= idx_max && tokens[idx].Item1 == BlastScriptToken.Else)
                     {
                         have_then_or_else = true;
                         idx++;
                         // skip the closure 
-                        if (!skip_closure(data, ref idx, idx_max)) return false;
+                        if (!skip_closure(data, tokens, ref idx, idx_max)) return false;
                     }
 
                     // check if we either have a then or else 
@@ -480,12 +490,12 @@ namespace NSS.Blast.Compiler.Stage
                     i2 = idx;
 
                     // take any ; with this statement
-                    while (idx <= idx_max && data.Tokens[idx].Item1 == BlastScriptToken.DotComma)
+                    while (idx <= idx_max && tokens[idx].Item1 == BlastScriptToken.DotComma)
                     {
                         idx++;
                     }
 
-                    if (idx == idx_max && data.Tokens[idx].Item1 == BlastScriptToken.CloseParenthesis)
+                    if (idx == idx_max && tokens[idx].Item1 == BlastScriptToken.CloseParenthesis)
                     {
                         // read past end 
                         idx++;
@@ -500,24 +510,24 @@ namespace NSS.Blast.Compiler.Stage
                     idx++;
 
                     // skip the while condition closure 
-                    if (!skip_closure(data, ref idx, idx_max)) return false;
+                    if (!skip_closure(data, tokens, ref idx, idx_max)) return false;
 
                     // next should be a new closure or a single statement 
-                    if (data.Tokens[idx].Item1 == BlastScriptToken.OpenParenthesis)
+                    if (tokens[idx].Item1 == BlastScriptToken.OpenParenthesis)
                     {
                         // TODO : could allow single statement 
-                        if (!skip_closure(data, ref idx, idx_max)) return false;
+                        if (!skip_closure(data, tokens, ref idx, idx_max)) return false;
 
                         // set the end of the statement and advance to next token 
                         i2 = idx;
 
                         // take any ; with this statement
-                        while (idx <= idx_max && data.Tokens[idx].Item1 == BlastScriptToken.DotComma)
+                        while (idx <= idx_max && tokens[idx].Item1 == BlastScriptToken.DotComma)
                         {
                             idx++;
                         }
 
-                        if (idx == idx_max && data.Tokens[idx].Item1 == BlastScriptToken.CloseParenthesis)
+                        if (idx == idx_max && tokens[idx].Item1 == BlastScriptToken.CloseParenthesis)
                         {
                             // read past end 
                             idx++;
@@ -549,10 +559,10 @@ namespace NSS.Blast.Compiler.Stage
                     idx++;
 
                     // skip the switch condition closure 
-                    if (!skip_closure(data, ref idx, idx_max)) return false;
+                    if (!skip_closure(data, tokens, ref idx, idx_max)) return false;
 
                     // skip over cases
-                    if (!skip_closure(data, ref idx, idx_max))
+                    if (!skip_closure(data, tokens, ref idx, idx_max))
                     {
                         data.LogError("find_next_statement: failed to scan over switch case/default closure");
                         return false;
@@ -562,7 +572,7 @@ namespace NSS.Blast.Compiler.Stage
                         i2 = idx;
 
                         // take any ; with this statement
-                        while (idx <= idx_max && data.Tokens[idx].Item1 == BlastScriptToken.DotComma)
+                        while (idx <= idx_max && tokens[idx].Item1 == BlastScriptToken.DotComma)
                         {
                             idx++;
                         }
@@ -588,18 +598,18 @@ namespace NSS.Blast.Compiler.Stage
         // while (statements ) then (statements);
         // switch(statement) case: [statement;]* default: [statement]*
         //
-        node parse_statement(IBlastCompilationData data, int idx_start, in int idx_end)
+        node parse_statement(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, int idx_start, in int idx_end)
         {
             int i, idx_condition;
 
             // determine statement type and process accordingly 
-            switch (data.Tokens[idx_start].Item1)
+            switch (tokens[idx_start].Item1)
             {
                 // either an assignment or a function call with no use for result
                 case BlastScriptToken.Identifier:
 
                     // an assignment is a sequence possibly containing compounds ending with ; or eof
-                    return parse_sequence(data, ref idx_start, idx_end);
+                    return parse_sequence(data, tokens, ref idx_start, idx_end);
 
                 case BlastScriptToken.If:
                     {
@@ -611,7 +621,7 @@ namespace NSS.Blast.Compiler.Stage
                         int idx_if = idx_start, idx_then, idx_else;
 
                         // scan to: then  
-                        if (!find_next(data, BlastScriptToken.Then, idx_start, idx_end, out idx_then, true, false))
+                        if (!find_next(data, tokens, BlastScriptToken.Then, idx_start, idx_end, out idx_then, true, false))
                         {
                             data.LogError($"parser.parse_statement: failed to locate matching THEN for IF statement found at token {idx_start} in statement from {idx_start} to {idx_end}");
                             return null;
@@ -619,7 +629,7 @@ namespace NSS.Blast.Compiler.Stage
 
                         // get IF condition sequence
                         i = idx_if + 1;
-                        node n_condition = parse_sequence(data, ref i, idx_then - 1);
+                        node n_condition = parse_sequence(data, tokens, ref i, idx_then - 1);
                         if (n_condition == null || !n_condition.HasChildren)
                         {
                             data.LogError($"parser.parse_statement: failed to parse IF condition or empty condition in statement from {idx_start} to {idx_end}");
@@ -634,15 +644,15 @@ namespace NSS.Blast.Compiler.Stage
                         // - if first token: ( then compound 
                         // - if first token: IF then nested if then else ........     todo for now force it to be a compound
                         // - else simple sequence
-                        if (data.Tokens[idx_then + 1].Item1 == BlastScriptToken.OpenParenthesis)
+                        if (tokens[idx_then + 1].Item1 == BlastScriptToken.OpenParenthesis)
                         {
                             // get matching parenthesis 
-                            if (find_next(data, BlastScriptToken.CloseParenthesis, idx_then + 2, idx_end, out i, true, false))
+                            if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx_then + 2, idx_end, out i, true, false))
                             {
                                 // parse statement list between the IFTHEN() 
                                 node n_then = n_if.CreateChild(nodetype.ifthen, BlastScriptToken.Then, "then");
                                 n_then.identifier = node.GenerateUniqueId("ifthen");
-                                int exitcode = parse_statements(data, n_then, idx_then + 2, i);
+                                int exitcode = parse_statements(data, tokens, n_then, idx_then + 2, i);
                                 if (exitcode != (int)BlastError.success)
                                 {
                                     data.LogError($"parser.parse_statement: failed to parse IFTHEN statement list in statement from {idx_start} to {idx_end}, exitcode: {exitcode}");
@@ -666,18 +676,18 @@ namespace NSS.Blast.Compiler.Stage
                         // get ELSE, by forcing THEN to have () we can get ELSE simply by skipping compound on search
                         idx_else = i + 1; // token after current must be ELSE for an else statement to be correct
 
-                        if (idx_else <= idx_end && data.Tokens[idx_else].Item1 == BlastScriptToken.Else)
+                        if (idx_else <= idx_end && tokens[idx_else].Item1 == BlastScriptToken.Else)
                         {
                             // read else, forse IFELSE with ()  
-                            if (idx_else + 1 <= idx_end && data.Tokens[idx_else + 1].Item1 == BlastScriptToken.OpenParenthesis)
+                            if (idx_else + 1 <= idx_end && tokens[idx_else + 1].Item1 == BlastScriptToken.OpenParenthesis)
                             {
                                 // get matching parenthesis 
-                                if (find_next(data, BlastScriptToken.CloseParenthesis, idx_else + 2, idx_end, out i, true, false))
+                                if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx_else + 2, idx_end, out i, true, false))
                                 {
                                     // parse statement list between the IFTHEN() 
                                     node n_else = n_if.CreateChild(nodetype.ifelse, BlastScriptToken.Else, "else");
                                     n_else.identifier = node.GenerateUniqueId("ifelse");
-                                    int exitcode = parse_statements(data, n_else, idx_else + 2, i);
+                                    int exitcode = parse_statements(data, tokens, n_else, idx_else + 2, i);
                                     if (exitcode != (int)BlastError.success)
                                     {
                                         data.LogError($"parser.parse_statement: failed to parse IFELSE statement list in statement from {idx_start} to {idx_end}, exitcode: {exitcode}");
@@ -708,14 +718,14 @@ namespace NSS.Blast.Compiler.Stage
 
                         // next token MUST be ( 
                         i = idx_start + 1;
-                        if (data.Tokens[i].Item1 == BlastScriptToken.OpenParenthesis)
+                        if (tokens[i].Item1 == BlastScriptToken.OpenParenthesis)
                         {
                             // get matching parenthesis 
                             idx_condition = i + 1;
-                            if (find_next(data, BlastScriptToken.CloseParenthesis, idx_condition, idx_end, out i, true, false))
+                            if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx_condition, idx_end, out i, true, false))
                             {
                                 // from here read the while condition sequence 
-                                node n_condition = parse_sequence(data, ref idx_condition, i - 1);
+                                node n_condition = parse_sequence(data, tokens, ref idx_condition, i - 1);
                                 if (n_condition == null || !n_condition.HasChildren)
                                 {
                                     data.LogError($"parser.parse_statement: failed to parse WHILE condition or empty condition in statement from {idx_start} to {idx_end}");
@@ -737,15 +747,15 @@ namespace NSS.Blast.Compiler.Stage
 
                             // now read while statement list
                             i = i + 1;
-                            if (data.Tokens[i].Item1 == BlastScriptToken.OpenParenthesis)
+                            if (tokens[i].Item1 == BlastScriptToken.OpenParenthesis)
                             {
                                 // should have matching statement list 
                                 int idx_compound = i + 1;
-                                if (find_next(data, BlastScriptToken.CloseParenthesis, idx_compound, idx_end, out i, true, false))
+                                if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx_compound, idx_end, out i, true, false))
                                 {
                                     // parse statement list between the IFTHEN() 
                                     node n_compound = n_while.CreateChild(nodetype.whilecompound, BlastScriptToken.While, node.GenerateUniqueId("while_compound"));
-                                    int exitcode = parse_statements(data, n_compound, idx_compound, i - 1);
+                                    int exitcode = parse_statements(data, tokens, n_compound, idx_compound, i - 1);
                                     if (exitcode != (int)BlastError.success)
                                     {
                                         data.LogError($"parser.parse_statement: failed to parse WHILE statement list in statement from {idx_start} to {idx_end}, exitcode: {exitcode}");
@@ -782,14 +792,14 @@ namespace NSS.Blast.Compiler.Stage
                         node n_for = new node(nodetype.forloop, BlastScriptToken.For);
                         n_for.identifier = node.GenerateUniqueId("for");
                         i = idx_start + 1;
-                        if (data.Tokens[i].Item1 == BlastScriptToken.OpenParenthesis)
+                        if (tokens[i].Item1 == BlastScriptToken.OpenParenthesis)
                         {
                             // get matching parenthesis 
                             idx_condition = i + 1;
-                            if (find_next(data, BlastScriptToken.CloseParenthesis, idx_condition, idx_end, out i, true, false))
+                            if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx_condition, idx_end, out i, true, false))
                             {
                                 // should be 3 ; seperated statements 
-                                int exitcode = parse_statements(data, n_for, idx_condition, i - 1);
+                                int exitcode = parse_statements(data, tokens, n_for, idx_condition, i - 1);
                                 if (exitcode != (int)BlastError.success)
                                 {
                                     data.LogError($"Parser.ParseStatement: failed to parse FOR statement list in statement from {idx_start} to {idx_end}, exitcode: {exitcode}");
@@ -811,15 +821,15 @@ namespace NSS.Blast.Compiler.Stage
 
                             // get the compound 
                             i = i + 1;
-                            if (data.Tokens[i].Item1 == BlastScriptToken.OpenParenthesis)
+                            if (tokens[i].Item1 == BlastScriptToken.OpenParenthesis)
                             {
                                 // should have matching statement list 
                                 int idx_compound = i + 1;
-                                if (find_next(data, BlastScriptToken.CloseParenthesis, idx_compound, idx_end, out i, true, false))
+                                if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx_compound, idx_end, out i, true, false))
                                 {
                                     // parse statement list between the IFTHEN() 
                                     node n_compound = n_for.CreateChild(nodetype.compound, BlastScriptToken.While, node.GenerateUniqueId("for_compound"));
-                                    int exitcode = parse_statements(data, n_compound, idx_compound, i - 1);
+                                    int exitcode = parse_statements(data, tokens, n_compound, idx_compound, i - 1);
                                     if (exitcode != (int)BlastError.success)
                                     {
                                         data.LogError($"Parser.ParseStatement: failed to parse FOR statement list in statement from {idx_start} to {idx_end}, exitcode: {exitcode}");
@@ -845,7 +855,7 @@ namespace NSS.Blast.Compiler.Stage
                         }
                         else
                         {
-                            data.LogError($"Parser.ParseStatement: failed to parse FOR statement, the for is not followed by ( but by an unsupported token: '{data.Tokens[i].Item1}'");
+                            data.LogError($"Parser.ParseStatement: failed to parse FOR statement, the for is not followed by ( but by an unsupported token: '{tokens[i].Item1}'");
                             return null;
                         }
                     }
@@ -857,17 +867,17 @@ namespace NSS.Blast.Compiler.Stage
 
                         // next token MUST be ( 
                         i = idx_start + 1;
-                        if (data.Tokens[i].Item1 != BlastScriptToken.OpenParenthesis)
+                        if (tokens[i].Item1 != BlastScriptToken.OpenParenthesis)
                         {
                             data.LogError($"parser.parse_statement: failed to parse switch statement in statement from {idx_start} to {idx_end}, the switch condition must be encapsulated in parenthesis.");
                             return null;
                         }
 
                         idx_condition = i + 1;
-                        if (find_next(data, BlastScriptToken.CloseParenthesis, idx_condition, idx_end, out i, true, false))
+                        if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx_condition, idx_end, out i, true, false))
                         {
                             // from here read the switch condition sequence 
-                            node n_condition = parse_sequence(data, ref idx_condition, i - 1);
+                            node n_condition = parse_sequence(data, tokens, ref idx_condition, i - 1);
                             if (n_condition == null || !n_condition.HasChildren)
                             {
                                 data.LogError($"parser.parse_statement: failed to parse switch condition or empty condition in statement from {idx_start} to {idx_end}");
@@ -889,14 +899,14 @@ namespace NSS.Blast.Compiler.Stage
 
                         // read switch cases
                         idx_start = i + 1;
-                        if (data.Tokens[idx_start].Item1 != BlastScriptToken.OpenParenthesis)
+                        if (tokens[idx_start].Item1 != BlastScriptToken.OpenParenthesis)
                         {
                             data.LogError($"parser.parse_statement: malformed parentheses in switch compound from {idx_start} to {idx_end}");
                             return null;
                         }
 
                         // find matching end of compound 
-                        if (find_next(data, BlastScriptToken.CloseParenthesis, idx_start + 1, idx_end, out i, true, false))
+                        if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx_start + 1, idx_end, out i, true, false))
                         {
                             int n_cases = 0;
 
@@ -910,8 +920,8 @@ namespace NSS.Blast.Compiler.Stage
                                 if (find_next(data, new BlastScriptToken[] { BlastScriptToken.Case, BlastScriptToken.Default }, idx_start, idx_end, out idx_case))
                                 {
                                     // case or default ? 
-                                    bool is_default = data.Tokens[idx_case].Item1 == BlastScriptToken.Default;
-                                    bool is_case = data.Tokens[idx_case].Item1 == BlastScriptToken.Case;
+                                    bool is_default = tokens[idx_case].Item1 == BlastScriptToken.Default;
+                                    bool is_case = tokens[idx_case].Item1 == BlastScriptToken.Case;
                                     if (!(is_default || is_case))
                                     {
                                         data.LogError($"parser.parse_statement: failed to locate case or default statements in switch compound from {idx_start} to {idx_end}");
@@ -925,7 +935,7 @@ namespace NSS.Blast.Compiler.Stage
                                     // directly after the case/default we must find ':' followed by either 1 statement or a compound with multiple statements 
                                     int idx_ternary;
                                     idx_case = idx_case + 1;
-                                    if (!find_next(data, BlastScriptToken.TernaryOption, idx_case, idx_end, out idx_ternary, true, false))
+                                    if (!find_next(data, tokens, BlastScriptToken.TernaryOption, idx_case, idx_end, out idx_ternary, true, false))
                                     {
                                         data.LogError($"parser.parse_statement: failed to parse switch statement, malformed case/default compound from {idx_start} to {idx_end}");
                                         return null;
@@ -938,20 +948,20 @@ namespace NSS.Blast.Compiler.Stage
 
                                     if (!is_default)
                                     {
-                                        node n_case_condition = parse_sequence(data, ref idx_case, idx_ternary - 1);
+                                        node n_case_condition = parse_sequence(data, tokens, ref idx_case, idx_ternary - 1);
                                         n_case_condition.type = nodetype.condition;
                                         n_case.SetChild(n_case_condition);
                                     }
 
                                     // either 1 statement or a list surrounded in a compound. 
-                                    if (data.Tokens[idx_ternary + 1].Item1 == BlastScriptToken.OpenParenthesis)
+                                    if (tokens[idx_ternary + 1].Item1 == BlastScriptToken.OpenParenthesis)
                                     {
                                         // a list in compound 
                                         idx_case = idx_ternary + 2;
-                                        if (find_next(data, BlastScriptToken.CloseParenthesis, idx_case, idx_end, out i, true, false))
+                                        if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx_case, idx_end, out i, true, false))
                                         {
                                             // parse statement list in the CASE: ()  
-                                            int exitcode = parse_statements(data, n_case, idx_case, i - 1);
+                                            int exitcode = parse_statements(data, tokens, n_case, idx_case, i - 1);
                                             if (exitcode != (int)BlastError.success)
                                             {
                                                 data.LogError($"parser.parse_statement: failed to parse CASE/DEFAULT statement list in SWITCH statement from {idx_start} to {idx_end}, exitcode: {exitcode}");
@@ -1040,20 +1050,24 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>null on failure, a node with the value on success</returns>
         unsafe node scan_and_parse_numeric(IBlastCompilationData data, ref int idx, in int idx_max)
         {
-            if (idx == idx_max && idx < data.Tokens.Count && data.Tokens[idx].Item1 == BlastScriptToken.Identifier)
+            return scan_and_parse_numeric(data, data.Tokens, ref idx, idx_max);
+        }
+        unsafe node scan_and_parse_numeric(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, ref int idx, in int idx_max)
+        {
+            if (idx == idx_max && idx < tokens.Count && tokens[idx].Item1 == BlastScriptToken.Identifier)
             {
                 idx++; 
                 return new node(null)
                 {
                     is_constant = true,
-                    identifier = data.Tokens[idx-1].Item2,
+                    identifier = tokens[idx-1].Item2,
                     type = nodetype.parameter
                 };
             }
 
             // we wont ever have minus = true in current situation because of tokenizer and how we read assignments
             // but leave it here just in case 
-            bool minus = data.Tokens[idx].Item1 == BlastScriptToken.Substract;
+            bool minus = tokens[idx].Item1 == BlastScriptToken.Substract;
             
 
             bool has_data = !minus; // if first token is minus sign then we dont have data yet
@@ -1062,19 +1076,19 @@ namespace NSS.Blast.Compiler.Stage
             
             int vector_size = 1;
 
-            string value = data.Tokens[idx].Item2;
+            string value = tokens[idx].Item2;
             idx++;
 
-            while (idx <= idx_max && idx < data.Tokens.Count)
+            while (idx <= idx_max && idx < tokens.Count)
             {
-                switch (data.Tokens[idx].Item1)
+                switch (tokens[idx].Item1)
                 {
                     case BlastScriptToken.Identifier:
                         {
                             if (!has_data)
                             {
                                 // first part of value
-                                value += data.Tokens[idx].Item2;
+                                value += tokens[idx].Item2;
                                 idx++;
                                 has_data = true;
                                 break;
@@ -1085,7 +1099,7 @@ namespace NSS.Blast.Compiler.Stage
                                 if (has_data && !has_fraction && has_indexer)
                                 {
                                     // last part of value
-                                    value += data.Tokens[idx].Item2;
+                                    value += tokens[idx].Item2;
                                     has_fraction = true;
                                     idx++;
                                     // retrn a 'parameter' node... bad name.. 
@@ -1118,7 +1132,7 @@ namespace NSS.Blast.Compiler.Stage
 
                             //idx++;
 
-                            data.LogError($"scan_and_parse_numeric: sequence of operations not valid for a numeric value: {data.Tokens[idx].Item2} in section {idx} - {idx_max} => {Blast.VisualizeTokens(data.Tokens, idx, idx_max)}");
+                            data.LogError($"scan_and_parse_numeric: sequence of operations not valid for a numeric value: {tokens[idx].Item2} in section {idx} - {idx_max} => {Blast.VisualizeTokens(tokens, idx, idx_max)}");
                             return null;
 
                             // break;
@@ -1186,11 +1200,17 @@ namespace NSS.Blast.Compiler.Stage
         /// </returns>
         unsafe node scan_and_parse_identifier(IBlastCompilationData data, ref int idx, in int idx_max, bool add_minus = false)
         {
+            return scan_and_parse_identifier(data, data.Tokens, ref idx, in idx_max, add_minus); 
+        }
+        unsafe node scan_and_parse_identifier(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, ref int idx, in int idx_max, bool add_minus = false)
+        {
+            Assert.IsNotNull(tokens);
+
             // step 1> we read a number if
 
             // - first char is number 
             // - first token is negative sign second token first char is digit 
-            bool minus = data.Tokens[idx].Item1 == BlastScriptToken.Substract;
+            bool minus = tokens[idx].Item1 == BlastScriptToken.Substract;
 
             if(add_minus) 
             {
@@ -1200,15 +1220,15 @@ namespace NSS.Blast.Compiler.Stage
 
             bool is_number =
                 // first minus and second char is digit 
-                (minus && (idx + 1 <= idx_max) && data.Tokens[idx + 1].Item2 != null && data.Tokens[idx + 1].Item2.Length > 0 && char.IsDigit(data.Tokens[idx + 1].Item2[0]))
+                (minus && (idx + 1 <= idx_max) && tokens[idx + 1].Item2 != null && tokens[idx + 1].Item2.Length > 0 && char.IsDigit(tokens[idx + 1].Item2[0]))
                 ||
                 // first char is digit 
-                (data.Tokens[idx].Item2 != null && data.Tokens[idx].Item2.Length > 0 && char.IsDigit(data.Tokens[idx].Item2[0]));
+                (tokens[idx].Item2 != null && tokens[idx].Item2.Length > 0 && char.IsDigit(tokens[idx].Item2[0]));
 
             if (is_number)
             {
                 // just return a numeric constant
-                node n_var_or_constant = scan_and_parse_numeric(data, ref idx, in idx_max);
+                node n_var_or_constant = scan_and_parse_numeric(data, tokens, ref idx, in idx_max);
                 
                 if(n_var_or_constant != null && minus)
                 {
@@ -1221,26 +1241,36 @@ namespace NSS.Blast.Compiler.Stage
 
             // step 2> create identifier from tokens 
             //
-            // -> this could be skipped based on several properties 
-            // 
 
-            if(data.Blast.Data->TryGetFunctionByName(data.Tokens[idx].Item2, out BlastScriptFunction function))
+            
+            // is it a function defined by blast? 
+            if(data.Blast.Data->TryGetFunctionByName(tokens[idx].Item2, out BlastScriptFunction function))
             {
                 // parse out function
-                node n_function = scan_and_parse_function(data, function, ref idx, in idx_max);
+                node n_function = scan_and_parse_function(data, tokens, function, ref idx, in idx_max);
 
                 return NegateNodeInCompound(minus, n_function);
             }
             else
             {
-                // now n_id should end up containing function and possible an index chain 
-                node n_id = new node(null);
-                n_id.identifier = data.Tokens[idx].Item2;
-                n_id.type = nodetype.parameter;
-                idx++;
+                // is it an inlined function? 
+                if (((CompilationData)data).TryGetInlinedFunction(tokens[idx].Item2, out BlastScriptInlineFunction inlined_function))
+                {
 
-                // grow a chain of indices 
-                return NegateNodeInCompound(minus, grow_index_chain(data, n_id, ref idx, in idx_max));
+                    node n_function = scan_and_parse_function(data, tokens, inlined_function, ref idx, in idx_max);
+                    return NegateNodeInCompound(minus, n_function); 
+                }
+                else
+                {
+                    // now n_id should end up being a parameter with possible an index chain 
+                    node n_id = new node(null);
+                    n_id.identifier = tokens[idx].Item2;
+                    n_id.type = nodetype.parameter;
+                    idx++;
+
+                    // grow a chain of indices 
+                    return NegateNodeInCompound(minus, grow_index_chain(data, tokens, n_id, ref idx, in idx_max));
+                }
             }
         }
 
@@ -1289,6 +1319,10 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>a node containing the function or null on failure</returns>
         node scan_and_parse_function(IBlastCompilationData data, BlastScriptFunction function, ref int idx, in int idx_max)
         {
+            return scan_and_parse_function(data, data.Tokens, function, ref idx, in idx_max);         
+        }
+        node scan_and_parse_function(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, BlastScriptFunction function, ref int idx, in int idx_max)
+        {
             node n_function = new node(null)
             {
                 type = nodetype.function,
@@ -1299,17 +1333,22 @@ namespace NSS.Blast.Compiler.Stage
             // parse parameters, which possibly are statements too
             // idx should be at ( directly after function, any other token then ,; is an error. 
 
+            //
+            // for 1 function we apply some sugar: return, we dont want to have to do return(a); but return a; 
+            // 
+            bool is_return = function.ScriptOp == blast_operation.ret; 
+
             idx++;
             bool parameter_less = false;
 
             // end reached? parameterless function 
             if (idx < idx_max)
             {
-                if (data.Tokens[idx].Item1 != BlastScriptToken.OpenParenthesis)
+                if (tokens[idx].Item1 != BlastScriptToken.OpenParenthesis && !is_return)
                 {
-                    if (data.Tokens[idx].Item1 == BlastScriptToken.DotComma
+                    if (tokens[idx].Item1 == BlastScriptToken.DotComma
                         ||
-                        data.Tokens[idx].Item1 == BlastScriptToken.Comma)
+                        tokens[idx].Item1 == BlastScriptToken.Comma)
                     {
                         // parameter less function 
                         idx++;
@@ -1320,6 +1359,15 @@ namespace NSS.Blast.Compiler.Stage
                         // error condition 
                         data.LogError($"parse.parse_function: scanned function {function.GetFunctionName()}, malformed parameter compound, expecting parameters, empty compound or statement termination");
                         return null;
+                    }
+                }
+                else
+                {
+                    if (is_return)
+                    {
+                        // return used with (), just allow it 
+                        // data.LogError($"parse.parse_function: scanned function {function.GetFunctionName()}, malformed parameter compound, expecting 1 parameter without parenthesis");
+                        // return null;
                     }
                 }
             }
@@ -1335,20 +1383,23 @@ namespace NSS.Blast.Compiler.Stage
                 int idx_end;
 
                 // at '(', find next ) skipping over compounds
-                idx++;
-                if (find_next(data, BlastScriptToken.CloseParenthesis, idx, idx_max, out idx_end, true, false))
+                if (!is_return)
+                {
+                    idx++;
+                }
+                if (find_next(data, tokens, is_return ? BlastScriptToken.DotComma : BlastScriptToken.CloseParenthesis, idx, idx_max, out idx_end, true, false))
                 {
                     int end_function_parenthesis = idx_end;
                     List<node> current_nodes = new List<node>(); 
 
                     while (idx < end_function_parenthesis)
                     {
-                        BlastScriptToken token = data.Tokens[idx].Item1;
+                        BlastScriptToken token = tokens[idx].Item1;
                         switch (token)
                         {
                             // identifier, possibly a nested function 
                             case BlastScriptToken.Identifier:
-                                current_nodes.Add(n_function.SetChild(scan_and_parse_identifier(data, ref idx, idx_end)));
+                                current_nodes.Add(n_function.SetChild(scan_and_parse_identifier(data, tokens, ref idx, idx_end)));
                                 break;
 
                             // seperator 
@@ -1376,7 +1427,7 @@ namespace NSS.Blast.Compiler.Stage
                             // compounds embedded in parameters -> statements resulting in values : 'sequences'
                             case BlastScriptToken.OpenParenthesis:
 
-                                if(data.Tokens[idx - 1].Item1 == BlastScriptToken.CloseParenthesis)
+                                if(tokens[idx - 1].Item1 == BlastScriptToken.CloseParenthesis)
                                 {
                                     if (current_nodes.Count > 0)
                                     {
@@ -1390,9 +1441,9 @@ namespace NSS.Blast.Compiler.Stage
                                     }
                                 }
 
-                                if (find_next(data, BlastScriptToken.CloseParenthesis, idx + 1, idx_max, out idx_end, true, false))
+                                if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx + 1, idx_max, out idx_end, true, false))
                                 {
-                                    current_nodes.Add(n_function.SetChild(parse_sequence(data, ref idx, idx_end)));
+                                    current_nodes.Add(n_function.SetChild(parse_sequence(data, tokens, ref idx, idx_end)));
                                 }
                                 else
                                 {
@@ -1422,7 +1473,7 @@ namespace NSS.Blast.Compiler.Stage
                             case BlastScriptToken.Not:
                                 // we are scanning inside a parameter list and are dropping the comma;s   (somewhere)
                                 // the minus should be added to the next identifier before the next comma
-                                current_nodes.Add(n_function.CreateChild(nodetype.operation, token, data.Tokens[idx].Item2));
+                                current_nodes.Add(n_function.CreateChild(nodetype.operation, token, tokens[idx].Item2));
                                 idx++;
                                 break;
 
@@ -1434,7 +1485,7 @@ namespace NSS.Blast.Compiler.Stage
                                 }
                                 else
                                 {
-                                    data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.GetFunctionName()}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)}  => \n{n_function.ToNodeTreeString()}");
+                                    data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.GetFunctionName()}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(tokens, idx, idx_end)}  => \n{n_function.ToNodeTreeString()}");
                                     return null;
                                 }
                                 break; 
@@ -1448,7 +1499,7 @@ namespace NSS.Blast.Compiler.Stage
                             case BlastScriptToken.Switch:
                             case BlastScriptToken.Case:
                             case BlastScriptToken.Default:
-                                data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.GetFunctionName()}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(data.Tokens, idx, idx_end)}  => \n{n_function.ToNodeTreeString()}");
+                                data.LogError($"parse.parse_function: found unexpected token '{token}' in function '{function.GetFunctionName()}' while parsing function parameters`, token index: {idx} => {Blast.VisualizeTokens(tokens, idx, idx_end)}  => \n{n_function.ToNodeTreeString()}");
                                 return null;
                         }
                     }
@@ -1490,7 +1541,7 @@ namespace NSS.Blast.Compiler.Stage
                 }
 
                 // allow a chain of indices to follow
-                return grow_index_chain(data, n_function, ref idx, in idx_max);
+                return grow_index_chain(data, tokens, n_function, ref idx, in idx_max);
             }
             // Function without indexers or parameters 
             else
@@ -1508,20 +1559,41 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+
         /// <summary>
-        /// parse a sequence of tokens between () into a list of nodes 
+        /// scan an inlined function 
         /// </summary>
         /// <param name="data"></param>
-        /// <param name="idx">index directly after the opening ( or at first token of sequence within () </param>
+        /// <param name="tokens"></param>
+        /// <param name="function"></param>
+        /// <param name="idx"></param>
         /// <param name="idx_max"></param>
         /// <returns></returns>
-        node parse_sequence(IBlastCompilationData data, ref int idx, in int idx_max)
+        node scan_and_parse_function(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, BlastScriptInlineFunction function, ref int idx, in int idx_max)
+        {
+            return scan_and_parse_function(data, tokens, function.GenerateDummyScriptFunction(),  ref idx, in idx_max);
+        }
+
+
+        /// <summary>
+        /// parse a sequence of tokens between () into a list of nodes 
+        /// 
+        /// -> start with idx on the ( of the enclosing compound 
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="tokens">tokens to index, can be a slice of data.Tokens</param>
+        /// <param name="idx">index directly after the opening ( or at first token of sequence within () </param>
+        /// <param name="idx_max"></param>
+        /// <param name="as_parameters"></param>
+        /// <returns></returns>
+        node parse_sequence(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, ref int idx, in int idx_max, bool as_parameters = false)
         {
             int idx_end = -1;
             node n_sequence = new node(null) { type = nodetype.compound };
 
             // if starting on parenthesis assume sequence compounded with parenthesis
-            bool has_parenthesis = data.Tokens[idx].Item1 == BlastScriptToken.OpenParenthesis;
+            bool has_parenthesis = tokens[idx].Item1 == BlastScriptToken.OpenParenthesis;
             if (has_parenthesis) idx++;
 
             BlastScriptToken prev_token = BlastScriptToken.Nop;
@@ -1531,7 +1603,7 @@ namespace NSS.Blast.Compiler.Stage
             // read all tokens 
             while (idx <= idx_max)
             {
-                BlastScriptToken token = data.Tokens[idx].Item1;
+                BlastScriptToken token = tokens[idx].Item1;
                 if (token == BlastScriptToken.CloseParenthesis)
                 {
                     if (has_parenthesis || idx == idx_max)
@@ -1546,9 +1618,10 @@ namespace NSS.Blast.Compiler.Stage
                     if(token != BlastScriptToken.Substract)
                     {
                         // should we raise error ?  or just allow it TODO 
-#if DEVELOPMENT_BUILD
-                        data.LogTrace(", used in non parameter sequence");
-#endif
+                        if (!as_parameters)
+                        {
+                            data.LogTrace(", used in non parameter sequence");
+                        }
                     }
                 }
 
@@ -1560,7 +1633,7 @@ namespace NSS.Blast.Compiler.Stage
                         // this cannot be anything else when 2 identifiers follow 
                         if (prev_token == BlastScriptToken.Identifier) if_sure_its_vector_define = true; 
 
-                        node ident = n_sequence.SetChild(scan_and_parse_identifier(data, ref idx, idx_max, minus));
+                        node ident = n_sequence.SetChild(scan_and_parse_identifier(data, tokens, ref idx, idx_max, minus));
 
                         // reset minus sign after reading an identifier 
                         minus = false; 
@@ -1592,9 +1665,9 @@ namespace NSS.Blast.Compiler.Stage
 
                     // compounds embedded in parameters -> statements resulting in values : 'sequences'
                     case BlastScriptToken.OpenParenthesis:
-                        if (find_next(data, BlastScriptToken.CloseParenthesis, idx + 1, idx_max, out idx_end, true, false))
+                        if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx + 1, idx_max, out idx_end, true, false))
                         {
-                            node n_compound = parse_sequence(data, ref idx, idx_end);
+                            node n_compound = parse_sequence(data, tokens, ref idx, idx_end);
                             if (n_compound != null)
                             {
                                 n_sequence.SetChild(n_compound);
@@ -1631,7 +1704,7 @@ namespace NSS.Blast.Compiler.Stage
                     case BlastScriptToken.Or:
                     case BlastScriptToken.Xor:
                     case BlastScriptToken.Not:
-                        n_sequence.CreateChild(nodetype.operation, token, data.Tokens[idx].Item2);
+                        n_sequence.CreateChild(nodetype.operation, token, tokens[idx].Item2);
                         idx++;
                         break;
 
@@ -1651,7 +1724,7 @@ namespace NSS.Blast.Compiler.Stage
                         else
                         {
                             // handle as a mathamatical operation 
-                            n_sequence.CreateChild(nodetype.operation, token, data.Tokens[idx].Item2);
+                            n_sequence.CreateChild(nodetype.operation, token, tokens[idx].Item2);
                             idx++;
                         }
                         break; 
@@ -1686,16 +1759,16 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="idx">token index to start reading chain from</param>
         /// <param name="idx_max">max index to grow into</param>
         /// <returns>chain root node with chain as children, or null on failure</returns>
-        node grow_index_chain(IBlastCompilationData data, node chain_root, ref int idx, in int idx_max)
+        node grow_index_chain(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, node chain_root, ref int idx, in int idx_max)
         {
             // STEP 3> grow identifier indexing chain (functions can be indexed)
             node n_id = chain_root;
             bool has_open_indexer = false;
             bool last_is_dot_indexer = false;
 
-            while (idx <= idx_max && idx < data.Tokens.Count)
+            while (idx <= idx_max && idx < tokens.Count)
             {
-                switch (data.Tokens[idx].Item1)
+                switch (tokens[idx].Item1)
                 {
                     case BlastScriptToken.Indexer:
                         if (last_is_dot_indexer || has_open_indexer)
@@ -1740,7 +1813,7 @@ namespace NSS.Blast.Compiler.Stage
                             //
                             // ! possible sequence in open indexer 
                             // 
-                            n_id = n_id.AppendIndexer(BlastScriptToken.Identifier, data.Tokens[idx].Item2);
+                            n_id = n_id.AppendIndexer(BlastScriptToken.Identifier, tokens[idx].Item2);
                             idx++;
                             last_is_dot_indexer = false;
                         }
@@ -1764,7 +1837,7 @@ namespace NSS.Blast.Compiler.Stage
                             //
                             // ! possible sequence in open indexer 
                             // 
-                            n_id = n_id.AppendIndexer(data.Tokens[idx].Item1, data.Tokens[idx].Item2);
+                            n_id = n_id.AppendIndexer(tokens[idx].Item1, tokens[idx].Item2);
                             idx++;
                             last_is_dot_indexer = false;
                         }
@@ -1782,17 +1855,10 @@ namespace NSS.Blast.Compiler.Stage
         }
 
         
-#pragma warning disable CS1572 // XML comment has a param tag for 'node', but there is no parameter by that name
-/// <summary>
+        /// <summary>
         /// check if the node is an assignment 
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="node">node to map out</param>
-        /// <returns></returns>
-#pragma warning disable CS1573 // Parameter 'ast_node' has no matching param tag in the XML comment for 'BlastParser.check_if_assignment_node(IBlastCompilationData, node)' (but other parameters do)
-        bool check_if_assignment_node(IBlastCompilationData data, node ast_node)
-#pragma warning restore CS1573 // Parameter 'ast_node' has no matching param tag in the XML comment for 'BlastParser.check_if_assignment_node(IBlastCompilationData, node)' (but other parameters do)
-#pragma warning restore CS1572 // XML comment has a param tag for 'node', but there is no parameter by that name
+        bool check_if_assignment_node(IBlastCompilationData data, node ast_node, bool inlined)
         {
             // check if this is an assignment 
             // [identifier][indexchain] = [sequence] ;/nop
@@ -1806,6 +1872,17 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     // looks like an assignment, check out the parameter. it must be non constant 
                     node param = ast_node.children[0];
+
+                    // check if the assignment is rooted in an inlinefunction, if so it may not create variables
+                    if (inlined)
+                    {
+                        if (!data.ExistsVariable(param.identifier))
+                        {
+                            data.LogError($"blast.parser: variable declarations are not allowed inside functions", (int)BlastError.error_inlinefunction_may_not_declare_variables);
+                            return false;
+                        }
+                    }
+
                     if (param.variable == null)
                     {
                         param.variable = ((CompilationData)data).GetOrCreateVariable(param.identifier);
@@ -1844,11 +1921,12 @@ namespace NSS.Blast.Compiler.Stage
         /// - depending on defines this may execute multithreaded 
         /// </summary>
         /// <param name="data"></param>
+        /// <param name="tokens"></param>
         /// <param name="parent">the parent node</param>
         /// <param name="idx_start">starting index into tokens </param>
         /// <param name="idx_max">max index in tokens to scan into</param>
         /// <returns>exitcode - blasterror</returns>
-        int parse_statements(IBlastCompilationData data, node parent, int idx_start, int idx_max)
+        int parse_statements(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens, node parent, int idx_start, int idx_max)
         {
             int idx_token = idx_start, idx_end = -1;
 
@@ -1858,7 +1936,7 @@ namespace NSS.Blast.Compiler.Stage
 
             while (idx_token <= idx_max)
             {
-                if (find_next_statement(data, ref idx_token, idx_max, out idx_start, out idx_end))
+                if (find_next_statement(data, tokens, ref idx_token, idx_max, out idx_start, out idx_end))
                 {
                     idx_statements.Add(new int4(idx_start, idx_end, idx_statements.Count, 0));
 
@@ -1884,13 +1962,13 @@ namespace NSS.Blast.Compiler.Stage
                 Parallel.ForEach(idx_statements, idx =>
                 {
                     // parse the statement from the token array
-                    node ast_node = parse_statement(data, idx[0], idx[1]);
+                    node ast_node = parse_statement(data, tokens, idx[0], idx[1]);
                     if (ast_node != null)
                     {
                         nodes[idx[2]] = ast_node;
                        
                         // check if the parsed statement is an assignment 
-                        check_if_assignment_node(data, ast_node);
+                        check_if_assignment_node(data, ast_node, IsParsingInlineFunction(data, tokens));
                     }
                 });
             }
@@ -1900,13 +1978,13 @@ namespace NSS.Blast.Compiler.Stage
                 foreach (int4 idx in idx_statements)
                 {
                     // parse the statement from the token array
-                    node ast_node = parse_statement(data, idx[0], idx[1]);
+                    node ast_node = parse_statement(data, tokens, idx[0], idx[1]);
                     if (ast_node != null)
                     {
                         nodes[idx[2]] = ast_node;
 
                         // check if the parsed statement is an assignment 
-                        check_if_assignment_node(data, ast_node);
+                        check_if_assignment_node(data, ast_node, IsParsingInlineFunction(data, tokens));
 
                         // get all function nodes 
                         // node[] functions = ast_node.GetChildren(nodetype.function);
@@ -1938,17 +2016,170 @@ namespace NSS.Blast.Compiler.Stage
         }
 
 
+        /// <summary>
+        /// check if the stream we are parsing is an inlined function 
+        /// </summary>
+        bool IsParsingInlineFunction(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> tokens)
+        {
+            if (tokens == data.Tokens) return false;
+            if (tokens.Count == 0) return false;
+            return tokens[0].Item1 == BlastScriptToken.Function; 
+        }
+
+
+        BlastError IdentifyFunctionRoots(IBlastCompilationData data, List<List<Tuple<BlastScriptToken, string>>> roots)
+        {
+            Assert.IsNotNull(roots);
+            foreach (var ftokens in roots)
+            {
+
+#if DEVELOPMENT_BUILD || TRACE
+                Assert.IsNotNull(ftokens);
+                Assert.IsTrue(ftokens.Count > 3);
+                Assert.IsTrue(ftokens[0].Item1 == BlastScriptToken.Function);
+
+                StringBuilder sbc = StringBuilderCache.Acquire();
+                sbc.Append("Found Function: ");
+                foreach (var t in ftokens)
+                {
+                    sbc.Append("  " + t.Item1.ToString());
+                }
+                sbc.AppendLine();
+
+                data.LogTrace(StringBuilderCache.GetStringAndRelease(ref sbc));
+#endif
+
+                // the first node will be 'function'
+                node n = new node(nodetype.inline_function, BlastScriptToken.Function).SkipCompilation();
+
+                // get identifier|name => it should be unique at this point 
+                if (ftokens[1].Item1 != BlastScriptToken.Identifier)
+                {
+                    data.LogError("blast.parser.parseinlinefunction: failed to parse functionname");
+                    return BlastError.error_inlinefunction_declaration_syntax;
+                }
+
+                n.identifier = ftokens[1].Item2;
+
+                // check if another function exists at this point with this name, all other identifiers get
+                // mapped out in the next stage 
+                if (data.AST.HasInlineFunction(n.identifier))
+                {
+                    data.LogError("blast.parser.parseinlinefunction: failed to parse functionname");
+                    return BlastError.error_inlinefunction_already_exists;
+                }
+
+                // get the parameters 
+                // - declaration is very rigid so we should expect an opening ( at the next token 
+                int idx = 2;
+
+                if (ftokens[idx].Item1 != BlastScriptToken.OpenParenthesis)
+                {
+                    // syntax error, although it is checked earlier, maybe this function will have different
+                    // callstacks in the future 
+                    return BlastError.error_inlinefunction_parameter_list_syntax;
+                }
+
+
+                node parameters = parse_sequence(data, ftokens, ref idx, ftokens.Count - 1, true);
+
+                // put each in dependancies of the function 
+                if (parameters.ChildCount > 0)
+                {
+                    for (int i = 0; i < parameters.ChildCount; i++)
+                        n.AppendDependency(parameters.children[i]);
+                }
+                else
+                {
+                    // must be empty compound then 
+                    if (parameters.type != nodetype.compound)
+                    {
+                        return BlastError.error_inlinefunction_parameter_list_syntax;
+                    }
+                }
+
+                idx++;
+                if (ftokens[idx].Item1 != BlastScriptToken.OpenParenthesis)
+                {
+                    return BlastError.error_inlinefunction_body_syntax;
+                }
+
+                // cut out parameter section leaving only the body 
+                ftokens.RemoveRange(2, idx - 2);
+
+                // add function to the ast root, insert it at the root directly after the other inlines 
+                data.AST.children.Insert(data.AST.CountChildren(nodetype.inline_function), n);
+
+                //determine parametercount
+                int c = n.DependencyCount; 
+
+                // add function definition 
+                BlastScriptInlineFunction f = new BlastScriptInlineFunction()
+                {
+                    Name = n.identifier,
+                    Node = n,
+                    ParameterCount = c
+                };
+
+                ((CompilationData)data).AddInlinedFunction(f);
+            }
+
+            return BlastError.success;
+        }
+
+
+
+        /// <summary>
+        /// parse a single inlined function from the tokens
+        /// </summary>
+        /// <param name="data">compilerdata</param>
+        /// <param name="ftokens">the tokens defining the function</param>
+        /// <returns>success if all went ok, errorcodes otherwise</returns>
         BlastError ParseInlineFunction(IBlastCompilationData data, List<Tuple<BlastScriptToken, string>> ftokens)
         {
+            // get identifier|name
+            if(ftokens[1].Item1 != BlastScriptToken.Identifier)
+            {
+                data.LogError("blast.parser.parseinlinefunction: failed to parse functionname");
+                return BlastError.error_inlinefunction_declaration_syntax;
+            }
 
+
+            BlastScriptInlineFunction function; 
+            if(!data.TryGetInlinedFunction(ftokens[1].Item2, out function))
+            {
+                data.LogError($"blast.parser.parseinlinefunction: failed to parse body statement, could not locate identified inline function node with functionname: {ftokens[1].Item2}");
+                return BlastError.error_inlinefunction_declaration_syntax; 
+            }
+            node n = function.Node;
+
+            Assert.IsNotNull(n); 
+
+            // read body statement list
+            int idx = 3; 
+
+            BlastError res = (BlastError)parse_statements(data, ftokens, n, idx, ftokens.Count - 1); 
+            if(res != 0)
+            {
+                data.LogError("blast.parser.parseinlinefunction: failed to parse body statements");
+                return res;
+            }
+
+            // function parsed correctly, register it so we can recognize calls to it 
 
             return BlastError.success; 
         }
 
 
-        BlastError FindAndExtractFunctions(IBlastCompilationData data)
+        /// <summary>
+        /// scan for functions and parse them into seperate nodes 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        BlastError FindAndExtractFunctionRoots(IBlastCompilationData data, out List<List<Tuple<BlastScriptToken, string>>> roots)
         {
             int i = 0;
+            roots = null; 
 
             while (i < data.Tokens.Count - 1)
             {
@@ -1961,8 +2192,16 @@ namespace NSS.Blast.Compiler.Stage
                     // a function can only return 1 value
                     //
 
+                    if (data.Tokens[i + 1].Item1 != BlastScriptToken.Identifier)
+                    {                   
+                        // the tokenizer should have picked up the function name as an identifier 
+                        // = syntax error 
+                        return BlastError.error_inlinefunction_declaration_syntax; 
+                    }
+
+
                     // the next token MUST be open 
-                    if (data.Tokens[i + 1].Item1 != BlastScriptToken.OpenParenthesis)
+                    if (data.Tokens[i + 2].Item1 != BlastScriptToken.OpenParenthesis)
                     {
                         // syntax error 
                         return BlastError.error_inlinefunction_parameter_list_syntax;
@@ -1973,34 +2212,33 @@ namespace NSS.Blast.Compiler.Stage
                     int i_start_body = 0;
                     int i_end_body = 0;
 
-                    if (!find_next(data, BlastScriptToken.OpenParenthesis, i + 1, data.Tokens.Count - 1, out i_start_body))
+                    if (!find_next(data, data.Tokens, BlastScriptToken.OpenParenthesis, i + 3, data.Tokens.Count - 1, out i_start_body))
                     {
                         return BlastError.error_inlinefunction_body_syntax;
                     }
 
-                    if (!find_next_skip_compound(data, BlastScriptToken.CloseParenthesis, i_start_body, data.Tokens.Count - 1, out i_end_body))
+                    if (!find_next_skip_compound(data, data.Tokens, BlastScriptToken.CloseParenthesis, i_start_body+1, data.Tokens.Count - 1, out i_end_body))
                     {
                         return BlastError.error_inlinefunction_body_syntax;
                     }
 
                     // read past any trailing ;'s
-                    while (data.Tokens[i_end_body].Item1 == BlastScriptToken.DotComma && i_end_body < data.Tokens.Count - 1) i_end_body++;
+                    int j = i_end_body; 
+                    while (data.Tokens[j].Item1 == BlastScriptToken.DotComma && j < data.Tokens.Count - 1) j++;
 
                     // should have our function between i and i_end_body 
-                    List<Tuple<BlastScriptToken, string>> ftokens = data.Tokens.GetRange(i, i_end_body - i);
+                    List<Tuple<BlastScriptToken, string>> ftokens = data.Tokens.GetRange(i, i_end_body - i + 2);
 
-                    // remove that range from the rest of the tokens
-                    data.Tokens.RemoveRange(i, i_end_body - i);
+                    // remove that range including any trailing ;'s from the rest of the tokens
+                    data.Tokens.RemoveRange(i, j - i + 2);
 
-                    // parse inline function node and add it to the ast
-                    BlastError res = ParseInlineFunction(data, ftokens);
-                    if (res != BlastError.success)
+
+                    if (roots == null)
                     {
-#if DEVELOPMENT_BUILD || TRACE
-                        data.LogError($"blast.parser.FindAndExtractFunctions: failed to parse function, error {res}");
-#endif
-                        return res;
+                        roots = new List<List<Tuple<BlastScriptToken, string>>>();
                     }
+                    roots.Add(ftokens); 
+
                 }
                 else
                 {
@@ -2011,6 +2249,24 @@ namespace NSS.Blast.Compiler.Stage
             return BlastError.success; 
         }
 
+        BlastError ParseFunctionRoots(IBlastCompilationData data, List<List<Tuple<BlastScriptToken, string>>> roots)
+        {
+            Assert.IsNotNull(roots); 
+            foreach(var root in roots)
+            {
+                // parse inline function node and insert it into the ast
+                BlastError res = ParseInlineFunction(data, root);
+                if (res != BlastError.success)
+                {
+#if DEVELOPMENT_BUILD || TRACE
+                    data.LogError($"blast.parser.FindAndExtractFunctions: failed to parse function, error {res}");
+#endif
+                    return res;
+                }
+            }
+
+            return BlastError.success; 
+        }
 
 
 
@@ -2029,18 +2285,56 @@ namespace NSS.Blast.Compiler.Stage
             // - body 
             //
 
-            BlastError res = FindAndExtractFunctions(data);
-            if(res != BlastError.success)
+            List<List<Tuple<BlastScriptToken, string>>> roots;
+            BlastError res = FindAndExtractFunctionRoots(data, out roots);
+            if (res != BlastError.success)
             {
 #if DEVELOPMENT_BUILD || TRACE 
-                data.LogError($"blast.parser: failed to locate and extract function scopes, error {res}"); 
+                data.LogError($"blast.parser: failed to locate and extract function scopes, error {res}");
+#endif
+                return (int)res;
+            }
+
+            // scan the roots and add identifiers for the inline functionnames (and nothing else) 
+            if (roots != null && roots.Count > 0)
+            {
+                res = IdentifyFunctionRoots(data, roots);
+                if (res != BlastError.success)
+                {
+#if DEVELOPMENT_BUILD || TRACE
+                    data.LogError($"blast.parser: failed to locate and extract function scopes, error {res}");
+#endif
+                    return (int)res;
+                }
+            }
+
+
+            // parse body tokens 
+            res = (BlastError)parse_statements(data, data.Tokens, data.AST, 0, data.Tokens.Count - 1);
+            if (res != BlastError.success)
+            {
+#if DEVELOPMENT_BUILD || TRACE 
+                data.LogError($"blast.parser: failed to locate and extract function scopes, error {res}");
 #endif
                 return (int)res;
             }
 
 
-            // parse tokens 
-            return parse_statements(data, data.AST, 0, data.Tokens.Count - 1);
+
+            // parse function trees 
+            if (roots != null && roots.Count > 0)
+            {
+                res = ParseFunctionRoots(data, roots);
+                if (res != BlastError.success)
+                {
+#if DEVELOPMENT_BUILD || TRACE
+                    data.LogError($"blast.parser: failed to locate and extract function scopes, error {res}");
+#endif
+                    return (int)res;
+                }
+            }
+
+            return (int)BlastError.success; 
         }
     }
 

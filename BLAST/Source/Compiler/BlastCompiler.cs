@@ -1,7 +1,7 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
@@ -19,6 +19,114 @@ using Unity.Mathematics;
 
 namespace NSS.Blast.Compiler
 {
+    namespace Stage
+    {
+        /// <summary>
+        /// the types of compiler stages that run in sequence to produce the output
+        /// </summary>
+        public enum BlastCompilerStageType
+        {
+            /// <summary>
+            /// unknown - not set
+            /// </summary>
+            None,
+            /// <summary>
+            /// convert input script into a list of tokens 
+            /// </summary>
+            Tokenizer,
+            /// <summary>
+            /// parses the tokens into an ast-tree
+            /// </summary>
+            Parser,
+            /// <summary>
+            /// identify all identifiers 
+            /// </summary>
+            IdentifierMapping,
+            /// <summary>
+            /// transform constructs in the ast: switch -> ifthen, while,for, etc -> ifthen 
+            /// making later stages having less to worry about 
+            /// </summary>
+            Transform,
+            /// <summary>
+            /// analyse parameter use
+            /// - determine vectors 
+            /// - enforce multiplication rules 
+            /// </summary>
+            ParameterAnalysis,
+            /// <summary>
+            /// analyze ast structure
+            /// - basic removal of some useless structures
+            /// - rules of multiplication
+            /// </summary>
+            Analysis,
+            /// <summary>
+            /// flatten execution path 
+            /// </summary>
+            Flatten,
+            /// <summary>
+            /// optimize ast structure
+            /// - transform expensive constructs into less expensive ones
+            /// - this should be done after flattening the tree, any optimization that reduces compounds should happen in analysis
+            /// </summary>
+            Optimization,
+            /// <summary>
+            /// pre compile cleanup 
+            /// </summary>
+            Cleanup,
+            /// <summary>
+            /// resolve stack operations into stack-variables (HPC/CS only)
+            /// </summary>
+            StackResolver,
+            /// <summary>
+            /// a [bytecode/hpc/cs] compiler
+            /// </summary>
+            Compile,
+            /// <summary>
+            /// post-compile: bytecode optimizer
+            /// </summary>
+            BytecodeOptimizer,
+            /// <summary>
+            /// post-compile: resolve jumps 
+            /// </summary>
+            JumpResolver,
+            /// <summary>
+            /// post-compile: package result
+            /// </summary>
+            Packaging,
+        }
+
+        /// <summary>
+        /// a compiler stage - employs 1 step of the compilation process
+        /// </summary>
+        public interface IBlastCompilerStage
+        {
+            /// <summary>
+            /// stage version, for future differentiation 
+            /// </summary>
+            System.Version Version
+            {
+                get;
+            }
+
+            /// <summary>
+            /// the type of stage implemented 
+            /// </summary>
+            BlastCompilerStageType StageType
+            {
+                get;
+            }
+
+            /// <summary>
+            /// execute interface 
+            /// </summary>
+            /// <param name="data">compiler data object</param>
+            /// <returns>blasterror code|success</returns>
+            int Execute(IBlastCompilationData data);
+        }
+
+
+    }
+
     /// <summary>
     /// Blast Compiler 
     /// 
@@ -58,7 +166,6 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public const byte opt_ident = (byte)blast_operation.id;
 
- 
         /// <summary>
         /// Default compilation setup 
         /// </summary>

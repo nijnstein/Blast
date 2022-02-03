@@ -1,7 +1,7 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
@@ -109,7 +109,11 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// a label (a jump target) inserted by the compiler 
         /// </summary>
-        label
+        label,
+        /// <summary>
+        /// an inline function defined in script 
+        /// </summary>
+        inline_function 
     }
 
     /// <summary>
@@ -175,18 +179,18 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// true if the node represents a constant value 
         /// </summary>
-        public bool is_constant;
+        public bool is_constant = false;
 
         /// <summary>
         /// the vector size 
         /// </summary>
-        public int vector_size;
+        public int vector_size = 0; //  = 1;  setting it to 0 will have it fail on unset with vectorsize mismatches, thats because somewhere we forget to set it
 
         /// <summary>
         /// true if the value represented is a vector, dont use this directly as the compilers interpretation might change during the process. 
         /// check variable or function property instead to find out if something is a vector 
         /// </summary>
-        internal bool is_vector;
+        internal bool is_vector = false;
 
         /// <summary>
         /// internal use: a linked push operation, used during compilation to keep track of pushpop pairs
@@ -234,6 +238,16 @@ namespace NSS.Blast.Compiler
         /// True if this is a function popping from the stack
         /// </summary>
         public bool IsPopFunction => type == nodetype.function && function.IsPopVariant;
+
+        /// <summary>
+        /// True if this node represents an inlined function 
+        /// </summary>
+        public bool IsInlinedFunction => type == nodetype.inline_function;
+
+        /// <summary>
+        /// returns true if this is a function that maps to an inlined function and NOT to an api function 
+        /// </summary>
+        public bool IsInlinedFunctionCall => type == nodetype.function && function.FunctionId == -1; 
 
         /// <summary>
         /// True if this is an operation 
@@ -711,7 +725,7 @@ namespace NSS.Blast.Compiler
         public string GetNodeDescription()
         {
             string sconstant = is_constant ? "constant " : "";
-            string svector = is_vector ? $" vector[{vector_size}]" : "";
+            string svector = is_vector || true ? $" vector[{vector_size}]" : "";
             switch (type)
             {
                 case nodetype.root: return $"{sconstant}{svector}root of {children.Count}";
@@ -733,7 +747,8 @@ namespace NSS.Blast.Compiler
                 case nodetype.switchdefault: return "default";
                 case nodetype.jump_to: return $"jump to {identifier}";
                 case nodetype.label: return $"label {identifier}";
-                case nodetype.forloop: return $"for "; 
+                case nodetype.forloop: return $"for ";
+                case nodetype.inline_function: return $"inlined-function {identifier}";
                 default: return base.ToString();
             }
         }
@@ -744,53 +759,61 @@ namespace NSS.Blast.Compiler
         /// <param name="indentation">nr of space to indent for each child iteration</param>
         public string ToNodeTreeString(int indentation = 3)
         {
-            return log_nodes(this, null, indentation);
+            return ToNodeTreeString(this, null, indentation);
+        }
 
-            string log_nodes(node n, StringBuilder sb = null, int indent = 3)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="n"></param>
+        /// <param name="sb"></param>
+        /// <param name="indent"></param>
+        /// <returns></returns>
+        public static string ToNodeTreeString(node n, StringBuilder sb = null, int indent = 3)
+        {
+            if (n == null)
             {
-                if (n == null)
-                {
-                    return string.Empty;
-                }
+                return string.Empty;
+            }
 
-                bool own_sb = sb == null;
-                if (own_sb)
-                {
-                    sb = new StringBuilder();
-                    sb.AppendLine("compiler node tree");
-                    sb.AppendLine();
-                }
+            bool own_sb = sb == null;
+            if (own_sb)
+            {
+                sb = new StringBuilder();
+                sb.AppendLine("compiler node tree");
+                sb.AppendLine();
+            }
 
-                string dependencies = string.Empty;
-                foreach (var d in n.depends_on)
-                {
-                    dependencies += d.ToString() + " ";
-                }
-                if (!string.IsNullOrWhiteSpace(dependencies))
-                {
-                    dependencies = $"[depends on: {dependencies}]";
-                }
+            string dependencies = string.Empty;
+            foreach (var d in n.depends_on)
+            {
+                dependencies += d.ToString() + " ";
+            }
+            if (!string.IsNullOrWhiteSpace(dependencies))
+            {
+                dependencies = $"[depends on: {dependencies}]";
+            }
 
-                sb.AppendLine($"{"".PadLeft(indent, ' ')}{n.GetNodeDescription()} {dependencies}");
-                if (n.children.Count > 0)
+            sb.AppendLine($"{"".PadLeft(indent, ' ')}{n.GetNodeDescription()} {dependencies}");
+            if (n.children.Count > 0)
+            {
+                foreach (node c in n.children)
                 {
-                    foreach (node c in n.children)
-                    {
-                        log_nodes(c, sb, indent + 3);
-                    }
-                    sb.AppendLine($"{"".PadLeft(indent, ' ')}/");
+                    ToNodeTreeString(c, sb, indent + 3);
                 }
+                sb.AppendLine($"{"".PadLeft(indent, ' ')}/");
+            }
 
-                if (own_sb)
-                {
-                    return sb.ToString();
-                }
-                else
-                {
-                    return string.Empty;
-                }
+            if (own_sb)
+            {
+                return sb.ToString();
+            }
+            else
+            {
+                return string.Empty;
             }
         }
+        
         /// <summary>
         /// check if the node is an operation sequence in the form: 3 + a + 4 + 4 + max(3093) + (4 + 0) 
         /// </summary>
@@ -1154,7 +1177,7 @@ namespace NSS.Blast.Compiler
         /// deep clones node without root parent set
         /// </summary>
         /// <returns></returns>
-        public node DeepClone()
+        public node DeepClone(bool include_children = true)
         {
             node n = new node(null);
             n.parent = parent;
@@ -1163,10 +1186,13 @@ namespace NSS.Blast.Compiler
 
             // note:  dependancy cloning not supported  
 
-            foreach (node child in children) n.children.Add(child.DeepClone());
-            foreach (node child in n.children) child.parent = n;
+            if (include_children)
+            {
+                foreach (node child in children) n.children.Add(child.DeepClone());
+                foreach (node child in n.children) child.parent = n;
+            }
 
-            foreach (node child in indexers) n.children.Add(child.DeepClone());
+            foreach (node child in indexers) n.indexers.Add(child.DeepClone());
             foreach (node child in n.indexers) child.parent = n;
 
             n.type = type;
@@ -1983,6 +2009,57 @@ namespace NSS.Blast.Compiler
             if (node.constant_op != blast_operation.nop) return true;
 
             return false; 
+        }
+
+        /// <summary>
+        /// check if there is a function in the ast root with the given identifier as name 
+        /// </summary>
+        /// <param name="identifier">name of function</param>
+        /// <returns>if a function with that name exists</returns>
+        public bool HasInlineFunction(string identifier)
+        {
+            Assert.IsNotNull(identifier);
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(identifier), "calling this with an empty identifier is considered a bug");
+
+            if (ChildCount <= 0) return false;
+            if (string.IsNullOrWhiteSpace(identifier)) return false; // or should we assert as this is a buggy thing to do.. 
+
+            identifier = identifier.Trim(); 
+            for(int i = 0; i < ChildCount; i++)
+            {
+                node c = children[i];
+                if(c.type == nodetype.inline_function)
+                {
+                    if (string.Compare(c.identifier, identifier, true) == 0) return true; 
+                }
+            }
+
+            return false; 
+        }
+
+        /// <summary>
+        /// check if the node has a parent of the given type, checks all nodes until reaching root  
+        /// </summary>
+        /// <param name="type">the type to find a parent for</param>
+        /// <returns>true if the node has a parent with the given type</returns>
+        public bool IsRootedIn(nodetype type)
+        {
+            node current = this; 
+            while(current.parent != null)
+            {
+                current = current.parent;
+                if (current.type == type) return true; 
+            }
+            return false; 
+        }
+
+        /// <summary>
+        /// skip compiling this node 
+        /// </summary>
+        public node SkipCompilation()
+        {
+            skip_compilation = true;
+            return this;
         }
     }
 }

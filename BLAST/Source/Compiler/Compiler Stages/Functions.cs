@@ -1,7 +1,7 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 using System;
 using System.Collections.Generic;
@@ -17,6 +17,7 @@ using UnityEngine.Assertions;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using NSS.Blast.Compiler;
 
 namespace NSS.Blast
 {
@@ -35,7 +36,12 @@ namespace NSS.Blast
         /// <summary>
         /// function uses a native function pointer for execution
         /// </summary>
-        NativeFunction = 2
+        NativeFunction = 2,
+
+        /// <summary>
+        /// function is an inlined temporary object that only exists during compilation
+        /// </summary>
+        Inlined = 4,
     }
 
 
@@ -281,6 +287,53 @@ namespace NSS.Blast
         }
     }
 
+    namespace Compiler
+    {
+        /// <summary>
+        /// an inlined script function definition 
+        /// </summary>
+        public class BlastScriptInlineFunction
+        {
+            /// <summary>
+            /// inlined function name
+            /// </summary>
+            public string Name;
+            /// <summary>
+            /// parameter count as defined in script 
+            /// </summary>
+            public int ParameterCount;
+            /// <summary>
+            /// root node of function 
+            /// </summary>
+            public node Node;
+
+            internal BlastScriptFunction GenerateDummyScriptFunction()
+            {
+                BlastScriptFunction f = new BlastScriptFunction
+                {
+                    Flags = BlastScriptFunctionFlag.Inlined,
+                    MinParameterCount = (byte)ParameterCount,
+                    MaxParameterCount = (byte)ParameterCount,
+                    AcceptsVectorSize = 0,
+                    ReturnsVectorSize = 0,
+                    ScriptOp = blast_operation.nop,
+                    ExtendedScriptOp = extended_blast_operation.nop,
+                    FunctionId = -1,
+                    NativeFunctionPointer = IntPtr.Zero
+                };
+                unsafe
+                {
+                   // fixed (char* pch = f.Match)
+                    {
+                        CodeUtils.FillCharArray(f.Match, Name.ToLower().Trim(), Blast.MaximumFunctionNameLength);
+                    }
+                }
+
+                return f; 
+            }
+        }
+
+    }
 
     /// <summary>
     /// managed information on functions 
@@ -973,7 +1026,7 @@ namespace NSS.Blast
             RegisterFunction(ReservedBlastScriptFunctionIds.Debug, "debug", 1, 1, 0, 0, extended_blast_operation.debug);
             RegisterFunction(ReservedBlastScriptFunctionIds.DebugStack, "debugstack", 0, 0, 0, 0, extended_blast_operation.debugstack);
 
-            RegisterFunction("return", 0, 0, 0, 0, blast_operation.ret); // todo -> refactor this into a reservedscriptfunctionid
+            RegisterFunction("return", 1, 1, 0, 0, blast_operation.ret);
 
             RegisterFunction("abs", 1, 1, 0, 0, blast_operation.abs);
             RegisterFunction("min", 2, 63, 0, 0, blast_operation.min);

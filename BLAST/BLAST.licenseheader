@@ -1,14 +1,14 @@
 ﻿extensions: .cs .cpp .h
 //##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 extensions: .bs
 ############################################################################################################
-# Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved        #
-# Unauthorized copying of this file, via any medium is strictly prohibited                                 #
-# Proprietary and confidential                                                                             #
+# Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved   ^__^\#
+# Unauthorized copying of this file, via any medium is strictly prohibited                            (oo)\#
+# Proprietary and confidential                                                                        (__) #
 ############################################################################################################
 extensions:  .xml .config .xsd
 <!--
@@ -16,3 +16,4 @@ Copyright © 2022 Rob Lemmens - rob.lemmens.s31@gmail.com
 Unauthorized copying of this file, via any medium is strictly prohibited
 Proprietary and confidential
 -->
+

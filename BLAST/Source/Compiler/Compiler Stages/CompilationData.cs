@@ -1,7 +1,7 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 using NSS.Blast.Compiler.Stage;
 using System;
@@ -145,6 +145,11 @@ namespace NSS.Blast.Compiler
         bool HasDefines { get; }
 
         /// <summary>
+        /// true if the script has functions inlined 
+        /// </summary>
+        bool HasInlinedFunctions { get; }
+
+        /// <summary>
         /// lookup a variablemapping defined by the script by its name
         /// </summary>
         /// <param name="name">the name of the variable as used in the script code</param>
@@ -173,6 +178,13 @@ namespace NSS.Blast.Compiler
         /// <param name="name">variable name</param>
         /// <returns>true if the variable exists</returns>
         bool ExistsVariable(string name);
+
+
+        /// <summary>
+        /// checks if an inlined function with the given name|identifier exists 
+        /// </summary>
+        /// <param name="name">identifier name</param>
+        bool ExistsInlineFunction(string name);
 
         /// <summary>
         /// check if there is an input defined by the script with the given id 
@@ -208,6 +220,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         int OffsetCount { get; }
 
+        bool TryGetInlinedFunction(string item2, out BlastScriptInlineFunction inlined_function);
     }
 
     /// <summary>
@@ -226,7 +239,6 @@ namespace NSS.Blast.Compiler
         public Version Version => version;
 
         #region Compiler Messages 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.WriteHumanReadableCode(StringBuilder, List<byte>, int, bool)'
 
         /// <summary>
         /// a compiler message 
@@ -258,7 +270,6 @@ namespace NSS.Blast.Compiler
                 return $"{DateTime.Now.ToString()} {(Content ?? string.Empty)}";
             }
         }
-        #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.WriteHumanReadableCode(StringBuilder, List<byte>, int, bool)'
 
         /// <summary>
         /// List of messages issued during compilation 
@@ -382,6 +393,11 @@ namespace NSS.Blast.Compiler
         public bool HasErrorsOrWarnings => HasErrors || HasWarnings;
 
         /// <summary>
+        /// true if the script compiled defines inlined function macros 
+        /// </summary>
+        public bool HasInlinedFunctions => InlinedFunctions != null && InlinedFunctions.Count > 0; 
+
+        /// <summary>
         /// true if everything went ok 
         /// </summary>
         public bool IsOK { get { return !HasErrors; } }
@@ -413,6 +429,7 @@ namespace NSS.Blast.Compiler
             Outputs = new List<BlastVariableMapping>();
             Variables = new List<BlastVariable>();
             Offsets = new List<byte>();
+            InlinedFunctions = null; 
 
             // -- compiler 
             Jumps = new List<Tuple<int, int>>();
@@ -823,9 +840,7 @@ namespace NSS.Blast.Compiler
         /// intermediate bytecode, only public for debugging view purposes, dont use, dont modify
         /// </summary>
         public IMByteCodeList code;
-
-
-        
+                                                                   
         /// <summary>
         /// the rootnode of the abstract syntax tree
         /// </summary>
@@ -862,6 +877,11 @@ namespace NSS.Blast.Compiler
         /// list of defines defined by this script 
         /// </summary>
         public Dictionary<string, string> Defines { get; set; }
+
+        /// <summary>
+        /// functions found inlined 
+        /// </summary>
+        public List<BlastScriptInlineFunction> InlinedFunctions { get; set; }
 
         /// <summary>
         /// list of inputs defined by this script
@@ -1088,7 +1108,26 @@ namespace NSS.Blast.Compiler
 
 
 
-#region exposed via interface, non reference counting 
+        /// <summary>
+        /// checks if an inlined function with the given name|identifier exists 
+        /// </summary>
+        /// <param name="name">identifier name</param>
+        public bool ExistsInlineFunction(string name)
+        {
+            if (InlinedFunctions == null || InlinedFunctions.Count == 0) return false; 
+
+            foreach(BlastScriptInlineFunction f in InlinedFunctions)
+            {
+                if (string.Compare(f.Name, name, true) == 0) return true;
+            }
+
+            return false;
+        }
+
+
+
+
+        #region exposed via interface, non reference counting 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.ExistsVariable(string)'
         public bool ExistsVariable(string name)
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.ExistsVariable(string)'
@@ -1213,7 +1252,63 @@ namespace NSS.Blast.Compiler
 
             return offset;
         }
-#endregion
+
+        /// <summary>
+        /// add an inlined function 
+        /// </summary>
+        /// <param name="f"></param>
+        public void AddInlinedFunction(BlastScriptInlineFunction f)
+        {
+            if (InlinedFunctions == null) InlinedFunctions = new List<BlastScriptInlineFunction>();
+            InlinedFunctions.Add(f);
+        }
+
+        /// <summary>
+        /// get an inlined function, returns null on fail
+        /// </summary>
+        /// <param name="name">the name if the function</param>
+        public BlastScriptInlineFunction GetInlinedFunction(string name)
+        {
+            if (InlinedFunctions == null || InlinedFunctions.Count == 0) return null;
+            if (string.IsNullOrWhiteSpace(name)) return null; 
+
+            foreach(BlastScriptInlineFunction f in InlinedFunctions)
+            {
+                if (string.Compare(f.Name, name, true) == 0) return f; 
+            }
+
+            return null; 
+        }
+
+        /// <summary>
+        /// try to lookup an inlined function by name 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="inlined_function"></param>
+        /// <returns></returns>
+        public bool TryGetInlinedFunction(string name, out BlastScriptInlineFunction inlined_function)
+        {
+            if (InlinedFunctions == null || InlinedFunctions.Count == 0 || string.IsNullOrWhiteSpace(name))
+            {
+                inlined_function = null; 
+                return false;
+            }
+
+            foreach (BlastScriptInlineFunction f in InlinedFunctions)
+            {
+                if (string.Compare(f.Name, name, true) == 0)
+                {
+                    inlined_function = f;
+                    return true;  
+                }
+            }
+
+
+            inlined_function = null;
+            return false; 
+        }
+
+        #endregion
     }
 
 

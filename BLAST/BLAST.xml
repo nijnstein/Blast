@@ -1,4 +1,11 @@
 <?xml version="1.0"?>
+<!--
+Copyright © 2022 Rob Lemmens - rob.lemmens.s31@gmail.com
+Unauthorized copying of this file, via any medium is strictly prohibited
+Proprietary and confidential
+-->
+
+
 <doc>
     <assembly>
         <name>BLAST</name>
@@ -731,159 +738,114 @@
             <param name="offset">the offset into output from where to start writing output data</param>
             <returns>true if ok, false on errors</returns>
         </member>
-        <member name="T:NSS.Blast.Compiler.BlastCompiler">
-             <summary>
-             Blast Compiler 
-             
-             Compile scripts into bytecode, the process consists of several stages:
-             
-             
-             For bytecode these stages might be executed:
-             
-             1   - tokenize:            convert code into a list of tokens 
-             2   - parse:               parse list of tokens into a tree of nodes 
-             2.1 - variable mapping     map all identifiers
-             3   - transform:           transform nodes sequences  
-             4.1 - analyse parameters:  determine parameter types and check inputs and outputs
-             4.2 - analyse:             analyse nodes, reorder were needed, optimize for execution
-             5   - flatten:             flatten execution path
-             6   - node optimizer:      optimize nodes 
-             7   - compile:             generate bytecode from the internal representation 
-             8   - optimize bytecode:   optimize bytecode patterns 
-             9   - package:             package bytecode and set it up for execution 
-             
+        <member name="T:NSS.Blast.Compiler.Stage.BlastCompilerStageType">
+            <summary>
+            the types of compiler stages that run in sequence to produce the output
             </summary>
         </member>
-        <member name="F:NSS.Blast.Compiler.BlastCompiler.opt_value">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.None">
             <summary>
-            from this opcode until opt_ident constant values are encoded
+            unknown - not set
             </summary>
         </member>
-        <member name="F:NSS.Blast.Compiler.BlastCompiler.opt_ident">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.Tokenizer">
             <summary>
-            form this opcode until 255 variables are encoded
+            convert input script into a list of tokens 
             </summary>
         </member>
-        <member name="F:NSS.Blast.Compiler.BlastCompiler.ByteCodeStages">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.Parser">
             <summary>
-            Default compilation setup 
+            parses the tokens into an ast-tree
             </summary>
         </member>
-        <member name="F:NSS.Blast.Compiler.BlastCompiler.HPCStages">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.IdentifierMapping">
             <summary>
-            compilation stages for compilation into a job,
-            - use the same precompilation, make sure behaviour is equal even if some unknown bug is there
+            identify all identifiers 
             </summary>
         </member>
-        <member name="F:NSS.Blast.Compiler.BlastCompiler.CSStages">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.Transform">
             <summary>
-            C# compilation uses the output from the hpc stage
+            transform constructs in the ast: switch -> ifthen, while,for, etc -> ifthen 
+            making later stages having less to worry about 
             </summary>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.Validate(NSS.Blast.Compiler.IBlastCompilationData,System.IntPtr)">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.ParameterAnalysis">
             <summary>
-            Validate output using data set in script for NULL inputs 
+            analyse parameter use
+            - determine vectors 
+            - enforce multiplication rules 
             </summary>
-            <param name="result">bytecode compiler data</param>
-            <param name="blast">blast engine data</param>
-            <returns>true if validation succeeded</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.EstimateStackSize(NSS.Blast.Compiler.CompilationData)">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.Analysis">
             <summary>
-            estimate stack size by running script with a selection of parameters from
-            input, output and validation settings 
-            
-            TODO: EstimateStackSize and Validate should be combined 
+            analyze ast structure
+            - basic removal of some useless structures
+            - rules of multiplication
             </summary>
-            <returns>estimated stack size in bytes</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.PackageNormal(NSS.Blast.Compiler.CompilationData,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.BlastPackageFlags)">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.Flatten">
             <summary>
-            Package in normal mode. 
-            
-            - packagemode       = NORMAL
-            - languageversion   = BS1
+            flatten execution path 
             </summary>
-            <param name="cdata">Compiler data</param>
-            <param name="code_size">size of code in bytes</param>
-            <param name="metadata_size">size of metadata in bytes, 1 byte per data element in data and stack segment combined</param>
-            <param name="data_size">size of datasegment in bytes</param>
-            <param name="stack_size">size of stacksegement in bytes</param>
-            <param name="flags">flags: alignment, stack</param>
-            <returns>blast package data</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.PackageSSMD(NSS.Blast.Compiler.CompilationData,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.BlastPackageFlags)">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.Optimization">
             <summary>
-            package for ssmd use:  [code-metadata] [data-stack]
+            optimize ast structure
+            - transform expensive constructs into less expensive ones
+            - this should be done after flattening the tree, any optimization that reduces compounds should happen in analysis
             </summary>
-            <param name="cdata">compiler result data</param>
-            <param name="code_size"></param>
-            <param name="metadata_size"></param>
-            <param name="data_size"></param>
-            <param name="stack_size"></param>
-            <param name="flags"></param>
-            <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.Package(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastCompilerOptions)">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.Cleanup">
             <summary>
-            package the result of the compiler into an executable package 
+            pre compile cleanup 
             </summary>
-            <returns>the native blast package data structure</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.Compile(NSS.Blast.BlastEngineDataPtr,System.String,NSS.Blast.BlastCompilerOptions)">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.StackResolver">
             <summary>
-            Compile script from text
+            resolve stack operations into stack-variables (HPC/CS only)
             </summary>
-            <param name="blast">blast engine data</param>
-            <param name="code">the code</param>
-            <param name="options">compiler options</param>
-            <returns>compiler data</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.Compile(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.Compile">
             <summary>
-            Compile a script
+            a [bytecode/hpc/cs] compiler
             </summary>
-            <param name="blast">blast engine data</param>
-            <param name="script">the script to compile</param>
-            <param name="options">compileoptions</param>
-            <returns>compiler data</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileHPC(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.BytecodeOptimizer">
             <summary>
-            
+            post-compile: bytecode optimizer
             </summary>
-            <param name="blast"></param>
-            <param name="script"></param>
-            <param name="options"></param>
-            <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileCS(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.JumpResolver">
             <summary>
-            Compile using .net c# compiler 
-            - only on windows .net framework > 4.5 
+            post-compile: resolve jumps 
             </summary>
-            <param name="blast"></param>
-            <param name="script"></param>
-            <param name="options"></param>
-            <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompilePackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+        <member name="F:NSS.Blast.Compiler.Stage.BlastCompilerStageType.Packaging">
             <summary>
-            compile script into a managed blastscriptpackage containing blastpackagedata
+            post-compile: package result
             </summary>
-            <param name="blast"></param>
-            <param name="script"></param>
-            <param name="options"></param>
-            <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileDataPackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+        <member name="T:NSS.Blast.Compiler.Stage.IBlastCompilerStage">
             <summary>
-            Compile the script into a native blastscript datapackage
+            a compiler stage - employs 1 step of the compilation process
             </summary>
-            <param name="blast"></param>
-            <param name="script"></param>
-            <param name="options"></param>
-            <returns></returns>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.IBlastCompilerStage.Version">
+            <summary>
+            stage version, for future differentiation 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.IBlastCompilerStage.StageType">
+            <summary>
+            the type of stage implemented 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.IBlastCompilerStage.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
+            <summary>
+            execute interface 
+            </summary>
+            <param name="data">compiler data object</param>
+            <returns>blasterror code|success</returns>
         </member>
         <member name="T:NSS.Blast.Compiler.Stage.BlastAnalysis">
             <summary>
@@ -957,6 +919,11 @@
         <member name="P:NSS.Blast.Compiler.Stage.BlastIdentifierMapping.StageType">
             <summary>
             compiler stage: parameter analysis
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastIdentifierMapping.map_inline_identifier(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+            <summary>
+            check mapping of inlined function
             </summary>
         </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastIdentifierMapping.map_identifiers(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
@@ -1175,6 +1142,16 @@
             - removes all nested things and reduces them to a linear stream of instructions using stack operations 
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastFlatten.Version">
+            <summary>
+            Version 1
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastFlatten.StageType">
+            <summary>
+            Flatten Stage
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenCompound(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node@,System.Collections.Generic.List{NSS.Blast.Compiler.node}@)">
             <summary>
             flatten a compound 
@@ -1231,6 +1208,21 @@
             <param name="data"></param>
             <param name="root"></param>
             <param name="flat"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastFlatten.FlattenRoot(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+            <param name="root"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastFlatten.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
             <returns></returns>
         </member>
         <member name="T:NSS.Blast.Compiler.Stage.BlastHPCCompiler">
@@ -1469,11 +1461,12 @@
             parsing stage: transforms token list into a node tree
             </summary>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastScriptToken,System.Int32,System.Int32@,System.Int32@)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},NSS.Blast.BlastScriptToken,System.Int32,System.Int32@,System.Int32@)">
             <summary>
             scan for the next token of type 
             </summary>
             <param name="data"></param>
+            <param name="tokens">token list to search in</param>
             <param name="token">token to look for</param>
             <param name="idx">idx to start looking from</param>
             <param name="max">max idx to look into</param>
@@ -1491,11 +1484,12 @@
             <param name="i1">idx of token</param>
             <returns>true if found</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next_skip_compound(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastScriptToken,System.Int32,System.Int32@,System.Int32@,System.Boolean)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next_skip_compound(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},NSS.Blast.BlastScriptToken,System.Int32,System.Int32@,System.Int32@,System.Boolean)">
             <summary>
             search for the next token skipping over compounds 
             </summary>
             <param name="data"></param>
+            <param name="tokens">token list to use</param>
             <param name="token">token to look for</param>
             <param name="idx">idx to start looking from</param>
             <param name="max">max idx to look into</param>
@@ -1503,11 +1497,12 @@
             <param name="accept_eof"></param>
             <returns>true if found</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next_skip_compound(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastScriptToken[],System.Int32,System.Int32@,System.Int32@,System.Boolean)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next_skip_compound(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},NSS.Blast.BlastScriptToken[],System.Int32,System.Int32@,System.Int32@,System.Boolean)">
             <summary>
             search for the next token skipping over compounds 
             </summary>
             <param name="data"></param>
+            <param name="tokenlist"></param>
             <param name="tokens">token to look for</param>
             <param name="idx">idx to start looking from</param>
             <param name="max">max idx to look into</param>
@@ -1515,11 +1510,12 @@
             <param name="accept_eof"></param>
             <returns>true if found</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastScriptToken,System.Int32,System.Int32@,System.Int32@,System.Boolean,System.Boolean)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},NSS.Blast.BlastScriptToken,System.Int32,System.Int32@,System.Int32@,System.Boolean,System.Boolean)">
             <summary>
             find next token from idx 
             </summary>
             <param name="data"></param>
+            <param name="tokens"></param>
             <param name="token"></param>
             <param name="idx">idx to start looking from</param>
             <param name="max">max index to check into</param>
@@ -1528,11 +1524,12 @@
             <param name="accept_eof">accept eof as succesfull end of search</param>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastScriptToken[],System.Int32,System.Int32@,System.Int32@,System.Boolean,System.Boolean)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},NSS.Blast.BlastScriptToken[],System.Int32,System.Int32@,System.Int32@,System.Boolean,System.Boolean)">
             <summary>
             find next match in token array 
             </summary>
             <param name="data"></param>
+            <param name="tokenlist"></param>
             <param name="tokens"></param>
             <param name="idx">idx to start looking from</param>
             <param name="max">max index to check into</param>
@@ -1540,20 +1537,22 @@
             <param name="skip_over_compounds">skip over ( ) not counting any token inside the (compound)</param>
             <param name="accept_eof">accept eof as succesfull end of search</param>        /// <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.skip_closure(NSS.Blast.Compiler.IBlastCompilationData,System.Int32@,System.Int32)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.skip_closure(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},System.Int32@,System.Int32)">
             <summary>
             skip the closure () starting with idx at the (, if true ends with idx at position after ) 
             </summary>
             <param name="data"></param>
+            <param name="tokens"></param>
             <param name="idx"></param>
             <param name="idx_max"></param>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next_statement(NSS.Blast.Compiler.IBlastCompilationData,System.Int32@,System.Int32,System.Int32@,System.Int32@)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.find_next_statement(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},System.Int32@,System.Int32,System.Int32@,System.Int32@)">
             <summary>
             scan token tree and find start and end index of next statement in token list
             </summary>
             <param name="data"></param>
+            <param name="tokens"></param>
             <param name="idx">current index into token list</param>
             <param name="idx_max"></param>
             <param name="i1">start index of next statement</param>
@@ -1610,16 +1609,32 @@
             <param name="idx_max">max index to scan into</param>
             <returns>a node containing the function or null on failure</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.parse_sequence(NSS.Blast.Compiler.IBlastCompilationData,System.Int32@,System.Int32@)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.scan_and_parse_function(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},NSS.Blast.Compiler.BlastScriptInlineFunction,System.Int32@,System.Int32@)">
             <summary>
-            parse a sequence of tokens between () into a list of nodes 
+            scan an inlined function 
             </summary>
             <param name="data"></param>
-            <param name="idx">index directly after the opening ( or at first token of sequence within () </param>
+            <param name="tokens"></param>
+            <param name="function"></param>
+            <param name="idx"></param>
             <param name="idx_max"></param>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.grow_index_chain(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node,System.Int32@,System.Int32@)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.parse_sequence(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},System.Int32@,System.Int32@,System.Boolean)">
+            <summary>
+            parse a sequence of tokens between () into a list of nodes 
+            
+            -> start with idx on the ( of the enclosing compound 
+            
+            </summary>
+            <param name="data"></param>
+            <param name="tokens">tokens to index, can be a slice of data.Tokens</param>
+            <param name="idx">index directly after the opening ( or at first token of sequence within () </param>
+            <param name="idx_max"></param>
+            <param name="as_parameters"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.grow_index_chain(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},NSS.Blast.Compiler.node,System.Int32@,System.Int32@)">
             <summary>
             grow a chain of indices after some other node/token
             </summary>
@@ -1629,24 +1644,42 @@
             <param name="idx_max">max index to grow into</param>
             <returns>chain root node with chain as children, or null on failure</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.check_if_assignment_node(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.check_if_assignment_node(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node,System.Boolean)">
             <summary>
             check if the node is an assignment 
             </summary>
-            <param name="data"></param>
-            <param name="node">node to map out</param>
-            <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.parse_statements(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node,System.Int32,System.Int32)">
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.parse_statements(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},NSS.Blast.Compiler.node,System.Int32,System.Int32)">
             <summary>
             parse a statement list
             - depending on defines this may execute multithreaded 
             </summary>
             <param name="data"></param>
+            <param name="tokens"></param>
             <param name="parent">the parent node</param>
             <param name="idx_start">starting index into tokens </param>
             <param name="idx_max">max index in tokens to scan into</param>
             <returns>exitcode - blasterror</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.IsParsingInlineFunction(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}})">
+            <summary>
+            check if the stream we are parsing is an inlined function 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.ParseInlineFunction(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}})">
+            <summary>
+            parse a single inlined function from the tokens
+            </summary>
+            <param name="data">compilerdata</param>
+            <param name="ftokens">the tokens defining the function</param>
+            <returns>success if all went ok, errorcodes otherwise</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastParser.FindAndExtractFunctionRoots(NSS.Blast.Compiler.IBlastCompilationData,System.Collections.Generic.List{System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}}}@)">
+            <summary>
+            scan for functions and parse them into seperate nodes 
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastParser.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
             <summary>
@@ -1724,13 +1757,15 @@
             [while, for, switch] into ifthen sequences 
             </summary>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.reduce_simple_function_sequence(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+        <member name="P:NSS.Blast.Compiler.Stage.BlastTransform.Version">
             <summary>
-            reduce a singular function in a sequence
+            current version 
             </summary>
-            <param name="data"></param>
-            <param name="ast_node"></param>
-            <returns></returns>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.BlastTransform.StageType">
+            <summary>
+            transform stage 
+            </summary>
         </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.clone_nodes(System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.node})">
             <summary>
@@ -1743,7 +1778,7 @@
             <summary>
             transform a switch into a series of ifthen statements 
             </summary>
-            <param name="result"></param>
+            <param name="data"></param>
             <param name="n_switch">the node containing the switch statement</param>
         </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.transform_for(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
@@ -1752,6 +1787,167 @@
             </summary>
             <param name="data">compilation data holding the ast</param>
             <param name="n_for">the node with the for loop</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.transform_inline_function_call(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+            <summary>
+            transform a function call to an inlined funtion into the code it generates 
+            </summary>
+            <param name="data"></param>
+            <param name="n"></param>
+        </member>
+        <member name="T:NSS.Blast.Compiler.BlastCompiler">
+             <summary>
+             Blast Compiler 
+             
+             Compile scripts into bytecode, the process consists of several stages:
+             
+             
+             For bytecode these stages might be executed:
+             
+             1   - tokenize:            convert code into a list of tokens 
+             2   - parse:               parse list of tokens into a tree of nodes 
+             2.1 - variable mapping     map all identifiers
+             3   - transform:           transform nodes sequences  
+             4.1 - analyse parameters:  determine parameter types and check inputs and outputs
+             4.2 - analyse:             analyse nodes, reorder were needed, optimize for execution
+             5   - flatten:             flatten execution path
+             6   - node optimizer:      optimize nodes 
+             7   - compile:             generate bytecode from the internal representation 
+             8   - optimize bytecode:   optimize bytecode patterns 
+             9   - package:             package bytecode and set it up for execution 
+             
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastCompiler.opt_value">
+            <summary>
+            from this opcode until opt_ident constant values are encoded
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastCompiler.opt_ident">
+            <summary>
+            form this opcode until 255 variables are encoded
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastCompiler.ByteCodeStages">
+            <summary>
+            Default compilation setup 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastCompiler.HPCStages">
+            <summary>
+            compilation stages for compilation into a job,
+            - use the same precompilation, make sure behaviour is equal even if some unknown bug is there
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastCompiler.CSStages">
+            <summary>
+            C# compilation uses the output from the hpc stage
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.Validate(NSS.Blast.Compiler.IBlastCompilationData,System.IntPtr)">
+            <summary>
+            Validate output using data set in script for NULL inputs 
+            </summary>
+            <param name="result">bytecode compiler data</param>
+            <param name="blast">blast engine data</param>
+            <returns>true if validation succeeded</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.EstimateStackSize(NSS.Blast.Compiler.CompilationData)">
+            <summary>
+            estimate stack size by running script with a selection of parameters from
+            input, output and validation settings 
+            
+            TODO: EstimateStackSize and Validate should be combined 
+            </summary>
+            <returns>estimated stack size in bytes</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.PackageNormal(NSS.Blast.Compiler.CompilationData,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.BlastPackageFlags)">
+            <summary>
+            Package in normal mode. 
+            
+            - packagemode       = NORMAL
+            - languageversion   = BS1
+            </summary>
+            <param name="cdata">Compiler data</param>
+            <param name="code_size">size of code in bytes</param>
+            <param name="metadata_size">size of metadata in bytes, 1 byte per data element in data and stack segment combined</param>
+            <param name="data_size">size of datasegment in bytes</param>
+            <param name="stack_size">size of stacksegement in bytes</param>
+            <param name="flags">flags: alignment, stack</param>
+            <returns>blast package data</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.PackageSSMD(NSS.Blast.Compiler.CompilationData,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.BlastPackageFlags)">
+            <summary>
+            package for ssmd use:  [code-metadata] [data-stack]
+            </summary>
+            <param name="cdata">compiler result data</param>
+            <param name="code_size"></param>
+            <param name="metadata_size"></param>
+            <param name="data_size"></param>
+            <param name="stack_size"></param>
+            <param name="flags"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.Package(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            package the result of the compiler into an executable package 
+            </summary>
+            <returns>the native blast package data structure</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.Compile(NSS.Blast.BlastEngineDataPtr,System.String,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Compile script from text
+            </summary>
+            <param name="blast">blast engine data</param>
+            <param name="code">the code</param>
+            <param name="options">compiler options</param>
+            <returns>compiler data</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.Compile(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Compile a script
+            </summary>
+            <param name="blast">blast engine data</param>
+            <param name="script">the script to compile</param>
+            <param name="options">compileoptions</param>
+            <returns>compiler data</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileHPC(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            
+            </summary>
+            <param name="blast"></param>
+            <param name="script"></param>
+            <param name="options"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileCS(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Compile using .net c# compiler 
+            - only on windows .net framework > 4.5 
+            </summary>
+            <param name="blast"></param>
+            <param name="script"></param>
+            <param name="options"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompilePackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            compile script into a managed blastscriptpackage containing blastpackagedata
+            </summary>
+            <param name="blast"></param>
+            <param name="script"></param>
+            <param name="options"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.BlastCompiler.CompileDataPackage(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.BlastCompilerOptions)">
+            <summary>
+            Compile the script into a native blastscript datapackage
+            </summary>
+            <param name="blast"></param>
+            <param name="script"></param>
+            <param name="options"></param>
+            <returns></returns>
         </member>
         <member name="T:NSS.Blast.Compiler.nodetype">
             <summary>
@@ -1861,6 +2057,11 @@
         <member name="F:NSS.Blast.Compiler.nodetype.label">
             <summary>
             a label (a jump target) inserted by the compiler 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.nodetype.inline_function">
+            <summary>
+            an inline function defined in script 
             </summary>
         </member>
         <member name="T:NSS.Blast.Compiler.node">
@@ -1982,6 +2183,16 @@
         <member name="P:NSS.Blast.Compiler.node.IsPopFunction">
             <summary>
             True if this is a function popping from the stack
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsInlinedFunction">
+            <summary>
+            True if this node represents an inlined function 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.node.IsInlinedFunctionCall">
+            <summary>
+            returns true if this is a function that maps to an inlined function and NOT to an api function 
             </summary>
         </member>
         <member name="P:NSS.Blast.Compiler.node.IsOperation">
@@ -2150,6 +2361,15 @@
             </summary>
             <param name="indentation">nr of space to indent for each child iteration</param>
         </member>
+        <member name="M:NSS.Blast.Compiler.node.ToNodeTreeString(NSS.Blast.Compiler.node,System.Text.StringBuilder,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="n"></param>
+            <param name="sb"></param>
+            <param name="indent"></param>
+            <returns></returns>
+        </member>
         <member name="M:NSS.Blast.Compiler.node.IsOperationList">
             <summary>
             check if the node is an operation sequence in the form: 3 + a + 4 + 4 + max(3093) + (4 + 0) 
@@ -2265,7 +2485,7 @@
             </summary>
             <returns>number of children matching type t</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.node.DeepClone">
+        <member name="M:NSS.Blast.Compiler.node.DeepClone(System.Boolean)">
             <summary>
             deep clones node without root parent set
             </summary>
@@ -2513,6 +2733,25 @@
             determine if the node is a single value or a pop operation
             </summary>
         </member>
+        <member name="M:NSS.Blast.Compiler.node.HasInlineFunction(System.String)">
+            <summary>
+            check if there is a function in the ast root with the given identifier as name 
+            </summary>
+            <param name="identifier">name of function</param>
+            <returns>if a function with that name exists</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.IsRootedIn(NSS.Blast.Compiler.nodetype)">
+            <summary>
+            check if the node has a parent of the given type, checks all nodes until reaching root  
+            </summary>
+            <param name="type">the type to find a parent for</param>
+            <returns>true if the node has a parent with the given type</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.node.SkipCompilation">
+            <summary>
+            skip compiling this node 
+            </summary>
+        </member>
         <member name="T:NSS.Blast.Compiler.IBlastCompilationData">
             <summary>
             interface into compilationdata, we should restrict outside use a bit via this 
@@ -2637,6 +2876,11 @@
             true if the script defines compiler defines 
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.HasInlinedFunctions">
+            <summary>
+            true if the script has functions inlined 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Compiler.IBlastCompilationData.GetVariable(System.String)">
             <summary>
             lookup a variablemapping defined by the script by its name
@@ -2665,6 +2909,12 @@
             </summary>
             <param name="name">variable name</param>
             <returns>true if the variable exists</returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IBlastCompilationData.ExistsInlineFunction(System.String)">
+            <summary>
+            checks if an inlined function with the given name|identifier exists 
+            </summary>
+            <param name="name">identifier name</param>
         </member>
         <member name="M:NSS.Blast.Compiler.IBlastCompilationData.HasInput(System.Int32)">
             <summary>
@@ -2800,6 +3050,11 @@
             true if any erorr or warning occured 
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.HasInlinedFunctions">
+            <summary>
+            true if the script compiled defines inlined function macros 
+            </summary>
+        </member>
         <member name="P:NSS.Blast.Compiler.CompilationData.IsOK">
             <summary>
             true if everything went ok 
@@ -2882,6 +3137,11 @@
             list of defines defined by this script 
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.InlinedFunctions">
+            <summary>
+            functions found inlined 
+            </summary>
+        </member>
         <member name="P:NSS.Blast.Compiler.CompilationData.Inputs">
             <summary>
             list of inputs defined by this script
@@ -2954,6 +3214,32 @@
             <param name="mapping">the output variable mapping</param>
             <returns>true if found</returns>
         </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.ExistsInlineFunction(System.String)">
+            <summary>
+            checks if an inlined function with the given name|identifier exists 
+            </summary>
+            <param name="name">identifier name</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.AddInlinedFunction(NSS.Blast.Compiler.BlastScriptInlineFunction)">
+            <summary>
+            add an inlined function 
+            </summary>
+            <param name="f"></param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.GetInlinedFunction(System.String)">
+            <summary>
+            get an inlined function, returns null on fail
+            </summary>
+            <param name="name">the name if the function</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.TryGetInlinedFunction(System.String,NSS.Blast.Compiler.BlastScriptInlineFunction@)">
+            <summary>
+            try to lookup an inlined function by name 
+            </summary>
+            <param name="name"></param>
+            <param name="inlined_function"></param>
+            <returns></returns>
+        </member>
         <member name="T:NSS.Blast.Compiler.CSCompilationData">
             <summary>
             compiler data for the C# compiler 
@@ -2972,6 +3258,26 @@
             <param name="blast">blast engine data</param>
             <param name="script">script code</param>
             <param name="options">compiler options</param>
+        </member>
+        <member name="T:NSS.Blast.Compiler.BlastScriptInlineFunction">
+            <summary>
+            an inlined script function definition 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastScriptInlineFunction.Name">
+            <summary>
+            inlined function name
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastScriptInlineFunction.ParameterCount">
+            <summary>
+            parameter count as defined in script 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastScriptInlineFunction.Node">
+            <summary>
+            root node of function 
+            </summary>
         </member>
         <member name="T:NSS.Blast.Compiler.HPCCompilationData">
             <summary>
@@ -3329,93 +3635,6 @@
             <param name="key">case insensitive key</param>
             <returns>true if the key was defined and subsequently removed</returns>
         </member>
-        <member name="T:NSS.Blast.BlastCompilerStageType">
-            <summary>
-            the types of compiler stages that run in sequence to produce the output
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.Tokenizer">
-            <summary>
-            convert input script into a list of tokens 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.Parser">
-            <summary>
-            parses the tokens into an ast-tree
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.IdentifierMapping">
-            <summary>
-            identify all identifiers 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.Transform">
-            <summary>
-            transform constructs in the ast: switch -> ifthen, while,for, etc -> ifthen 
-            making later stages having less to worry about 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.ParameterAnalysis">
-            <summary>
-            analyse parameter use
-            - determine vectors 
-            - enforce multiplication rules 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.Analysis">
-            <summary>
-            analyze ast structure
-            - basic removal of some useless structures
-            - rules of multiplication
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.Flatten">
-            <summary>
-            flatten execution path 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.Optimization">
-            <summary>
-            optimize ast structure
-            - transform expensive constructs into less expensive ones
-            - this should be done after flattening the tree, any optimization that reduces compounds should happen in analysis
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.Cleanup">
-            <summary>
-            pre compile cleanup 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.StackResolver">
-            <summary>
-            resolve stack operations into stack-variables (HPC/CS only)
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.Compile">
-            <summary>
-            a [bytecode/hpc/cs] compiler
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.BytecodeOptimizer">
-            <summary>
-            post-compile: bytecode optimizer
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.JumpResolver">
-            <summary>
-            post-compile: resolve jumps 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastCompilerStageType.Packaging">
-            <summary>
-            post-compile: package result
-            </summary>
-        </member>
-        <member name="T:NSS.Blast.IBlastCompilerStage">
-            <summary>
-            a compiler stage - employs 1 step of the compilation process
-            </summary>
-        </member>
         <member name="T:NSS.Blast.BlastScriptFunctionFlag">
             <summary>
             flags for extra information on script functions
@@ -3429,6 +3648,11 @@
         <member name="F:NSS.Blast.BlastScriptFunctionFlag.NativeFunction">
             <summary>
             function uses a native function pointer for execution
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionFlag.Inlined">
+            <summary>
+            function is an inlined temporary object that only exists during compilation
             </summary>
         </member>
         <member name="T:NSS.Blast.ReservedBlastScriptFunctionIds">
@@ -5015,6 +5239,36 @@
         <member name="F:NSS.Blast.BlastError.error_inlinefunction_body_syntax">
             <summary>
             inline function definition has a malformed body compound
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_inlinefunction_declaration_syntax">
+            <summary>
+            inline function declaration is malformed (probably malformed function name)
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_inlinefunction_already_exists">
+            <summary>
+            inline function already exists
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_inlinefunction_doenst_exist">
+            <summary>
+            inline function definition doesnt exist/couldnt be found
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_inlinefunction_parameters">
+            <summary>
+            error re-mapping parameter list during inlining of function 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_inlinefunction_may_not_declare_variables">
+            <summary>
+            error: inlined functions may not allocate memory/declare variables 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_inlinefunction_failed_to_remap_identifiers">
+            <summary>
+            error failed to remap identifiers in inlined function segment  
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastPackageMode">

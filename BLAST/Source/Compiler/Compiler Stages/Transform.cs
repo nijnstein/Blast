@@ -1,7 +1,7 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
@@ -22,23 +22,17 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastTransform : IBlastCompilerStage
     {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.Version'
+        /// <summary>
+        /// current version 
+        /// </summary>
         public Version Version => new Version(0, 1, 4);
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.Version'
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.StageType'
-        public BlastCompilerStageType StageType => BlastCompilerStageType.Transform;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.StageType'
 
         /// <summary>
-        /// reduce a singular function in a sequence
+        /// transform stage 
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="ast_node"></param>
-        /// <returns></returns>
-        bool reduce_simple_function_sequence(IBlastCompilationData data, node ast_node)
-        {
-            return true;
-        }
+        public BlastCompilerStageType StageType => BlastCompilerStageType.Transform;
+
+  
 
 
         /// <summary>
@@ -54,17 +48,12 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
-        
-#pragma warning disable CS1572 // XML comment has a param tag for 'result', but there is no parameter by that name
-/// <summary>
+        /// <summary>
         /// transform a switch into a series of ifthen statements 
         /// </summary>
-        /// <param name="result"></param>
+        /// <param name="data"></param>
         /// <param name="n_switch">the node containing the switch statement</param>
-#pragma warning disable CS1573 // Parameter 'data' has no matching param tag in the XML comment for 'BlastTransform.transform_switch(IBlastCompilationData, node)' (but other parameters do)
         static void transform_switch(IBlastCompilationData data, node n_switch)
-#pragma warning restore CS1572 // XML comment has a param tag for 'result', but there is no parameter by that name
-#pragma warning restore CS1573 // Parameter 'data' has no matching param tag in the XML comment for 'BlastTransform.transform_switch(IBlastCompilationData, node)' (but other parameters do)
         {
             if (n_switch.parent == null)
             {
@@ -244,9 +233,231 @@ namespace NSS.Blast.Compiler.Stage
         }
 
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.Execute(IBlastCompilationData)'
+
+        /// <summary>
+        /// transform a function call to an inlined funtion into the code it generates 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="n"></param>
+        BlastError transform_inline_function_call(IBlastCompilationData data, node n)
+        {
+            BlastScriptInlineFunction function;
+
+            // lookup the inlined function 
+            if (!data.TryGetInlinedFunction(n.identifier, out function))
+            {
+                data.LogError($"transform: couldnt locate inlined function body for identifier: '{n.identifier}'", (int)BlastError.error_inlinefunction_doenst_exist);
+                return BlastError.error_inlinefunction_doenst_exist;
+            }
+
+            // setup translation map for variables/parameters 
+            node[] parameters = n.children.ToArray();
+            Dictionary<string, node> varmap = new Dictionary<string, node>();
+
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                varmap.Add(function.Node.depends_on[i].identifier, parameters[i]);
+            }
+
+            // input node n can be like:
+            //
+            //  assignment of result
+            //   function test
+            //      constant parameter 2
+            //         constant parameter 3
+            //      /
+            //   /
+            //
+            //
+            // when funtion = 
+            //
+            //  inlined - function test[depends on: parameter a parameter b]
+            //      assignment of c
+            //         parameter b
+            //         operation Substract
+            //         constant parameter 1
+            //      /
+            //      compound statement of 1
+            //         function return                      ->CHANGE RETURN IN ASSIGNMENT OF RESULT
+            //           compound statement of 5
+            //               parameter a
+            //               operation Multiply
+            //               parameter b
+            //               operation Multiply
+            //               parameter c
+            //            /
+            //         /
+            //      /
+            //   /
+            //
+            //
+            // result should be: 
+            //
+            //      assignment of c
+            //         parameter b
+            //         operation Substract
+            //         constant parameter 1
+            //      /
+            //      compound statement of 1
+            //         assignment of result
+            //           compound statement of 5
+            //               parameter a
+            //               operation Multiply
+            //               parameter b
+            //               operation Multiply
+            //               parameter c
+            //            /
+            //         /
+            //      /
+
+            //
+            // > copy the inlined function nodes while scanning for <return> in the function.node
+            //
+
+            int i_insert = n.parent.parent.children.IndexOf(n.parent);
+            node t = inline_nodes(function.Node);
+
+
+            node inline_nodes(node current)
+            {
+                node inlined = new node(null);
+
+                for (int i = 0; i < current.ChildCount; i++)
+                {
+                    node child = current.children[i];
+
+                    if (child.IsFunction && child.function.ScriptOp == blast_operation.ret)
+                    {
+                        // the return
+                        node new_return = child.DeepClone().FirstChild;
+                        new_return.type = nodetype.compound;
+                        new_return.identifier = n.identifier;
+                        new_return.vector_size = n.vector_size;
+                        new_return.is_vector = n.is_vector;
+                        new_return.variable = n.variable;
+
+                        // - TODO : check if its enforced that the return function is at the root level... TODO
+                        node p = n.parent;
+                        p.children.Clear();
+                        p.SetChild(new_return); // .children.Add(new_return);
+
+                        // any node after the return node is not used 
+                        break;
+                    }
+                    else
+                    {
+                        if (child.IsCompound)
+                        {
+                            inlined.SetChild(inline_nodes(child));
+                        }
+                        else
+                        {
+                            inlined.SetChild(child.DeepClone(true));
+                        }
+                    }
+                }
+
+                return inlined;
+            }
+
+            bool remap_variables(node remapnode, Dictionary<string, node> map)
+            {
+                // get the id  
+                string id = remapnode.identifier;
+
+                // is it a parameter ?  
+                if (!string.IsNullOrWhiteSpace(remapnode.identifier)
+                    &&
+                    map.TryGetValue(remapnode.identifier, out node vnode))
+                {
+                    remapnode.identifier = vnode.identifier;
+                    if (vnode.is_constant)
+                    {
+                        remapnode.is_constant = true;
+                        remapnode.constant_op = vnode.constant_op;
+                        remapnode.variable = vnode.variable;
+                        remapnode.vector_size = vnode.vector_size;
+                        remapnode.is_vector = vnode.is_vector; 
+                    }
+                    else
+                    {
+                        remapnode.variable = vnode.variable;
+                        remapnode.vector_size = vnode.vector_size;
+                        remapnode.is_vector = vnode.is_vector;
+                        vnode.variable.AddReference();
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < remapnode.ChildCount; i++)
+                    {
+                        if (!remap_variables(remapnode.children[i], map))
+                        {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            bool resolve_identifiers(node resolvenode)
+            {
+                // check for any constant not setup correctly  
+
+                //          tidi resolve param not connected in compiler 
+                // any undeclared variable|identifier is an error at this point 
+                return true;
+
+            }
+
+            // n is no longer attached to anything if correct but its parent field is still valid 
+
+            // rebuild target node
+            for (int i = 0; i < t.children.Count; i++)
+            {
+                node child = t.children[i];
+
+                // skip null or empty nodes that resulted
+                if (child == null || (child.type == nodetype.none && child.ChildCount == 0)) continue;
+
+                n.parent.parent.children.Insert(i_insert + i, child);
+                child.parent = n.parent.parent;
+
+            }
+
+            // now remap variables . ..
+            // - parameters hold the variables from the callsite 
+            // - translate these into the variable-names used in the inlined code
+
+
+            // the preludes 
+            if (!remap_variables(t, varmap))
+            {
+                return BlastError.error_inlinefunction_failed_to_remap_identifiers;
+            }
+
+            // the return / was replaced inline 
+            if (!remap_variables(n.parent, varmap))
+            {
+                return BlastError.error_inlinefunction_failed_to_remap_identifiers;
+            }
+
+            // - we should run parameter analysis again on the remapped nodes 
+            // - it could be the inlined function used constants that are not mapped yet
+            // - we only need to do this on the FIRST inline.
+
+            if (!resolve_identifiers(t) || !resolve_identifiers(n.parent))
+            {
+                return BlastError.error_inlinefunction_failed_to_remap_identifiers; 
+            }
+             
+
+            return BlastError.success; 
+        }
+
+
+
         public int Execute(IBlastCompilationData data)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastTransform.Execute(IBlastCompilationData)'
         {
             if (!data.IsOK || data.AST == null) return (int)BlastError.error;
 
@@ -278,6 +489,22 @@ namespace NSS.Blast.Compiler.Stage
                             }
                             break;
                         }
+
+                    case nodetype.function:
+                        {
+                            if (n.IsFunction && n.IsInlinedFunctionCall)
+                            {
+                                // inline the macro instead of the function call 
+                                transform_inline_function_call(data, n);
+                            }
+                            break; 
+                        }
+
+                    case nodetype.inline_function:
+                        {
+                            return;
+                        }
+                        
 
                     default:
                         {

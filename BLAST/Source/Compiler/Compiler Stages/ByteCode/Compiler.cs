@@ -1,13 +1,14 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Mathematics;
+using UnityEngine.Assertions;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -610,7 +611,7 @@ namespace NSS.Blast.Compiler.Stage
             return true;
         }
 
-
+  
         /// <summary>
         /// Compile a node into bytecode 
         /// </summary>
@@ -620,10 +621,14 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>an intermediate bytecode list</returns>
         static IMByteCodeList CompileNode(CompilationData data, node ast_node, IMByteCodeList code = null)
         {
+            Assert.IsFalse(ast_node.IsInlinedFunction);
+
             if(code == null)
             {
                 code = new IMByteCodeList();
             }
+
+            if (ast_node.skip_compilation) return code; 
 
             // detect if current node is compound with 1 child only
             // >> this should not happen if the flatten operation went ok, but its fixable be we should log warnings  
@@ -747,47 +752,58 @@ namespace NSS.Blast.Compiler.Stage
                 // function 
                 case nodetype.function:
                     {
-                        if (!ast_node.IsFunction || ast_node.function.FunctionId <= 0)
+                        // is it inlined or api 
+                        if (ast_node.IsFunction && ast_node.function.FunctionId == -1)
                         {
-                            data.LogError($"CompileNode: encountered function node with no function set, node: <{ast_node}>");
-                            return null;
-                        }
-                        if ((ast_node.parent == null || ast_node.parent.type == nodetype.root) && ast_node.function.ReturnsVectorSize > 0)
-                        {
-                            switch ((ReservedBlastScriptFunctionIds)ast_node.function.FunctionId)
-                            {
-                                // these procedures are allowed at the root, the rest is not 
-                                case ReservedBlastScriptFunctionIds.Push:
-                                case ReservedBlastScriptFunctionIds.PushFunction:
-                                case ReservedBlastScriptFunctionIds.PushCompound:
-                                case ReservedBlastScriptFunctionIds.PushVector:
-                                case ReservedBlastScriptFunctionIds.Yield:
-                                case ReservedBlastScriptFunctionIds.Pop:
-                                case ReservedBlastScriptFunctionIds.Seed:
-                                case ReservedBlastScriptFunctionIds.Debug:
-                                    {
-                                        if (!CompileFunction(data, ast_node, code))
-                                        {
-                                            data.LogError($"CompileNode: failed to compile function: {ast_node}.");
-                                            return null;
-                                        }
-                                    }
-                                    break;
-
-                                default:
-                                    data.LogToDo($"todo: allow functions on root");
-                                    data.LogError($"CompileNode: only procedures are allowed to execute at root, no functions, found {ast_node.function.GetFunctionName()}");
-                                    return null;
-                            }
+                            data.LogError($"CompileNode: inline function: <{ast_node}> found in node tree, these should not be compiled as api calls."); 
                         }
                         else
                         {
-                            if (!CompileFunction(data, ast_node, code))
+                            // compile an API function call 
+                            if (!ast_node.IsFunction || ast_node.function.FunctionId <= 0)
                             {
-                                data.LogError($"CompileNode: failed to compile function: {ast_node}.");
+                                data.LogError($"CompileNode: encountered function node with no function set, node: <{ast_node}>");
                                 return null;
                             }
+                            if ((ast_node.parent == null || ast_node.parent.type == nodetype.root) && ast_node.function.ReturnsVectorSize > 0)
+                            {
+                                switch ((ReservedBlastScriptFunctionIds)ast_node.function.FunctionId)
+                                {
+                                    // these procedures are allowed at the root, the rest is not 
+                                    case ReservedBlastScriptFunctionIds.Push:
+                                    case ReservedBlastScriptFunctionIds.PushFunction:
+                                    case ReservedBlastScriptFunctionIds.PushCompound:
+                                    case ReservedBlastScriptFunctionIds.PushVector:
+                                    case ReservedBlastScriptFunctionIds.Yield:
+                                    case ReservedBlastScriptFunctionIds.Pop:
+                                    case ReservedBlastScriptFunctionIds.Seed:
+                                    case ReservedBlastScriptFunctionIds.Debug:
+                                        {
+                                            if (!CompileFunction(data, ast_node, code))
+                                            {
+                                                data.LogError($"CompileNode: failed to compile function: {ast_node}.");
+                                                return null;
+                                            }
+                                        }
+                                        break;
+
+                                    default:
+                                        data.LogToDo($"todo: allow functions on root");
+                                        data.LogError($"CompileNode: only procedures are allowed to execute at root, no functions, found {ast_node.function.GetFunctionName()}");
+                                        return null;
+                                }
+                            }
+                            else
+                            {
+                                if (!CompileFunction(data, ast_node, code))
+                                {
+                                    data.LogError($"CompileNode: failed to compile function: <{ast_node}>.");
+                                    return null;
+                                }
+                            }
                         }
+
+
                         break;
                     }
 
@@ -1169,7 +1185,14 @@ namespace NSS.Blast.Compiler.Stage
                     changed = false; 
                     while (i < current.ChildCount || (is_disconnected && i == 0))
                     {
-                        node child = is_disconnected ? current : current.children[i]; 
+                        node child = is_disconnected ? current : current.children[i];
+                        if (child.IsInlinedFunction)
+                        {
+                            // skip inlined functions
+                            i++; 
+                            continue; 
+                        }
+
                         if (child.IsAssignment || child.IsPushFunction)
                         {
                             // check for case 1: assignment with useless compound in between 
@@ -1259,6 +1282,7 @@ namespace NSS.Blast.Compiler.Stage
         {
             IMByteCodeList code = new IMByteCodeList();
 
+
             if(AnalyzeCompoundNesting(data, ast_root) != 0)
             {
                 data.LogError("Failed to compile node list from <{ast_root}>, there are unresolved nested compounds");
@@ -1282,6 +1306,8 @@ namespace NSS.Blast.Compiler.Stage
             {
                 foreach (node ast_node in ast_root.children)
                 {
+                    if (ast_node.IsInlinedFunction) continue; 
+
                     // parse the statement from the token array
                     // CompileNode(result, ast_root, code);      // more efficient 
                     IMByteCodeList bcl = CompileNode(data, ast_node);

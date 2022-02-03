@@ -1,7 +1,7 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 using System;
 using System.Collections.Generic;
@@ -22,13 +22,15 @@ namespace NSS.Blast.Compiler.Stage
     /// </summary>
     public class BlastFlatten : IBlastCompilerStage
     {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Version'
+        /// <summary>
+        /// Version 1
+        /// </summary>
         public Version Version => new Version(0, 1, 0);
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Version'
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.StageType'
-        public BlastCompilerStageType StageType => BlastCompilerStageType.Flatten;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.StageType'
 
+        /// <summary>
+        /// Flatten Stage
+        /// </summary>
+        public BlastCompilerStageType StageType => BlastCompilerStageType.Flatten;
 
         /// <summary>
         /// flatten a compound 
@@ -770,68 +772,82 @@ namespace NSS.Blast.Compiler.Stage
             
             foreach(node input_node in root.children)
             {
-                // remove any unneeded compounds from node and its children (note that this function may return a child of the input node if the parent was useless) 
-                node node = node.ReduceSingularCompounds(input_node);
-
-                // depending on nodetype things differ
-                switch(node.type)
+                if (input_node.IsInlinedFunction)
                 {
-                    case nodetype.assignment:
-                        res = FlattenAssignment(data, in node, out output, false, out pusher);
-                        if (res != BlastError.success)
-                        {
-                            data.LogError($"flatten: error flattening assignment: <{node.parent}>.<{node}>[{node.ChildCount}], errorcode: {res}");
-                            return res;
-                        }
+                    res = FlattenRoot(data, input_node);
+                    if (res != BlastError.success)
+                    {
+                        data.LogError($"flatten: error flattening inlined function:  <{input_node.parent}>.<{input_node}>[{input_node.ChildCount}], errorcode: {res}");
+                        return res;
+                    }
 
-                        flat.AddRange(output);
-                        break;
+                    flat.Add(input_node);
+                }
+                else
+                {
+                    // remove any unneeded compounds from node and its children (note that this function may return a child of the input node if the parent was useless) 
+                    node node = node.ReduceSingularCompounds(input_node);
 
-                    // a while loop will always be either on the root, inside ifthen or inside while, in any case
-                    // it will be handled by this loop and we dont need to worry about flattening its return
-                    case nodetype.whileloop:
-                        res = FlattenWhileLoop(data, node);
-                        if (res != BlastError.success)
-                        {
-                            data.LogError($"flatten: error flattening while loop: <{node.parent}>.<{node}>[{node.ChildCount}], errorcode: {res}");
-                            return res;
-                        }
+                    // depending on nodetype things differ
+                    switch (node.type)
+                    {
+                        case nodetype.assignment:
+                            res = FlattenAssignment(data, in node, out output, false, out pusher);
+                            if (res != BlastError.success)
+                            {
+                                data.LogError($"flatten: error flattening assignment: <{node.parent}>.<{node}>[{node.ChildCount}], errorcode: {res}");
+                                return res;
+                            }
 
-                        flat.Add(node);  
-                        break;
+                            flat.AddRange(output);
+                            break;
 
-                    // same story as with while, these will not be flat in the root 
-                    case nodetype.ifthenelse:
-                        res = FlattenIfThenElse(data, node);
-                        if (res != BlastError.success)
-                        {
-                            data.LogError($"flatten: error flattening if-then-else construct: <{node.parent}>.<{node}>[{node.ChildCount}], errorcode: {res}");
-                            return res;
-                        }
+                        // a while loop will always be either on the root, inside ifthen or inside while, in any case
+                        // it will be handled by this loop and we dont need to worry about flattening its return
+                        case nodetype.whileloop:
+                            res = FlattenWhileLoop(data, node);
+                            if (res != BlastError.success)
+                            {
+                                data.LogError($"flatten: error flattening while loop: <{node.parent}>.<{node}>[{node.ChildCount}], errorcode: {res}");
+                                return res;
+                            }
 
-                        flat.Add(node);
-                        break;
+                            flat.Add(node);
+                            break;
 
-                    case nodetype.function:
-                        // flatten function, add to output, dont push function result 
-                        res = FlattenFunction(data, in node, out output, false, out pusher);
-                        if (res != BlastError.success)
-                        {
-                            data.LogError($"flatten: error flattening function:  <{node.parent}>.<{node}>[{node.ChildCount}], errorcode: {res}"); 
-                            return res;
-                        }
+                        // same story as with while, these will not be flat in the root 
+                        case nodetype.ifthenelse:
+                            res = FlattenIfThenElse(data, node);
+                            if (res != BlastError.success)
+                            {
+                                data.LogError($"flatten: error flattening if-then-else construct: <{node.parent}>.<{node}>[{node.ChildCount}], errorcode: {res}");
+                                return res;
+                            }
 
-                        flat.AddRange(output);
-                        break;
+                            flat.Add(node);
+                            break;
 
-                    case nodetype.jump_to:
-                    case nodetype.label:
-                        flat.Add(node);
-                        break;
+                        case nodetype.function:
+                            // flatten function, add to output, dont push function result 
+                            res = FlattenFunction(data, in node, out output, false, out pusher);
+                            if (res != BlastError.success)
+                            {
+                                data.LogError($"flatten: error flattening function:  <{node.parent}>.<{node}>[{node.ChildCount}], errorcode: {res}");
+                                return res;
+                            }
 
-                    default:
-                        data.LogError($"flatten: invalid nodetype in root: <{node.parent}>.<{node}>, type = {node.type}"); 
-                        return BlastError.error_invalid_nodetype_in_root; 
+                            flat.AddRange(output);
+                            break;
+
+                        case nodetype.jump_to:
+                        case nodetype.label:
+                            flat.Add(node);
+                            break;
+
+                        default:
+                            data.LogError($"flatten: invalid nodetype in root: <{node.parent}>.<{node}>, type = {node.type}");
+                            return BlastError.error_invalid_nodetype_in_root;
+                    }
                 }
             }
 
@@ -839,45 +855,39 @@ namespace NSS.Blast.Compiler.Stage
             return BlastError.success;
         }
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Flatten(IBlastCompilationData, node)'
-        public BlastError Flatten(IBlastCompilationData data, node root)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Flatten(IBlastCompilationData, node)'
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="root"></param>
+        /// <returns></returns>
+        public BlastError FlattenRoot(IBlastCompilationData data, node root)
         {
-            List<node> flat = new List<node>(); 
+            List<node> flat = new List<node>();
 
             BlastError res = FlattenStatements(data, root, out flat);
-            if (res != BlastError.success) return res; 
+            if (res != BlastError.success) return res;
 
-            // update compiler node tree 
-            data.AST.children.Clear();
-            data.AST.children.AddRange(flat);
-            foreach (node n in data.AST.children) n.parent = data.AST;
+            root.children.Clear();
+            root.children.AddRange(flat);
+            foreach (node n in root.children)
+            {
+                n.parent = root;
+            }
 
-            // return success
             return BlastError.success; 
         }
 
 
-
-
-
-
-
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Execute(IBlastCompilationData)'
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public int Execute(IBlastCompilationData data)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'BlastFlatten.Execute(IBlastCompilationData)'
         {
-          //  if (((CompilationData)data).use_new_stuff)
-          //  {
-                Flatten(data, data.AST);
-          //  }
-         //   else
-          //  {
-          //      flatten(data, data.AST);
-          //  }
-
-
-            return (int)(data.IsOK ? BlastError.success : BlastError.error);
+            return (int)FlattenRoot(data, data.AST);
         }
     }
 }

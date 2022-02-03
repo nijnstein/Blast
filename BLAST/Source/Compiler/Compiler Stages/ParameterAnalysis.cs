@@ -1,7 +1,7 @@
 ﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved       #
-// Unauthorized copying of this file, via any medium is strictly prohibited                                #
-// Proprietary and confidential                                                                            #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
+// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
+// Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 using System.Collections.Generic;
 using Unity.Mathematics;
@@ -28,7 +28,7 @@ namespace NSS.Blast.Compiler.Stage
         /// </summary>
         public BlastCompilerStageType StageType => BlastCompilerStageType.ParameterAnalysis;
 
-        bool check_input_output(IBlastCompilationData data)
+        static bool check_input_output(IBlastCompilationData data)
         {
             int o = 0;
 
@@ -88,14 +88,14 @@ namespace NSS.Blast.Compiler.Stage
             return true;
         }
 
-        int wouldbe_vector_size_of_calculation(node node)
+        static int wouldbe_vector_size_of_calculation(node node)
         {
             if (node.ChildCount < 3) return 0;
 
             return 0;
         }
 
-        void set_function_vector_size(int fsize, node c)
+        static void set_function_vector_size(int fsize, node c)
         {
             if (c.function.ReturnsVectorSize == 0)
             {
@@ -109,7 +109,7 @@ namespace NSS.Blast.Compiler.Stage
         }
 
 
-        int wouldbe_vector_size_of_same_sized_elements(node node)
+        static int wouldbe_vector_size_of_same_sized_elements(node node)
         {
             if (node.type != nodetype.compound) return 0; 
            
@@ -156,7 +156,7 @@ namespace NSS.Blast.Compiler.Stage
         /// </summary>
         /// <param name="data"></param>
         /// <param name="leaf_node"></param>
-        void check_if_vector(IBlastCompilationData data, node leaf_node)
+        static public void check_if_vector(IBlastCompilationData data, node leaf_node)
         {
             // should only be called on a leaf node 
             if (leaf_node.children.Count > 0) return;
@@ -292,6 +292,15 @@ namespace NSS.Blast.Compiler.Stage
                                                 {
                                                     size = math.max(size, v.VectorSize);
                                                     all_numeric = true;
+                                                }
+                                                else
+                                                {
+                                                    if (c.is_constant && c.constant_op != blast_operation.nop)
+                                                    {
+                                                        // is a v1 constant, this essentially is a needles set
+                                                        size = math.max(size, 1);
+                                                        all_numeric = true;
+                                                    }
                                                 }
                                                 continue;
                                             }
@@ -429,10 +438,15 @@ namespace NSS.Blast.Compiler.Stage
         public int Execute(IBlastCompilationData data)
         {
             // check each leaf for being a vector and propagate upward 
-            List<node> leafs = data.AST.GetLeafNodes();
-            foreach (node leaf in leafs)
+            foreach(node child in data.AST.children)
             {
-                check_if_vector(data, leaf);
+                if (child.IsInlinedFunction) continue; 
+
+                List<node> leafs = child.GetLeafNodes();
+                foreach (node leaf in leafs)
+                {
+                    check_if_vector(data, leaf);
+                }
             }
 
             // check defined input / outputs 
