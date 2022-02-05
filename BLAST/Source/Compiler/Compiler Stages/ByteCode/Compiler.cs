@@ -839,13 +839,34 @@ namespace NSS.Blast.Compiler.Stage
                         break;
                     }
 
+                    // if the assignment is indexed we have to add extra opcodes
+                    bool is_indexed_assignment = ast_node.HasIndexers;
+                    blast_operation op_indexer = blast_operation.nop;
+
+                    if(is_indexed_assignment)
+                    {
+                        // first node should contain the indexer operation
+                        op_indexer = ast_node.indexers[0].constant_op; 
+                        if(op_indexer == blast_operation.nop)
+                        {
+                            data.LogError($"CompileNode: assignment node: <{ast_node}>, assignment destination variable not correctly indexed: '{assignee}'");
+                            break;
+                        }
+                    }
+                     
+                    //
+                    // in _all_ cases the first byte after assignment is opt_ident or higher
+                    // the index-x y z w n operations all have a lower byte value that the interpretor can check 
+                    //
+
                     // assigning a single value or pop?  
                     if (ast_node.ChildCount == 1 && node.IsSingleValueOrPop(ast_node.FirstChild))
                     {
                         //
-                        // encode assigns instead of assing, this saves a trip through get_compound and 1 byte closing that compound
+                        // encode assigns instead of assign, this saves a trip through get_compound and 1 byte closing that compound
                         //
                         code.Add(blast_operation.assigns);
+                        if(is_indexed_assignment) code.Add(op_indexer);
                         code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
 
                         // encode variable, constant value or pop instruction 
@@ -860,6 +881,7 @@ namespace NSS.Blast.Compiler.Stage
                     if (ast_node.ChildCount == 1 && ast_node.FirstChild.type == nodetype.function && !ast_node.IsStackFunction)
                     {
                         code.Add(ast_node.function.IsExternalCall ? blast_operation.assignfe : blast_operation.assignf);
+                        if (is_indexed_assignment) code.Add(op_indexer);
                         code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
                         CompileNode(data, ast_node.FirstChild, code);
                         if (!data.IsOK)
@@ -879,6 +901,7 @@ namespace NSS.Blast.Compiler.Stage
                         ast_node.LastChild.type == nodetype.function)
                     {
                         code.Add(ast_node.function.IsExternalCall ? blast_operation.assignfen : blast_operation.assignfn);
+                        if (is_indexed_assignment) code.Add(op_indexer);
                         code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
                         CompileNode(data, ast_node.FirstChild, code);                                                         
                         {
@@ -895,6 +918,7 @@ namespace NSS.Blast.Compiler.Stage
                     {
 
                         code.Add((byte)blast_operation.assignv);
+                        if (is_indexed_assignment) code.Add(op_indexer);
                         code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
                         
                         // assingv deduces vectorsize and parametercount at interpretation and assumes compiler has generated correct code 
@@ -924,6 +948,7 @@ namespace NSS.Blast.Compiler.Stage
                         // encode first part of assignment 
                         // [op:assign][var:id+128]
                         code.Add(blast_operation.assign);
+                        if (is_indexed_assignment) code.Add(op_indexer);
                         code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
 
                         // compile child nodes 
@@ -1281,7 +1306,6 @@ namespace NSS.Blast.Compiler.Stage
         static IMByteCodeList CompileNodes(CompilationData data, node ast_root)
         {
             IMByteCodeList code = new IMByteCodeList();
-
 
             if(AnalyzeCompoundNesting(data, ast_root) != 0)
             {

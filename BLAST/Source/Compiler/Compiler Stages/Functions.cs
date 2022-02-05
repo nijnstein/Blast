@@ -1047,6 +1047,11 @@ namespace NSS.Blast
             RegisterFunction("select", 3, 3, 0, 0, blast_operation.select);
             RegisterFunction("random", 0, 2, 0, 0, blast_operation.random);
 
+            RegisterFunction("idx", 1, 1, 0, 1, blast_operation.index_x);
+            RegisterFunction("idy", 1, 1, 0, 1, blast_operation.index_y);
+            RegisterFunction("idz", 1, 1, 0, 1, blast_operation.index_z);
+            RegisterFunction("idw", 1, 1, 0, 1, blast_operation.index_w);
+            
             RegisterFunction("sin", 1, 1, 0, 0, extended_blast_operation.sin);
             RegisterFunction("cos", 1, 1, 0, 0, extended_blast_operation.cos);
             RegisterFunction("tan", 1, 1, 0, 0, extended_blast_operation.tan);

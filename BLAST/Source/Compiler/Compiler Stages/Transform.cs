@@ -450,76 +450,272 @@ namespace NSS.Blast.Compiler.Stage
             {
                 return BlastError.error_inlinefunction_failed_to_remap_identifiers; 
             }
-             
+
+            // finally, we need to run transform again, the function might encode a for loop or switch
+            transform(data, t);
+            transform(data, n.parent);  
 
             return BlastError.success; 
         }
 
 
+        /// <summary>
+        /// classify the indexers on a node
+        /// </summary>
+        /// <remarks>
+        /// 
+        /// !!!! currently supports the following indexes only:
+        /// 
+        /// .[x|y|z|w]
+        /// .[r|g|b|a]
+        /// 
+        /// </remarks>
+        static public bool ClassifyIndexer(node n, out blast_operation op, out byte spec)
+        {
+            Assert.IsNotNull(n); 
 
+            if( n.indexers != null 
+                && 
+                n.indexers.Count >= 2
+                &&
+                n.indexers[0].type == nodetype.index
+                &&
+                !string.IsNullOrWhiteSpace(n.indexers[1].identifier))
+            {
+
+                // determine length of chain
+                if (n.indexers.Count == 2)
+                {
+
+                    // 1 contains index var
+                    char index = n.indexers[1].identifier.ToLower().Trim()[0];
+                    switch (index)
+                    {
+                        case 'x':
+                        case 'r': op = blast_operation.index_x; spec = 0; return true; 
+                                       
+                        case 'y':
+                        case 'g': op = blast_operation.index_y; spec = 0; return true; 
+
+                        case 'z':
+                        case 'b': op = blast_operation.index_z; spec = 0; return true; 
+
+                        case 'w':
+                        case 'a': op = blast_operation.index_w; spec = 0; return true; 
+                    }                     
+                }
+                else
+                {
+                    //
+                    // supporting all variations of xyzw would require additional encoding on the opcode index_n
+                    // TODO 
+                    //
+
+                    op = blast_operation.index_n;
+                    spec = 0;
+                    return false; 
+                }
+            }
+            op = blast_operation.nop;
+            spec = 0;
+            return false; 
+        }
+
+
+        /// <summary>
+        /// only call this on nodes that actually have an indexer, for now create functions 
+        /// for indices, we could allow the interpretor to directly index it but then we would
+        /// lose all debugging features (we would get invalid metadata types on indexing it,
+        /// because we index a f4 for example expecting a f1 back, the interpretor has no knowledge 
+        /// of indexers and for now i'd like to keep it like that)
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        BlastError transform_indexer(IBlastCompilationData data, node n)
+        {
+            Assert.IsNotNull(n);
+            Assert.IsTrue(n.HasIndexers, "only call transform_indexer on nodes with indexers!");
+                        
+            if(ClassifyIndexer(n, out blast_operation op, out byte spec))
+            {
+                if (n.IsAssignment)
+                {
+                    // setting a value, replace indexchain with a single node holding operation 
+                    n.indexers.Clear();
+                    n.AppendIndexer(BlastScriptToken.Indexer, op).EnsureIdentifierIsUniquelySet(); 
+                }
+                else
+                {
+                    // reading a value, remove indexers and  insert indexing function as new parent of current 
+                    node f = new node(null, n);
+                    f.EnsureIdentifierIsUniquelySet();
+                    f.type = nodetype.function;
+
+
+                    int idx = n.parent.children.IndexOf(n);
+
+                    f.parent = n.parent;
+                    n.parent = f;
+
+                    f.parent.children.RemoveAt(idx);
+                    f.parent.children.Insert(idx, f);
+
+                    n.indexers.Clear();
+                    unsafe
+                    {
+                        f.function = data.Blast.Data->GetFunction(op);
+                    }
+                    if (!f.function.IsValid)
+                    {
+                        data.LogError($"transform_indexer: failed to transform operation {op}, could not find corresponding function in api");
+                        return BlastError.error_indexer_transform;
+                    }
+                }
+            }
+            else
+            {
+                data.LogError($"transform_indexer: failed to classify indexers on <{n}>, only .[xyzwrgba] are allowed");
+                return BlastError.error_indexer_transform;
+            }
+
+            return BlastError.success; 
+        }
+
+
+        /// <summary>
+        /// find and transform all indexers
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="ast_root"></param>
+        /// <returns></returns>
+        BlastError transform_indexers(IBlastCompilationData data, node ast_root)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(ast_root);
+
+            BlastError res = BlastError.success; 
+            List<node> work = NodeListCache.Acquire(); 
+
+            work.Push(ast_root);
+            while (work.TryPop(out node current))
+            {
+                if(current.HasIndexers)
+                {
+                    res = transform_indexer(data, current);
+                    if (res != BlastError.success) break;                     
+                }
+
+                work.PushRange(current.children);            
+            }
+
+            NodeListCache.Release(work);
+            return res; 
+        }
+
+
+        /// <summary>
+        /// run transform depending on nodetype 
+        /// - TODO -> would be nice if this all returned errors.. 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="n"></param>
+        BlastError transform(IBlastCompilationData data, node n)
+        {
+            BlastError res = BlastError.success; 
+
+            switch (n.type)
+            {
+                case nodetype.switchnode:
+                    {
+                        // transform into a series of ifthen statements 
+                        transform_switch(data, n);
+                        break;
+                    }
+
+                case nodetype.forloop:
+                    {
+                        // transform into a while loop 
+                        transform_for(data, n);
+                        break;
+                    }
+
+                case nodetype.compound:
+                    {
+                        // if having only 1 child, merge with it 
+                        while (n.ChildCount == 1 && n.children[0].IsCompound)
+                        {
+                            n = transform_merge_compound(data, n);
+                        }
+                        break;
+                    }
+
+                case nodetype.function:
+                    {
+                        if (n.IsFunction && n.IsInlinedFunctionCall)
+                        {
+                            // inline the macro instead of the function call 
+                            res = transform_inline_function_call(data, n);
+                        }
+                        break;
+                    }
+
+                case nodetype.inline_function:
+                    {
+                        // dont iterate through inline functions, only after they are inlined
+                        return BlastError.success;
+                    }
+
+
+                default:
+                    {
+                        break;
+                    }
+            }
+
+            if (res == BlastError.success)
+            {
+                foreach (node c in n.children.ToArray())
+                {
+                    res = transform(data, c);
+                    if (res != BlastError.success) break;
+                }
+            }
+
+            return res;
+        }
+
+
+
+        /// <summary>
+        /// execute the transform stage:
+        /// - merge compounds
+        /// - transform for loops => while
+        /// - transform switch => ifthen 
+        /// - transfrom inlined functions 
+        /// - transform indexers
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public int Execute(IBlastCompilationData data)
         {
             if (!data.IsOK || data.AST == null) return (int)BlastError.error;
 
             // transform node iterator 
-            void transform(node n)
-            {
-                switch(n.type)
-                {
-                    case nodetype.switchnode:
-                        {
-                            // transform into a series of ifthen statements 
-                            transform_switch(data, n);
-                            break;
-                        }
-
-                    case nodetype.forloop:
-                        {
-                            // transform into a while loop 
-                            transform_for(data, n); 
-                            break; 
-                        }
-
-                    case nodetype.compound:
-                        {
-                            // if having only 1 child, merge with it 
-                            while (n.ChildCount == 1 && n.children[0].IsCompound)
-                            {
-                                n = transform_merge_compound(data, n);
-                            }
-                            break;
-                        }
-
-                    case nodetype.function:
-                        {
-                            if (n.IsFunction && n.IsInlinedFunctionCall)
-                            {
-                                // inline the macro instead of the function call 
-                                transform_inline_function_call(data, n);
-                            }
-                            break; 
-                        }
-
-                    case nodetype.inline_function:
-                        {
-                            return;
-                        }
-                        
-
-                    default:
-                        {
-                            break; 
-                        }                         
-                }
-
-                foreach (node c in n.children.ToArray())
-                {
-                    transform(c);
-                }
-            }
 
             // recursively look for statements to transform
-            transform(data.AST);
+            BlastError res = transform(data, data.AST);
+            if (res != BlastError.success)
+            {
+                return (int)res; 
+            }
+
+            // after expanding everything, check the tree for indexers 
+            res = transform_indexers(data, data.AST); 
+            if(res != BlastError.success)
+            {
+                return (int)res; 
+            }
 
             return data.IsOK ? (int)BlastError.success : (int)BlastError.error;
         }

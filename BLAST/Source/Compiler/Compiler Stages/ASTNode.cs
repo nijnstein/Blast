@@ -65,11 +65,11 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// the root of an if then else structure
         /// </summary>
-        ifthenelse, 
+        ifthenelse,
         /// <summary>
         /// the ifthen clausule
         /// </summary>
-        ifthen, 
+        ifthen,
         /// <summary>
         /// the ifelse clausule
         /// </summary>
@@ -81,7 +81,7 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// the root of a while loop
         /// </summary>
-        whileloop, 
+        whileloop,
         /// <summary>
         /// the while loop body, handled as a compound 
         /// </summary>
@@ -89,11 +89,11 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// the switch statement root node, transformed into ifthenelse statements during compilation
         /// </summary>
-        switchnode, 
+        switchnode,
         /// <summary>
         /// a switch case 
         /// </summary>
-        switchcase, 
+        switchcase,
         /// <summary>
         /// the default case 
         /// </summary>
@@ -105,7 +105,7 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// a jump instruction inserted by the compiler that jumps to a given label in the ast
         /// </summary>
-        jump_to, 
+        jump_to,
         /// <summary>
         /// a label (a jump target) inserted by the compiler 
         /// </summary>
@@ -113,7 +113,7 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// an inline function defined in script 
         /// </summary>
-        inline_function 
+        inline_function
     }
 
     /// <summary>
@@ -125,17 +125,17 @@ namespace NSS.Blast.Compiler
         /// the parent node, null if the node is the root
         /// </summary>
         public node parent;
-        
+
         /// <summary>
         /// nodetype of node
         /// </summary>
         public nodetype type;
-        
+
         /// <summary>
         /// if the node is a function then its this one
         /// </summary>
         public BlastScriptFunction function;
-        
+
         /// <summary>
         /// any token attached to this node 
         /// </summary>
@@ -200,12 +200,12 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// internal use: a linked pop operation, used during compilation to keep track of pushpop pairs
         /// </summary>
-        public node linked_pop = null; 
+        public node linked_pop = null;
 
         /// <summary>
         /// Only true if this is the root of the ast
         /// </summary>
-        public bool IsRoot => parent == null && type == nodetype.root; 
+        public bool IsRoot => parent == null && type == nodetype.root;
 
         /// <summary>
         /// True if this a compound node
@@ -226,8 +226,8 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// true if the function maps to a stack operation: push, pop etc. 
         /// </summary>
-        public bool IsStackFunction => type == nodetype.function && (function.IsPopVariant || function.IsPushVariant); 
-          
+        public bool IsStackFunction => type == nodetype.function && (function.IsPopVariant || function.IsPushVariant);
+
 
         /// <summary>
         /// True if this is a function pushing to the stack 
@@ -247,7 +247,7 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// returns true if this is a function that maps to an inlined function and NOT to an api function 
         /// </summary>
-        public bool IsInlinedFunctionCall => type == nodetype.function && function.FunctionId == -1; 
+        public bool IsInlinedFunctionCall => type == nodetype.function && function.FunctionId == -1;
 
         /// <summary>
         /// True if this is an operation 
@@ -277,7 +277,7 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// get the number of dependency nodes
         /// </summary>
-        public int DependencyCount => depends_on != null ? depends_on.Count : 0; 
+        public int DependencyCount => depends_on != null ? depends_on.Count : 0;
 
         /// <summary>
         /// true if the node contains child nodes 
@@ -304,7 +304,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public int CountNodes()
         {
-            return CountChildNodes(this); 
+            return CountChildNodes(this);
         }
 
         /// <summary>
@@ -318,14 +318,14 @@ namespace NSS.Blast.Compiler
             {
                 return 0;
             }
-           
-            int c = n.ChildCount; 
-            
-            for(int i = 0; i < n.ChildCount;i++)
+
+            int c = n.ChildCount;
+
+            for (int i = 0; i < n.ChildCount; i++)
             {
-                c += CountChildNodes(n.children[i]);                    
+                c += CountChildNodes(n.children[i]);
             }
-            return c; 
+            return c;
         }
 
         /// <summary>
@@ -341,19 +341,19 @@ namespace NSS.Blast.Compiler
         /// <returns></returns>
         public static bool IsVectorDefinition(node n)
         {
-            Assert.IsNotNull(n); 
+            Assert.IsNotNull(n);
 
             // must be compound of n elements 
-            if(!n.IsCompound) return false;
+            if (!n.IsCompound) return false;
 
             // a vector has more then 1 element 
             if (n.ChildCount <= 1) return false;
-            
+
             // each element is either a
             // - pop or other function resulting in 1 value 
             // - identiefieer resulting in 1 value
 
-            for(int i = 0; i < n.ChildCount; i++)
+            for (int i = 0; i < n.ChildCount; i++)
             {
                 node child = n.children[i];
 
@@ -386,10 +386,10 @@ namespace NSS.Blast.Compiler
                             return false;
                         }
                     }
-                }                      
+                }
             }
 
-            return true; 
+            return true;
         }
 
 
@@ -404,8 +404,8 @@ namespace NSS.Blast.Compiler
             n.EnsureIdentifierIsUniquelySet();
             n.constant_op = value_0;
             n.vector_size = 1;
-            n.is_vector = false; 
-            return n; 
+            n.is_vector = false;
+            return n;
         }
 
 
@@ -420,7 +420,7 @@ namespace NSS.Blast.Compiler
         /// <returns></returns>
         public bool IsNonNestedVectorDefinition()
         {
-            return IsNonNestedVectorDefinition(this); 
+            return IsNonNestedVectorDefinition(this);
         }
 
         /// <summary>
@@ -441,7 +441,7 @@ namespace NSS.Blast.Compiler
                 }
                 else
                 { return false; }
-                    
+
             }
 
             // a vector has more then 1 element 
@@ -476,7 +476,7 @@ namespace NSS.Blast.Compiler
                 }
 
 
-                switch(child.type)
+                switch (child.type)
                 {
                     case nodetype.parameter: continue;
 
@@ -492,15 +492,15 @@ namespace NSS.Blast.Compiler
                                 &&
                                 child.children[1].token == BlastScriptToken.Identifier)
                             {
-                                continue; 
+                                continue;
                             }
                         }
-                        return false; 
+                        return false;
 
-                    default: return false; 
+                    default: return false;
                 }
             }
-            return true; 
+            return true;
         }
 
         /// <summary>
@@ -529,11 +529,11 @@ namespace NSS.Blast.Compiler
                 return false;
 
             // scan trough children maintain operation list
-            for(int i = from; i < node.ChildCount; i++)
+            for (int i = from; i < node.ChildCount; i++)
             {
-                node child = node.children[i]; 
+                node child = node.children[i];
 
-                switch(child.type)
+                switch (child.type)
                 {
                     case nodetype.operation:
                         {
@@ -553,23 +553,23 @@ namespace NSS.Blast.Compiler
                                 else
                                 {
                                     // different node typ 
-                                    if(op_count >= min_group_size)
+                                    if (op_count >= min_group_size)
                                     {
                                         // sequence long enough
-                                        return true; 
+                                        return true;
                                     }
                                     else
                                     {
                                         // reset to different op
                                         op_count = 1;
                                         first_op_in_sequence = child;
-                                        op = node_op; 
+                                        op = node_op;
                                     }
 
-                                }                               
+                                }
                             }
                         }
-                        break; 
+                        break;
                 }
             }
 
@@ -588,13 +588,14 @@ namespace NSS.Blast.Compiler
         /// <returns></returns>
         public bool FirstConsecutiveOperationSequence(int min_groupsize, int from, out blast_operation op, out int op_count, out node first_op_in_sequence)
         {
-            return node.FirstConsecutiveOperationSequence(this, min_groupsize, from, out op, out op_count, out first_op_in_sequence); 
+            return node.FirstConsecutiveOperationSequence(this, min_groupsize, from, out op, out op_count, out first_op_in_sequence);
         }
 
         /// <summary>
         /// interpret this node as a float value and return that
         /// </summary>
-        public bool IsFloat {
+        public bool IsFloat
+        {
             get
             {
                 if (vector_size != 1 || string.IsNullOrWhiteSpace(identifier)) return false;
@@ -611,7 +612,8 @@ namespace NSS.Blast.Compiler
                     }
 
                     // minus only as first 
-                    if (ch == '-') {
+                    if (ch == '-')
+                    {
                         if (i == 0)
                         {
                             i++;
@@ -626,11 +628,11 @@ namespace NSS.Blast.Compiler
                     if (ch == '.' || ch == ',')
                     {
                         // ., not as first or last
-                        if(c != 0 || ch == 0 || ch == identifier.Length - 1) return false;
+                        if (c != 0 || ch == 0 || ch == identifier.Length - 1) return false;
                         // max 1 .,
                         c++;
-                        i++; 
-                        continue; 
+                        i++;
+                        continue;
                     }
 
                     return false;
@@ -646,7 +648,7 @@ namespace NSS.Blast.Compiler
                     // if not, min 1 
                     return d > 0;
                 }
-            }            
+            }
         }
 
 
@@ -703,18 +705,18 @@ namespace NSS.Blast.Compiler
             if (HasChildren)
             {
                 StringBuilder sb = StringBuilderCache.Acquire();
-                sb.Append(GetNodeDescription()); 
+                sb.Append(GetNodeDescription());
                 sb.Append("[");
                 foreach (node child in children)
                 {
                     sb.Append($"[{child}] ");
                 }
                 sb.Append("]");
-                return StringBuilderCache.GetStringAndRelease(ref sb); 
+                return StringBuilderCache.GetStringAndRelease(ref sb);
             }
             else
             {
-                return GetNodeDescription(); 
+                return GetNodeDescription();
             }
         }
 
@@ -749,6 +751,7 @@ namespace NSS.Blast.Compiler
                 case nodetype.label: return $"label {identifier}";
                 case nodetype.forloop: return $"for ";
                 case nodetype.inline_function: return $"inlined-function {identifier}";
+                case nodetype.index: return $"indexer {identifier} {constant_op}";
                 default: return base.ToString();
             }
         }
@@ -794,7 +797,17 @@ namespace NSS.Blast.Compiler
                 dependencies = $"[depends on: {dependencies}]";
             }
 
-            sb.AppendLine($"{"".PadLeft(indent, ' ')}{n.GetNodeDescription()} {dependencies}");
+            string indexers = string.Empty;
+            foreach (var d in n.indexers)
+            {
+                indexers += d.ToString() + " ";
+            }
+            if (!string.IsNullOrWhiteSpace(indexers))
+            {
+                indexers = $"[indexed with: {indexers}]";
+            }
+
+            sb.AppendLine($"{"".PadLeft(indent, ' ')}{n.GetNodeDescription()} {dependencies} {indexers}");
             if (n.children.Count > 0)
             {
                 foreach (node c in n.children)
@@ -813,7 +826,7 @@ namespace NSS.Blast.Compiler
                 return string.Empty;
             }
         }
-        
+
         /// <summary>
         /// check if the node is an operation sequence in the form: 3 + a + 4 + 4 + max(3093) + (4 + 0) 
         /// </summary>
@@ -830,11 +843,11 @@ namespace NSS.Blast.Compiler
         /// <returns>true if an operation list and all operations used are the same</returns>
         public bool IsSingleOperationList(out blast_operation op)
         {
-            if(node.IsOperationList(this, out op))
+            if (node.IsOperationList(this, out op))
             {
-                return op != blast_operation.nop && op != blast_operation.ex_op; 
+                return op != blast_operation.nop && op != blast_operation.ex_op;
             }
-            return false; 
+            return false;
         }
 
 
@@ -844,7 +857,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public bool IsCompoundWithSingleNegationOfValue()
         {
-            return IsCompoundWithSingleNegationOfValue(this); 
+            return IsCompoundWithSingleNegationOfValue(this);
         }
 
 
@@ -855,10 +868,10 @@ namespace NSS.Blast.Compiler
         /// <param name="node">the node that should be the compound in the check</param>
         public static bool IsCompoundWithSingleNegationOfValue(node node)
         {
-            return 
+            return
                 (node.IsCompound || node.IsPushFunction)
                 &&
-                node.ChildCount == 2 
+                node.ChildCount == 2
                 &&
                 node.FirstChild.token == BlastScriptToken.Substract
                 &&
@@ -889,17 +902,17 @@ namespace NSS.Blast.Compiler
             bool has_ops = false;
 
 
-            if(node.ChildCount == 2)
+            if (node.ChildCount == 2)
             {
                 // only a negation should be possible to be 2 long 
-                if(IsCompoundWithSingleNegationOfValue(node))
+                if (IsCompoundWithSingleNegationOfValue(node))
                 {
-                    singleop = blast_operation.substract; 
+                    singleop = blast_operation.substract;
                     return true;
                 }
                 else
                 {
-                    return false; 
+                    return false;
                 }
             }
 
@@ -909,7 +922,7 @@ namespace NSS.Blast.Compiler
                 bool canbenegation = false;
                 int consecutive_params = 0;
                 bool lastwasparam = false;
-                bool lastwasop = false; 
+                bool lastwasop = false;
 
                 for (int i = 0; i < node.ChildCount; i++)
                 {
@@ -930,7 +943,7 @@ namespace NSS.Blast.Compiler
                             }
                             lastwasop = true;
 
-                            blast_operation child_operation = Blast.GetBlastOperationFromToken(child.token); 
+                            blast_operation child_operation = Blast.GetBlastOperationFromToken(child.token);
 
                             if (singleop == blast_operation.nop) singleop = child_operation;
                             else if (singleop != child_operation) singleop = blast_operation.ex_op;
@@ -939,7 +952,7 @@ namespace NSS.Blast.Compiler
 
                         case nodetype.compound:
                         case nodetype.parameter:
-                           
+
                             if (!lastwasparam)
                             {
                                 lastwasparam = true;
@@ -952,16 +965,16 @@ namespace NSS.Blast.Compiler
                             break;
 
                         case nodetype.function:
-                            if(lastwasparam)
+                            if (lastwasparam)
                             {
                                 consecutive_params++;
                                 if (consecutive_params > 1) return false;
                             }
                             else
                             {
-                                lastwasparam = true; 
+                                lastwasparam = true;
                             }
-                            break; 
+                            break;
 
 
                         default:
@@ -970,7 +983,7 @@ namespace NSS.Blast.Compiler
                             if (canbenegation) { has_ops = true; canbenegation = false; }
                             if (child.HasChildren && node.IsOperationList(child)) has_ops = true;
                             lastwasparam = false;
-                            consecutive_params = 0; 
+                            consecutive_params = 0;
                             break;
                     }
                 }
@@ -978,7 +991,7 @@ namespace NSS.Blast.Compiler
             return has_ops;
         }
 
-        
+
 
         /// <summary>
         /// -encode vectorsize in lower nibble
@@ -1014,7 +1027,7 @@ namespace NSS.Blast.Compiler
                 ast_node.parent.children.Remove(ast_node);
             }
 
-            AppendDependency(ast_node); 
+            AppendDependency(ast_node);
         }
 
         /// <summary>
@@ -1049,16 +1062,16 @@ namespace NSS.Blast.Compiler
         /// <param name="n">the node to add</param>
         public void AppendDependency(node n)
         {
-            if(n == null)
+            if (n == null)
             {
-                return; 
+                return;
             }
-            if(depends_on == null) 
+            if (depends_on == null)
             {
-                depends_on = new List<node>(); 
+                depends_on = new List<node>();
             }
             n.parent = this;
-            depends_on.Add(n); 
+            depends_on.Add(n);
         }
 
         /// <summary>
@@ -1067,7 +1080,7 @@ namespace NSS.Blast.Compiler
         /// <param name="nodes">nodes to add to dependencies</param>
         public void AppendDependencies(IEnumerable<node> nodes)
         {
-            foreach(node n in nodes) AppendDependency(n); 
+            foreach (node n in nodes) AppendDependency(n);
         }
 
 
@@ -1087,12 +1100,12 @@ namespace NSS.Blast.Compiler
         /// <returns>a node if any was found, otherwise null</returns>
         public node GetChild(nodetype first_choice, nodetype second_choice)
         {
-            node c = GetChild(first_choice); 
-            if(c == null)
+            node c = GetChild(first_choice);
+            if (c == null)
             {
                 c = GetChild(second_choice);
             }
-            return c; 
+            return c;
         }
 
         /// <summary>
@@ -1131,11 +1144,11 @@ namespace NSS.Blast.Compiler
                 int count = 0;
                 foreach (node c in children)
                 {
-                    if (c.type != t)  others[count] = c;
+                    if (c.type != t) others[count] = c;
                 }
             }
 
-            return others; 
+            return others;
         }
 
 
@@ -1287,7 +1300,7 @@ namespace NSS.Blast.Compiler
         static public node ReduceSingularCompounds(node node)
         {
             Assert.IsNotNull(node);
-            
+
             // reduce root
             while (node.ChildCount == 1 && (node.FirstChild.IsCompound || node.FirstChild.IsFunction))
             {
@@ -1302,21 +1315,21 @@ namespace NSS.Blast.Compiler
                 else
                 {
                     // single function as child, swap with this node if this node is merely a compound
-                    if(node.IsCompound)
+                    if (node.IsCompound)
                     {
                         child.parent = node.parent;
-                        node = child; 
+                        node = child;
                     }
                     else
                     {
                         // node is some other thing, leave it to be flattened below
-                        break; 
+                        break;
                     }
                 }
             }
 
             // go through children 
-            foreach(node child in node.children)
+            foreach (node child in node.children)
             {
                 if (child.ChildCount > 0)
                 {
@@ -1330,7 +1343,7 @@ namespace NSS.Blast.Compiler
                 }
             }
 
-            return node; 
+            return node;
         }
 
 
@@ -1439,7 +1452,7 @@ namespace NSS.Blast.Compiler
                         switch (c.function.FunctionId)
                         {
                             case (int)ReservedBlastScriptFunctionIds.Pop:
-                                 if (c.children.Count == 0)
+                                if (c.children.Count == 0)
                                 {
                                     continue;
                                 }
@@ -1491,16 +1504,16 @@ namespace NSS.Blast.Compiler
             for (int i = 0; i < ChildCount; i++)
             {
                 node child = children[i];
-                switch(child.type)
+                switch (child.type)
                 {
                     case nodetype.parameter:
                         if (child.HasChildren) return false;
-                        break; 
+                        break;
 
                     case nodetype.function:
                         // only pop is allowed 
-                        if (!child.function.IsPopVariant) return false; 
-                        break; 
+                        if (!child.function.IsPopVariant) return false;
+                        break;
 
                     case nodetype.compound:
 
@@ -1509,10 +1522,10 @@ namespace NSS.Blast.Compiler
                         // - we should allow flatten to keep it in this case, saving a push-pop pair during compilation 
                         //
 
-                        if (!child.IsSimplexVectorDefinition()) return false; 
+                        if (!child.IsSimplexVectorDefinition()) return false;
                         break;
 
-                    default: return false; 
+                    default: return false;
                 }
 
                 //
@@ -1523,12 +1536,12 @@ namespace NSS.Blast.Compiler
 
                 if (c_vecsize > vector_size)
                 {
-                    return false; 
+                    return false;
                 }
             }
 
             // if these match then OK 
-            return c_vecsize == vector_size; 
+            return c_vecsize == vector_size;
         }
 
         /// <summary>
@@ -1539,8 +1552,8 @@ namespace NSS.Blast.Compiler
         /// <returns></returns>
         public bool IsFlat(bool allow_vector_root_compound = false)
         {
-            if (ChildCount == 0) return true; 
-            foreach(node child in children)
+            if (ChildCount == 0) return true;
+            foreach (node child in children)
             {
                 switch (child.type)
                 {
@@ -1554,18 +1567,18 @@ namespace NSS.Blast.Compiler
                         if (!allow_vector_root_compound) return false;
                         // only allowed if vector root is allowed 
 
-                        foreach(node vc in child.children)
+                        foreach (node vc in child.children)
                         {
                             // eiter pops or parameters
                             if (!vc.IsSingleValueOrPop()) return false;
                         }
-                        return child.ChildCount > 0; 
+                        return child.ChildCount > 0;
 
-                    default: return false;       
+                    default: return false;
                 }
-                if (!child.IsFunction && child.HasChildren) return false; 
+                if (!child.IsFunction && child.HasChildren) return false;
             }
-            return true; 
+            return true;
         }
 
 
@@ -1633,7 +1646,7 @@ namespace NSS.Blast.Compiler
         /// <param name="index">index to insert at at parent</param>
         internal node SetChild(node ast_node, int index)
         {
-            Assert.IsNotNull(ast_node); 
+            Assert.IsNotNull(ast_node);
 
             // remove it from current parent if any
             if (ast_node.parent != null)
@@ -1655,11 +1668,11 @@ namespace NSS.Blast.Compiler
         /// <returns>this node</returns>
         internal node SetChildren(IEnumerable<node> nodes)
         {
-            foreach(node n in nodes.ToArray()) // need to protect agains moving our own children and changing the collection
+            foreach (node n in nodes.ToArray()) // need to protect agains moving our own children and changing the collection
             {
-                SetChild(n); 
+                SetChild(n);
             }
-            return this; 
+            return this;
         }
 
 
@@ -1704,6 +1717,15 @@ namespace NSS.Blast.Compiler
         {
             node n = new node(null) { type = nodetype.index, token = token, identifier = identifier };
             indexers.Add(n);
+            n.parent = this;
+            return n;
+        }
+
+        internal node AppendIndexer(BlastScriptToken token, blast_operation index_op)
+        {
+            node n = new node(null) { type = nodetype.index, token = token, identifier = string.Empty, constant_op = index_op };
+            indexers.Add(n);
+            n.parent = this;
             return n;
         }
 
@@ -1737,7 +1759,7 @@ namespace NSS.Blast.Compiler
         /// first child of node, null if there are no children
         /// </summary>
         public node FirstChild => ChildCount > 0 ? children[0] : null;
-        
+
         /// <summary>
         /// last child of node, null if there are no children, equals first if childcount == 1
         /// </summary>
@@ -1747,7 +1769,7 @@ namespace NSS.Blast.Compiler
         internal bool SetIsVector(int _vector_size, bool propagate_to_parents = true)
         {
             // the root cannot be set as vector
-            if (parent == null) return true; 
+            if (parent == null) return true;
 
             is_vector = _vector_size > 1;
             vector_size = _vector_size;
@@ -1768,37 +1790,37 @@ namespace NSS.Blast.Compiler
                             }
                             else
                             {
-                                if (!parent.SetIsVector(parent.function.ReturnsVectorSize)) return false; 
+                                if (!parent.SetIsVector(parent.function.ReturnsVectorSize)) return false;
                             }
                         }
                         else
                         {
                             // half the callers of this method cannot know its relation so this is sometimes necessary 
-                           // Debug.LogError($"setisvector: parameter vectorsize mismatch in node {parent}, function: {parent.function.Match} , expecting: {parent.function.AcceptsVectorSize}, given {_vector_size}"); 
-                            return false; 
-                        }   
+                            // Debug.LogError($"setisvector: parameter vectorsize mismatch in node {parent}, function: {parent.function.Match} , expecting: {parent.function.AcceptsVectorSize}, given {_vector_size}"); 
+                            return false;
+                        }
                         break;
 
                     default:
-                        if (!parent.SetIsVector(_vector_size, true)) return false; 
+                        if (!parent.SetIsVector(_vector_size, true)) return false;
                         break;
                 }
             }
 
-            return true; 
+            return true;
         }
 
 
         internal bool ValidateType(IBlastCompilationData data, IEnumerable<nodetype> valid_node_types)
         {
-            foreach(nodetype node_type in valid_node_types)
+            foreach (nodetype node_type in valid_node_types)
             {
-                if(this.type == node_type)
+                if (this.type == node_type)
                 {
                     return true;
                 }
             }
-            data.LogError($"Node: <{this}> has a nodetype that is invalid in the current context"); 
+            data.LogError($"Node: <{this}> has a nodetype that is invalid in the current context");
             return false;
         }
 
@@ -1836,17 +1858,17 @@ namespace NSS.Blast.Compiler
             return true;
         }
 
-        
+
         /// <summary>
         /// insert a new node of the given type and operation  before this node in parent 
         /// </summary>
         /// <param name="type">node type</param>
         /// <param name="token">token for script operation</param>
         public node InsertBeforeThisNodeInParent(nodetype type, BlastScriptToken token)
-        { 
+        {
             if (parent != null)
             {
-                Assert.IsNotNull(parent.children); 
+                Assert.IsNotNull(parent.children);
 
                 node n = new node(null) { type = type, token = token };
                 n.parent = this.parent;
@@ -1876,7 +1898,7 @@ namespace NSS.Blast.Compiler
             node.parent = this;
 
 
-            return node; 
+            return node;
         }
 
         /// <summary>
@@ -1888,7 +1910,7 @@ namespace NSS.Blast.Compiler
             Assert.IsNotNull(node);
             Assert.IsNotNull(node.children);
 
-            node.parent = this.parent; 
+            node.parent = this.parent;
             node.children.Add(this);
 
             this.parent = node;
@@ -1905,7 +1927,7 @@ namespace NSS.Blast.Compiler
             node.vector_size = this.vector_size;
             node.is_constant = this.is_constant;
 
-            return node; 
+            return node;
         }
 
         /// <summary>
@@ -1981,9 +2003,9 @@ namespace NSS.Blast.Compiler
         /// <param name="tag">name to use for reference while debugging</param>
         public void EnsureIdentifierIsUniquelySet(string tag = "gen")
         {
-            if(string.IsNullOrWhiteSpace(identifier))
+            if (string.IsNullOrWhiteSpace(identifier))
             {
-                identifier = GenerateUniqueId(tag); 
+                identifier = GenerateUniqueId(tag);
             }
         }
 
@@ -2008,7 +2030,7 @@ namespace NSS.Blast.Compiler
             if (node.IsScriptVariable) return true;
             if (node.constant_op != blast_operation.nop) return true;
 
-            return false; 
+            return false;
         }
 
         /// <summary>
@@ -2024,17 +2046,17 @@ namespace NSS.Blast.Compiler
             if (ChildCount <= 0) return false;
             if (string.IsNullOrWhiteSpace(identifier)) return false; // or should we assert as this is a buggy thing to do.. 
 
-            identifier = identifier.Trim(); 
-            for(int i = 0; i < ChildCount; i++)
+            identifier = identifier.Trim();
+            for (int i = 0; i < ChildCount; i++)
             {
                 node c = children[i];
-                if(c.type == nodetype.inline_function)
+                if (c.type == nodetype.inline_function)
                 {
-                    if (string.Compare(c.identifier, identifier, true) == 0) return true; 
+                    if (string.Compare(c.identifier, identifier, true) == 0) return true;
                 }
             }
 
-            return false; 
+            return false;
         }
 
         /// <summary>
@@ -2044,13 +2066,13 @@ namespace NSS.Blast.Compiler
         /// <returns>true if the node has a parent with the given type</returns>
         public bool IsRootedIn(nodetype type)
         {
-            node current = this; 
-            while(current.parent != null)
+            node current = this;
+            while (current.parent != null)
             {
                 current = current.parent;
-                if (current.type == type) return true; 
+                if (current.type == type) return true;
             }
-            return false; 
+            return false;
         }
 
         /// <summary>
@@ -2062,4 +2084,111 @@ namespace NSS.Blast.Compiler
             return this;
         }
     }
+
+
+    /// <summary>
+    /// a node list cache, trashes the gc a little less using this, 
+    /// only caches small lists, 1 for each thread using this
+    /// </summary>
+    public static class NodeListCache 
+    {
+        const int CACHED_CAPACITY = 64;
+        [ThreadStatic]
+        private static List<node> CachedInstance;
+
+        /// <summary>
+        /// get a new list of desired capacity
+        /// </summary>
+        public static List<node> Acquire(int capacity = CACHED_CAPACITY)
+        {
+            if (capacity <= CACHED_CAPACITY)
+            {
+                List<node> list = CachedInstance;
+                if (list != null)
+                {
+                    if (capacity <= list.Capacity)
+                    {
+                        CachedInstance = null;
+                        list.Clear();
+                        return list;
+                    }
+                }
+            }
+            return new List<node>(capacity);
+        }
+
+        /// <summary>
+        /// release the nodelist back to the static cache
+        /// </summary>
+        /// <param name="list"></param>
+        public static void Release(List<node> list)
+        {
+            if (list.Capacity <= CACHED_CAPACITY)
+            {
+                CachedInstance = list;
+            }
+        }
+
+        /// <summary>
+        /// release the list and return its contents in an array
+        /// </summary>
+        public static node[] ReleaseArray(List<node> list)
+        {
+            if (list.Capacity <= CACHED_CAPACITY)
+            {
+                CachedInstance = list;
+            }
+            return list.ToArray();
+        }
+    }
+
+
+    /// <summary>
+    /// provide some extensions on list, using list as stack we hit the cache more
+    /// </summary>
+    public static class NodeListExtensions
+    {
+        /// <summary>
+        /// push a node to the end of the list 
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="node"></param>
+        public static void Push(this List<node> list, node node)
+        {
+            list.Add(node); 
+        }
+
+        /// <summary>
+        /// push a list of nodes to the end of the list 
+        /// - this reverses the input node order befor adding them to the end to preserve pop order
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="nodes"></param>
+        public static void PushRange(this List<node> list, IEnumerable<node> nodes)
+        {
+            list.AddRange(nodes.Reverse());
+        }
+
+        /// <summary>
+        /// try to pop a node from the end of the list 
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        public static bool TryPop(this List<node> list, out node node)
+        { 
+            if(list.Count > 0)
+            {
+                node = list[list.Count - 1];
+                list.RemoveAt(list.Count - 1);
+                return true; 
+            }
+
+            node = null;
+            return false; 
+        }
+    }
+
+
+
 }

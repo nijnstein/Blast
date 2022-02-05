@@ -1813,7 +1813,7 @@ namespace NSS.Blast.Compiler.Stage
                             //
                             // ! possible sequence in open indexer 
                             // 
-                            n_id = n_id.AppendIndexer(BlastScriptToken.Identifier, tokens[idx].Item2);
+                            n_id = n_id.parent.AppendIndexer(BlastScriptToken.Identifier, tokens[idx].Item2);
                             idx++;
                             last_is_dot_indexer = false;
                         }
@@ -1837,7 +1837,7 @@ namespace NSS.Blast.Compiler.Stage
                             //
                             // ! possible sequence in open indexer 
                             // 
-                            n_id = n_id.AppendIndexer(tokens[idx].Item1, tokens[idx].Item2);
+                            n_id.AppendIndexer(tokens[idx].Item1, tokens[idx].Item2);
                             idx++;
                             last_is_dot_indexer = false;
                         }
@@ -1907,6 +1907,11 @@ namespace NSS.Blast.Compiler.Stage
                         // set the identifier of the assignee
                         ast_node.identifier = param.identifier;
                         ast_node.variable = param.variable;
+                        // take indexers from the first child / assignee if any 
+                        if (ast_node.FirstChild.HasIndexers)
+                        {
+                            ast_node.indexers = ast_node.FirstChild.indexers; 
+                        }                         
                         // remove the first 2 child nodes, these are the id = and can now be omitted
                         ast_node.children.RemoveRange(0, 2);
                     }

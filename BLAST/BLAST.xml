@@ -1,11 +1,4 @@
 <?xml version="1.0"?>
-<!--
-Copyright © 2022 Rob Lemmens - rob.lemmens.s31@gmail.com
-Unauthorized copying of this file, via any medium is strictly prohibited
-Proprietary and confidential
--->
-
-
 <doc>
     <assembly>
         <name>BLAST</name>
@@ -738,6 +731,16 @@ Proprietary and confidential
             <param name="offset">the offset into output from where to start writing output data</param>
             <returns>true if ok, false on errors</returns>
         </member>
+        <member name="M:NSS.Blast.BlastScript.GetDataPointer(System.Single*@,System.Int32@)">
+            <summary>
+            get a direct pointer to the data in the package 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.GetDataPointer(NSS.Blast.BlastPackageData@,System.Single*@,System.Int32@)">
+            <summary>
+            get a direct pointer to the data in the package 
+            </summary>
+        </member>
         <member name="T:NSS.Blast.Compiler.Stage.BlastCompilerStageType">
             <summary>
             the types of compiler stages that run in sequence to produce the output
@@ -1300,14 +1303,24 @@ Proprietary and confidential
             - re-use variables as much as possible  
             </summary>
         </member>
-        <member name="T:NSS.Blast.Compiler.Stage.IMJumpLabel">
-            <summary>
-            a jump label, for help keeping track of jump targets 
-            </summary>
-        </member>
         <member name="T:NSS.Blast.Compiler.Stage.IMByteCode">
             <summary>
             intermediate bytecode - can contain additional data
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.IMByteCode.code">
+            <summary>
+            the bytecode
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.IMByteCode.op">
+            <summary>
+            possible translation
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.IMByteCode.ToString">
+            <summary>
+            
             </summary>
         </member>
         <member name="T:NSS.Blast.Compiler.Stage.IMByteCodeList">
@@ -1322,7 +1335,7 @@ Proprietary and confidential
             after that following stages might run using multithreading on the segments 
             </summary>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.IMByteCodeList.Add(System.Byte,NSS.Blast.Compiler.Stage.IMJumpLabel)">
+        <member name="M:NSS.Blast.Compiler.Stage.IMByteCodeList.Add(System.Byte,NSS.Blast.Compiler.IMJumpLabel)">
             <summary>
             add code to list
             </summary>
@@ -1330,7 +1343,7 @@ Proprietary and confidential
             <param name="label">optional jump label</param>
             <returns>returns index of opcode</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.IMByteCodeList.Add(NSS.Blast.blast_operation,NSS.Blast.Compiler.Stage.IMJumpLabel)">
+        <member name="M:NSS.Blast.Compiler.Stage.IMByteCodeList.Add(NSS.Blast.blast_operation,NSS.Blast.Compiler.IMJumpLabel)">
             <summary>
             add op to code list
             </summary>
@@ -1341,6 +1354,16 @@ Proprietary and confidential
         <member name="M:NSS.Blast.Compiler.Stage.IMByteCodeList.ReduceSegments">
             <summary>
             add all segments to this list clearing the segment list afterwards 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.IMByteCodeList.Item(System.Int32)">
+            <summary>
+            get opcode at index
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.Stage.IMByteCodeList.Count">
+            <summary>
+            get count of opcodes
             </summary>
         </member>
         <member name="T:NSS.Blast.Compiler.Stage.BlastOptimizer">
@@ -1794,6 +1817,59 @@ Proprietary and confidential
             </summary>
             <param name="data"></param>
             <param name="n"></param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.ClassifyIndexer(NSS.Blast.Compiler.node,NSS.Blast.blast_operation@,System.Byte@)">
+            <summary>
+            classify the indexers on a node
+            </summary>
+            <remarks>
+            
+            !!!! currently supports the following indexes only:
+            
+            .[x|y|z|w]
+            .[r|g|b|a]
+            
+            </remarks>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.transform_indexer(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+            <summary>
+            only call this on nodes that actually have an indexer, for now create functions 
+            for indices, we could allow the interpretor to directly index it but then we would
+            lose all debugging features (we would get invalid metadata types on indexing it,
+            because we index a f4 for example expecting a f1 back, the interpretor has no knowledge 
+            of indexers and for now i'd like to keep it like that)
+            </summary>
+            <param name="data"></param>
+            <param name="n"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.transform_indexers(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+            <summary>
+            find and transform all indexers
+            </summary>
+            <param name="data"></param>
+            <param name="ast_root"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.transform(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+            <summary>
+            run transform depending on nodetype 
+            - TODO -> would be nice if this all returned errors.. 
+            </summary>
+            <param name="data"></param>
+            <param name="n"></param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
+            <summary>
+            execute the transform stage:
+            - merge compounds
+            - transform for loops => while
+            - transform switch => ifthen 
+            - transfrom inlined functions 
+            - transform indexers
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
         </member>
         <member name="T:NSS.Blast.Compiler.BlastCompiler">
              <summary>
@@ -2752,6 +2828,56 @@ Proprietary and confidential
             skip compiling this node 
             </summary>
         </member>
+        <member name="T:NSS.Blast.Compiler.NodeListCache">
+            <summary>
+            a node list cache, trashes the gc a little less using this, 
+            only caches small lists, 1 for each thread using this
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.NodeListCache.Acquire(System.Int32)">
+            <summary>
+            get a new list of desired capacity
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.NodeListCache.Release(System.Collections.Generic.List{NSS.Blast.Compiler.node})">
+            <summary>
+            release the nodelist back to the static cache
+            </summary>
+            <param name="list"></param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.NodeListCache.ReleaseArray(System.Collections.Generic.List{NSS.Blast.Compiler.node})">
+            <summary>
+            release the list and return its contents in an array
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.Compiler.NodeListExtensions">
+            <summary>
+            provide some extensions on list, using list as stack we hit the cache more
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.NodeListExtensions.Push(System.Collections.Generic.List{NSS.Blast.Compiler.node},NSS.Blast.Compiler.node)">
+            <summary>
+            push a node to the end of the list 
+            </summary>
+            <param name="list"></param>
+            <param name="node"></param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.NodeListExtensions.PushRange(System.Collections.Generic.List{NSS.Blast.Compiler.node},System.Collections.Generic.IEnumerable{NSS.Blast.Compiler.node})">
+            <summary>
+            push a list of nodes to the end of the list 
+            - this reverses the input node order befor adding them to the end to preserve pop order
+            </summary>
+            <param name="list"></param>
+            <param name="nodes"></param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.NodeListExtensions.TryPop(System.Collections.Generic.List{NSS.Blast.Compiler.node},NSS.Blast.Compiler.node@)">
+            <summary>
+            try to pop a node from the end of the list 
+            </summary>
+            <param name="list"></param>
+            <param name="node"></param>
+            <returns></returns>
+        </member>
         <member name="T:NSS.Blast.Compiler.IBlastCompilationData">
             <summary>
             interface into compilationdata, we should restrict outside use a bit via this 
@@ -3384,6 +3510,21 @@ Proprietary and confidential
         <member name="M:NSS.Blast.Compiler.BlastIntermediate.Execute(System.IntPtr@,System.Boolean)">
             <summary>
             execute the intermediate for validation and stack info 
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.Compiler.JumpLabelType">
+            <summary>
+            jump label types, used for reference during compilation 
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.Compiler.IMJumpLabel">
+            <summary>
+            a jump label, for help keeping track of jump targets 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.IMJumpLabel.ToString">
+            <summary>
+            tostring override
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastCompilerOptions">
@@ -4120,6 +4261,26 @@ Proprietary and confidential
             print(q.w); // 123
             </summary>
         </member>
+        <member name="T:NSS.Blast.ListCache`1">
+            <summary>
+             a static list cache, caches only a single list of a preset small capacity
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.ListCache`1.Acquire(System.Int32)">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.ListCache`1.Release(System.Collections.Generic.List{`0})">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.ListCache`1.ReleaseArray(System.Collections.Generic.List{`0})">
+            <summary>
+            
+            </summary>
+        </member>
         <member name="T:NSS.Blast.StringBuilderCache">
             <summary>
             copied with minor changes from ms cli reference source  
@@ -4214,6 +4375,19 @@ Proprietary and confidential
         <member name="F:NSS.Blast.BlastVariableDataType.ID64">
             <summary>
             long datatype 
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.vector_index">
+            <summary>
+            when encoding xxx xxy etc:
+            
+            byte: 00112233
+            
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.floatindex">
+            <summary>
+            combination of vectorsize and datatype 
             </summary>
         </member>
         <member name="T:NSS.Blast.blast_operation">
@@ -4499,6 +4673,31 @@ Proprietary and confidential
         <member name="F:NSS.Blast.blast_operation.trunc">
             <summary>
             truncate float into integer part only 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.index_x">
+            <summary>
+            index the x component of a vector
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.index_y">
+            <summary>
+            index the y component of a vector
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.index_z">
+            <summary>
+            index the z component of a vector
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.index_w">
+            <summary>
+            index the w component of a vector 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.index_n">
+            <summary>
+            index the vector of n size with an m size indexer: x, xy, zzz etc. 
             </summary>
         </member>
         <member name="F:NSS.Blast.blast_operation.pi">
@@ -5271,6 +5470,16 @@ Proprietary and confidential
             error failed to remap identifiers in inlined function segment  
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastError.error_indexer_transform">
+            <summary>
+            error transforming node indexers 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_assign_component_from_vector">
+            <summary>
+            error in assign, cannot set a vector component from a multicomponent vector
+            </summary>
+        </member>
         <member name="T:NSS.Blast.BlastPackageMode">
             <summary>
             Blast script packaging types 
@@ -5379,26 +5588,6 @@ Proprietary and confidential
             <summary>
             data for ssmd operation modes: data-stack only
             - only used as pointer, fields handy in debugger
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.a">
-            <summary>
-            fictional - for debug view only
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.b">
-            <summary>
-            fictional - for debug view only
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.c">
-            <summary>
-            fictional - for debug view only
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.d">
-            <summary>
-            fictional - for debug view only
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastPackageData">
@@ -5947,14 +6136,6 @@ Proprietary and confidential
         <member name="T:NSS.Blast.Interpretor.BlastInterpretor">
             <summary>
             
-              V2 - use state machine instead of get_compound_result and internal grow-vector / operation sequence loop, should reduce load a lot on handling vectors 
-            
-              state ---- read root statement ----\ 
-                  \------read compound ----------/
-                   \-----grow value-------------/
-                    \-----get result ----------/
-            
-            
             </summary>
         </member>
         <member name="F:NSS.Blast.Interpretor.BlastInterpretor.opt_value">
@@ -6028,6 +6209,7 @@ Proprietary and confidential
             <param name="_code">code pointer</param>
             <param name="_data">datastack pointer</param>
             <param name="_metadata">metadata</param>
+            <param name="initial_stack_offset"></param>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.execute(NSS.Blast.BlastEngineData*,System.IntPtr,System.IntPtr,System.Boolean)">
             <summary>
@@ -6106,6 +6288,31 @@ Proprietary and confidential
             </summary>
             <param name="code_pointer"></param>
             <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaDataSize(System.Byte*@,System.Byte@)">
+            <summary>
+            get the size of a vector from metadata
+            </summary>
+            <param name="metadata">the metadata segment</param>
+            <param name="offset">the variable offset</param>
+            <returns>size of vector, 0 means 4..</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaDataType(System.Byte*@,System.Byte@)">
+            <summary>
+            get datatype of variable from metadata
+            </summary>
+            <param name="metadata">the metadata segment</param>
+            <param name="offset">the variable offset</param>
+            <returns>the datatype</returns>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.GetMetaData(System.Byte*@,System.Byte@,System.Byte@,NSS.Blast.BlastVariableDataType@)">
+            <summary>
+            get datatype and vectorsize of a variable from metadata 
+            </summary>
+            <param name="metadata">the metadata segment</param>
+            <param name="offset">offset of variable</param>
+            <param name="size">output vectorsize</param>
+            <param name="type">output parametertype</param>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.yield(Unity.Mathematics.float4)">
             <summary>

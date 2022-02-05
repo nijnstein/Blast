@@ -590,6 +590,56 @@ namespace NSS.Blast
             return true;
         }
 
+
+#if !STANDALONE_VSBUILD
+
+        /// <summary>
+        /// get a direct pointer to the data in the package 
+        /// </summary>
+        /// <param name="package"></param>
+        /// <param name="data"></param>
+        /// <param name="data_length"></param>
+        /// <returns></returns>
+        [BurstCompatible]
+        static unsafe public bool GetDataArray(in BlastPackageData package, out NativeArray<float> data)
+        {
+
+        cast a datasegment pointer to the native array 
+
+        }
+
+#endif 
+
+
+        /// <summary>
+        /// get a direct pointer to the data in the package 
+        /// </summary>
+        unsafe public bool GetDataPointer(out float* data, out int data_length)
+        {
+            return GetDataPointer(Package.Package, out data, out data_length);
+        }
+
+        /// <summary>
+        /// get a direct pointer to the data in the package 
+        /// </summary>
+        [BurstCompatible]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static unsafe public bool GetDataPointer(in BlastPackageData package, out float* data, out int data_length)
+        {
+            if (package.IsAllocated)
+            {
+                data = package.Data;
+                data_length = package.DataSize >> 2; // elementsize 4 floats 
+                return true;
+            }
+            else
+            {
+                data = null;
+                data_length = 0;
+                return false; 
+            }
+        }
+
         #endregion 
     }
 

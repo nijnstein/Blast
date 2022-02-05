@@ -108,6 +108,34 @@ namespace NSS.Blast
     }
 
     /// <summary>
+    /// when encoding xxx xxy etc:
+    /// 
+    /// byte: 00112233
+    /// 
+    /// </summary>
+    public enum vector_index : byte
+    {
+        x = 0, y = 1, z = 2, w = 3
+    }
+
+    /// <summary>
+    /// combination of vectorsize and datatype 
+    /// </summary>
+    public enum floatindex : byte
+    {
+       float4 = 0, // float 4 base 
+       float1 = 1, // float 1 base 
+       float2 = 2, // float 2 base 
+       float3 = 3, // float 3 base 
+
+       float4x, float4y, float4z, float4w,
+       float3x, float3y, float3w,
+       float2x, float2y
+    }
+
+
+
+    /// <summary>
     /// instruction set bs1
     /// </summary>
     public enum blast_operation : byte
@@ -396,11 +424,31 @@ namespace NSS.Blast
         /// </summary>
         trunc,
 
-        reserved1,
-        reserved2,
-        reserved3,
-        reserved4,
-        reserved5,
+        /// <summary>
+        /// index the x component of a vector
+        /// </summary>
+        index_x,
+
+        /// <summary>
+        /// index the y component of a vector
+        /// </summary>
+        index_y,
+
+        /// <summary>
+        /// index the z component of a vector
+        /// </summary>
+        index_z,
+        
+        /// <summary>
+        /// index the w component of a vector 
+        /// </summary>
+        index_w,
+
+        /// <summary>
+        /// index the vector of n size with an m size indexer: x, xy, zzz etc. 
+        /// </summary>
+        index_n,
+
         reserved6,
         reserved7,
         reserved8,
@@ -976,6 +1024,66 @@ namespace NSS.Blast
         }
     }
 
+    namespace Compiler
+    {
+        /// <summary>
+        /// jump label types, used for reference during compilation 
+        /// </summary>
+        internal enum JumpLabelType
+        {
+            Jump,
+            Offset,
+            Label
+        }
+
+
+
+        /// <summary>
+        /// a jump label, for help keeping track of jump targets 
+        /// </summary>
+        public class IMJumpLabel
+        {
+            internal string id { get; private set; }
+            internal JumpLabelType type { get; private set; }
+            internal bool is_label => type == JumpLabelType.Label;
+            internal bool is_offset => type == JumpLabelType.Offset;
+            internal bool is_jump => type == JumpLabelType.Jump;
+            internal IMJumpLabel(string _id, JumpLabelType _type)
+            {
+                id = _id;
+                type = _type;
+            }
+
+            static internal IMJumpLabel Jump(string _id)
+            {
+                return new IMJumpLabel(_id, JumpLabelType.Jump);
+            }
+            static internal IMJumpLabel Label(string _id)
+            {
+                return new IMJumpLabel(_id, JumpLabelType.Label);
+            }
+            static internal IMJumpLabel Offset(string _id)
+            {
+                return new IMJumpLabel(_id, JumpLabelType.Offset);
+            }
+
+            /// <summary>
+            /// tostring override
+            /// </summary>
+            public override string ToString()
+            {
+                switch (type)
+                {
+                    case JumpLabelType.Offset: return $"offset: {id}";
+                    case JumpLabelType.Jump: return $"jump to: {id}";
+
+                    default:
+                    case JumpLabelType.Label: return $"label: {id}";
+                }
+            }
+        }
+    }
+
 
     /// <summary>
     /// Errorcodes that can be returned by blast 
@@ -1234,7 +1342,15 @@ namespace NSS.Blast
         /// <summary>
         /// error failed to remap identifiers in inlined function segment  
         /// </summary>
-        error_inlinefunction_failed_to_remap_identifiers = -62
+        error_inlinefunction_failed_to_remap_identifiers = -62,
+        /// <summary>
+        /// error transforming node indexers 
+        /// </summary>
+        error_indexer_transform = -63,
+        /// <summary>
+        /// error in assign, cannot set a vector component from a multicomponent vector
+        /// </summary>
+        error_assign_component_from_vector = -64,
     }
 
 }
