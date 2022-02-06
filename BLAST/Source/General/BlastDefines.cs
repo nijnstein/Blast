@@ -720,12 +720,42 @@ namespace NSS.Blast
         ceilpow2,
 
 
+        // <summary>
+        // snap value to its closest interval
+        // </summary>
+        // <remarks>
+        // // Snaps the value x to the current increment of step. Ex: snap(44, 5) results in 145.
+        // <code>
+        //     function snap(x, step) {
+        //         return Math.round(x / step) * step;
+        //     }
+        //</code>
+        //</remarks>
+        //snap,
+
+
+
         // step, smoothstep? 
 
 
+        /// <summary>
+        /// log stack contents in debugstream
+        /// </summary>
         debugstack = 252,
+
+        /// <summary>
+        /// log variable contents in debugstream 
+        /// </summary>
         debug = 253,
+
+        /// <summary>
+        /// call an external function, opcode is followed by 4 byte id 
+        /// TODO: update to also have a callsmall and call medium with 1 and 2 bytes for external function index? 
+        /// </summary>
         call = 254, // call external
+        /// <summary>
+        /// extensions on extensions... better use another ex in blast_operation, save 1 byte if ever needed
+        /// </summary>
         ex = 255 // extend further if ever needed. 
     }
 

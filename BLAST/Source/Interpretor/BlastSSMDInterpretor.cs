@@ -932,6 +932,91 @@ namespace NSS.Blast.SSMD
         }
 
 
+        /// <summary>
+        /// pop operation [stack/constant/variabledata] and move it into dataindex 
+        /// - this is the indexed version of popinto 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="code_pointer"></param>
+        /// <param name="dataindex"></param>
+        /// <param name="offsetindex"></param>
+        /// <param name="vector_size"></param>
+        void pop_fx_into_indexed(in int code_pointer, in byte dataindex, in byte offsetindex, in byte vector_size)
+        {
+            blast_operation c = (blast_operation)code[code_pointer];
+            if (c == blast_operation.pop)
+            {
+                //
+                // STACK operation 
+                //
+
+                stack_offset = stack_offset - vector_size;
+
+#if DEVELOPMENT_BUILD
+                // validate the stack
+                BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset));
+                int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset));
+                if (size != vector_size || type != BlastVariableDataType.Numeric)
+                {
+                    Debug.LogError($"blast.ssmd.pop_fx_into_indexed(assignee = {dataindex}) -> stackdata mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at stack offset {stack_offset}");
+                    return;
+                }
+#endif
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    ((float*)data[i])[offsetindex] = ((float*)stack[i])[stack_offset];
+                }
+            }
+            else
+            if (c >= blast_operation.id)
+            {
+                //
+                // DATASEG operation
+                // 
+                int source_index = (int)c - (int)BlastInterpretor.opt_id;
+                if (source_index == dataindex)
+                {
+                    // dont need to move anything .. 
+                    // if this would ever be the case, compiler should be checked
+                    return;
+                }
+
+#if DEVELOPMENT_BUILD
+                // validate source index
+                BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(source_index));
+                int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(source_index));
+                if (size != vector_size || type != BlastVariableDataType.Numeric)
+                {
+                    Debug.LogError($"blast.ssmd.pop_fx_into_indexed(assignee = {dataindex}) -> datasegment mismatch, expecting numeric of size {vector_size}, found {type} of size {size} at stack offset {stack_offset}");
+                    return;
+                }
+#endif
+
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    ((float*)data[i])[offsetindex] = ((float*)data[i])[source_index];
+                }
+            }
+            else
+            if (c >= blast_operation.pi)
+            {
+                //
+                // CONSTANT operation                         
+                //
+
+                // set a vector of max size, and get a pointer to it
+                // regardless of vector_size(T) we still would write correct value 
+                float constant = engine_ptr->constants[(int)c];
+                {
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        ((float*)data[i])[offsetindex] = constant;
+                    }
+                }
+            }
+        }
+
+
 
         /// <summary>
         /// pop a float from stack and assign it to dataindex inside a datasegment 
@@ -1000,7 +1085,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// pop a float and assign it to dataindex inside a datasegment, if there is a minus sign at the poplocation pop the next and keep the sign
         /// </summary>
-        void pop_f1_into_with_minus(in int code_pointer, byte dataindex, ref int cp)
+        void pop_f1_into_with_minus(in int code_pointer, byte dataindex, ref int cp, byte indexoffset, bool is_indexed)
         {
             BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, dataindex);
             int datasize = BlastInterpretor.GetMetaDataSize(metadata, dataindex);
@@ -1028,6 +1113,8 @@ namespace NSS.Blast.SSMD
                 }
 #endif
                 // variable acccess: copy variable to variable 
+                if (is_indexed) dataindex = indexoffset; 
+
                 if (!minus)
                 {
                     for (int i = 0; i < ssmd_datacount; i++)
@@ -1059,6 +1146,7 @@ namespace NSS.Blast.SSMD
                 // stack pop 
                 stack_offset = stack_offset - 1;
 
+                if (is_indexed) dataindex = indexoffset; 
                 if (!minus)
                 {
                     for (int i = 0; i < ssmd_datacount; i++)
@@ -1079,6 +1167,7 @@ namespace NSS.Blast.SSMD
             {
                 float constant = engine_ptr->constants[c];
                 constant = math.select(constant, -constant, minus);
+                if (is_indexed) dataindex = indexoffset;
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
                     ((float*)data[i])[dataindex] = constant;
@@ -6563,6 +6652,7 @@ namespace NSS.Blast.SSMD
 
 
         #endregion
+
         #region fused substract multiply actions
 
         /// <summary>
@@ -6614,6 +6704,82 @@ namespace NSS.Blast.SSMD
 
         #endregion
 
+        #region indexers
+
+        void get_index_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register, byte index)
+        {
+            BlastVariableDataType datatype;
+            pop_op_meta(code[code_pointer + 1], out datatype, out vector_size);
+
+#if DEVELOPMENT_BUILD || TRACE
+            if (datatype != BlastVariableDataType.Numeric)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.index: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                return;
+            }
+            if (math.select(vector_size, 4, vector_size == 0) > index + 1)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.ïndex: indexing error, index: {index}, vectorsize: {vector_size}");  
+                return;
+            }
+#endif
+
+            switch (vector_size)
+            {
+                case 1:
+                    {
+                        pop_fx_into<float>(code_pointer + 1, (float*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = ((float*)temp)[i];
+                        }
+                    }
+                    break;
+
+                case 2:
+                    {
+                        pop_fx_into<float2>(code_pointer + 1, (float2*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = ((float2*)temp)[0][index];
+                        }
+                    }
+                    break;
+
+                case 3:
+                    {
+                        pop_fx_into<float3>(code_pointer + 1, (float3*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = ((float3*)temp)[0][index];
+                        }
+                    }
+                    break;
+
+                case 0:
+                case 4:
+                    {
+                        vector_size = 4;
+                        pop_fx_into<float4>(code_pointer + 1, (float4*)temp);
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = ((float4*)temp)[0][index];
+                        }
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.index: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
+                    break;
+#endif
+            }
+            code_pointer += 1;
+            vector_size = 1; 
+        }
+
+
+        #endregion 
         #endregion
 
         #region External Function Handler 
@@ -6840,6 +7006,11 @@ namespace NSS.Blast.SSMD
                 case blast_operation.adda: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.add); break;
                 case blast_operation.suba: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.substract); break;
                 case blast_operation.diva: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.diva); break;
+
+                case blast_operation.index_x: get_index_result(temp, ref code_pointer, ref vector_size, f4_result, 0); break;
+                case blast_operation.index_y: get_index_result(temp, ref code_pointer, ref vector_size, f4_result, 1); break;
+                case blast_operation.index_z: get_index_result(temp, ref code_pointer, ref vector_size, f4_result, 2); break;
+                case blast_operation.index_w: get_index_result(temp, ref code_pointer, ref vector_size, f4_result, 3); break;
 
                 case blast_operation.ex_op:
                     {
@@ -7407,18 +7578,40 @@ namespace NSS.Blast.SSMD
                     }
                 }
 
-                // apply minus (if in sequence and not already applied)...  
-                if (minus && !last_is_bool_or_math_operation)
+                // apply minus|not (if in sequence and not already applied)...  
+                if ((minus || not) && !last_is_bool_or_math_operation && prev_op != 0)
                 {
-                    switch ((BlastVectorSizes)vector_size)
+#if STANDALONE_VSBUILD
+                    if (minus && not)
                     {
-                        case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = -f4_result[i].x; break;
-                        case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = -f4_result[i].xy; break;
-                        case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = -f4_result[i].xyz; break;
-                        case 0:
-                        case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = -f4_result[i]; break;
+                        Debug.LogError("blast.ssmd.interpretor: minus and not together active: error");
                     }
-                    minus = false;
+#endif
+
+                    if (minus)
+                    {
+                        switch ((BlastVectorSizes)vector_size)
+                        {
+                            case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = -f4_result[i].x; break;
+                            case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = -f4_result[i].xy; break;
+                            case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = -f4_result[i].xyz; break;
+                            case 0:
+                            case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = -f4_result[i]; break;
+                        }
+                        minus = false;
+                    }
+                    else 
+                    {
+                        switch ((BlastVectorSizes)vector_size)
+                        {
+                            case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = math.select(0f, 1f, f4_result[i].x == 0); break;
+                            case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = math.select((float2)0f, (float2)1f, f4_result[i].xy == 0); break;
+                            case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = math.select((float3)0f, (float3)1f, f4_result[i].xyz == 0); break;
+                            case 0:
+                            case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = math.select((float4)0f, (float4)1f, f4_result[i].xyzw == 0); break;
+                        }
+                        not = false;
+                    }
                 }
 
                 // reset current operation if last thing was a value 
@@ -7613,20 +7806,88 @@ namespace NSS.Blast.SSMD
 
         #region Assign[s|f] operation handlers
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void determine_assigned_indexer(ref int code_pointer, ref byte assignee_op, out bool is_indexed, out blast_operation indexer)
+        {
+            is_indexed = assignee_op < BlastInterpretor.opt_id;
+            indexer = (blast_operation)math.select(0, assignee_op, is_indexed);
+            code_pointer = math.select(code_pointer, code_pointer + 1, is_indexed);
+            assignee_op = code[code_pointer];  // reading twice will probably be a lot faster then if() could test sometime.. todo
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        byte get_offset_from_indexed(in byte assignee, in blast_operation indexer, in bool is_indexed)
+        {
+            // if an indexer is set, then get offset (x = 0 , y = 1 etc) and add that to assignee
+            return (byte)math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
+        }
+
+
+        /// <summary>
+        /// assign single value 
+        /// </summary>
         BlastError assigns(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
         {
-            // assign 1 val;ue
+            // assign 1 value
             byte assignee_op = code[code_pointer];
+
+            // determine indexer 
+            bool is_indexed;
+            blast_operation indexer;
+            determine_assigned_indexer(ref code_pointer, ref assignee_op, out is_indexed, out indexer);
+
+            // get assignee
             byte assignee = (byte)(assignee_op - BlastInterpretor.opt_id);
             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
+            // the assigned must have room for the indexer if indexed 
+
+#if DEVELOPMENT_BUILD || TRACE
+            // the compiler should have cought this, if it didt wel that would be noticed before going in release
+            // so we define this only for debug saving the if
+            // cannot set a component from a vector (yet)
+            if (vector_size != 1 && is_indexed)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.assignsingle: cannot set component from vector at #{code_pointer}, component: {indexer}");
+                return BlastError.error_assign_component_from_vector;
+            }
+#endif 
+
+            // set at index depending on size of the assigned
             switch (s_assignee)
             {
                 case 1: pop_fx_into<float>(code_pointer + 1, assignee); vector_size = 1; break;
-                case 2: pop_fx_into<float2>(code_pointer + 1, assignee); vector_size = 2; break;
-                case 3: pop_fx_into<float3>(code_pointer + 1, assignee); vector_size = 3; break;
+
+                case 2:
+                    pop_fx_into_indexed(
+                        code_pointer + 1, 
+                        assignee,
+                        get_offset_from_indexed(in assignee, in indexer, in is_indexed),
+                        1
+                    ); 
+                    vector_size = 2; 
+                    break;
+
+                case 3:
+                    pop_fx_into_indexed(
+                        code_pointer + 1,
+                        assignee,
+                        get_offset_from_indexed(in assignee, in indexer, in is_indexed),
+                        1
+                    ); 
+                    vector_size = 3; 
+                    break;
+
                 case 0:
-                case 4: pop_fx_into<float4>(code_pointer + 1, assignee); vector_size = 4; break;
+                case 4:
+                    pop_fx_into_indexed(
+                       code_pointer + 1, 
+                       assignee,
+                       get_offset_from_indexed(in assignee, in indexer, in is_indexed),
+                       1
+                    ); 
+                    vector_size = 4; 
+                    break;
             }
 
             code_pointer += 2;
@@ -7635,12 +7896,21 @@ namespace NSS.Blast.SSMD
         }
 
 
+        /// <summary>
+        /// assign result of a sequence 
+        /// </summary>
         BlastError assign(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
         {
             // advance 1 if on assign 
             code_pointer += math.select(0, 1, code[code_pointer] == (byte)blast_operation.assign);
-
             byte assignee_op = code[code_pointer];
+
+            // determine indexer 
+            bool is_indexed;
+            blast_operation indexer;
+            determine_assigned_indexer(ref code_pointer, ref assignee_op, out is_indexed, out indexer);
+            
+            // get assignee
             byte assignee = (byte)(assignee_op - BlastInterpretor.opt_id);
 
             // advance 2 if on begin 1 otherwise
@@ -7654,11 +7924,20 @@ namespace NSS.Blast.SSMD
             BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size);
             if (res != BlastError.success)
             {
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                 Debug.LogError($"blast.ssmd.assign: failed to read compound data for assign operation at codepointer {code_pointer}");
 #endif
                 return res;
             }
+
+#if DEVELOPMENT_BUILD || TRACE
+            // compiler should have cought this 
+            if (vector_size != 1 && is_indexed)
+            {
+                Debug.LogError($"blast.ssmd.assign: cannot set component from vector at #{code_pointer}, component: {indexer}");
+                return BlastError.error_assign_component_from_vector;
+            }
+#endif 
 
             // set assigned data fields in stack 
             switch ((byte)vector_size)
@@ -7667,18 +7946,19 @@ namespace NSS.Blast.SSMD
                     //if(Unity.Burst.CompilerServices.Hint.Unlikely(s_assignee != 1))
                     if (s_assignee != 1)
                     {
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                         Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
 #endif
                         return BlastError.error_assign_vector_size_mismatch;
                     }
-                    set_data_from_register_f1(assignee);
+                    set_data_from_register_f1(
+                        get_offset_from_indexed(in assignee, in indexer, in is_indexed)); 
                     break;
 
                 case (byte)BlastVectorSizes.float2:
                     if (s_assignee != 2)
                     {
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                         Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
 #endif
                         return BlastError.error_assign_vector_size_mismatch;
@@ -7689,7 +7969,7 @@ namespace NSS.Blast.SSMD
                 case (byte)BlastVectorSizes.float3:
                     if (s_assignee != 3)
                     {
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD ||TRACE
                         Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
 #endif
                         return BlastError.error_assign_vector_size_mismatch;
@@ -7701,7 +7981,7 @@ namespace NSS.Blast.SSMD
                 case (byte)BlastVectorSizes.float4:
                     if (s_assignee != 4)
                     {
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                         Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
 #endif
                         return BlastError.error_assign_vector_size_mismatch;
@@ -7710,7 +7990,7 @@ namespace NSS.Blast.SSMD
                     break;
 
                 default:
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                     Debug.LogError($"blast.ssmd.assign: vector size {vector_size} not allowed at codepointer {code_pointer}");
 #endif
                     return BlastError.error_unsupported_operation_in_root;
@@ -7723,6 +8003,13 @@ namespace NSS.Blast.SSMD
         {
             // get assignee 
             byte assignee_op = code[code_pointer];
+
+            // determine indexer 
+            bool is_indexed;
+            blast_operation indexer;
+            determine_assigned_indexer(ref code_pointer, ref assignee_op, out is_indexed, out indexer);
+
+            // get assignee index
             byte assignee = (byte)(assignee_op - BlastInterpretor.opt_id);
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -7735,6 +8022,15 @@ namespace NSS.Blast.SSMD
             code_pointer++;
 
 #if DEVELOPMENT_BUILD || TRACE
+            // compiler should have cought this 
+            if (vector_size != 1 && is_indexed)
+            {
+                Debug.LogError($"blast.ssmd.assignf: cannot set component from vector at #{code_pointer}, component: {indexer}");
+                return BlastError.error_assign_component_from_vector;
+            }
+#endif 
+
+#if DEVELOPMENT_BUILD || TRACE
             // 4 == 0 depending on decoding 
             s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
             if (s_assignee != vector_size)
@@ -7743,7 +8039,11 @@ namespace NSS.Blast.SSMD
                 return BlastError.error_assign_vector_size_mismatch;
             }
 #endif
-            set_data_from_register(vector_size, assignee, minus);
+            set_data_from_register(
+                vector_size, 
+                get_offset_from_indexed(in assignee, in indexer, in is_indexed), 
+                minus);
+
             return BlastError.success;
         }
 
@@ -7751,9 +8051,16 @@ namespace NSS.Blast.SSMD
         {
             // get assignee 
             byte assignee_op = code[code_pointer];
+
+            // determine indexer 
+            bool is_indexed;
+            blast_operation indexer;
+            determine_assigned_indexer(ref code_pointer, ref assignee_op, out is_indexed, out indexer);
+
+            // get assignee index
             byte assignee = (byte)(assignee_op - BlastInterpretor.opt_id);
 
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
             // check its size?? in debug only, functions return size in vector_size 
             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
@@ -7763,7 +8070,7 @@ namespace NSS.Blast.SSMD
             // CallExternalFunction(temp, ref code_pointer, ref vector_size, ref register);
             code_pointer++;
 
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
             // 4 == 0 depending on decoding 
             s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
             if (s_assignee != vector_size)
@@ -7773,25 +8080,57 @@ namespace NSS.Blast.SSMD
             }
 #endif
 
+#if DEVELOPMENT_BUILD || TRACE
+            // compiler should have cought this 
+            if (vector_size != 1 && is_indexed)
+            {
+                Debug.LogError($"blast.ssmd.assignf: cannot set component from vector at #{code_pointer}, component: {indexer}");
+                return BlastError.error_assign_component_from_vector;
+            }
+#endif 
 
-            set_data_from_register(vector_size, assignee, minus);
+            set_data_from_register(
+                vector_size,
+                get_offset_from_indexed(in assignee, in indexer, in is_indexed),
+                minus);
+
             return BlastError.success;
         }
 
         BlastError assignv(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
         {
             byte assignee_op = code[code_pointer];
+
+            // determine indexer 
+            bool is_indexed;
+            blast_operation indexer;
+            determine_assigned_indexer(ref code_pointer, ref assignee_op, out is_indexed, out indexer);
+
+            // get assignee index
             byte assignee = (byte)(assignee_op - BlastInterpretor.opt_id);
             vector_size = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
             code_pointer++;
 
+#if DEVELOPMENT_BUILD || TRACE
+            // compiler should have cought this 
+            if (vector_size != 1 && is_indexed)
+            {
+                Debug.LogError($"blast.ssmd.assignf: cannot set component from vector at #{code_pointer}, component: {indexer}");
+                return BlastError.error_assign_component_from_vector;
+            }
+#endif
+
             int cp = 0;
             switch (vector_size)
             {
                 case 1:
-                    pop_f1_into_with_minus(code_pointer, assignee, ref cp);
-                    // assignee[0] = pop_f1_with_minus(code_pointer, ref cp);
+                    pop_f1_into_with_minus(
+                        code_pointer, 
+                        assignee, 
+                        ref cp, 
+                        get_offset_from_indexed(in assignee, in indexer, in is_indexed),
+                        is_indexed);
                     code_pointer += 1 + cp;
                     break;
                 case 2:
@@ -7809,7 +8148,7 @@ namespace NSS.Blast.SSMD
                     break;
 
                 default:
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                     Debug.LogError($"Blast SSMD Interpretor: assignv error: vector size {vector_size} not supported");
 #endif
                     break;
@@ -7908,6 +8247,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.pushf:
                         if ((ires = (int)pushf(ref code_pointer, ref vector_size, temp)) < 0) return ires;
                         break;
+                    
                     //
                     // push the result from a compound directly onto the stack 
                     //

@@ -4875,6 +4875,27 @@
             get next power of 2 of value
             </summary>
         </member>
+        <member name="F:NSS.Blast.extended_blast_operation.debugstack">
+            <summary>
+            log stack contents in debugstream
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.extended_blast_operation.debug">
+            <summary>
+            log variable contents in debugstream 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.extended_blast_operation.call">
+            <summary>
+            call an external function, opcode is followed by 4 byte id 
+            TODO: update to also have a callsmall and call medium with 1 and 2 bytes for external function index? 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.extended_blast_operation.ex">
+            <summary>
+            extensions on extensions... better use another ex in blast_operation, save 1 byte if ever needed
+            </summary>
+        </member>
         <member name="T:NSS.Blast.BlastScriptToken">
             <summary>
             The tokens used in languageversions: BS1|BS2|BSSSDM1
@@ -7001,6 +7022,17 @@
             <param name="code_pointer"></param>
             <param name="dataindex"></param>
         </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into_indexed(System.Int32@,System.Byte@,System.Byte@,System.Byte@)">
+            <summary>
+            pop operation [stack/constant/variabledata] and move it into dataindex 
+            - this is the indexed version of popinto 
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="code_pointer"></param>
+            <param name="dataindex"></param>
+            <param name="offsetindex"></param>
+            <param name="vector_size"></param>
+        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_stack_fx_into``1(System.Int32@,System.Byte)">
             <summary>
             pop a float from stack and assign it to dataindex inside a datasegment 
@@ -7010,7 +7042,7 @@
             <param name="code_pointer"></param>
             <param name="dataindex"></param>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f1_into_with_minus(System.Int32@,System.Byte,System.Int32@)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f1_into_with_minus(System.Int32@,System.Byte,System.Int32@,System.Byte,System.Boolean)">
             <summary>
             pop a float and assign it to dataindex inside a datasegment, if there is a minus sign at the poplocation pop the next and keep the sign
             </summary>
@@ -7290,6 +7322,16 @@
             <summary>
             process a sequence of operations into a new register value 
             </summary>        
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.assigns(System.Int32@,System.Byte@,System.Void*)">
+            <summary>
+            assign single value 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.assign(System.Int32@,System.Byte@,System.Void*)">
+            <summary>
+            assign result of a sequence 
+            </summary>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.Execute(System.Byte*,System.Byte**,System.Int32,Unity.Mathematics.float4*)">
             <summary>
