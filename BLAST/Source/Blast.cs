@@ -282,7 +282,7 @@ namespace NSS.Blast
         /// the value used for invalid numerics 
         /// </summary>
         public const float InvalidNumeric = float.NaN;
-                        
+
         /// <summary>
         /// Pointer to native memory holding data used during interpretation:
         /// - function pointers
@@ -321,7 +321,7 @@ namespace NSS.Blast
         /// <returns>the blast struct</returns>
         public unsafe static Blast Create(Allocator allocator)
         {
-            return Create(null, allocator); 
+            return Create(null, allocator);
         }
 
 
@@ -344,7 +344,7 @@ namespace NSS.Blast
             // setup constant data 
             for (int b = 0; b < 256; b++)
             {
-                blast.data->constants[b] = Blast.GetConstantValue((blast_operation)b);
+                blast.data->constants[b] = Blast.GetConstantValueDefault((blast_operation)b);
             }
 
             // setup api 
@@ -360,12 +360,12 @@ namespace NSS.Blast
             }
 
             blast.API = api;
-            blast.data->FunctionCount = api.FunctionCount; 
+            blast.data->FunctionCount = api.FunctionCount;
             blast.data->Functions = api.Functions; // memory is just referenced, not copied 
 
             // we only allocate some memory for the intptr array
-            blast.data->FunctionPointers = (IntPtr*)UnsafeUtils.Malloc(sizeof(IntPtr) * api.FunctionCount, 8, blast.allocator); 
-            for(int i = 1; i < api.FunctionCount; i++)
+            blast.data->FunctionPointers = (IntPtr*)UnsafeUtils.Malloc(sizeof(IntPtr) * api.FunctionCount, 8, blast.allocator);
+            for (int i = 1; i < api.FunctionCount; i++)
             {
                 if (api.FunctionInfo[i] != null)
                 {
@@ -381,14 +381,14 @@ namespace NSS.Blast
             fsb.AppendLine("BLAST: known script functions: ");
             fsb.AppendLine();
             fsb.AppendLine($"{"Index".PadLeft(6)} {"FID".PadLeft(6)}   {"FunctionName".PadRight(32)} {"Operation".PadRight(12)} {"Extended Op".PadRight(12)} ");
-                
+
             fsb.AppendLine("".PadRight(80, '-'));
             for (int i = 1; i < api.FunctionCount; i++)
             {
                 BlastScriptFunction f = blast.data->Functions[i];
                 if (f.IsValid)
                 {
-                    fsb.AppendLine($"{i.ToString().PadLeft(6)} {f.FunctionId.ToString().PadLeft(6)}   {f.GetFunctionName().PadRight(32)} {f.ScriptOp.ToString().PadRight(12)} {f.ExtendedScriptOp.ToString().PadRight(12)}"); 
+                    fsb.AppendLine($"{i.ToString().PadLeft(6)} {f.FunctionId.ToString().PadLeft(6)}   {f.GetFunctionName().PadRight(32)} {f.ScriptOp.ToString().PadRight(12)} {f.ExtendedScriptOp.ToString().PadRight(12)}");
                     blast.data->FunctionPointers[i] = api.FunctionInfo[i].Function.NativeFunctionPointer;
                 }
             }
@@ -425,11 +425,11 @@ namespace NSS.Blast
             }
             // if the api is owned by this instance then destroy it
             // - TODO => should reference count its use and destroy when its not referenced by any blast instance anymore 
-            if(OwnScriptAPIMemory && API != null && API.IsInitialized)
+            if (OwnScriptAPIMemory && API != null && API.IsInitialized)
             {
-                API.Dispose(); 
+                API.Dispose();
                 API = null;
-                OwnScriptAPIMemory = false; 
+                OwnScriptAPIMemory = false;
             }
 
             is_created = false;
@@ -522,7 +522,7 @@ namespace NSS.Blast
         /// <returns>succes or an error code</returns>
         [BurstDiscard]
         public BlastError Execute(in BlastPackageData package, IntPtr environment, IntPtr caller)
-        {                                 
+        {
             return Execute(Engine, in package, environment, caller);
         }
 
@@ -652,7 +652,7 @@ namespace NSS.Blast
             if (ssmd_count == 0) return BlastError.error_nothing_to_execute;
 
             BlastSSMDInterpretor blaster = default;
-            return (BlastError)blaster.Execute(blast, environment, (BlastSSMDDataStack*)ssmd_data, ssmd_count); 
+            return (BlastError)blaster.Execute(blast, environment, (BlastSSMDDataStack*)ssmd_data, ssmd_count);
         }
 
 
@@ -715,7 +715,7 @@ namespace NSS.Blast
         /// <returns></returns>
         public IBlastCompilationData Intermediate(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options = null)
         {
-            return BlastCompiler.Compile(blast, script, options); 
+            return BlastCompiler.Compile(blast, script, options);
         }
 
         #endregion 
@@ -780,18 +780,73 @@ namespace NSS.Blast
             blast_operation.inv_value_180,
             blast_operation.inv_value_270,
             blast_operation.inv_value_360
-        }; 
-        
+        };
 
         /// <summary>
-        /// get the constant numeric value of the operation 
+        /// Constant Values, these can be overwritten 
+        /// </summary>
+        public static float[] Constant = new float[]
+        {
+            math.PI,
+            math.PI,
+            math.EPSILON,
+            math.INFINITY,
+            -math.INFINITY,
+            math.NAN,
+            math.FLT_MIN_NORMAL,
+            0f,
+            1f,
+            2f,
+            3f,
+            4f,
+            8f,
+            10f,
+            16f,
+            24f,
+            32f,
+            64f,
+            100f,
+            128f,
+            256f,
+            512f,
+            1000f,
+            1024f,
+            30f,
+            45f,
+            90f,
+            180f,
+            270f,
+            360f,
+            1f / 2f,
+            1f / 3f,
+            1f / 4f,
+            1f / 8f,
+            1f / 10f,
+            1f / 16f,
+            1f / 24f,
+            1f / 32f,
+            1f / 64f,
+            1f / 100f,
+            1f / 128f,
+            1f / 256f,
+            1f / 512f,
+            1f / 1000f,
+            1f / 1024f,
+            1f / 30f,
+            1f / 45f,
+            1f / 90f,
+            1f / 180f,
+            1f / 270f,
+            1f / 360f,
+        };
+
+        /// <summary>
+        /// get the default constant numeric value of the operation 
         /// </summary>
         /// <param name="op">the operation to return the constant for</param>
         /// <returns>a constant float value</returns>
         [BurstCompile]
-
-        public static float GetConstantValue(blast_operation op)
-
+        public static float GetConstantValueDefault(blast_operation op)
         {
             switch (op)
             {
@@ -867,6 +922,43 @@ namespace NSS.Blast
         }
 
 
+        /// <summary>
+        /// overwrite a constantvalue, blast uses a lookup table to convert some constants
+        /// into byte sized operations. This is used for the most frequent numbers.
+        /// They can be overloaded with for important numbers for the given simulation 
+        /// saving 3 bytes for each in the package, this can stack to huge savings if used correctly
+        /// </summary>
+        public static bool SetConstantDefault(blast_operation constant, float constantvalue)
+        {
+            if(constant >= blast_operation.value_3 && constant < blast_operation.id)
+            {
+                // ok 
+                return SetConstantDefault(constant - blast_operation.value_3, constantvalue);
+            }
+            return false; 
+        }
+
+        /// <summary>
+        /// overwrite constant default value
+        /// </summary>
+        public static bool SetConstantDefault(byte constant_index, float constantvalue)
+        {
+            if (blast_operation.id - 1 - constant_index >= blast_operation.value_3)
+            {
+                Constant[Constant.Length - 1 - constant_index] = constantvalue;
+                return true; 
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// get number of constants that can be overwritten 
+        /// </summary>
+        /// <returns></returns>
+        public static int GetRewritableConstantCount()
+        {
+            return blast_operation.id - blast_operation.value_3 - 1;
+        }
         
         /// <summary>
         /// get the script_op belonging to a constant value, eiter by name or value 
@@ -875,7 +967,7 @@ namespace NSS.Blast
         /// <param name="constant_epsilon">the epsilon to use matching constant values</param>
         /// <returns>nop on no match, nan of not a string match and no float, operation on match</returns>
         [BurstDiscard]
-        public static blast_operation GetConstantValueOperation(string value, float constant_epsilon = 0.0001f)
+        public static blast_operation GetConstantValueDefaultOperation(string value, float constant_epsilon = 0.0001f)
         {
             // prevent matching to epsilon and/or min flt values (as they are very close to 0) 
             if (value == "0") return blast_operation.value_0;
@@ -896,7 +988,7 @@ namespace NSS.Blast
 
             foreach (blast_operation value_op in ValueOperations)
             {
-                float f2 = Blast.GetConstantValue(value_op);
+                float f2 = Blast.GetConstantValueDefault(value_op);
                 if (f2 > f - constant_epsilon && f2 < f + constant_epsilon)
                 {
                     return value_op;

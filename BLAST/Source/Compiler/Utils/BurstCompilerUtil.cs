@@ -13,13 +13,9 @@ using Unity.Collections.LowLevel.Unsafe;
 namespace NSS.Blast
 {
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CodeUtils'
     public static class CodeUtils
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CodeUtils'
     {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CodeUtils.AsFloat(string)'
         public static float AsFloat(this string s)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CodeUtils.AsFloat(string)'
         {
             float f = float.NaN;
 
@@ -30,7 +26,6 @@ namespace NSS.Blast
 
             if (CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator == ",")
             {
-                /*if (s.Contains('.')) */
                 s = s.Replace('.', ',');
             }
             else
@@ -39,7 +34,6 @@ namespace NSS.Blast
             }
 
 
-            //if(
             float.TryParse(s, out f);//)
             {
                 return f;
@@ -92,28 +86,6 @@ namespace NSS.Blast
         }
     }
 
-    /// <summary>
-    /// 
-    /// cast 1 refernce to another
-    /// 
-    /// Quaternion q;
-    /// ref float4 f = ref CastUtil.RefToRef(q);
-    /// f.w = 123;
-    /// print(q.w); // 123
-    /// </summary>
-    static class CastUtil
-    {
-        public static unsafe ref TDest RefToRef<TSrc, TDest>(in TSrc src)
-            where TSrc : unmanaged
-            where TDest : unmanaged
-        {
-            fixed (TSrc* pSrc = &src)
-            {
-                TDest* dest = (TDest*)pSrc;
-                return ref *dest;
-            }
-        }
-    }
 
 #if !STANDALONE_VSBUILD
     static class BurstCompilerUtil<T>

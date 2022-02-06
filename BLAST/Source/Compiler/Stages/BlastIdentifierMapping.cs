@@ -102,7 +102,7 @@ namespace NSS.Blast.Compiler.Stage
                             // its a constant, only lookup the positive part of values, if a match on negated we add back a minus op
                             string value = is_negated ? current.identifier.Substring(1) : current.identifier;
 
-                            blast_operation op = Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
+                            blast_operation op = Blast.GetConstantValueDefaultOperation(value, data.CompilerOptions.ConstantEpsilon);
                             if (op == blast_operation.nan)
                             {
                                 data.LogError($"map_inline_identifiers: ({current.identifier}) could not convert to a float or use as mathematical constant (pi, epsilon, infinity, minflt, euler)");
@@ -286,7 +286,7 @@ namespace NSS.Blast.Compiler.Stage
                         // its a constant, only lookup the positive part of values, if a match on negated we add back a minus op
                         string value = is_negated ? ast_node.identifier.Substring(1) : ast_node.identifier;
 
-                        blast_operation op = Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
+                        blast_operation op = Blast.GetConstantValueDefaultOperation(value, data.CompilerOptions.ConstantEpsilon);
                         if (op == blast_operation.nan)
                         {
                             data.LogError($"map_identifiers: ({ast_node.identifier}) could not convert to a float or use as mathematical constant (pi, epsilon, infinity, minflt, euler)");

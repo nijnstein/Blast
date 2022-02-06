@@ -302,7 +302,7 @@ namespace NSS.Blast.Compiler.Stage
                                                         }
 
                                                         // get constant value and negate it 
-                                                        float f = -Blast.GetConstantValue(constant);
+                                                        float f = -Blast.GetConstantValueDefault(constant);
 
                                                         BlastVariable negated_variable = null;
 
@@ -419,7 +419,7 @@ namespace NSS.Blast.Compiler.Stage
                                 {
                                     // pushing result of pop == same as doing nothing 
                                     // >> this should be considered a bug .. 
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                                     data.LogWarning($"bug in compilation: <{ast_function}>.<{ast_function.FirstChild}>, tries to push a pop operation, somehow the pop was wrongfully flattened out. Its compilation is skipped");
 #endif
                                 }
@@ -891,10 +891,10 @@ namespace NSS.Blast.Compiler.Stage
                         }
                     }
                     else
-                    // assigning a negated / notted function result 
+                    // assigning a negated function result 
                     if (ast_node.ChildCount == 2
                         &&
-                        (ast_node.FirstChild.type == nodetype.operation && (ast_node.FirstChild.token == BlastScriptToken.Substract || ast_node.FirstChild.token == BlastScriptToken.Not))
+                        (ast_node.FirstChild.type == nodetype.operation && (ast_node.FirstChild.token == BlastScriptToken.Substract))
                         &&
                         !ast_node.IsStackFunction                                                    
                         &&

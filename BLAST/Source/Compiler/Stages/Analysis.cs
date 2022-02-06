@@ -139,7 +139,7 @@ namespace NSS.Blast.Compiler.Stage
                                 if (cc.type == nodetype.compound)
                                 {
                                     b_again = true; // this should not happen if leaf 
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                                     Debug.LogWarning("nested compound.. should not happen here");
 #endif
                                 }
@@ -234,7 +234,7 @@ namespace NSS.Blast.Compiler.Stage
 
                             // is the new variable already mapped ? 
                             string value = f.ToString("R");
-                            blast_operation op = Blast.GetConstantValueOperation(value, data.CompilerOptions.ConstantEpsilon);
+                            blast_operation op = Blast.GetConstantValueDefaultOperation(value, data.CompilerOptions.ConstantEpsilon);
                             if (op == blast_operation.nan)
                             {
                                 data.LogError($"analyse.refactor_divisions: failure converting constant value to its reciprocal and remapping it");

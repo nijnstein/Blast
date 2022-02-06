@@ -1943,7 +1943,7 @@ namespace NSS.Blast.Compiler
                 if (constant_op != blast_operation.nop)
                 {
                     // maps to constant op 
-                    return Blast.GetConstantValue(constant_op);
+                    return Blast.GetConstantValueDefault(constant_op);
                 }
 
                 // if it encodes to some system constant op then get its value 

@@ -754,7 +754,7 @@ namespace NSS.Blast
 
             if(FunctionExists(name))
             {
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                 // consider this an error in program flow
                 Debug.LogError($"blast.scriptapi.register: a function with the name '{name}' already exists and thus cannot be registered again.");
 #endif
@@ -804,7 +804,7 @@ namespace NSS.Blast
             // program flow error if not already registred 
             if(info == null)
             {
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                 Debug.LogError($"blast.scriptapi.updateregistration: a function with the id '{id}' could not be found in the registry.");
 #endif
                 return BlastError.error_scriptapi_function_not_registered; 
@@ -930,7 +930,7 @@ namespace NSS.Blast
         {
             unsafe
             {
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                 Assert.IsTrue(Functions != null && id < FunctionInfo.Count); // in release,a the ref to functioninfo is removed, after that this would burstcompile, if only assertions would be correctly handled in burst... 
 #endif
                 return Functions[id]; 
@@ -946,7 +946,7 @@ namespace NSS.Blast
         public bool TryGetFunctionCallById(int id, out BlastScriptFunction function)
         {
             unsafe {
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                 if (Functions != null && id >= 0 && id < FunctionInfo.Count && Functions[id].FunctionId == id)
                 {
                     function = Functions[id]; 

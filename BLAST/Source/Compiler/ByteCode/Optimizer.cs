@@ -329,7 +329,7 @@ namespace NSS.Blast.Compiler.Stage
 
                             if(v == null)
                             {
-#if DEVELOPMENT_BUILD
+#if DEVELOPMENT_BUILD || TRACE
                                 Debug.Log(result.GetHumanReadableCode());
                                 Debug.Log(result.GetHumanReadableBytes());
 #endif

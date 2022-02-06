@@ -302,7 +302,7 @@ namespace NSS.Blast.Compiler
         /// <param name="member">caller member name</param>
         public void LogTrace(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
-#if DEVELOPMENT_BUILD && TRACE
+#if DEVELOPMENT_BUILD || TRACE && TRACE
             if (CompilerOptions.VerboseLogging || CompilerOptions.TraceLogging) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
             if (CompilerOptions.VerboseLogging && CompilerOptions.TraceLogging)
             {
@@ -761,7 +761,7 @@ namespace NSS.Blast.Compiler
                             }
                             else if (op >= BlastCompiler.opt_value)
                             {
-                                sb.Append(NSS.Blast.Blast.GetConstantValue((blast_operation)op) + " ");
+                                sb.Append(NSS.Blast.Blast.GetConstantValueDefault((blast_operation)op) + " ");
                             }
                             else
                             {
