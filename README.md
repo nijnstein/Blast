@@ -2,20 +2,21 @@
 #### See https://github.com/nijnstein/BLAST-Documentation for documentation
 
 
+
+- input variables may NOT be optimized away even if not used 
+- value objects?
+
+
 - test handling of ++|+-|-+|--
 
 - seamless execution of scriptpackage be it bytecode or burst pointers
 
 - finish opcodes / refactor away pop_or_value remnants in interpretor 
 - push variants in JZ/JNZ for while/switch conditions which run in compounds
-- update unity build 
 - error handling / messages
-- manual
-- update packaging
-- update repository
 
-- ssmd interpretor
-- refactor Blast engine 
+- manual
+- update repository
 
 - RELEASE V1
 
