@@ -7,9 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Unity.Assertions;
+using UnityEngine.Assertions;
 using Unity.Mathematics;
 
 namespace NSS.Blast.Compiler.Stage

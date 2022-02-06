@@ -20,6 +20,7 @@ using UnityEngine;
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace NSS.Blast
 {
@@ -64,7 +65,11 @@ namespace NSS.Blast
         /// <summary>
         ///  true if the script has been packaged / prepared
         /// </summary>
-        public bool IsPrepared => IsPackaged; 
+        public bool IsPrepared => IsPackaged;
+
+        public bool HasVariables { get { return Package != null && Package.Variables != null && Package.Variables.Length > 0; } }
+        public bool HasInputs { get { return Package != null && Package.Inputs != null && Package.Inputs.Length > 0; } }
+
 
         /// <summary>
         /// create script object from code 
@@ -90,22 +95,39 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="blast">blast engine data</param>
         /// <returns>success if all is ok </returns>
-        public BlastError Prepare(IntPtr blast)
+        public BlastError Prepare(IntPtr blast, bool prepare_variable_info = true)
         {
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (IsPackaged) return BlastError.error_already_packaged;
 
-            BlastScriptPackage package = new BlastScriptPackage();
-
-            IBlastCompilationData data = BlastCompiler.Compile(blast, this, default);
-            if (!data.IsOK) return BlastError.error_compilation_failure; 
-
-            package.Package = BlastCompiler.Package(data, default);
-            if (!data.IsOK)
+#if DEVELOPMENT_BUILD || TRACE
+            BlastCompilerOptions options = BlastCompilerOptions.Default.Trace();
+#else
+            BlastCompilerOptions options = BlastCompilerOptions.Default; 
+#endif
+            if(prepare_variable_info)
             {
-                this.Package = package;
+                BlastError res = BlastCompiler.CompilePackage(blast, this, options);
+                return res;                 
             }
-            return data.IsOK ? BlastError.success : BlastError.compile_packaging_error; 
+            else
+            {
+                this.Package = new BlastScriptPackage();
+
+                IBlastCompilationData data = BlastCompiler.Compile(blast, this, options);
+                if (!data.IsOK) return BlastError.error_compilation_failure;
+
+                this.Package.Package = BlastCompiler.Package(data, options);
+                if (!data.IsOK) return BlastError.compile_packaging_error;
+
+                //if (!this.Package.HasInputs && this.Package.HasVariables)
+                //{
+                //    this.Package.DefineInputsFromVariables(); 
+                //}
+
+                return BlastError.success; 
+            }
+
         }
 
         /// <summary>
@@ -124,6 +146,42 @@ namespace NSS.Blast
                 if (res != BlastError.success) return res; 
             }
             return Package.Execute(blast, environment, caller); 
+        }
+
+        /// <summary>
+        /// execute the script
+        /// </summary>
+        /// <returns></returns>
+        public BlastError Execute()
+        {
+            Blast blast = Blast.Create(Allocator.Persistent);
+            try
+            {
+                if (!IsPackaged)
+                {
+                    BlastError res = Prepare(blast.Engine);
+                    if (res != BlastError.success) return res;
+                }
+
+                return Package.Execute(blast.Engine, IntPtr.Zero, IntPtr.Zero);
+            }
+            finally
+            {
+                // mainly for clean return, blast shouldnt throw any exceptions normally 
+                blast.Destroy(); 
+            }
+        }
+
+        /// <summary>
+        /// Run (execute) the script 
+        /// </summary>
+        /// <param name="assert_on_errors"></param>
+        /// <returns></returns>
+        public BlastScript Run(bool assert_on_errors = true)
+        {
+            BlastError res = Execute();
+            Assert.IsTrue(assert_on_errors && res != BlastError.success, "failed to execute script, error = {res}, please see the log for details");
+            return res == BlastError.success ? this : null; // end any chaining on errors     
         }
 
 
@@ -177,7 +235,7 @@ namespace NSS.Blast
         }
 
 
-        #region Variables 
+#region Variables 
 
         /// <summary>
         /// Lookup a variable by its index, the script must be prepared first
@@ -185,7 +243,7 @@ namespace NSS.Blast
         /// <param name="index">the variable index</param>
         /// <param name="assert_on_fail">disable assertion on failure to lookup variable</param>
         /// <returns>BlastVariable or null on errors in release (asserts in debug)</returns>
-        protected BlastVariable GetVariable(int index, bool assert_on_fail = true)
+        public BlastVariable GetVariable(int index, bool assert_on_fail = true)
         {
             Assert.IsTrue(IsPrepared, $"BlastScript.GetVariable: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
             if(assert_on_fail) Assert.IsFalse(Package.Variables == null || index < 0 || index >= Package.Variables.Length, $"BlastScript.GetVariable: script {Id} {Name}, variable index {index} is out of range");
@@ -198,7 +256,7 @@ namespace NSS.Blast
         /// <param name="name">the name</param>
         /// <param name="assert_on_fail">disable assertion on failure to lookup variable</param>
         /// <returns>BlastVariable or null on errors in release (asserts in debug)</returns>
-        protected BlastVariable GetVariable(string name, bool assert_on_fail = true)
+        public BlastVariable GetVariable(string name, bool assert_on_fail = true)
         {
             Assert.IsTrue(IsPrepared, $"BlastScript.GetVariable: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
             if(assert_on_fail) Assert.IsFalse(Package.Variables == null || Package.Variables.Length == 0, $"BlastScript.GetVariable: script {Id} {Name}, variable '{name}' could not be found");
@@ -219,10 +277,64 @@ namespace NSS.Blast
         }
 
         /// <summary>
+        /// get variable offset into datasegment 
+        /// </summary>
+        /// <param name="name">name of script variable</param>
+        /// <param name="assert_on_fail">assert on failure to locate variable, default = true</param>
+        /// <returns>the variable offset or -1 if not found</returns>
+        public int GetVariableOffset(string variable_name, bool assert_on_fail = true)
+        {
+            Assert.IsTrue(IsPrepared, $"BlastScript.GetVariableOffset: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
+            if (assert_on_fail) Assert.IsFalse(Package.Variables == null || Package.Variables.Length == 0, $"BlastScript.GetVariableOffset: script {Id} {Name}, variable '{variable_name}' could not be found");
+
+            for (int i = 0; i < Package.Variables.Length; i++)
+            {
+                BlastVariable v = Package.Variables[i];
+                if (v != null && !string.IsNullOrWhiteSpace(v.Name))
+                {
+                    if (string.Compare(v.Name, variable_name, true) == 0)
+                    {
+                        return Package.VariableOffsets[i];
+                    }
+                }
+            }
+
+            if (assert_on_fail) Assert.IsFalse(Package.Variables == null || Package.Variables.Length == 0, $"BlastScript.GetVariableOffset: script {Id} {Name}, variable '{variable_name}' could not be found");
+            return -1;
+        }
+
+        /// <summary>
+        /// get index of a named variable 
+        /// </summary>
+        /// <param name="variable_name">variable name to lookup</param>
+        /// <param name="assert_on_fail">assert on failed lookups if true</param>
+        /// <returns>variable index into package</returns>
+        public int GetVariableIndex(string variable_name, bool assert_on_fail = true)
+        {
+            Assert.IsTrue(IsPrepared, $"BlastScript.GetVariableIndex: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
+            if (assert_on_fail) Assert.IsFalse(Package.Variables == null || Package.Variables.Length == 0, $"BlastScript.GetVariableIndex: script {Id} {Name}, variable '{variable_name}' could not be found");
+
+            for (int i = 0; i < Package.Variables.Length; i++)
+            {
+                BlastVariable v = Package.Variables[i];
+                if (v != null && !string.IsNullOrWhiteSpace(v.Name))
+                {
+                    if (string.Compare(v.Name, variable_name, true) == 0)
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            if (assert_on_fail) Assert.IsFalse(Package.Variables == null || Package.Variables.Length == 0, $"BlastScript.GetVariableIndex: script {Id} {Name}, variable '{variable_name}' could not be found");
+            return -1;
+        }
+
+        /// <summary>
         /// Get the number of variables defined by the script, the script must be prepared first 
         /// </summary>
         /// <returns>the number of variables in the script</returns>
-        protected int GetVariableCount()
+        public int GetVariableCount()
         {
             Assert.IsTrue(IsPrepared, $"BlastScript.GetVariable: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
             return Package.Variables == null ? 0 : Package.Variables.Length; 
@@ -233,7 +345,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="variable_index">index of variable</param>
         /// <returns></returns>
-        protected int GetVariableOffset(in int variable_index)
+        public int GetVariableOffset(in int variable_index)
         {
             Assert.IsTrue(IsPrepared, $"BlastScript.GetVariableOffset: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
             Assert.IsTrue(variable_index >= 0 && variable_index < Package.Variables.Length, $"BlastScriptOffset.GetVariable: script {Id} {Name}, variable index {variable_index} out of range");
@@ -241,9 +353,9 @@ namespace NSS.Blast
             return Package.VariableOffsets[variable_index]; 
         }
 
-        #endregion
+#endregion
 
-        #region Inputs|Outputs 
+#region Inputs|Outputs 
 
         //
         // if the script does not define inputs or outputs then the compiler should create a list
@@ -276,7 +388,7 @@ namespace NSS.Blast
         {
 #if DEVELOPMENT_BUILD || TRACE
             Assert.IsTrue(IsPrepared, $"BlastScript.GetVariable: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
-#endif 
+#endif
             return Package != null ? (Package.Inputs == null ? 0 : Package.Inputs.Length) : 0;
         }
         
@@ -303,34 +415,23 @@ namespace NSS.Blast
         }
 
         /// <summary>
-        /// get a float input/output value, asserts on errors
+        /// get a float input/output value
         /// </summary>
-        /// <param name="input_index"></param>
         /// <returns></returns>
-        public float GetFloat(in int input_index)
+        public float GetFloat(in int data_index)
         {
-            assert_is_valid_input_size(input_index, 1);
-
-
-            int offset = Package.Inputs[input_index].Offset;
-
             unsafe
             {
-                return Package.Package.Data[offset];
+                return Package.Package.Data[Package.VariableOffsets[data_index]];
             }
         }
 
         /// <summary>
-        /// get a float2 input/output value, asserts on errors
+        /// get a float2 input/output value
         /// </summary>
-        /// <param name="input_index"></param>
-        /// <returns></returns>
-        public float2 GetFloat2(in int input_index)
+        public float2 GetFloat2(in int data_index)
         {
-            assert_is_valid_input_size(input_index, 2);
-
-            int offset = Package.Inputs[input_index].Offset;
-
+            int offset = Package.VariableOffsets[data_index];
             unsafe
             {
                 return ((float2*)(void*)&Package.Package.Data[offset])[0];
@@ -341,14 +442,9 @@ namespace NSS.Blast
         /// <summary>
         /// get a float3 input/output value, asserts on errors
         /// </summary>
-        /// <param name="input_index"></param>
-        /// <returns></returns>
-        public float3 GetFloat3(in int input_index)
+        public float3 GetFloat3(in int data_index)
         {
-            assert_is_valid_input_size(input_index, 3);
-
-            int offset = Package.Inputs[input_index].Offset;
-
+            int offset = Package.VariableOffsets[data_index];
             unsafe
             {
                 return ((float3*)(void*)&Package.Package.Data[offset])[0];
@@ -359,13 +455,9 @@ namespace NSS.Blast
         /// <summary>
         /// get a float4 input/output value, asserts on errors
         /// </summary>
-        /// <param name="input_index"></param>
-        /// <returns></returns>
-        public float4 GetFloat4(in int input_index)
+        public float4 GetFloat4(in int data_index)
         {
-            assert_is_valid_input_size(input_index, 4);
-
-            int offset = Package.Inputs[input_index].Offset;
+            int offset = Package.VariableOffsets[data_index];
 
             unsafe
             {
@@ -373,9 +465,9 @@ namespace NSS.Blast
             }
         }
 
-        #endregion
+#endregion
 
-        #region Static Get|Set Data overloads
+#region Static Get|Set Data overloads
 
         /// <summary>
         /// set variable in package data
@@ -384,7 +476,7 @@ namespace NSS.Blast
         /// <param name="packages">array of package data</param>
         /// <param name="data">array of float data to fill</param>
         /// <returns></returns>
-        static public bool SetData(in int variable_offset, in NativeArray<BlastPackageData> packages, ref NativeArray<float> data)
+        static public bool SetData(in int variable_offset, in NativeArray<BlastPackageData> packages, in NativeArray<float> data)
         {
             if (!packages.IsCreated || !data.IsCreated || packages.Length != data.Length || variable_offset < 0) return false;
             if (packages.Length > data.Length) return false;
@@ -395,10 +487,10 @@ namespace NSS.Blast
             {
                 for (int i = 0; i < packages.Length; i++)
                 {
-                    data[i] = packages[i].Data[variable_offset];
+                    packages[i].Data[variable_offset] = data[i];
                 }
             }
-
+                        
             return true;
         }
 
@@ -409,7 +501,7 @@ namespace NSS.Blast
         /// <param name="packages">array of package data</param>
         /// <param name="data">array of float2 data to fill</param>
         /// <returns></returns>
-        static public bool SetData(in int variable_offset, in NativeArray<BlastPackageData> packages, ref NativeArray<float2> data)
+        static public bool SetData(in int variable_offset, in NativeArray<BlastPackageData> packages, in NativeArray<float2> data)
         {
             if (!packages.IsCreated || !data.IsCreated || packages.Length != data.Length || variable_offset < 0) return false;
             if (packages.Length > data.Length) return false;
@@ -420,7 +512,7 @@ namespace NSS.Blast
             {
                 for (int i = 0; i < packages.Length; i++)
                 {
-                    data[i] = ((float2*)(void*)&packages[i].Data[variable_offset])[0];
+                    ((float2*)(void*)&packages[i].Data[variable_offset])[0] = data[i]; 
                 }
             }
 
@@ -435,7 +527,7 @@ namespace NSS.Blast
         /// <param name="packages">array of package data</param>
         /// <param name="data">array of float2 data to fill</param>
         /// <returns></returns>
-        static public bool SetData(in int variable_offset, in NativeArray<BlastPackageData> packages, ref NativeArray<float3> data)
+        static public bool SetData(in int variable_offset, in NativeArray<BlastPackageData> packages, in NativeArray<float3> data)
         {
             if (!packages.IsCreated || !data.IsCreated || packages.Length != data.Length || variable_offset < 0) return false;
             if (packages.Length > data.Length) return false;
@@ -446,7 +538,7 @@ namespace NSS.Blast
             {
                 for (int i = 0; i < packages.Length; i++)
                 {
-                    data[i] = ((float3*)(void*)&packages[i].Data[variable_offset])[0];
+                    ((float3*)(void*)&packages[i].Data[variable_offset])[0] = data[i];
                 }
             }
 
@@ -461,7 +553,7 @@ namespace NSS.Blast
         /// <param name="packages">array of package data</param>
         /// <param name="data">array of float2 data to fill</param>
         /// <returns></returns>
-        static public bool SetData(in int variable_offset, in NativeArray<BlastPackageData> packages, ref NativeArray<float4> data)
+        static public bool SetData(in int variable_offset, in NativeArray<BlastPackageData> packages, in NativeArray<float4> data)
         {
             if (!packages.IsCreated || !data.IsCreated || packages.Length != data.Length || variable_offset < 0) return false;
             if (packages.Length > data.Length) return false;
@@ -472,7 +564,7 @@ namespace NSS.Blast
             {
                 for (int i = 0; i < packages.Length; i++)
                 {
-                    data[i] = ((float4*)(void*)&packages[i].Data[variable_offset])[0];
+                    ((float4*)(void*)&packages[i].Data[variable_offset])[0] = data[i]; 
                 }
             }
 
@@ -603,12 +695,22 @@ namespace NSS.Blast
         [BurstCompatible]
         static unsafe public bool GetDataArray(in BlastPackageData package, out NativeArray<float> data)
         {
-
-        cast a datasegment pointer to the native array 
-
+            if (package.IsAllocated)
+            {
+                data = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<float>(
+                    (void*)package.Data,
+                    package.DataSize >> 2,
+                    Allocator.None);
+                return true;
+            }
+            else
+            {
+                data = default;
+                return false;
+            }
         }
 
-#endif 
+#endif
 
 
         /// <summary>
@@ -640,7 +742,565 @@ namespace NSS.Blast
             }
         }
 
-        #endregion 
+#endregion
+
+#region SetData 
+
+        /// <summary>
+        /// set variable data from a collection of variable-name-value tuples
+        /// </summary>
+        /// <param name="values">collection of name-value tuples</param>
+        public BlastScript SetData<T>(params Tuple<string, object>[] values) 
+        {
+            // ok if called with empty list 
+            if (values == null || values.Length == 0) return this;
+
+            if (!IsPackaged)
+            {
+                Debug.LogError($"BlastScript.Set(value-tuples): package invalid'");
+                return null;
+            }
+            foreach (Tuple<string, object> val in values)
+            {
+                int index = GetVerifyDataIndex(val.Item1);
+                if (index < 0)
+                {
+                    return null;
+                }
+                if (null == SetData(index, val.Item2))
+                {
+                    return null;
+                }
+            }
+            return this; 
+        }
+
+        /// <summary>
+        /// set variable data from a dictionary of name-value 
+        /// </summary>
+        /// <param name="values">collection of name-value tuples</param>
+        public BlastScript SetData(Dictionary<string, object> values) 
+        {
+            // ok if called with empty list 
+            if (values == null || values.Count == 0) return this;
+
+            if (!IsPackaged)
+            {
+                Debug.LogError($"BlastScript.Set(value-tuples): package invalid'");
+                return null;
+            }
+            foreach (KeyValuePair<string, object> val in values)
+            {
+                int index = GetVerifyDataIndex(val.Key);
+                if (index < 0)
+                {
+                    return null;
+                }
+                if (null == SetData(index, val.Value))
+                {
+                    return null;
+                }
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// set variable data from a dictionary of index-value
+        /// </summary>
+        /// <param name="values">collection of name-value tuples</param>
+        public BlastScript SetData(Dictionary<int, object> values)
+        {
+            // ok if called with empty list 
+            if (values == null || values.Count == 0) return this;
+
+            if (!IsPackaged)
+            {
+                Debug.LogError($"BlastScript.SetData(value-tuples): package invalid | not prepared'");
+                return null;
+            }
+            foreach (KeyValuePair<int, object> val in values)
+            {
+                if (val.Key < 0)
+                {
+                    return null;
+                }
+                if (null == SetData(val.Key, val.Value))
+                {
+                    return null;
+                }
+            }
+            return this;
+        }
+
+        public BlastScript SetData(float[] values)
+        {
+            // ok if called with empty list 
+            if (values == null || values.Length == 0) return this;
+
+            if (!IsPackaged)
+            {
+                Debug.LogError($"BlastScript.SetData(float[]): package invalid | not prepared'");
+                return null;
+            }
+            for(int i = 0; i < values.Length; i++)
+            {
+                if (null == SetData(i, values[i])) 
+                {
+                    return null;
+                }
+            }
+            return this;
+        }
+
+
+        /// <summary>
+        /// set data index from object 
+        /// </summary>
+        /// <param name="index">set data at index</param>
+        /// <param name="obj">the object to read the data from</param>
+        /// <returns></returns>
+        public BlastScript SetData(int index, object obj)
+        {
+            switch (obj)
+            {
+                // floats
+                case float f1:
+                    if (null == SetData(index, f1)) return null;
+                    break;
+                case float2 f2:
+                    if (null == SetData(index, f2)) return null;
+                    break;
+                case float3 f3:
+                    if (null == SetData(index, f3)) return null;
+                    break;
+                case float4 f4:
+                    if (null == SetData(index, f4)) return null;
+                    break;
+
+                // vectors 
+                case Vector2 v2:
+                    if (null == SetData(index, v2)) return null;
+                    break;
+                case Vector3 v3:
+                    if (null == SetData(index, v3)) return null;
+                    break;
+                case Vector4 v4:
+                    if (null == SetData(index, v4)) return null;
+                    break;
+
+                // doubles 
+                case double d1:
+                    if (null == SetData(index, (float)d1)) return null;
+                    break;
+                case double2 d2:
+                    if (null == SetData(index, (float2)d2)) return null;
+                    break;
+                case double3 d3:
+                    if (null == SetData(index, (float3)d3)) return null;
+                    break;
+                case double4 d4:
+                    if (null == SetData(index, (float4)d4)) return null;
+                    break;
+
+                // integers
+                case int i1:
+                    if (null == SetData(index, (float)i1)) return null;
+                    break;
+                case int2 i2:
+                    if (null == SetData(index, (float2)i2)) return null;
+                    break;
+                case int3 i3:
+                    if (null == SetData(index, (float3)i3)) return null;
+                    break;
+                case int4 i4:
+                    if (null == SetData(index, (float4)i4)) return null;
+                    break;
+
+                case uint ui1:
+                    if (null == SetData(index, (float)ui1)) return null;
+                    break;
+                case uint2 ui2:
+                    if (null == SetData(index, (float2)ui2)) return null;
+                    break;
+                case uint3 ui3:
+                    if (null == SetData(index, (float3)ui3)) return null;
+                    break;
+                case uint4 ui4:
+                    if (null == SetData(index, (float4)ui4)) return null;
+                    break;
+
+                // bytes, shorts & longs 
+                case byte b1:
+                    if (null == SetData(index, (float)b1)) return null;
+                    break;
+
+                case short s1:
+                    if (null == SetData(index, (float)s1)) return null;
+                    break;
+
+                case long l1:
+                    if (null == SetData(index, (float)l1)) return null;
+                    break;
+
+                case ushort us1:
+                    if (null == SetData(index, (float)us1)) return null;
+                    break;
+
+                case ulong ul1:
+                    if (null == SetData(index, (float)ul1)) return null;
+                    break;
+
+                case sbyte sb1:
+                    if (null == SetData(index, (float)sb1)) return null;
+                    break;
+
+                // halfs 
+                case half h1:
+                    if (null == SetData(index, (float)h1)) return null;
+                    break;
+                case half2 h2:
+                    if (null == SetData(index, (float2)h2)) return null;
+                    break;
+                case half3 h3:
+                    if (null == SetData(index, (float3)h3)) return null;
+                    break;
+                case half4 h4:
+                    if (null == SetData(index, (float4)h4)) return null;
+                    break;
+
+                // decimals 
+                case decimal dec1:
+                    if (null == SetData(index, (float)dec1)) return null;
+                    break;
+
+                // booleans  
+                case bool bo1:
+                    if (null == SetData(index, math.select((float)0, (float)1, bo1))) return null;
+                    break;
+                case bool2 bo2:
+                    if (null == SetData(index, math.select((float2)0, (float2)1, bo2))) return null;
+                    break;
+                case bool3 bo3:
+                    if (null == SetData(index, math.select((float3)0, (float3)1, bo3))) return null;
+                    break;
+                case bool4 bo4:
+                    if (null == SetData(index, math.select((float4)0, (float4)1, bo4))) return null;
+                    break;
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// set variable data
+        /// </summary>
+        /// <param name="name">variable name</param>
+        /// <param name="value">float value</param>
+        /// <returns></returns>
+        public BlastScript SetData(string name, float value)
+
+        {
+            int index = GetVerifyDataIndex(name, 1);
+            if (index >= 0)
+            {
+                unsafe
+                {
+                    int offset = Package.VariableOffsets[index];
+                    Package.Package.Data[offset] = value;
+                }
+                return this;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// set variable data
+        /// </summary>
+        /// <param name="index">variable index</param>
+        /// <param name="value">float value</param>
+        /// <returns></returns>
+        public BlastScript SetData(int index, float value)
+        {
+            if (index >= 0 && index < Package.VariableOffsets.Length)
+            {
+                unsafe
+                {
+                    int offset = Package.VariableOffsets[index];
+                    Package.Package.Data[offset] = value;
+                }
+                return this;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
+        /// <summary>
+        /// set variable data
+        /// </summary>
+        /// <param name="index">variable index</param>
+        /// <param name="value">float2 value</param>
+        /// <returns></returns>
+        public BlastScript SetData(int index, float2 value)
+
+        {
+            if (index >= 0)
+            {
+                unsafe
+                {
+                    int offset = Package.VariableOffsets[index];
+                    Package.Package.Data[offset] = value.x;
+                    Package.Package.Data[offset + 1] = value.y;
+                }
+                return this;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// set variable data
+        /// </summary>
+        /// <param name="index">variable index</param>
+        /// <param name="value">float value</param>
+        /// <returns></returns>
+        public BlastScript SetData(int index, float3 value)
+
+        {
+            if (index >= 0)
+            {
+                unsafe
+                {
+                    int offset = Package.VariableOffsets[index];
+                    Package.Package.Data[offset] = value.x;
+                    Package.Package.Data[offset + 1] = value.y;
+                    Package.Package.Data[offset + 2] = value.z;
+                }
+                return this;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// set variable data
+        /// </summary>
+        /// <param name="index">variable index</param>
+        /// <param name="value">float4 value</param>
+        /// <returns></returns>
+        public BlastScript SetData(int index, float4 value)
+
+        {
+            if (index >= 0)
+            {                                
+                unsafe
+                {
+                    int offset = Package.VariableOffsets[index];
+                    Package.Package.Data[offset] = value.x;
+                    Package.Package.Data[offset + 1] = value.y;
+                    Package.Package.Data[offset + 2] = value.z;
+                    Package.Package.Data[offset + 3] = value.w; 
+                }
+                return this;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
+        #region data verify helpers 
+        /// <summary>
+        /// get index for named variable data, verify its datatype and log errors on fail
+        /// </summary>
+        /// <param name="name">variable name</param>
+        /// <param name="vector_size">vectorsize expected</param>
+        /// <returns>-1 on failure, variable index otherwise</returns>
+        protected int GetVerifyDataIndex(string name, int vector_size)
+        {
+            int index = GetVerifyDataIndex(name);
+            if (index >= 0)
+            {
+                BlastVariable var = Package.Variables[index];
+                if (var.DataType != BlastVariableDataType.Numeric
+                    &&
+                   var.VectorSize != vector_size)
+                {
+                    Debug.LogError($"BlastScript.Set(name, value): datatype mismatch setting variable '{name}', expecting {var.DataType}[{var.VectorSize}]");
+                    return -1;
+                }
+            }
+            return index; 
+        }
+
+        /// <summary>
+        /// get index for named variable data
+        /// </summary>
+        /// <param name="name">variable name</param>
+        /// <returns>-1 on failure, variable index otherwise</returns>
+        protected int GetVerifyDataIndex(string name)
+        {
+            if (!IsPackaged)
+            {
+                Debug.LogError($"BlastScript.Set(name, value): package invalid'");
+                return -1;
+            }
+
+            int index = GetVariableIndex(name, false);
+            if (index < 0)
+            {
+                Debug.LogError($"BlastScript.Set(name, value): variable '{name}' not found in package");
+                return -1;
+            }
+
+            return index;
+        }
+
+#endregion
+
+#region typed SetData overloads 
+        /// <summary>
+        /// set variable data
+        /// </summary>
+        /// <param name="name">variable name</param>
+        /// <param name="value">float2 value</param>
+        /// <returns></returns>
+        public BlastScript SetData(string name, float2 value)
+        {
+            int index = GetVerifyDataIndex(name, 2);
+            if (index >= 0)
+            {
+                unsafe
+                {
+                    int offset = Package.VariableOffsets[index];
+                    Package.Package.Data[offset] = value.x;
+                    Package.Package.Data[offset + 1] = value.y;
+                }
+                return this;
+            }
+            else
+            {
+                return null; 
+            }
+        }
+
+        /// <summary>
+        /// set variable data
+        /// </summary>
+        /// <param name="name">variable name</param>
+        /// <param name="value">float3 value</param>
+        /// <returns></returns>
+        public BlastScript SetData(string name, float3 value)
+        {
+            int index = GetVerifyDataIndex(name, 3);
+            if (index >= 0)
+            {
+                unsafe
+                {
+                    int offset = Package.VariableOffsets[index];
+                    Package.Package.Data[offset] = value.x;
+                    Package.Package.Data[offset + 1] = value.y;
+                    Package.Package.Data[offset + 2] = value.z;
+                }
+                return this;
+            }
+            else
+            {
+                return null;
+            }
+        } 
+
+       
+        /// <summary>
+        /// set variable data
+        /// </summary>
+        /// <param name="name">variable name</param>
+        /// <param name="value">float4 value</param>
+        /// <returns></returns>
+        public BlastScript SetData(string name, float4 value)
+        {
+            int index = GetVerifyDataIndex(name, 4);
+            if (index >= 0)
+            {
+                unsafe
+                {
+                    int offset = Package.VariableOffsets[index];
+                    Package.Package.Data[offset] = value.x;
+                    Package.Package.Data[offset + 1] = value.y;
+                    Package.Package.Data[offset + 2] = value.z;
+                    Package.Package.Data[offset + 3] = value.w;
+                }
+                return this;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+#endregion
+#endregion
+
+#region GetData
+
+        /// <summary>
+        /// get a data element by looking up its variable index by name first 
+        /// </summary>
+        public object GetData(string name)
+        {
+            Assert.IsTrue(IsPrepared, $"BlastScript.GetData: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
+            return GetData(GetVerifyDataIndex(name)); 
+        }
+
+        /// <summary>
+        /// get data by index
+        /// </summary>
+        public object GetData(int index)
+        {
+            Assert.IsTrue(IsPrepared, $"BlastScript.GetData(index): script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
+            Assert.IsTrue(index >= 0, $"BlastScript.GetData(index): script {Id} {Name}, data index: {index} not valid");
+            switch (Package.Variables[index].VectorSize)
+
+            {
+                case 1: return GetFloat(index);
+                case 2: return GetFloat2(index);
+                case 3: return GetFloat3(index);
+                case 4: return GetFloat4(index);
+            }
+            Assert.IsTrue(false, $"BlastScript.GetData(index): script {Id} {Name}, unhandled vectorsize");
+            return null; 
+        }
+
+
+        /// <summary>
+        /// get all data elements 
+        /// </summary>
+        /// <returns></returns>
+        public object[] GetData()
+        {
+            int c = GetVariableCount();
+
+            object[] r = new object[c]; 
+
+            for(int i = 0; i < c; i++)
+            {
+                r[i] = GetData(i); 
+            }
+
+            return r; 
+        }
+
+#endregion
+
     }
 
 

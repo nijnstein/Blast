@@ -4,11 +4,12 @@
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
-using NSS.Blast.Interpretor;
 using NSS.Blast.Standalone;
 #else
     using UnityEngine;
 #endif
+
+using NSS.Blast.Interpretor;
 
 using System;
 using System.Text;
@@ -1182,6 +1183,39 @@ namespace NSS.Blast
 
         #endregion
 
+
+        public bool HasVariables { get { return Variables != null && Variables.Length > 0; } }
+        public bool HasInputs { get { return Inputs != null && Inputs.Length > 0; } }
+
+
+        /// <summary>
+        /// define inputs from variables, usefull if a script does not define inputs 
+        /// </summary>
+        /// <returns></returns>
+        public BlastError DefineInputsFromVariables() 
+        {
+            if (HasVariables)
+            {
+                Inputs = new BlastVariableMapping[Variables.Length];
+                int offset = 0; 
+                for(int i = 0; i < Variables.Length; i++)
+                {
+                    int bytesize = Variables[i].VectorSize * 4;
+
+                    Inputs[i] = new BlastVariableMapping()
+                    {
+                        ByteSize = bytesize,
+                        Offset = offset,
+                        Variable = Variables[i]
+                    };
+
+                    offset += bytesize; 
+                }
+
+                return BlastError.success;
+            }
+            return BlastError.compile_packaging_error; 
+        }
 
 
         /// <summary>

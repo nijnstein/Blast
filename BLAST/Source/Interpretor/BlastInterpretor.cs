@@ -5911,7 +5911,6 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.push:
                     case blast_operation.pushv:
                     case blast_operation.peek:
-                    case blast_operation.peekv:
                     case blast_operation.pushf:
                     case blast_operation.pushc:
                         Assert.IsTrue(false, $"BlastInterpretor.GetCompound: stack operation {(blast_operation)op} not allowed in compounds, codepointer = {code_pointer}");

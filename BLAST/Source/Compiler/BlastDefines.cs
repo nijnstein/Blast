@@ -329,12 +329,6 @@ namespace NSS.Blast
         peek,
 
         /// <summary>
-        /// peek vector data 
-        /// </summary>
-        [Obsolete]
-        peekv,
-
-        /// <summary>
         /// Multiply add: a = m1 * m2 + a1
         /// </summary>
         fma,          // fused multiply add => variants ??        could bit encode op sequences.. +-+- etc.  it would save on control code 
@@ -449,6 +443,7 @@ namespace NSS.Blast
         /// </summary>
         index_n,
 
+        reserved5,
         reserved6,
         reserved7,
         reserved8,

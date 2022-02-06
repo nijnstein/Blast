@@ -1006,6 +1006,8 @@ namespace NSS.Blast.Compiler
         /// <returns>the native blast package data structure</returns>
         static public BlastPackageData Package(IBlastCompilationData compilerdata, BlastCompilerOptions options)
         {
+            if (options == null) options = BlastCompilerOptions.Default; 
+
             // this heavily depends on bytecode 
             Assert.IsTrue(options.Language == BlastLanguageVersion.BS1 || options.Language == BlastLanguageVersion.BSSMD1);
 
@@ -1234,14 +1236,14 @@ namespace NSS.Blast.Compiler
         /// <param name="script"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        unsafe static public BlastScriptPackage CompilePackage(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options = null)
+        unsafe static public BlastError CompilePackage(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options = null)
         {
             if (options == null) options = new BlastCompilerOptions();
 
             IBlastCompilationData result = Compile(blast, script, options);
             if (result.IsOK)
             {
-                BlastScriptPackage pkg = new BlastScriptPackage()
+                script.Package = new BlastScriptPackage()
                 {
                     Package = Package(result, options),
                     Variables = result.Variables.ToArray(),
@@ -1249,11 +1251,11 @@ namespace NSS.Blast.Compiler
                     Inputs = result.Inputs.ToArray(),
                     Outputs = result.Outputs.ToArray()
                 };
-                return pkg;
+                return BlastError.success; 
             }
             else
             {
-                return null;
+                return BlastError.compile_packaging_error;
             }
         }
 

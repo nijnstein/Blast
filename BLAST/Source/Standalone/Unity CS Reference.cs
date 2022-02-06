@@ -8,7 +8,7 @@
 
 using System;
 
-namespace Unity.Assertions
+namespace UnityEngine.Assertions
 {
     public static class Assert
     {

@@ -668,7 +668,19 @@ namespace NSS.Blast
         /// <returns>the blastscript package</returns>
         public BlastScriptPackage Package(string code, BlastCompilerOptions options = null)
         {
-            return Package(BlastScript.FromText(code), options);
+            BlastScript script = BlastScript.FromText(code); 
+
+            BlastError res = Package(script, options);
+            if (res == BlastError.success) 
+            {
+                BlastScriptPackage package = script.Package;
+                script.Package = null; 
+                return package;
+            }
+            else
+            {
+                return null; 
+            }
         }
 
         /// <summary>
@@ -677,7 +689,7 @@ namespace NSS.Blast
         /// <param name="script">the script to compile</param>
         /// <param name="options">compiler options</param>
         /// <returns>the blastscript package</returns>
-        public BlastScriptPackage Package(BlastScript script, BlastCompilerOptions options = null)
+        public BlastError Package(BlastScript script, BlastCompilerOptions options = null)
         {
             return Blast.Package(Engine, script, options);
         }
@@ -690,7 +702,18 @@ namespace NSS.Blast
         /// <returns>the code packaged and ready to execute</returns>
         static public BlastScriptPackage Package(BlastEngineDataPtr blast, string code, BlastCompilerOptions options = null)
         {
-            return Package(blast, BlastScript.FromText(code), options);
+            BlastScript script = BlastScript.FromText(code);
+
+            if (Package(blast, BlastScript.FromText(code), options) == BlastError.success)
+            {
+                BlastScriptPackage package = script.Package;
+                script.Package = null;
+                return package;
+            }
+            else
+            {
+                return null; 
+            }
         }
 
         /// <summary>
@@ -700,7 +723,7 @@ namespace NSS.Blast
         /// <param name="script">script code to compile</param>
         /// <param name="options">compiler options</param>
         /// <returns>the code packaged and ready to execute</returns>
-        static public BlastScriptPackage Package(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options = null)
+        static public BlastError Package(BlastEngineDataPtr blast, BlastScript script, BlastCompilerOptions options = null)
         {
             return BlastCompiler.CompilePackage(blast, script, options);
         }
@@ -1483,7 +1506,6 @@ namespace NSS.Blast
                     case blast_operation.pop: sb.Append("pop "); break;
                     case blast_operation.pushv: sb.Append("pushv "); break;
                     case blast_operation.peek: sb.Append("peek "); break;
-                    case blast_operation.peekv: sb.Append("peekv "); break;
                     case blast_operation.pushf: sb.Append("pushf "); break;
                     case blast_operation.pushc: sb.Append("pushc "); break;
 

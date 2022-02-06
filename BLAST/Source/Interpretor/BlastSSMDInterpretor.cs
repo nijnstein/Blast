@@ -7084,7 +7084,7 @@ namespace NSS.Blast.SSMD
                                     code_pointer++;
 
                                     int op_id = code[code_pointer];
-                                    BlastVariableDataType datatype = default;
+                                    //BlastVariableDataType datatype = default;
 
                                     // even if not in debug, if the command is encoded any stack op needs to be popped 
                                     // void* pdata = pop_with_info(code_pointer, out datatype, out vector_size);
@@ -7291,7 +7291,6 @@ namespace NSS.Blast.SSMD
                     case blast_operation.push:
                     case blast_operation.pushv:
                     case blast_operation.peek:
-                    case blast_operation.peekv:
                     case blast_operation.pushf:
                     case blast_operation.pushc:
                         Assert.IsTrue(false, $"SSMD Interpretor: stack operation {(blast_operation)op} not allowed in compounds, codepointer = {code_pointer}");
@@ -8364,7 +8363,7 @@ namespace NSS.Blast.SSMD
                         }
 
                         // code_pointer = math.select(code_pointer, jump_to, f4_register[i].x != 0);
-                        break; 
+                        //break; 
                                                                     
 
                     case blast_operation.jz:

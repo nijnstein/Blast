@@ -582,7 +582,6 @@ namespace NSS.Blast.Compiler
                         case blast_operation.max: sb.Append("max "); break;
                         case blast_operation.min: sb.Append("min "); break;
                         case blast_operation.peek: sb.Append("peek "); break;
-                        case blast_operation.peekv: sb.Append("peek "); break;
                         case blast_operation.push: sb.Append("push "); break;
                         case blast_operation.pushf: sb.Append("push function "); break;
                         case blast_operation.pushc: sb.Append("push compound "); break;
