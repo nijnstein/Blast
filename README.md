@@ -5,6 +5,8 @@
 
 - input variables may NOT be optimized away even if not used 
 
+- blasscript.set/getdata tests!@!
+
 
 - test handling of ++|+-|-+|--
 
