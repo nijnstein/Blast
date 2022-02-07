@@ -5,6 +5,9 @@
 
 - input variables may NOT be optimized away even if not used 
 
+- allow statements to omit ; when possible 
+- allow , seperator to be omitted in input/output define
+
 - blasscript.set/getdata tests!@!
 
 
