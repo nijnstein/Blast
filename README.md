@@ -4,7 +4,9 @@
 
 
 - input variables may NOT be optimized away even if not used 
-- value objects?
+
+- **!! compiler should use default data on input / output variables if the initial assign assigns a constant**
+
 
 
 - test handling of ++|+-|-+|--
