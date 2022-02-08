@@ -547,11 +547,13 @@ namespace NSS.Blast.Compiler.Stage
                 }
                 else
                 {
-                    // reading a value, remove indexers and  insert indexing function as new parent of current 
+                    // reading a value, remove indexers and insert indexing function as new parent of current 
+                    // - this will insert: paramnode<function idx(param)> 
+                    // - -> should we allow indexing on parameters to functions ? this saves a push pop 
+                    // - ->  for now: modify nodetype to function
                     node f = new node(null, n);
                     f.EnsureIdentifierIsUniquelySet();
                     f.type = nodetype.function;
-
 
                     int idx = n.parent.children.IndexOf(n);
 

@@ -108,6 +108,7 @@ namespace NSS.Blast.Compiler.Stage
                 else
                 {
                     // parameter (it must have been asssinged somewhere before comming here) 
+                    // - did flatten fail and left stuff that cannot be a parameter to a function ? 
                     data.LogError($"CompileParameter: node: <{ast_param.parent}>.<{ast_param}>, identifier/variable not connected: '{ast_param.identifier}'");
                     return false;
                 }

@@ -51,12 +51,39 @@ namespace NSS.Blast.Compiler.Stage
             while(i < compound.ChildCount)
             {
                 node child = compound.children[i];
-                switch(child.type)
+                switch (child.type)
                 {
                     case nodetype.function:
+                        // dont further flatten stack operations
+                        if (!(child.function.IsPopVariant || child.function.IsPushVariant))
+                        {
+                            //
+                            // should we allow indexing functions to persist? they are leafs by definition, it would ad a layer to pops... TODO 
+                            //
+
+                            // this must be flattened out 
+                            BlastError res;
+                            if (BlastError.success == (res = FlattenFunction(data, child, out List<node> flattened_output_of_compound, true, out node pusher)))
+                            {
+                                // insert in output 
+                                flattened_output.InsertRange(0, flattened_output_of_compound);
+
+                                // replace flattened function node with the newly created pop node linked to the push
+                                compound.children[i] = node.CreatePopNode(data.Blast, pusher);
+                                compound.children[i].parent = compound;
+                            }
+                            else
+                            {
+                                data.LogError($"Flatten.Compound: failed to flatten child function: <{compound}>.<{child}>", (int)res);
+                                return res;
+                            }
+                        }
                         break; 
 
                     case nodetype.operation:
+                        // todo  should filter on allowed ops 
+                        break;
+
                     case nodetype.parameter:
                         break;
 
