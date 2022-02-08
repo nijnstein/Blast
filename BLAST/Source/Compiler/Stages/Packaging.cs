@@ -118,6 +118,9 @@ namespace NSS.Blast.Compiler.Stage
             }
             cdata.Executable.data_count = offset;
 
+            // initialize default values set through input|output defines 
+            cdata.ResetIntermediateDefaults(); 
+
             // setup code segment 
             cdata.Executable.code_pointer = 0;
             cdata.Executable.code_size = code.Count;

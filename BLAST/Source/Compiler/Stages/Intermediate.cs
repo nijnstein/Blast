@@ -436,7 +436,10 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public int Validate(in IntPtr blast)
         {
-            return Execute(in blast, true); 
+           
+            int results = Execute(in blast, true);
+
+            return results;
         }
 
         /// <summary>
@@ -495,7 +498,6 @@ namespace NSS.Blast.Compiler
 
             return (int)BlastError.success;
         }
-
 
     }
 }

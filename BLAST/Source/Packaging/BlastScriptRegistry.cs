@@ -4,10 +4,11 @@
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone;
-    using Unity.Assertions; 
+using NSS.Blast.Standalone;
+using UnityEngine.Assertions;
 #else
-using UnityEngine;
+    using UnityEngine;
+    using UnityEngine.Assertions; 
 #endif
 
 

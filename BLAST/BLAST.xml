@@ -522,6 +522,16 @@
             return if an error code actually means success 
             </summary>
         </member>
+        <member name="M:NSS.Blast.Blast.GetDataTypeInfo(System.String,NSS.Blast.BlastVariableDataType@,System.Int32@,System.Int32@)">
+            <summary>
+            get datatype information from its name 
+            </summary>
+            <param name="name"></param>
+            <param name="datatype"></param>
+            <param name="vector_size"></param>
+            <param name="byte_size"></param>
+            <returns></returns>
+        </member>
         <member name="T:NSS.Blast.Compiler.BlastCompilerOptions">
             <summary>
             Options for compiling and packaging scripts 
@@ -1801,6 +1811,13 @@
             <summary>
             read #input and #output defines 
             </summary>
+            <remarks>
+            <code>
+            #input id datatype default(s)
+            #output id datatype default(s)
+            </code>
+            </remarks>
+            
             <param name="data"></param>
             <param name="comment"></param>
             <param name="a"></param>
@@ -2241,6 +2258,16 @@
             true if the script defines compiler defines 
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.HasInputs">
+            <summary>
+            true if the script defines inputs
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.IBlastCompilationData.HasOutputs">
+            <summary>
+            true if the script defines outputs
+            </summary>
+        </member>
         <member name="P:NSS.Blast.Compiler.IBlastCompilationData.HasInlinedFunctions">
             <summary>
             true if the script has functions inlined 
@@ -2512,10 +2539,20 @@
             list of inputs defined by this script
             </summary>
         </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.HasInputs">
+            <summary>
+            true if inputs are defined 
+            </summary>
+        </member>
         <member name="P:NSS.Blast.Compiler.CompilationData.Outputs">
             <summary>
             list of outputs defined by this script
             </summary>
+        </member>
+        <member name="P:NSS.Blast.Compiler.CompilationData.HasOutputs">
+            <summary>
+            true if outputs are defined 
+            </summary>                         
         </member>
         <member name="P:NSS.Blast.Compiler.CompilationData.Validations">
             <summary>
@@ -2532,8 +2569,22 @@
             create a holder for variable data collected during compilation 
             - will log errors if the variable exists and returns null 
             - initializes reference count at 1
+            - datatype = numeric, vectorsize = 1 
+            </summary>
+            <param name="name"></param>
+            <param name="is_input">default false</param>
+            <param name="is_output">default false</param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.CreateVariable(System.String,NSS.Blast.BlastVariableDataType,System.Int32,System.Boolean,System.Boolean)">
+            <summary>
+            create a holder for variable data collected during compilation 
+            - will log errors if the variable exists and returns null 
+            - initializes reference count at 1
             </summary>
             <param name="name">first part of identifier - the name</param>
+            <param name="datatype"></param>
+            <param name="vector_size"></param>
             <param name="is_input">true if used as an input</param>
             <param name="is_output">true if used as an output</param>
             <returns>null on failure, any error will be logged</returns>
@@ -2584,6 +2635,11 @@
             checks if an inlined function with the given name|identifier exists 
             </summary>
             <param name="name">identifier name</param>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.ResetIntermediateDefaults">
+            <summary>
+            reset inputs and outputs in datasegment to default values
+            </summary>
         </member>
         <member name="M:NSS.Blast.Compiler.CompilationData.AddInlinedFunction(NSS.Blast.Compiler.BlastScriptInlineFunction)">
             <summary>
@@ -3860,11 +3916,6 @@
             peek stack data 
             </summary>
         </member>
-        <member name="F:NSS.Blast.blast_operation.peekv">
-            <summary>
-            peek vector data 
-            </summary>
-        </member>
         <member name="F:NSS.Blast.blast_operation.fma">
             <summary>
             Multiply add: a = m1 * m2 + a1
@@ -4779,6 +4830,26 @@
         <member name="F:NSS.Blast.BlastError.error_assign_component_from_vector">
             <summary>
             error in assign, cannot set a vector component from a multicomponent vector
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_input_type_invalid">
+            <summary>
+            error in input define, the supplied typename could not be matched with any supported type 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_input_failed_to_create">
+            <summary>
+            error in input define, failed to create variable for input define
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_output_datatype_mismatch">
+            <summary>
+            error in output define, datatype mismatched 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_input_ouput_invalid_default">
+            <summary>
+            error in input or output define, the default set could not be interpreted into the correct datatype
             </summary>
         </member>
         <member name="M:NSS.Blast.Cache.blast.max(System.Single,System.Single)">
@@ -6871,6 +6942,11 @@
             Bytesize of variable  
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastVariableMapping.Default">
+            <summary>
+            for now, default is stored in max sized datatype, this will change in the future
+            </summary>
+        </member>
         <member name="M:NSS.Blast.BlastVariableMapping.ToString">
             <summary>
             ToString override providing a more usefull description while debugging 
@@ -7056,14 +7132,46 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.BlastScriptPackage.Execute(System.IntPtr,System.IntPtr,System.IntPtr)">
+        <member name="P:NSS.Blast.BlastScriptPackage.HasVariables">
+            <summary>
+            true if the script uses variables 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptPackage.HasOutputs">
+            <summary>
+            true if the package has outputs defined
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptPackage.HasInputs">
+            <summary>
+            true if package has inputs defined
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.DefineInputsFromVariables">
+            <summary>
+            define inputs from variables, usefull if a script does not define inputs 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.Execute(System.IntPtr,System.IntPtr,System.IntPtr,System.Boolean)">
             <summary>
             execute the script in the given environment with the supplied data
             </summary>
             <param name="blast">blastengine data</param>
             <param name="environment">[optional] pointer to environment data</param>
             <param name="caller">[ooptional] caller data</param>
+            <param name="reset_defaults">rewrite default values in datasegment, can be omitted on first execute with fresh datasegment</param>
             <returns>success if all is ok</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.SetDefaultData(NSS.Blast.BlastVariableMapping[],System.Single*)">
+            <summary>
+            set default data from input or output data 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.ResetDefaults">
+            <summary>
+            reset datasegment to default data set by input and output defines 
+            </summary>
         </member>
         <member name="T:NSS.Blast.Register.BlastReflect">
             <summary>
@@ -7193,7 +7301,7 @@
             <param name="id">a unique id</param>
             <returns>a blast script</returns>
         </member>
-        <member name="M:NSS.Blast.BlastScript.Prepare(System.IntPtr)">
+        <member name="M:NSS.Blast.BlastScript.Prepare(System.IntPtr,System.Boolean)">
             <summary>
             Prepare the script for execution
             </summary>
@@ -7208,6 +7316,19 @@
             <param name="environment">[optional] pointer to environment data</param>
             <param name="caller">[ooptional] caller data</param>
             <returns>success if all is ok</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.Execute">
+            <summary>
+            execute the script
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.Run(System.Boolean)">
+            <summary>
+            Run (execute) the script 
+            </summary>
+            <param name="assert_on_errors"></param>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.BlastScript.ToString">
             <summary>
@@ -7239,6 +7360,22 @@
             <param name="name">the name</param>
             <param name="assert_on_fail">disable assertion on failure to lookup variable</param>
             <returns>BlastVariable or null on errors in release (asserts in debug)</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.GetVariableOffset(System.String,System.Boolean)">
+            <summary>
+            get variable offset into datasegment 
+            </summary>
+            <param name="name">name of script variable</param>
+            <param name="assert_on_fail">assert on failure to locate variable, default = true</param>
+            <returns>the variable offset or -1 if not found</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.GetVariableIndex(System.String,System.Boolean)">
+            <summary>
+            get index of a named variable 
+            </summary>
+            <param name="variable_name">variable name to lookup</param>
+            <param name="assert_on_fail">assert on failed lookups if true</param>
+            <returns>variable index into package</returns>
         </member>
         <member name="M:NSS.Blast.BlastScript.GetVariableCount">
             <summary>
@@ -7275,31 +7412,24 @@
         </member>
         <member name="M:NSS.Blast.BlastScript.GetFloat(System.Int32@)">
             <summary>
-            get a float input/output value, asserts on errors
+            get a float input/output value
             </summary>
-            <param name="input_index"></param>
             <returns></returns>
         </member>
         <member name="M:NSS.Blast.BlastScript.GetFloat2(System.Int32@)">
             <summary>
-            get a float2 input/output value, asserts on errors
+            get a float2 input/output value
             </summary>
-            <param name="input_index"></param>
-            <returns></returns>
         </member>
         <member name="M:NSS.Blast.BlastScript.GetFloat3(System.Int32@)">
             <summary>
             get a float3 input/output value, asserts on errors
             </summary>
-            <param name="input_index"></param>
-            <returns></returns>
         </member>
         <member name="M:NSS.Blast.BlastScript.GetFloat4(System.Int32@)">
             <summary>
             get a float4 input/output value, asserts on errors
             </summary>
-            <param name="input_index"></param>
-            <returns></returns>
         </member>
         <member name="M:NSS.Blast.BlastScript.SetData(System.Int32@,Unity.Collections.NativeArray{NSS.Blast.BlastPackageData}@,Unity.Collections.NativeArray{System.Single}@)">
             <summary>
@@ -7366,6 +7496,11 @@
             <param name="offset">the offset into output from where to start writing output data</param>
             <returns>true if ok, false on errors</returns>
         </member>
+        <member name="M:NSS.Blast.BlastScript.ResetDefaults">
+            <summary>
+            reset default values in datasegment as they might have been overwritten during execution
+            </summary>
+        </member>
         <member name="M:NSS.Blast.BlastScript.GetData(System.Int32@,Unity.Collections.NativeArray{NSS.Blast.BlastPackageData}@,Unity.Collections.NativeArray{Unity.Mathematics.float4}@,System.Int32)">
             <summary>
             get all data for a given input offset for a collection of packages 
@@ -7385,6 +7520,127 @@
             <summary>
             get a direct pointer to the data in the package 
             </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData``1(System.Tuple{System.String,System.Object}[])">
+            <summary>
+            set variable data from a collection of variable-name-value tuples
+            </summary>
+            <param name="values">collection of name-value tuples</param>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>
+            set variable data from a dictionary of name-value 
+            </summary>
+            <param name="values">collection of name-value tuples</param>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.Collections.Generic.Dictionary{System.Int32,System.Object})">
+            <summary>
+            set variable data from a dictionary of index-value
+            </summary>
+            <param name="values">collection of name-value tuples</param>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.Int32,System.Object)">
+            <summary>
+            set data index from object 
+            </summary>
+            <param name="index">set data at index</param>
+            <param name="obj">the object to read the data from</param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.String,System.Single)">
+            <summary>
+            set variable data
+            </summary>
+            <param name="name">variable name</param>
+            <param name="value">float value</param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.Int32,System.Single)">
+            <summary>
+            set variable data
+            </summary>
+            <param name="index">variable index</param>
+            <param name="value">float value</param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.Int32,Unity.Mathematics.float2)">
+            <summary>
+            set variable data
+            </summary>
+            <param name="index">variable index</param>
+            <param name="value">float2 value</param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.Int32,Unity.Mathematics.float3)">
+            <summary>
+            set variable data
+            </summary>
+            <param name="index">variable index</param>
+            <param name="value">float value</param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.Int32,Unity.Mathematics.float4)">
+            <summary>
+            set variable data
+            </summary>
+            <param name="index">variable index</param>
+            <param name="value">float4 value</param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.GetVerifyDataIndex(System.String,System.Int32)">
+            <summary>
+            get index for named variable data, verify its datatype and log errors on fail
+            </summary>
+            <param name="name">variable name</param>
+            <param name="vector_size">vectorsize expected</param>
+            <returns>-1 on failure, variable index otherwise</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.GetVerifyDataIndex(System.String)">
+            <summary>
+            get index for named variable data
+            </summary>
+            <param name="name">variable name</param>
+            <returns>-1 on failure, variable index otherwise</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.String,Unity.Mathematics.float2)">
+            <summary>
+            set variable data
+            </summary>
+            <param name="name">variable name</param>
+            <param name="value">float2 value</param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.String,Unity.Mathematics.float3)">
+            <summary>
+            set variable data
+            </summary>
+            <param name="name">variable name</param>
+            <param name="value">float3 value</param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData(System.String,Unity.Mathematics.float4)">
+            <summary>
+            set variable data
+            </summary>
+            <param name="name">variable name</param>
+            <param name="value">float4 value</param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.GetData(System.String)">
+            <summary>
+            get a data element by looking up its variable index by name first 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.GetData(System.Int32)">
+            <summary>
+            get data by index
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.GetData">
+            <summary>
+            get all data elements 
+            </summary>
+            <returns></returns>
         </member>
         <member name="T:NSS.Blast.CompileTimeBlastScript">
             <summary>

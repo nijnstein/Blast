@@ -18,6 +18,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+using System.Collections.Generic;
 
 namespace NSS.Blast
 {
@@ -814,6 +815,12 @@ namespace NSS.Blast
 
 
         /// <summary>
+        /// for now, default is stored in max sized datatype, this will change in the future
+        /// </summary>
+        public float4 Default; 
+
+
+        /// <summary>
         /// ToString override providing a more usefull description while debugging 
         /// </summary>
         /// <returns>a formatted string</returns>
@@ -821,11 +828,11 @@ namespace NSS.Blast
         {
             if (Variable == null)
             {
-                return $"variable mapping: var = null, bytesize: {ByteSize}, offset: {Offset}";
+                return $"variable mapping: var = null, bytes: {ByteSize}, offset: {Offset}";
             }
             else
             {
-                return $"variable mapping: var: {VariableId} {Variable.Name} {Variable.DataType}, vectorsize: {Variable.VectorSize} , bytesize: {ByteSize}, offset: {Offset}";
+                return $"variable mapping: var: {VariableId} {Variable.Name} {Variable.DataType}, vectorsize: {Variable.VectorSize}, bytes: {ByteSize}, offset: {Offset}, default: {Default}";
             }
         }
     }
@@ -1183,8 +1190,19 @@ namespace NSS.Blast
 
         #endregion
 
-
+        /// <summary>
+        /// true if the script uses variables 
+        /// </summary>
         public bool HasVariables { get { return Variables != null && Variables.Length > 0; } }
+
+        /// <summary>
+        /// true if the package has outputs defined
+        /// </summary>
+        public bool HasOutputs { get { return Outputs != null && Outputs.Length > 0; } }
+
+        /// <summary>
+        /// true if package has inputs defined
+        /// </summary>
         public bool HasInputs { get { return Inputs != null && Inputs.Length > 0; } }
 
 
@@ -1224,8 +1242,9 @@ namespace NSS.Blast
         /// <param name="blast">blastengine data</param>
         /// <param name="environment">[optional] pointer to environment data</param>
         /// <param name="caller">[ooptional] caller data</param>
+        /// <param name="reset_defaults">rewrite default values in datasegment, can be omitted on first execute with fresh datasegment</param>
         /// <returns>success if all is ok</returns>
-        public BlastError Execute(IntPtr blast, IntPtr environment, IntPtr caller)
+        public BlastError Execute(IntPtr blast, IntPtr environment, IntPtr caller, bool reset_defaults = true)
         {
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (!IsAllocated) return BlastError.error_package_not_allocated;
@@ -1244,6 +1263,46 @@ namespace NSS.Blast
             }
 
             return BlastError.success;
+        }
+
+
+
+        /// <summary>
+        /// set default data from input or output data 
+        /// </summary>
+        unsafe static public void SetDefaultData(BlastVariableMapping[] inout, float* datasegment)
+        {
+            for (int i = 0; i < inout.Length; i++)
+            {
+                // we cant know if its actually set so we just write it at compilation 
+                BlastVariableMapping map = inout[i];
+                for (int j = 0; j < map.Variable.VectorSize; j++)
+                {
+                   datasegment[(map.Offset >> 2) + j] = map.Default[j];
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// reset datasegment to default data set by input and output defines 
+        /// </summary>
+        public void ResetDefaults()
+        {
+            if (IsAllocated && (HasInputs || HasOutputs))
+            {
+                unsafe
+                {
+                    if (HasInputs)
+                    {
+                        BlastScriptPackage.SetDefaultData(Inputs, Package.Data);
+                    }
+                    if (HasOutputs)
+                    {
+                        BlastScriptPackage.SetDefaultData(Outputs, Package.Data);
+                    }
+                }
+            }
         }
 
     }

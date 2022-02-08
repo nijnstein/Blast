@@ -4,19 +4,15 @@
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
-#if DEVELOPMENT_BUILD || TRACE
-#define HANDLE_DEBUG_OP
-#endif
-using NSS.Blast.Standalone;
-using Unity.Assertions;
+    using NSS.Blast.Standalone; 
 #else 
     using UnityEngine;
-    using UnityEngine.Assertions;
 #endif 
 
 using System;
 using System.Runtime.CompilerServices;
 using Unity.Burst;
+using UnityEngine.Assertions;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -1130,12 +1126,9 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: a = math.select(0f, 1f, a <= b); return;
                 case blast_operation.greater_equals: a = math.select(0f, 1f, a >= b); return;
                 case blast_operation.equals: a = math.select(0f, 1f, a == b); return;
+                case blast_operation.not_equals: a = math.select(0f, 1f, a != b); return;
 
-                case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not");
-#endif
-                    return;
+                case blast_operation.not: a = math.select(0f, 1f, b == 0); return; 
             }
         }
 
@@ -1168,12 +1161,9 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
                 case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
                 case blast_operation.equals: return math.select(0f, 1f, a == b);
+                case blast_operation.not_equals: return math.select(0f, 1f, a != b);
 
-                case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not|substract");
-#endif
-                    return float.NaN;
+                case blast_operation.not: return math.select(0f, 1f, b == 0);
             }
         }
 
@@ -1206,12 +1196,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
                 case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
                 case blast_operation.equals: return math.select(0f, 1f, a == b);
+                case blast_operation.not_equals: return math.select(0f, 1f, a != b);
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not|substract");
-#endif
-                    return float.NaN;
+                    return math.select(0f, 1f, b == 0);
             }
         }
 
@@ -1244,12 +1232,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
                 case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
                 case blast_operation.equals: return math.select(0f, 1f, a == b);
+                case blast_operation.not_equals: return math.select(0f, 1f, a != b);
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not|substract");
-#endif
-                    return float.NaN;
+                    return math.select(0f, 1f, b == 0);
             }
         }
 
@@ -1281,12 +1267,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
                 case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
                 case blast_operation.equals: return math.select(0f, 1f, a == b);
+                case blast_operation.not_equals: return math.select(0f, 1f, a != b); 
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not|substract");
-#endif
-                    return float.NaN;
+                    return math.select(0f, 1f, b == 0);
             }
         }
 
@@ -1318,12 +1302,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return (float2)(a <= b);
                 case blast_operation.greater_equals: return (float2)(a >= b);
                 case blast_operation.equals: return (float2)(a == b);
+                case blast_operation.not_equals: return (float2)(a != b);
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not|substract");
-#endif
-                    return float.NaN;
+                    return math.select(0f, 1f, b == 0);
             }
         }
 
@@ -1355,12 +1337,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return (float2)(a <= b);
                 case blast_operation.greater_equals: return (float2)(a >= b);
                 case blast_operation.equals: return (float2)(a == b);
+                case blast_operation.not_equals: return (float2)(a != b);
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not|substract");
-#endif
-                    return float.NaN;
+                    return math.select(0f, 1f, b == 0);
             }
         }
 
@@ -1392,12 +1372,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return (float3)(a <= b);
                 case blast_operation.greater_equals: return (float3)(a >= b);
                 case blast_operation.equals: return (float3)(a == b);
+                case blast_operation.not_equals: return (float3)(a != b);
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not|substract");
-#endif
-                    return float.NaN;
+                    return math.select(0f, 1f, b == 0);
             }
         }
 
@@ -1430,12 +1408,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return (float3)(a <= b);
                 case blast_operation.greater_equals: return (float3)(a >= b);
                 case blast_operation.equals: return (float3)(a == b);
+                case blast_operation.not_equals: return (float3)(a != b);
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not|substract");
-#endif
-                    return float.NaN;
+                    return math.select(0f, 1f, b == 0);
             }
         }
 
@@ -1467,12 +1443,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return (float4)(a <= b);
                 case blast_operation.greater_equals: return (float4)(a >= b);
                 case blast_operation.equals: return (float4)(a == b);
+                case blast_operation.not_equals: return (float4)(a != b);
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not|substract");
-#endif
-                    return float.NaN;
+                    return math.select(0f, 1f, b == 0);
             }
         }
 
@@ -1505,12 +1479,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return (float4)(a <= b);
                 case blast_operation.greater_equals: return (float4)(a >= b);
                 case blast_operation.equals: return (float4)(a == b);
+                case blast_operation.not_equals: return (float4)(a != b);
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not|substract");
-#endif
-                    return float.NaN;
+                    return math.select(0f, 1f, b == 0);
             }
         }
 
@@ -1540,12 +1512,9 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: a.xyz = math.select(0f, 1f, a.xyz <= b); return;
                 case blast_operation.greater_equals: a.xyz = math.select(0f, 1f, a.xyz >= b); return;
                 case blast_operation.equals: a.xyz = math.select(0f, 1f, a.xyz == b); return;
+                case blast_operation.not_equals: a.xyz = (float3)(a.xyz != b); return; 
 
-                case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not");
-#endif
-                    return;
+                case blast_operation.not: a.xyz = math.select(0f, 1f, b == 0); return;
             }
         }
 
@@ -1575,12 +1544,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: a.xy = math.select(0f, 1f, a.xy <= b); return;
                 case blast_operation.greater_equals: a.xy = math.select(0f, 1f, a.xy >= b); return;
                 case blast_operation.equals: a.xy = math.select(0f, 1f, a.xy == b); return;
+                case blast_operation.not_equals: a.xy = (float2)(a.xy != b); return;
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not");
-#endif
-                    return;
+                    a.xy = math.select(0f, 1f, b == 0); return;
             }
         }
 
@@ -1610,12 +1577,10 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: a = math.select(0f, 1f, a <= b); return;
                 case blast_operation.greater_equals: a = math.select(0f, 1f, a >= b); return;
                 case blast_operation.equals: a = math.select(0f, 1f, a == b); return;
+                case blast_operation.not_equals: a = math.select(0f, 1f, a != b); return;
 
                 case blast_operation.not:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError("not");
-#endif
-                    return;
+                    a = math.select(0f, 1f, b == 0); return;
             }
         }
 
@@ -5340,11 +5305,11 @@ namespace NSS.Blast.Interpretor
             switch ((BlastVectorSizes)vector_size)
             {
                 // result is always the same regardless.. could raise errors on this condition as compiler could do better then wast precious bytes
-                case BlastVectorSizes.float1: f4.x = math.abs(((float*)fdata)[0]); vector_size = 1; break;
-                case BlastVectorSizes.float2: f4.x = math.abs(((float2*)fdata)[0][offset]); vector_size = 1; break;
-                case BlastVectorSizes.float3: f4.x = math.abs(((float3*)fdata)[0][offset]); vector_size = 1; break;
+                case BlastVectorSizes.float1: f4.x = ((float*)fdata)[0]; vector_size = 1; break;
+                case BlastVectorSizes.float2: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
+                case BlastVectorSizes.float3: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
                 case 0:
-                case BlastVectorSizes.float4: f4.x = math.abs(((float4*)fdata)[0][offset]); vector_size = 1; break;
+                case BlastVectorSizes.float4: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
 #if DEVELOPMENT_BUILD || TRACE
                 default:
                     {
@@ -5762,7 +5727,7 @@ namespace NSS.Blast.Interpretor
             while (code_pointer < package.CodeSize)
             {
                 bool last_is_bool_or_math_operation = false;
-
+                prev_op = op; 
                 op = code[code_pointer];
 
                 // process operation, put any value in f4, set current_op if something else
@@ -5836,18 +5801,22 @@ namespace NSS.Blast.Interpretor
                             // handle operation AFTER reading next value
                             current_op = (blast_operation)op;
                             last_is_bool_or_math_operation = true;
+                            not = false;
+                            minus = false;
+                            code_pointer++;
+                            prev_op = op;
                         }
-                        break;
+                        continue;
 
                     case blast_operation.not:
                         {
                             // if the first in a compound or previous was an operation
-                            if (prev_op == 0 || last_is_bool_or_math_operation)
+                            if (prev_op == 0 || IsMathematicalOrBooleanOperation((blast_operation)prev_op))
                             {
 #if DEVELOPMENT_BUILD || TRACE
                                 if (not)
                                 {
-                                    Debug.LogError("blast.interpretor: double token: ! !, this will be become nothing, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
+                                    Debug.LogError("blast.interpretor: 4: ! !, this will be become nothing, it is not supported as it cant be determined to be intentional and will raise this error in editor mode only");
                                 }
 #endif
                                 not = !not;
@@ -5855,15 +5824,19 @@ namespace NSS.Blast.Interpretor
                             else
                             {
                                 current_op = blast_operation.not;
-                                last_is_bool_or_math_operation = true;
                             }
+
+                            // read next
+                            last_is_bool_or_math_operation = true;
+                            code_pointer++;
+                            prev_op = op;
                         }
-                        break;
+                        continue;
 
                     case blast_operation.substract:
                         {
                             // first or after an op 
-                            if (prev_op == 0 || last_is_bool_or_math_operation)
+                            if (prev_op == 0 || IsMathematicalOrBooleanOperation((blast_operation)prev_op))
                             {
 #if DEVELOPMENT_BUILD || TRACE
                                 if (minus)
@@ -5876,10 +5849,12 @@ namespace NSS.Blast.Interpretor
                             else
                             {
                                 current_op = blast_operation.substract;
-                                last_is_bool_or_math_operation = true;
                             }
+                            last_is_bool_or_math_operation = true;
+                            code_pointer++;
+                            prev_op = op;
                         }
-                        break;
+                        continue;
 
 
                     // in development builds assert on non supported operations
@@ -5978,7 +5953,13 @@ namespace NSS.Blast.Interpretor
                     // random 
                     case blast_operation.random: get_random_result(ref code_pointer, ref vector_size, out f4); break;
 
+                    // indexing operations 
+                    case blast_operation.index_x: get_index_result(ref code_pointer, ref vector_size, out f4, 0); break;
+                    case blast_operation.index_y: get_index_result(ref code_pointer, ref vector_size, out f4, 1); break;
+                    case blast_operation.index_z: get_index_result(ref code_pointer, ref vector_size, out f4, 2); break;
+                    case blast_operation.index_w: get_index_result(ref code_pointer, ref vector_size, out f4, 3); break;
 
+                    // extended operations 
                     case blast_operation.ex_op:
                         {
                             code_pointer++;
@@ -6159,8 +6140,29 @@ namespace NSS.Blast.Interpretor
                 // -> on first value
                 //
                 //
-                if (current_op == 0 && !(minus && prev_op == 0))
+                if (current_op == 0 && !((minus || not) && prev_op == 0))
                 {
+                    if ((minus || not))
+                    {
+#if STANDALONE_VSBUILD
+                        if (minus && not)
+                        {
+                            Debug.LogError("minus and not together active: error");
+                        }
+#endif
+                        if (minus)
+                        {
+                            f4 = -f4;
+                            minus = false;
+                        }
+                        if (not)
+                        {
+                            f4 = math.select((float4)0, (float4)1, f4 == 0);
+                            not = false;
+                            // f4_result = math.select(f4_result, -f4_result, minus && !last_is_bool_or_math_operation);
+                        }
+                    }
+
                     // just set according to vector size
                     switch ((BlastVectorSizes)vector_size)
                     {
@@ -6175,6 +6177,28 @@ namespace NSS.Blast.Interpretor
                 {
                     if (!last_is_bool_or_math_operation)
                     {
+                        if ((minus || not))
+                        {
+#if STANDALONE_VSBUILD
+                            if (minus && not)
+                            {
+                                Debug.LogError("minus and not together active: error");
+                            }
+#endif
+                            if (minus)
+                            {
+                                f4 = -f4;
+                                minus = false;
+                            }
+                            if (not)
+                            {
+                                f4 = math.select((float4)0, (float4)1, f4 == 0);
+                                not = false;
+                                // f4_result = math.select(f4_result, -f4_result, minus && !last_is_bool_or_math_operation);
+                            }
+                        }
+
+
                         switch ((BlastVectorSizes)current_vector_size)
                         {
                             case BlastVectorSizes.float1:
@@ -6257,6 +6281,9 @@ namespace NSS.Blast.Interpretor
                 }
 
                 // apply minus (if in sequence)...  
+                //
+                //  TODO     dont think this will ever run after the changes 
+                //
                 if ((minus || not) && !last_is_bool_or_math_operation && prev_op != 0)
                 {
 #if STANDALONE_VSBUILD
@@ -6268,21 +6295,21 @@ namespace NSS.Blast.Interpretor
                     if (minus)
                     {
                         f4_result = -f4_result;
+                        minus = false;
                     }
                     if(not)
                     {
                         f4_result = math.select((float4)0, (float4)1, f4_result == 0);
-                        // f4_result = math.select(f4_result, -f4_result, minus && !last_is_bool_or_math_operation);
+                        not = false;
                     }
                 }
           
-                minus = minus && !last_is_bool_or_math_operation;
+                //minus = minus && !last_is_bool_or_math_operation;
 
                 // reset current operation if last thing was a value 
                 if (!last_is_bool_or_math_operation) current_op = blast_operation.nop;
 
                 // next
-                prev_op = op;
                 code_pointer++;
             }
 
@@ -6800,7 +6827,7 @@ namespace NSS.Blast.Interpretor
                             {
                                 case (byte)BlastVectorSizes.float1:
                                     //if(Unity.Burst.CompilerServices.Hint.Unlikely(s_assignee != 1))
-                                    if (s_assignee != 1)
+                                    if (s_assignee != 1 && !is_indexed)
                                     {
 #if DEVELOPMENT_BUILD || TRACE
                                         Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");

@@ -8,19 +8,18 @@ using NSS.Blast.Interpretor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#if !STANDALONE_VSBUILD
-using System.Runtime.InteropServices.WindowsRuntime;
-using UnityEngine.Assertions;
-#else
-using Unity.Assertions;
 
+#if STANDALONE_VSBUILD
+    using NSS.Blast.Standalone;
+    using UnityEngine.Assertions;
+#else
+    using UnityEngine;
+    using UnityEngine.Assertions;
 #endif
-using System.Threading;
-using UnityEngine;
+
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 
 namespace NSS.Blast
 {
@@ -653,8 +652,19 @@ namespace NSS.Blast
 
             return true;
         }
-        
-                
+
+        /// <summary>
+        /// reset default values in datasegment as they might have been overwritten during execution
+        /// </summary>
+        public void ResetDefaults()
+        {
+            if (IsPackaged && IsPrepared)
+            {
+                Package.ResetDefaults(); 
+            }
+        }
+
+
         /// <summary>
         /// get all data for a given input offset for a collection of packages 
         /// </summary>
@@ -878,13 +888,13 @@ namespace NSS.Blast
                     break;
 
                 // vectors 
-                case Vector2 v2:
+                case UnityEngine.Vector2 v2:
                     if (null == SetData(index, v2)) return null;
                     break;
-                case Vector3 v3:
+                case UnityEngine.Vector3 v3:
                     if (null == SetData(index, v3)) return null;
                     break;
-                case Vector4 v4:
+                case UnityEngine.Vector4 v4:
                     if (null == SetData(index, v4)) return null;
                     break;
 
@@ -1046,7 +1056,6 @@ namespace NSS.Blast
         /// <param name="value">float2 value</param>
         /// <returns></returns>
         public BlastScript SetData(int index, float2 value)
-
         {
             if (index >= 0)
             {

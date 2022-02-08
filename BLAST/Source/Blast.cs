@@ -7,21 +7,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Linq;
 
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
-    using Unity.Assertions;
+    using UnityEngine.Assertions;
 #else
-using UnityEngine;
-using UnityEngine.Assertions;
-using Unity.Jobs;
-using Unity.Collections.LowLevel.Unsafe;
+    using UnityEngine;
+    using UnityEngine.Assertions;
 #endif
+
 
 using NSS.Blast.Cache;
 using NSS.Blast.Compiler;
-using NSS.Blast.Register;
 using NSS.Blast.Interpretor;
 using NSS.Blast.SSMD;
 
@@ -1653,7 +1650,7 @@ namespace NSS.Blast
         /// <returns></returns>
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]                                               
-        static public bool IsError(BlastError res)
+        static internal bool IsError(BlastError res)
         {
             return res != BlastError.success && res != BlastError.yield;
         }
@@ -1663,9 +1660,67 @@ namespace NSS.Blast
         /// </summary>
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static public bool IsSuccess(BlastError res)
+        static internal bool IsSuccess(BlastError res)
         {
             return res == BlastError.success;
+        }
+
+        /// <summary>
+        /// get datatype information from its name 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="datatype"></param>
+        /// <param name="vector_size"></param>
+        /// <param name="byte_size"></param>
+        /// <returns></returns>
+        [BurstDiscard]
+        static public bool GetDataTypeInfo(string name, out BlastVariableDataType datatype, out int vector_size, out int byte_size)
+        {
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+
+                switch (name.ToLower().Trim())
+                {
+                    case "single":
+                    case "float":
+                    case "float1":
+                    case "numeric":
+                    case "numeric1":
+                        datatype = BlastVariableDataType.Numeric;
+                        vector_size = 1;
+                        byte_size = 4;
+                        return true;
+
+                    case "float2":
+                    case "numeric2":
+                    case "vector2":
+                        datatype = BlastVariableDataType.Numeric;
+                        vector_size = 2;
+                        byte_size = 8;
+                        return true;
+
+                    case "float3":
+                    case "numeric3":
+                    case "vector3":
+                        datatype = BlastVariableDataType.Numeric;
+                        vector_size = 3;
+                        byte_size = 12;
+                        return true;
+
+                    case "float4":
+                    case "numeric4":
+                    case "vector4":
+                        datatype = BlastVariableDataType.Numeric;
+                        vector_size = 4;
+                        byte_size = 16;
+                        return true;
+                }
+            }
+
+            datatype = BlastVariableDataType.Numeric;
+            vector_size = 0;
+            byte_size = 0;
+            return false;
         }
 
         #endregion

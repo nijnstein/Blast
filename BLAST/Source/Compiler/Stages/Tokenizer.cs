@@ -4,11 +4,13 @@
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone;
-    using Unity.Assertions; 
+using NSS.Blast.Standalone;
+using UnityEngine.Assertions;
 #else
-using UnityEngine;
+    using UnityEngine;
+    using UnityEngine.Assertions;
 #endif
+
 
 using System;
 using System.Collections.Generic;
@@ -158,6 +160,13 @@ namespace NSS.Blast.Compiler.Stage
         /// <summary>
         /// read #input and #output defines 
         /// </summary>
+        /// <remarks>
+        /// <code>
+        /// #input id datatype default(s)
+        /// #output id datatype default(s)
+        /// </code>
+        /// </remarks>
+        /// 
         /// <param name="data"></param>
         /// <param name="comment"></param>
         /// <param name="a"></param>
@@ -165,47 +174,52 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>null on failure (also logs error in data)</returns>
         static BlastVariableMapping read_input_output_mapping(IBlastCompilationData data, string comment, string[] a, bool is_input)
         {
-            // optionally defines input and output mappings - also very usefull for validations
-            //
-            // #input id offset bytesize
-            // #output id offset bytesize     
+            // get input|output name 
+            string input_variable_id = a[1];
 
-            string id = a[1];
-            int offset, bytesize;
-
-            // OFFSET 
-            if (!int.TryParse(a[2], out offset))
+            int offset = 0;
+            if (data.HasInputs)
             {
-                data.LogError($"tokenizer.read_input_output_mapping: failed to parse offset field as an integer, value = {a[2]}");
-                return null;
-            }
-
-
-            // DATATYPE || DATASIZE 
-            BlastVariableDataType datatype = BlastVariableDataType.Numeric; 
-
-            if (string.Compare(a[3], "NUMERIC", true) == 0)
-            {
-                datatype = BlastVariableDataType.Numeric;
-                bytesize = 4;
-            }
-            else
-            {
-                if (string.Compare(a[3], "ID", true) == 0)
+                for (int i = 0; i < data.Inputs.Count; i++)
                 {
-                    datatype = BlastVariableDataType.ID;
-                    bytesize = 4; 
+                    offset += data.Inputs[i].ByteSize;
                 }
-                else
+            }
+
+            // read the datatype 
+            BlastVariableDataType datatype = BlastVariableDataType.Numeric;
+            int vector_size, byte_size;
+
+            if(!Blast.GetDataTypeInfo(a[2], out datatype, out vector_size, out byte_size))
+            {
+                data.LogError($"tokenizer.read_input_output_mapping: failed to interpret input variable typename {a[1]} as a valid type", (int)BlastError.error_input_type_invalid);
+                return null; 
+            }
+
+
+            // defaults? 
+            float4 variable_default = default; 
+            if(a.Length > 3)
+            {
+                // if there are defaults, then depending on datatype enforce vectorsize and type (only float now..)
+                int c = a.Length - 3; 
+                if(c != vector_size)
                 {
-                    if (!int.TryParse(a[3], out bytesize))
+                    data.LogError($"tokenizer.read_input_output_mapping: failed to interpret default as valid data for type, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}", (int)BlastError.error_input_ouput_invalid_default);
+                    return null;  
+                }
+                for(int i = 0; i < vector_size; i++)
+                {
+                    float f = CodeUtils.AsFloat(a[3 + i]);
+                    if(float.IsNaN(f))
                     {
-                        data.LogError($"tokenizer.read_input_output_mapping: failed to parse bytesize field as an integer, value = {a[2]}");
+                        data.LogError($"tokenizer.read_input_output_mapping: failed to parse default[{i}] as numeric, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}, data = {a[3 + i]}", (int)BlastError.error_input_ouput_invalid_default);
                         return null;
                     }
-                    datatype = BlastVariableDataType.Numeric;
+                    variable_default[i] = f; 
                 }
             }
+
 
             BlastVariable v;
             CompilationData cdata = (CompilationData)data; 
@@ -213,10 +227,10 @@ namespace NSS.Blast.Compiler.Stage
             if (is_input)
             {
                 // create variable, validate: it should not exist at this stage
-                v = cdata.CreateVariable(a[1], true, false);
+                v = cdata.CreateVariable(input_variable_id, datatype, vector_size, true, false);
                 if (v == null)
                 {
-                    data.LogError($"tokenizer.read_input_output_mapping: failed to create input variable with name {a[1]}");
+                    data.LogError($"tokenizer.read_input_output_mapping: failed to create input variable with name {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}", (int)BlastError.error_input_failed_to_create);
                     return null;
                 }
                 v.DataType = datatype;
@@ -231,26 +245,16 @@ namespace NSS.Blast.Compiler.Stage
                     v.AddReference();
 
                     // validate datatype 
-                    if (v.DataType != datatype)
+                    if (v.DataType != datatype || v.VectorSize != vector_size)
                     {
-                        data.LogError($"tokenizer.read_input_output_mapping: failed to validate input&output variable with name {a[1]}, datatype mismatch, input specifies '{v.DataType}', output says: '{datatype}'");
+                        data.LogError($"tokenizer.read_input_output_mapping: failed to validate input&output variable with name {a[1]}, datatype mismatch, input specifies '{v.DataType}[{v.VectorSize}]', output says: '{datatype}[{vector_size}]'", (int)BlastError.error_output_datatype_mismatch);
                         return null;
-                    }
-
-                    // validate bytesize from mappings 
-                    if(cdata.TryGetInput(v, out BlastVariableMapping vmap))
-                    {
-                        if(vmap.ByteSize != bytesize)
-                        {
-                            data.LogError($"tokenizer.read_input_output_mapping: failed to validate input&output variable with name {a[1]}, datasize mismatch, input specifies '{vmap.ByteSize}', output says: '{bytesize}'");
-                            return null;
-                        }                           
                     }
                 }
                 else
                 {
                     // create a new output variable 
-                    v = cdata.CreateVariable(a[1], false, true); // refcount is increased in create
+                    v = cdata.CreateVariable(a[1], datatype, vector_size, false, true); // refcount is increased in create
                     if (v == null)
                     {
                         data.LogError($"tokenizer.read_input_output_mapping: failed to create output variable with name {a[1]}");
@@ -260,12 +264,13 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
 
-            // setup mapping
+            // setup mapping, this links variables with the input|output
             BlastVariableMapping mapping = new BlastVariableMapping()
             {
                 Variable = v,
-                ByteSize = bytesize,
-                Offset = offset
+                ByteSize = byte_size,
+                Offset = offset,
+                Default = variable_default 
             };
 
             return mapping;
@@ -377,11 +382,22 @@ namespace NSS.Blast.Compiler.Stage
                         }
 
                         // scan for the next# in comment (if any)
-                        comment = scan_until_stripend(comment);
+                        comment = scan_until_stripend(comment).Trim();
+
+                        // 
+                        // Include the ; as allowed terminator. i forget it myself too often that i should not close defines
+                        // 
+
+                        int i_end = math.min(scan_until(comment, '#', 1), scan_until(comment, ';', 1));
+                        if (i_end >= 0)
+                        {
+                            // and remove that part, assume it to be a comment on the output def.                             
+                            comment = comment.Substring(0, i_end);
+                        }
 
                         // split result into strings 
                         string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (a.Length == 4)
+                        if (a.Length >= 3)
                         {
                             BlastVariableMapping mapping = read_input_output_mapping(data, comment, a, true);
                             if (mapping != null)
@@ -402,6 +418,7 @@ namespace NSS.Blast.Compiler.Stage
                     // output mapping 
                     if (comment.StartsWith("#output ", StringComparison.OrdinalIgnoreCase))
                     {
+                        // we could merge input and output parsing as code duplicates.. TODO 
                         if (tokens.Count > 0)
                         {
                             // not allowed   must be first things 
@@ -409,10 +426,19 @@ namespace NSS.Blast.Compiler.Stage
                             return (int)BlastError.error;
                         }
 
-                        comment = scan_until_stripend(comment);
+                        // 
+                        // Include the ; as allowed terminator. i forget it myself too often that i should not close defines
+                        // 
+
+                        int i_end = math.min(scan_until(comment, '#', 1), scan_until(comment, ';', 1));
+                        if (i_end >= 0)
+                        {
+                            // and remove that part, assume it to be a comment on the output def.                             
+                            comment = comment.Substring(0, i_end);
+                        }
 
                         string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (a.Length == 4)
+                        if (a.Length >= 3)
                         {
                             BlastVariableMapping mapping = read_input_output_mapping(data, comment, a, false);
                             if (mapping != null)
@@ -442,7 +468,7 @@ namespace NSS.Blast.Compiler.Stage
                 // check if a token 
                 if (is_token(code[i1]))
                 {
-                    previous_token = token;
+                    previous_token = i1 > 0 ? parse_token(code[i1 - 1]) : BlastScriptToken.Nop;
                     token = parse_token(code[i1]);
 
                     // some tokens may alter the previous token (multi char tokens) 
@@ -453,20 +479,29 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 switch (previous_token)
                                 {
+                                    case BlastScriptToken.Equals:
+                                        {
+                                            // this would also allow ======== 
+                                            i1++;
+                                        }
+                                        continue; 
                                     case BlastScriptToken.GreaterThen:
                                         {
+                                            token = BlastScriptToken.GreaterThenEquals;
                                             tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.GreaterThenEquals, null);
                                             i1++;
                                         }
                                         continue;
                                     case BlastScriptToken.SmallerThen:
                                         {
+                                            token = BlastScriptToken.SmallerThenEquals;
                                             tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.SmallerThenEquals, null);
                                             i1++;
                                         }
                                         continue;
                                     case BlastScriptToken.Not:
                                         {
+                                            token = BlastScriptToken.NotEquals;
                                             tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.NotEquals, null);
                                             i1++;
                                         }
@@ -474,12 +509,67 @@ namespace NSS.Blast.Compiler.Stage
                                 }
                             }
                             break;
+
+                        case BlastScriptToken.Substract:
+                            {
+                                switch(previous_token)
+                                {
+                                    case BlastScriptToken.Substract:
+                                        {
+                                            // -- => +
+                                            token = BlastScriptToken.Add; 
+                                            tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.Add, null);
+                                            i1++;
+                                        }
+                                        continue;
+
+                                    case BlastScriptToken.Add:
+                                        {
+                                            // -+ => -
+                                            token = BlastScriptToken.Substract;
+                                            tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.Substract, null);
+                                            i1++;
+                                        }
+                                        continue; 
+                                }
+                            }
+                            break;
+
+                        case BlastScriptToken.Add:
+                            {
+                                switch (previous_token)
+                                {
+                                    case BlastScriptToken.Substract:
+                                        {
+                                            // -+ => -
+                                            token = BlastScriptToken.Substract;
+                                            tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.Substract, null);
+                                            i1++;
+                                        }
+                                        continue;
+
+                                    case BlastScriptToken.Add:
+                                        {
+                                            // ++ => +
+                                            token = BlastScriptToken.Add; 
+                                            tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.Add, null);
+                                            i1++;
+                                        }
+                                        continue;
+                                }
+                            }
+                            break;                        
                     }
 
                     // if reaching here it was a single char token
                     tokens.Add(new Tuple<BlastScriptToken, string>(token, null));
                     i1++;
                     continue;
+                }
+                else
+                {
+                    previous_token = BlastScriptToken.Nop;
+                    token = BlastScriptToken.Nop;
                 }
 
                 // the rest are identifiers like: 

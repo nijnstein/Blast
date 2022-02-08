@@ -145,6 +145,16 @@ namespace NSS.Blast.Compiler
         bool HasDefines { get; }
 
         /// <summary>
+        /// true if the script defines inputs
+        /// </summary>
+        bool HasInputs { get; }
+
+        /// <summary>
+        /// true if the script defines outputs
+        /// </summary>
+        bool HasOutputs { get; }
+
+        /// <summary>
         /// true if the script has functions inlined 
         /// </summary>
         bool HasInlinedFunctions { get; }
@@ -888,9 +898,20 @@ namespace NSS.Blast.Compiler
         public List<BlastVariableMapping> Inputs { get; set; }
 
         /// <summary>
+        /// true if inputs are defined 
+        /// </summary>
+        public bool HasInputs { get { return Inputs != null && Inputs.Count > 0; } }
+
+        /// <summary>
         /// list of outputs defined by this script
         /// </summary>
         public List<BlastVariableMapping> Outputs { get; set; }
+
+        /// <summary>
+        /// true if outputs are defined 
+        /// </summary>                         
+        public bool HasOutputs { get { return Outputs != null && Outputs.Count > 0; } }
+
 
         /// <summary>
         /// list of validations defined by this script
@@ -902,16 +923,35 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public List<Tuple<BlastScriptToken, string>> Tokens { get; set; }
 
+
+        /// <summary>
+        /// create a holder for variable data collected during compilation 
+        /// - will log errors if the variable exists and returns null 
+        /// - initializes reference count at 1
+        /// - datatype = numeric, vectorsize = 1 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="is_input">default false</param>
+        /// <param name="is_output">default false</param>
+        /// <returns></returns>
+        public BlastVariable CreateVariable(string name, bool is_input = false, bool is_output = false)
+        {
+            return CreateVariable(name, BlastVariableDataType.Numeric, 1, is_input, is_output); 
+        }
+
+
         /// <summary>
         /// create a holder for variable data collected during compilation 
         /// - will log errors if the variable exists and returns null 
         /// - initializes reference count at 1
         /// </summary>
         /// <param name="name">first part of identifier - the name</param>
+        /// <param name="datatype"></param>
+        /// <param name="vector_size"></param>
         /// <param name="is_input">true if used as an input</param>
         /// <param name="is_output">true if used as an output</param>
         /// <returns>null on failure, any error will be logged</returns>
-        public BlastVariable CreateVariable(string name, bool is_input = false, bool is_output = false)
+        public BlastVariable CreateVariable(string name, BlastVariableDataType datatype, int vector_size, bool is_input = false, bool is_output = false)
         {
             name = name.ToLower();
 
@@ -935,6 +975,7 @@ namespace NSS.Blast.Compiler
                 // create a variable with 1 reference, 
                 BlastVariable v = new BlastVariable()
                 {
+                    // id == index into variables 
                     Id = Variables.Count,
 
                     // values like 42 will be named 42 this is nice when looking at it in debugger 
@@ -945,16 +986,16 @@ namespace NSS.Blast.Compiler
                     // - outputs do refcount 
                     ReferenceCount = is_input ? 0 : 1,
 
-                    DataType = BlastVariableDataType.Numeric,
+                    DataType = datatype,
 
                     // assume constant value if the first char is a digit or minus sign 
                     IsConstant = char.IsDigit(name[0]) || name[0] == '-',
                     IsInput = is_input,
                     IsOutput = is_output,
 
-                    // initally assume this is not a vector                     
-                    IsVector = false,
-                    VectorSize = 1
+                    // initally assume this is not a vector if nothing is set 
+                    IsVector = vector_size > 1,
+                    VectorSize = vector_size                     
                 };
 
                 Variables.Add(v);
@@ -1121,6 +1162,27 @@ namespace NSS.Blast.Compiler
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// reset inputs and outputs in datasegment to default values
+        /// </summary>
+        public void ResetIntermediateDefaults()
+        {
+            unsafe
+            {
+                fixed (float* pdata = Executable.data)
+                {
+                    if (HasOutputs)
+                    {
+                        BlastScriptPackage.SetDefaultData(Outputs.ToArray(), pdata);
+                    }
+                    if (HasInputs)
+                    {
+                        BlastScriptPackage.SetDefaultData(Inputs.ToArray(), pdata);
+                    }
+                }
+            }
         }
 
 

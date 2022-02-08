@@ -5,7 +5,7 @@
 //##########################################################################################################
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
-    using Unity.Assertions; 
+    using UnityEngine.Assertions;
 #else
     using UnityEngine;
     using UnityEngine.Assertions;
@@ -683,6 +683,21 @@ namespace NSS.Blast.Compiler
                 }
             }
 
+            // reset defaults after validating  
+            unsafe
+            {
+                fixed (float* pdata = cdata.Executable.data)
+                {
+                    if (result.HasInputs)
+                    {
+                        BlastScriptPackage.SetDefaultData(result.Inputs.ToArray(), pdata);
+                    }
+                    if (result.HasOutputs)
+                    {
+                        BlastScriptPackage.SetDefaultData(result.Outputs.ToArray(), pdata);
+                    }
+                }
+            }
             return result.IsOK;
         }
 

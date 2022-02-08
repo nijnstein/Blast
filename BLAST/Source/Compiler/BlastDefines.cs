@@ -1376,6 +1376,22 @@ namespace NSS.Blast
         /// error in assign, cannot set a vector component from a multicomponent vector
         /// </summary>
         error_assign_component_from_vector = -64,
+        /// <summary>
+        /// error in input define, the supplied typename could not be matched with any supported type 
+        /// </summary>
+        error_input_type_invalid = -65,
+        /// <summary>
+        /// error in input define, failed to create variable for input define
+        /// </summary>
+        error_input_failed_to_create = -66,
+        /// <summary>
+        /// error in output define, datatype mismatched 
+        /// </summary>
+        error_output_datatype_mismatch = -67,
+        /// <summary>
+        /// error in input or output define, the default set could not be interpreted into the correct datatype
+        /// </summary>
+        error_input_ouput_invalid_default = -68,
     }
 
 }

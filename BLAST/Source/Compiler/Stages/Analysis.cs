@@ -4,12 +4,13 @@
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone;
-using System.Threading;
-using Unity.Assertions; 
+using NSS.Blast.Standalone;
+using UnityEngine.Assertions;
 #else
-using UnityEngine;
+    using UnityEngine;
+    using UnityEngine.Assertions;
 #endif
+
 
 using Unity.Mathematics;
 
@@ -309,7 +310,8 @@ namespace NSS.Blast.Compiler.Stage
                         case nodetype.operation:
                             if (last_was_op)
                             {
-                                if (child.token != BlastScriptToken.Substract)
+                                // not allow negations 
+                                if (child.token != BlastScriptToken.Substract && child.token != BlastScriptToken.Not)
                                 {
                                     // error
                                     data.LogError("analyze.apply_multiplication_rules: found double operater, this is only allowed for negation with '-'");

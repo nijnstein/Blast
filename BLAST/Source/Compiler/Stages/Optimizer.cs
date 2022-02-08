@@ -5,7 +5,7 @@
 //##########################################################################################################
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
-    using Unity.Assertions; 
+    using UnityEngine.Assertions; 
 #else
     using UnityEngine;
     using UnityEngine.Assertions; 

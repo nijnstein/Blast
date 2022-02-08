@@ -8,12 +8,13 @@ using System.Collections.Generic;
 using System.Text;
 
 #if STANDALONE_VSBUILD
-    using Unity.Assertions;
-using NSS.Blast.Standalone; 
-#else
-using UnityEngine;
+using NSS.Blast.Standalone;
 using UnityEngine.Assertions;
+#else
+    using UnityEngine;
+    using UnityEngine.Assertions;
 #endif
+
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
