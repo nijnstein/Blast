@@ -3,8 +3,16 @@
 
 
 
+** if there is an assignment of a value like a = 3523;  and that value is used only 1 time 
+ then use a new assign and pop that encodes directly in code the value to set. 
+**
+
 - input variables may NOT be optimized away even if not used 
-- value objects?
+
+- allow statements to omit ; when possible 
+- allow , seperator to be omitted in input/output define
+
+- blasscript.set/getdata tests!@!
 
 
 - test handling of ++|+-|-+|--
