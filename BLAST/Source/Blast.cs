@@ -243,6 +243,18 @@ namespace NSS.Blast
     unsafe public struct Blast
     {
         /// <summary>
+        /// default interpretor 
+        /// </summary>
+        [ThreadStatic]
+        static public BlastInterpretor blaster = default;
+
+        /// <summary>
+        /// [ThreadStatic] ssmd interpretor
+        /// </summary>
+        [ThreadStatic]
+        static public BlastSSMDInterpretor ssmd_blaster = default;
+
+        /// <summary>
         /// delegate used to execute scripts
         /// </summary>
         /// <param name="scriptid">the id of the script</param>
@@ -623,11 +635,10 @@ namespace NSS.Blast
             if (!blast.IsCreated) return BlastError.error_blast_not_initialized;
             if (!package.IsAllocated) return BlastError.error_package_not_allocated;
 
-            BlastInterpretor blaster = default;
-            blaster.SetPackage(package);
 
             unsafe
             {
+                blaster.SetPackage(package);
                 return (BlastError)blaster.Execute(blast, environment, caller);
             }
         }
@@ -647,9 +658,12 @@ namespace NSS.Blast
             if (!blast.IsCreated) return BlastError.error_blast_not_initialized;
             if (!package.IsAllocated) return BlastError.error_package_not_allocated;
             if (ssmd_count == 0) return BlastError.error_nothing_to_execute;
-
-            BlastSSMDInterpretor blaster = default;
-            return (BlastError)blaster.Execute(blast, environment, (BlastSSMDDataStack*)ssmd_data, ssmd_count);
+            
+            unsafe
+            {
+                ssmd_blaster.SetPackage(package);
+                return (BlastError)ssmd_blaster.Execute(blast, environment, (BlastSSMDDataStack*)ssmd_data, ssmd_count);
+            }
         }
 
 
@@ -1166,13 +1180,19 @@ namespace NSS.Blast
         ///        equals,
         ///        not_equals
         ///        
+        ///        max
+        ///        min
         /// </summary>
         /// <param name="op">the operation to check</param>
-        /// <returns>true if handled by the ssmd interpretor</returns>
+        /// <returns>true if handled by the ssmd sequencer</returns>
         [BurstCompile]
         static public bool IsOperationSSMDHandled(blast_operation op)
         {
-            return op >= blast_operation.add && op <= blast_operation.not_equals;
+            return (op >= blast_operation.add && op <= blast_operation.not_equals)
+                ||
+                op == blast_operation.max
+                ||
+                op == blast_operation.min; 
         }
 
 

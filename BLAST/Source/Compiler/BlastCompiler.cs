@@ -296,6 +296,7 @@ namespace NSS.Blast.Compiler
             return this;
         }
 
+     
 
         /// <summary>
         /// add a compiled define
@@ -1050,7 +1051,12 @@ namespace NSS.Blast.Compiler
 
                     // [code-meta] [data-stack] 
                 case BlastPackageMode.SSMD:
-                    return PackageSSMD(result, code_size, metadata_size, data_size, stack_size);
+                    return PackageSSMD(result,
+                                        code_size,
+                                        metadata_size,
+                                        data_size,
+                                        stack_size,
+                                        options.PackageStack ? BlastPackageFlags.None : BlastPackageFlags.NoStack); 
 
                 case BlastPackageMode.Entity:
                     // [code] [meta-data-stack]

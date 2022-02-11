@@ -156,7 +156,7 @@ namespace NSS.Blast
         /// <summary>
         /// fictional - for debug view only
         /// </summary>
-        public float4 d;
+        public float4 d;        
 #endif 
     }
 

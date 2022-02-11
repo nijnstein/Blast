@@ -43,7 +43,6 @@ namespace NSS.Blast.Compiler.Stage
         {
             Assert.IsNotNull(compound);
 
-
             flattened_output = new List<node>();
 
             // does the compound contain nested compounds? we will reduce them all
@@ -87,14 +86,12 @@ namespace NSS.Blast.Compiler.Stage
                     case nodetype.parameter:
                         break;
 
-
                     case nodetype.compound:
-
                         // append this node to flattened
                         node push = CreatePushNodeAndAddChildsChildren(data, child);
 
-                       // child.parent = push;
-                      //  push.children.Add(child);
+                        // child.parent = push;
+                        //  push.children.Add(child);
 
                         // insert nodes to beginning of output
                         flattened_output.Insert(0, push);
@@ -189,12 +186,7 @@ namespace NSS.Blast.Compiler.Stage
                     if ((child.IsFunction && !child.IsPopFunction) || child.IsCompound)
                     {
                         
-#pragma warning disable CS1587 // XML comment is not placed on a valid language element
-///
-                        ///  we might want to do this with recursion.. 
-                        ///   
                         switch (child.type)
-#pragma warning restore CS1587 // XML comment is not placed on a valid language element
                         {
                             case nodetype.function:
                                 {
@@ -221,9 +213,6 @@ namespace NSS.Blast.Compiler.Stage
                                     //
                                     //  FLATTEN ANY COMPOUND !!!   TEST TILL DEATH
                                     // 
-
-                                    // this should allow for nested stuf: (1 2 3 (-1))
-
                                     List<node> flattened_compound; 
                                     BlastError res = FlattenCompound(data, child, out flattened_compound);
                                     if (res != BlastError.success)

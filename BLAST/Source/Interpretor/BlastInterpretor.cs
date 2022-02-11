@@ -5825,12 +5825,8 @@ namespace NSS.Blast.Interpretor
                             {
                                 current_op = blast_operation.not;
                             }
-
-                            // read next
-                            last_is_bool_or_math_operation = true;
-                            code_pointer++;
-                            prev_op = op;
                         }
+                        code_pointer++;
                         continue;
 
                     case blast_operation.substract:
@@ -5850,10 +5846,8 @@ namespace NSS.Blast.Interpretor
                             {
                                 current_op = blast_operation.substract;
                             }
-                            last_is_bool_or_math_operation = true;
-                            code_pointer++;
-                            prev_op = op;
                         }
+                        code_pointer++;
                         continue;
 
 

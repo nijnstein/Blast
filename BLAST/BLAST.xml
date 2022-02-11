@@ -112,6 +112,16 @@
             Blast Engine
             </summary>
         </member>
+        <member name="F:NSS.Blast.Blast.blaster">
+            <summary>
+            default interpretor 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Blast.ssmd_blaster">
+            <summary>
+            [ThreadStatic] ssmd interpretor
+            </summary>
+        </member>
         <member name="T:NSS.Blast.Blast.BlastExecute">
             <summary>
             delegate used to execute scripts
@@ -448,9 +458,11 @@
                     equals,
                     not_equals
                     
+                    max
+                    min
              </summary>
              <param name="op">the operation to check</param>
-             <returns>true if handled by the ssmd interpretor</returns>
+             <returns>true if handled by the ssmd sequencer</returns>
         </member>
         <member name="M:NSS.Blast.Blast.VisualizeTokens(System.Collections.Generic.List{System.Tuple{NSS.Blast.BlastScriptToken,System.String}},System.Int32,System.Int32)">
             <summary>
@@ -6220,7 +6232,7 @@
             <param name="code_pointer"></param>
             <param name="dataindex"></param>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into_indexed(System.Int32@,System.Byte@,System.Byte@,System.Byte@)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into_indexed(System.Int32@,System.Byte@,System.Byte@,System.Byte@,System.Byte@)">
             <summary>
             pop operation [stack/constant/variabledata] and move it into dataindex 
             - this is the indexed version of popinto 
@@ -6229,7 +6241,8 @@
             <param name="code_pointer"></param>
             <param name="dataindex"></param>
             <param name="offsetindex"></param>
-            <param name="vector_size"></param>
+            <param name="vector_size">vector size of value used to set with, should be 1 for now</param>
+            <param name="target_vector_size">targets vectorsize without index applied.. this could be lookup up but caller should know already</param>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_stack_fx_into``1(System.Int32@,System.Byte)">
             <summary>
