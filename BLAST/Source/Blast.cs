@@ -28,10 +28,7 @@ using Unity.Burst;
 
 using Random = Unity.Mathematics.Random;
 using System.Runtime.CompilerServices;
-
-
-
-
+using System.Linq;
 
 namespace NSS.Blast
 {

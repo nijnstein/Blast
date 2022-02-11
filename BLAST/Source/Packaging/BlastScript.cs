@@ -15,6 +15,7 @@ using System.Linq;
 #else
     using UnityEngine;
     using UnityEngine.Assertions;
+    using Unity.Collections.LowLevel.Unsafe;
 #endif
 
 using System.Runtime.CompilerServices;
