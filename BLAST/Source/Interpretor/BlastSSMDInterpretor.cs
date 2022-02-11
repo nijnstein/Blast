@@ -7235,13 +7235,12 @@ namespace NSS.Blast.SSMD
             float4* f4_result = register;               // here we accumelate the resulting value in 
 
             vector_size = 1; // vectors dont shrink in normal operations 
-            byte current_vector_size = 1;
-
+            byte prev_vector_size = 1;  
 
             while (code_pointer < package.CodeSize)
             {
-                bool last_is_bool_or_math_operation = false;
-
+                prev_vector_size = vector_size; 
+                
                 prev_op = op;
                 op = code[code_pointer];
 
@@ -7314,11 +7313,12 @@ namespace NSS.Blast.SSMD
                         {
                             // handle operation AFTER reading next value
                             current_op = (blast_operation)op;
-                            last_is_bool_or_math_operation = true;
                             not = minus = false; 
                         }
-                        break;
-
+                        // back to start of loop 
+                        code_pointer++;
+                        continue; 
+                        
                     case blast_operation.not:
                         {
                             // if the first in a compound or previous was an operation
@@ -7405,7 +7405,12 @@ namespace NSS.Blast.SSMD
 
                     case blast_operation.pop:
                         {
-                            pop_fn_into(code_pointer, f4, minus, out vector_size);
+                            //
+                            // -> pop into result if first op and continue
+                            // -> pop into f4 temp buffer if another operation
+                            // ! this saves 2 copies ! when prev_op == 0
+
+                            pop_fn_into(code_pointer, prev_op == 0 ? f4_result : f4, minus, out vector_size);
                             minus = false;
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -7415,6 +7420,13 @@ namespace NSS.Blast.SSMD
                                 return (int)BlastError.ssmd_error_unsupported_vector_size;
                             }
 #endif
+                            vector_size = (byte)math.select(vector_size, 4, vector_size == 0);
+                            if (prev_op == 0)
+                            {
+                                // this is the first datapoint, nothing can happen to it so jump
+                                code_pointer++;
+                                continue;
+                            }
                         }
                         break;
 
@@ -7442,7 +7454,27 @@ namespace NSS.Blast.SSMD
                     case blast_operation.index_y:
                     case blast_operation.index_z:
                     case blast_operation.index_w:
-                    case blast_operation.ex_op: GetFunctionResult(f4_temp, ref code_pointer, ref vector_size, ref f4); break;
+                    case blast_operation.ex_op:
+                        
+                        // ### optimization depending on callchain ###
+                        //
+                        // if on the first token (prevop = 0)    (saves multiple copies)
+                        // 
+                        // - copy directly into f4_result, continue to next iteration like on minus
+                        //
+                        // if not minus and not not       (save 1 copy)
+                        // 
+                        // - into f4_result,  set skipset flag
+                        //
+                        // else
+                        //
+                        // - into f4 -> normal flow
+                        //
+
+                               //   todo
+                     
+
+                        GetFunctionResult(f4_temp, ref code_pointer, ref vector_size, ref f4); break;
 
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -7571,11 +7603,11 @@ namespace NSS.Blast.SSMD
                     {
                         switch ((BlastVectorSizes)vector_size)
                         {
-                            case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = -f4[i].x; current_vector_size = 1; break;
-                            case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = -f4[i].xy; current_vector_size = 2; break;
-                            case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = -f4[i].xyz; current_vector_size = 3; break;
+                            case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = -f4[i].x; break;
+                            case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = -f4[i].xy; break;
+                            case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = -f4[i].xyz; break;
                             case 0:
-                            case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = -f4[i]; current_vector_size = 4; break;
+                            case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = -f4[i]; break;
                         }
                         minus = false;
                     }
@@ -7585,11 +7617,11 @@ namespace NSS.Blast.SSMD
                         {
                             switch ((BlastVectorSizes)vector_size)
                             {
-                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = math.select(0, 1, f4[i].x == 0f); current_vector_size = 1; break;
-                                case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = math.select((float2)0f, (float2)1f, f4[i].xy == (float2)0f); current_vector_size = 2; break;
-                                case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = math.select((float3)0f, (float3)1f, f4[i].xyz == (float3)0f); current_vector_size = 3; break;
+                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = math.select(0, 1, f4[i].x == 0f); break;
+                                case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = math.select((float2)0f, (float2)1f, f4[i].xy == (float2)0f); break;
+                                case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = math.select((float3)0f, (float3)1f, f4[i].xyz == (float3)0f); break;
                                 case 0:
-                                case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = math.select((float4)0f, (float4)1f, f4[i] == (float4)0f); ; current_vector_size = 4; break;
+                                case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = math.select((float4)0f, (float4)1f, f4[i] == (float4)0f); break;
                             }
                             not = false;
                         }
@@ -7597,177 +7629,138 @@ namespace NSS.Blast.SSMD
                         {
                             switch ((BlastVectorSizes)vector_size)
                             {
-                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = f4[i].x; current_vector_size = 1; break;
-                                case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = f4[i].xy; current_vector_size = 2; break;
-                                case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = f4[i].xyz; current_vector_size = 3; break;
+                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = f4[i].x; break;
+                                case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = f4[i].xy; break;
+                                case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = f4[i].xyz; break;
                                 case 0:
-                                case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = f4[i]; current_vector_size = 4; break;
+                                case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = f4[i]; break;
                             }
                         }
                     }
-                 }
+                }
                 else
                 {
-                    if (!last_is_bool_or_math_operation)
+                    if ((minus || not))
                     {
-                        if ((minus || not))
+#if DEVELOPMENT_BUILD || TRACE
+                        if (minus && not)
                         {
-#if DEVELOPMENT_BUILD || TRACE 
-                            if (minus && not)
+                            Debug.LogError("minus and not together active: error");
+                        }
+#endif
+                        if (not)
+                        {
+                            // this could be put in handle_op.. saving a loop
+                            switch ((BlastVectorSizes)vector_size)
                             {
-                                Debug.LogError("minus and not together active: error");
+                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.select(0, 1, f4[i].x == 0f); break;
+                                case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4[i].xy = math.select((float2)0f, (float2)1f, f4[i].xy == (float2)0f); break;
+                                case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4[i].xyz = math.select((float3)0f, (float3)1f, f4[i].xyz == (float3)0f); break;
+                                case 0:
+                                case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4[i] = math.select((float4)0f, (float4)1f, f4[i] == (float4)0f); break;
                             }
-#endif 
-                            if (not)
-                            {
-                                // this could be put in handle_op.. saving a loop
-                                switch ((BlastVectorSizes)vector_size)
-                                {
-                                    case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.select(0, 1, f4[i].x == 0f); current_vector_size = 1; break;
-                                    case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4[i].xy = math.select((float2)0f, (float2)1f, f4[i].xy == (float2)0f); current_vector_size = 2; break;
-                                    case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4[i].xyz = math.select((float3)0f, (float3)1f, f4[i].xyz == (float3)0f); current_vector_size = 3; break;
-                                    case 0:
-                                    case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4[i] = math.select((float4)0f, (float4)1f, f4[i] == (float4)0f); ; current_vector_size = 4; break;
-                                }
-                                not = false;
-                            }
-
-                            if(minus)
-                            {
-                                // this could be put in handle_op.. saving a loop
-                                switch ((BlastVectorSizes)vector_size)
-                                {
-                                    case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4[i].x = -f4[i].x; current_vector_size = 1; break;
-                                    case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4[i].xy = -f4[i].xy; current_vector_size = 2; break;
-                                    case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4[i].xyz = -f4[i].xyz; current_vector_size = 3; break;
-                                    case 0:
-                                    case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4[i] = -f4[i]; current_vector_size = 4; break;
-                                }
-                                minus = false;
-                            }
+                            not = false;
                         }
 
-                        switch ((BlastVectorSizes)current_vector_size)
+                        if (minus)
                         {
-                            case BlastVectorSizes.float1:
-
-                                switch ((BlastVectorSizes)vector_size)
-                                {
-                                    case BlastVectorSizes.float1:
-                                        handle_op_f1_f1(current_op, f4_result, f4, ref vector_size);
-                                        break;
-                                    case BlastVectorSizes.float2:
-                                        handle_op_f1_f2(current_op, f4_result, f4, ref vector_size);
-                                        break;
-                                    case BlastVectorSizes.float3:
-                                        handle_op_f1_f3(current_op, f4_result, f4, ref vector_size);
-                                        break;
-                                    case BlastVectorSizes.float4:
-                                        handle_op_f1_f4(current_op, f4_result, f4, ref vector_size);
-                                        break;
-#if DEVELOPMENT_BUILD || TRACE
-                                    default:
-                                        Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
-                                        break;
-#endif
-                                }
-                                break;
-
-
-                            case BlastVectorSizes.float2:
-
-                                switch ((BlastVectorSizes)vector_size)
-                                {
-                                    case BlastVectorSizes.float1: handle_op_f2_f1(current_op, f4_result, f4, ref vector_size); break;
-                                    case BlastVectorSizes.float2: handle_op_f2_f2(current_op, f4_result, f4, ref vector_size); break;
-#if DEVELOPMENT_BUILD || TRACE
-                                    default:
-                                        Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size} -> {current_vector_size}");
-                                        break;
-#endif
-                                }
-                                break;
-
-                            case BlastVectorSizes.float3:
-
-                                switch ((BlastVectorSizes)vector_size)
-                                {
-                                    case BlastVectorSizes.float1: handle_op_f3_f1(current_op, f4_result, f4, ref vector_size); break;
-                                    case BlastVectorSizes.float3: handle_op_f3_f3(current_op, f4_result, f4, ref vector_size); break;
-#if DEVELOPMENT_BUILD || TRACE
-                                    default:
-                                        Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size} -> {current_vector_size}");
-                                        break;
-#endif
-                                }
-                                break;
-
-
-                            case 0:
-                            case BlastVectorSizes.float4:
-
-                                switch ((BlastVectorSizes)vector_size)
-                                {
-                                    case BlastVectorSizes.float1: handle_op_f4_f1(current_op, f4_result, f4, ref vector_size); break;
-                                    case BlastVectorSizes.float4: handle_op_f4_f4(current_op, f4_result, f4, ref vector_size); break;
-#if DEVELOPMENT_BUILD || TRACE
-                                    default:
-                                        Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size} -> {current_vector_size}");
-                                        break;
-#endif
-                                }
-                                break;
-
-
-#if DEVELOPMENT_BUILD || TRACE
-                            default:
-                                Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
-                                break;
-#endif
-
-
+                            // this could be put in handle_op.. saving a loop
+                            switch ((BlastVectorSizes)vector_size)
+                            {
+                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4[i].x = -f4[i].x; break;
+                                case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4[i].xy = -f4[i].xy; break;
+                                case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4[i].xyz = -f4[i].xyz; break;
+                                case 0:
+                                case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4[i] = -f4[i]; break;
+                            }
+                            minus = false;
                         }
+                    }
+
+                    switch ((BlastVectorSizes)prev_vector_size)
+                    {
+                        case BlastVectorSizes.float1:
+
+                            switch ((BlastVectorSizes)vector_size)
+                            {
+                                case BlastVectorSizes.float1:
+                                    handle_op_f1_f1(current_op, f4_result, f4, ref vector_size);
+                                    break;
+                                case BlastVectorSizes.float2:
+                                    handle_op_f1_f2(current_op, f4_result, f4, ref vector_size);
+                                    break;
+                                case BlastVectorSizes.float3:
+                                    handle_op_f1_f3(current_op, f4_result, f4, ref vector_size);
+                                    break;
+                                case BlastVectorSizes.float4:
+                                    handle_op_f1_f4(current_op, f4_result, f4, ref vector_size);
+                                    break;
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
+                                    break;
+#endif
+                            }
+                            break;
+
+
+                        case BlastVectorSizes.float2:
+
+                            switch ((BlastVectorSizes)vector_size)
+                            {
+                                case BlastVectorSizes.float1: handle_op_f2_f1(current_op, f4_result, f4, ref vector_size); break;
+                                case BlastVectorSizes.float2: handle_op_f2_f2(current_op, f4_result, f4, ref vector_size); break;
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                                    break;
+#endif
+                            }
+                            break;
+
+                        case BlastVectorSizes.float3:
+
+                            switch ((BlastVectorSizes)vector_size)
+                            {
+                                case BlastVectorSizes.float1: handle_op_f3_f1(current_op, f4_result, f4, ref vector_size); break;
+                                case BlastVectorSizes.float3: handle_op_f3_f3(current_op, f4_result, f4, ref vector_size); break;
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                                    break;
+#endif
+                            }
+                            break;
+
+
+                        case 0:
+                        case BlastVectorSizes.float4:
+
+                            switch ((BlastVectorSizes)vector_size)
+                            {
+                                case BlastVectorSizes.float1: handle_op_f4_f1(current_op, f4_result, f4, ref vector_size); break;
+                                case BlastVectorSizes.float4: handle_op_f4_f4(current_op, f4_result, f4, ref vector_size); break;
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                                    break;
+#endif
+                            }
+                            break;
+
+
+#if DEVELOPMENT_BUILD || TRACE
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
+                            break;
+#endif
+
+
                     }
                 }
 
-                // apply minus|not (if in sequence and not already applied)...  
-                if ((minus || not) && !last_is_bool_or_math_operation && prev_op != 0)
-                {
-#if STANDALONE_VSBUILD
-                    if (minus && not)
-                    {
-                        Debug.LogError("blast.ssmd.interpretor: minus and not together active: error");
-                    }
-#endif
-
-                    if (minus)
-                    {
-                        switch ((BlastVectorSizes)vector_size)
-                        {
-                            case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = -f4_result[i].x; break;
-                            case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = -f4_result[i].xy; break;
-                            case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = -f4_result[i].xyz; break;
-                            case 0:
-                            case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = -f4_result[i]; break;
-                        }
-                        minus = false;
-                    }
-                    else 
-                    {
-                        switch ((BlastVectorSizes)vector_size)
-                        {
-                            case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = math.select(0f, 1f, f4_result[i].x == 0); break;
-                            case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = math.select((float2)0f, (float2)1f, f4_result[i].xy == 0); break;
-                            case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = math.select((float3)0f, (float3)1f, f4_result[i].xyz == 0); break;
-                            case 0:
-                            case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = math.select((float4)0f, (float4)1f, f4_result[i].xyzw == 0); break;
-                        }
-                        not = false;
-                    }
-                }
-
-                // reset current operation if last thing was a value 
-                if (!last_is_bool_or_math_operation) current_op = blast_operation.nop;
+                // reset current operation when last thing was a value  (otherwise wont get here) 
+                current_op = blast_operation.nop;
 
                 // next
                 code_pointer++;

@@ -240,7 +240,7 @@ namespace NSS.Blast
     unsafe public struct Blast
     {
         /// <summary>
-        /// default interpretor 
+        /// [ThreadStatic] default interpretor 
         /// </summary>
         [ThreadStatic]
         static public BlastInterpretor blaster = default;

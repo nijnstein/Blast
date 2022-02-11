@@ -114,7 +114,7 @@
         </member>
         <member name="F:NSS.Blast.Blast.blaster">
             <summary>
-            default interpretor 
+            [ThreadStatic] default interpretor 
             </summary>
         </member>
         <member name="F:NSS.Blast.Blast.ssmd_blaster">
@@ -6662,26 +6662,6 @@
             <summary>
             data for ssmd operation modes: data-stack only
             - only used as pointer, fields handy in debugger
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.a">
-            <summary>
-            fictional - for debug view only
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.b">
-            <summary>
-            fictional - for debug view only
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.c">
-            <summary>
-            fictional - for debug view only
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.d">
-            <summary>
-            fictional - for debug view only
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastPackageData">
