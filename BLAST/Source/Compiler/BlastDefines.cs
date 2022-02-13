@@ -1392,6 +1392,10 @@ namespace NSS.Blast
         /// error in input or output define, the default set could not be interpreted into the correct datatype
         /// </summary>
         error_input_ouput_invalid_default = -68,
+        /// <summary>
+        /// failure enumerating all function attributed with the BlastFunctionAttribute, most probably blast could not match the method definition to a matching delegate
+        /// </summary>
+        error_enumerate_attributed_external_functions = -69,
     }
 
 }

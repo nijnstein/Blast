@@ -4,10 +4,10 @@
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone; 
-#else 
+using NSS.Blast.Standalone;
+#else
     using UnityEngine;
-#endif 
+#endif
 
 using System;
 using System.Runtime.CompilerServices;
@@ -194,7 +194,7 @@ namespace NSS.Blast.Interpretor
 
             // killing yield.. 
             /*int */
-            
+
             code_pointer = 0;
             return execute(blast, environment, caller); // ref package->code_pointer);
         }
@@ -501,7 +501,7 @@ namespace NSS.Blast.Interpretor
                 if (size != 1 || type != BlastVariableDataType.Numeric)
                 {
                     Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
-                    return float.NaN;                                                                                                                                      
+                    return float.NaN;
                 }
 #endif         
                 // stack pop 
@@ -1128,7 +1128,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.equals: a = math.select(0f, 1f, a == b); return;
                 case blast_operation.not_equals: a = math.select(0f, 1f, a != b); return;
 
-                case blast_operation.not: a = math.select(0f, 1f, b == 0); return; 
+                case blast_operation.not: a = math.select(0f, 1f, b == 0); return;
             }
         }
 
@@ -1267,7 +1267,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
                 case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
                 case blast_operation.equals: return math.select(0f, 1f, a == b);
-                case blast_operation.not_equals: return math.select(0f, 1f, a != b); 
+                case blast_operation.not_equals: return math.select(0f, 1f, a != b);
 
                 case blast_operation.not:
                     return math.select(0f, 1f, b == 0);
@@ -1512,7 +1512,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.smaller_equals: a.xyz = math.select(0f, 1f, a.xyz <= b); return;
                 case blast_operation.greater_equals: a.xyz = math.select(0f, 1f, a.xyz >= b); return;
                 case blast_operation.equals: a.xyz = math.select(0f, 1f, a.xyz == b); return;
-                case blast_operation.not_equals: a.xyz = (float3)(a.xyz != b); return; 
+                case blast_operation.not_equals: a.xyz = (float3)(a.xyz != b); return;
 
                 case blast_operation.not: a.xyz = math.select(0f, 1f, b == 0); return;
             }
@@ -1713,16 +1713,16 @@ namespace NSS.Blast.Interpretor
         {
             // get int id from next 4 ops/bytes 
             int id =
-                (code[code_pointer + 1] << 24)
+                //(code[code_pointer + 1] << 24)
+                //+
+                //(code[code_pointer + 2] << 16)
+                //+
+                (code[code_pointer + 1] << 8)
                 +
-                (code[code_pointer + 2] << 16)
-                +
-                (code[code_pointer + 3] << 8)
-                +
-                code[code_pointer + 4];
+                code[code_pointer + 2];
 
             // advance code pointer beyond the script id
-            code_pointer += 4;
+            code_pointer += 2;//4;
 
             // get function pointer 
 #if DEVELOPMENT_BUILD || TRACE
@@ -1770,81 +1770,305 @@ namespace NSS.Blast.Interpretor
                 vector_size = 1; 
 #endif 
 
-                switch (p.MinParameterCount)
+                //
+                // -   currently only a list of float 1 values of parametercount length is supported 
+                // 
+                // -   support to read parametercount components from parameters supplied in any vectorsize/ truncate at the last vector 
+                //  
+                // -   THIS NEEDS A COMPILER UPDATE TO ALLOW THIS
+                //     in case of external function it should count components of parameters as function parameters
+                //     
+
+
+                // in the case of 0 parameters, handle it and return skipping the rest 
+                if (p.MinParameterCount == 0)
                 {
-                    case 0:
-                        FunctionPointer<Blast.BlastDelegate_f0> fp0 = p.Generic<Blast.BlastDelegate_f0>();
+#if STANDALONE_VSBUILD
+                    Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, null);
+#else
+                    FunctionPointer<BlastDelegate_f0> fp0 = p.Generic<BlastDelegate_f0>();
+                    if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
+                    {
+                        f4 = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr);
+                        return;
+                    }
+                    else
+                    {
+                        f4 = float.NaN;
+#if DEVELOPMENT_BUILD || TRACE
+                        Debug.LogError($"blast.interpretor.call_external: error mapping external fuction pointer, function id {p.FunctionId} parametercount = {p.MinParameterCount}");
+#endif
+                        return; 
+                    }
+#endif
+                }
+
+                // first gather up to MinParameterCount parameter components 
+                int p_count = 0;
+                float* p_data = stackalloc float[p.MinParameterCount];
+
+                while (p_count < p.MinParameterCount)
+                {
+                    byte vsize;
+                    code_pointer++;
+                    float* vdata = (float*)pop_with_info(code_pointer, out BlastVariableDataType vtype, out vsize);
+                    for (int i = 0; i < vsize && p_count < p.MinParameterCount; i++)
+                    {
+                        p_data[p_count] = vdata[i];
+                        p_count++;
+                    }
+                }
+
+                // then with those components call the matching delegate (up until 16 parameters)
+                if (p.IsShortDefinition)
+                {
+                    switch (p.MinParameterCount)
+                    {
+                        // failure case -> could not map delegate
+                        case 112:
+#if DEVELOPMENT_BUILD || TRACE
+                            Debug.LogError($"blast.interpretor.call_external: error mapping external fuction pointer, function id {p.FunctionId} parametercount = {p.MinParameterCount}");
+#endif
+                            f4 = float.NaN;
+                            break;
+
+                        case 0:
+#if STANDALONE_VSBUILD
+                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, null);
+                            return;
+#else
+                        FunctionPointer<BlastDelegate_f0_s> fp0_s = p.Generic<BlastDelegate_f0_s>();
+                        if (fp0_s.IsCreated && fp0_s.Value != IntPtr.Zero)
+                        {
+                            f4 = fp0_s.Invoke();
+                            return;
+                        }
+                        goto case 112;
+#endif
+
+
+                        case 1:
+#if STANDALONE_VSBUILD
+                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, new object[] { p_data[0] });
+                            return;
+#else
+                        FunctionPointer<BlastDelegate_f1_s> fp1_s = p.Generic<BlastDelegate_f1_s>();
+                        if (fp1_s.IsCreated && fp1_s.Value != IntPtr.Zero)
+                        {
+                            f4 = fp1_s.Invoke(p_data[0]);
+                            return;
+                        }
+                        goto case 112;
+#endif
+
+                        case 2:
+#if STANDALONE_VSBUILD
+                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, new object[] { p_data[0], p_data[1] });
+                            return;
+#else
+                        FunctionPointer<BlastDelegate_f11_s> fp11_s = p.Generic<BlastDelegate_f11_s>();
+                        if (fp11_s.IsCreated && fp11_s.Value != IntPtr.Zero)
+                        {
+                            f4 = fp11_s.Invoke(p_data[0], p_data[1]);
+                            return;
+                        }
+                        goto case 112;
+#endif
+                    }
+                }
+                else
+                {
+                    switch (p.MinParameterCount)
+                    {
+                        // failure case -> could not map delegate
+                        case 112:
+#if DEVELOPMENT_BUILD || TRACE
+                            Debug.LogError($"blast.interpretor.call_external: error mapping external fuction pointer, function id {p.FunctionId} parametercount = {p.MinParameterCount}");
+#endif
+                            f4 = float.NaN;
+                            break;
+                        
+                        
+                        case 0:
+#if STANDALONE_VSBUILD
+                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, new object[] { IntPtr.Zero, IntPtr.Zero, IntPtr.Zero });
+                            return;
+#else
+                        FunctionPointer<BlastDelegate_f0> fp0 = p.Generic<BlastDelegate_f0>();
                         if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
                         {
-                            vector_size = 1;
                             f4 = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr);
                             return;
                         }
-                        break;
-
-                    case 1:
-                        FunctionPointer<Blast.BlastDelegate_f1> fp1 = p.Generic<Blast.BlastDelegate_f1>();
+                        goto case 112;
+#endif
+                        
+                        case 1:
+#if STANDALONE_VSBUILD
+                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, new object[] { IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, p_data[0] });
+                            return;
+#else
+                        FunctionPointer<BlastDelegate_f1> fp1 = p.Generic<BlastDelegate_f1>();
                         if (fp1.IsCreated && fp1.Value != IntPtr.Zero)
                         {
-                            float a = pop_f1(code_pointer + 1);
-                            code_pointer++;
-
-                            f4 = fp1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a);
+                            f4 = fp1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0]);
                             return;
                         }
-                        break;
+                        goto case 112;
+#endif
 
-                    case 2:
-                        FunctionPointer<Blast.BlastDelegate_f2> fp2 = p.Generic<Blast.BlastDelegate_f2>();
-                        if (fp2.IsCreated && fp2.Value != IntPtr.Zero)
+                        case 2:
+#if STANDALONE_VSBUILD
+                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, new object[] { IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, p_data[0], p_data[1] });
+                            return;
+#else
+                        FunctionPointer<BlastDelegate_f11> fp11 = p.Generic<BlastDelegate_f11>();
+                        if (fp11.IsCreated && fp11.Value != IntPtr.Zero)
                         {
-                            float a = pop_f1(code_pointer + 1);
-                            float b = pop_f1(code_pointer + 2);
-                            code_pointer += 2;
-                            f4 = fp2.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a, b);
+                            f4 = fp11.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1]);
                             return;
                         }
-                        break;
+                        goto case 112;
+#endif
 
-                    case 3:
-                        FunctionPointer<Blast.BlastDelegate_f3> fp3 = p.Generic<Blast.BlastDelegate_f3>();
-                        if (fp3.IsCreated && fp3.Value != IntPtr.Zero)
-                        {
-                            float a = pop_f1(code_pointer + 1);
-                            float b = pop_f1(code_pointer + 2);
-                            float c = pop_f1(code_pointer + 3);
-                            code_pointer += 3;
-                            f4 = fp3.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a, b, c);
-                            return;
-                        }
-                        break;
+                        case 3:
+                            FunctionPointer<BlastDelegate_f111> fp111 = p.Generic<BlastDelegate_f111>();
+                            if (fp111.IsCreated && fp111.Value != IntPtr.Zero)
+                            {
+                                f4 = fp111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2]);
+                                return;
+                            }
+                            goto case 112;
 
-                    case 4:
-                        FunctionPointer<Blast.BlastDelegate_f4> fp4 = p.Generic<Blast.BlastDelegate_f4>();
-                        if (fp4.IsCreated && fp4.Value != IntPtr.Zero)
-                        {
-                            float a = pop_f1(code_pointer + 1);
-                            float b = pop_f1(code_pointer + 2);
-                            float c = pop_f1(code_pointer + 3);
-                            float d = pop_f1(code_pointer + 4);
-                            code_pointer += 4;
-                            f4 = (int)fp4.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, a, b, c, d);
-                            return;
-                        }
-                        break;
+                        case 4:
+                            FunctionPointer<BlastDelegate_f1111> fp1111 = p.Generic<BlastDelegate_f1111>();
+                            if (fp1111.IsCreated && fp1111.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3]);
+                                return;
+                            }
+                            goto case 112;
 
+                        case 5:
+                            FunctionPointer<BlastDelegate_f1111_1> fp1111_1 = p.Generic<BlastDelegate_f1111_1>();
+                            if (fp1111_1.IsCreated && fp1111_1.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 6:
+                            FunctionPointer<BlastDelegate_f1111_11> fp1111_11 = p.Generic<BlastDelegate_f1111_11>();
+                            if (fp1111_11.IsCreated && fp1111_11.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_11.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 7:
+                            FunctionPointer<BlastDelegate_f1111_111> fp1111_111 = p.Generic<BlastDelegate_f1111_111>();
+                            if (fp1111_111.IsCreated && fp1111_111.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 8:
+                            FunctionPointer<BlastDelegate_f1111_1111> fp1111_1111 = p.Generic<BlastDelegate_f1111_1111>();
+                            if (fp1111_1111.IsCreated && fp1111_1111.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_1111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 9:
+                            FunctionPointer<BlastDelegate_f1111_1111_1> fp1111_1111_1 = p.Generic<BlastDelegate_f1111_1111_1>();
+                            if (fp1111_1111_1.IsCreated && fp1111_1111_1.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_1111_1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 10:
+                            FunctionPointer<BlastDelegate_f1111_1111_11> fp1111_1111_11 = p.Generic<BlastDelegate_f1111_1111_11>();
+                            if (fp1111_1111_11.IsCreated && fp1111_1111_11.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_1111_11.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 11:
+                            FunctionPointer<BlastDelegate_f1111_1111_111> fp1111_1111_111 = p.Generic<BlastDelegate_f1111_1111_111>();
+                            if (fp1111_1111_111.IsCreated && fp1111_1111_111.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_1111_111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 12:
+                            FunctionPointer<BlastDelegate_f1111_1111_1111> fp1111_1111_1111 = p.Generic<BlastDelegate_f1111_1111_1111>();
+                            if (fp1111_1111_1111.IsCreated && fp1111_1111_1111.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_1111_1111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10], p_data[11]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 13:
+                            FunctionPointer<BlastDelegate_f1111_1111_1111_1> fp1111_1111_1111_1 = p.Generic<BlastDelegate_f1111_1111_1111_1>();
+                            if (fp1111_1111_1111_1.IsCreated && fp1111_1111_1111_1.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_1111_1111_1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10], p_data[11], p_data[12]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 14:
+                            FunctionPointer<BlastDelegate_f1111_1111_1111_11> fp1111_1111_1111_11 = p.Generic<BlastDelegate_f1111_1111_1111_11>();
+                            if (fp1111_1111_1111_11.IsCreated && fp1111_1111_1111_11.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_1111_1111_11.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10], p_data[11], p_data[12], p_data[13]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 15:
+                            FunctionPointer<BlastDelegate_f1111_1111_1111_111> fp1111_1111_1111_111 = p.Generic<BlastDelegate_f1111_1111_1111_111>();
+                            if (fp1111_1111_1111_111.IsCreated && fp1111_1111_1111_111.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_1111_1111_111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10], p_data[11], p_data[12], p_data[13], p_data[14]);
+                                return;
+                            }
+                            goto case 112;
+
+                        case 16:
+                            FunctionPointer<BlastDelegate_f1111_1111_1111_1111> fp1111_1111_1111_1111 = p.Generic<BlastDelegate_f1111_1111_1111_1111>();
+                            if (fp1111_1111_1111_1111.IsCreated && fp1111_1111_1111_1111.Value != IntPtr.Zero)
+                            {
+                                f4 = (int)fp1111_1111_1111_1111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10], p_data[11], p_data[12], p_data[13], p_data[14], p_data[15]);
+                                return;
+                            }
+                            goto case 112;
 
 #if DEVELOPMENT_BUILD || TRACE
-                    default:
-                        Debug.LogError($"function id {id}, with parametercount {p.MinParameterCount} is not supported yet");
-                        break;
+                        default:
+                            Debug.LogError($"function id {id}, with parametercount {p.MinParameterCount} is not supported yet");
+                            break;
 #endif
+                    }
                 }
 #if DEVELOPMENT_BUILD || TRACE
             }
 #endif
 
-#if DEVELOPMENT_BUILD || TRACE 
+#if DEVELOPMENT_BUILD || TRACE
             Debug.LogError($"blast: failed to call function pointer with id: {id}");
 #endif
             f4 = float.NaN;
@@ -1994,12 +2218,12 @@ namespace NSS.Blast.Interpretor
                     f4.x = float.NaN;
                     return;
                 }
-#endif                           
+#endif
 
                 switch ((BlastVectorSizes)popped_vector_size)
                 {
                     case BlastVectorSizes.float1: f4.x += ((float*)pdata)[0]; break;
-                    case BlastVectorSizes.float2: f4.x += math.csum(((float2*)pdata)[0]); break; 
+                    case BlastVectorSizes.float2: f4.x += math.csum(((float2*)pdata)[0]); break;
                     case BlastVectorSizes.float3: f4.x += math.csum(((float3*)pdata)[0]); break;
                     case 0:
                     case BlastVectorSizes.float4: f4.x += math.csum(((float4*)pdata)[0]); vector_size = 4; break;
@@ -2454,7 +2678,7 @@ namespace NSS.Blast.Interpretor
                         Debug.LogError($"ceillog2: numeric vector size '{vector_size}' not supported ");
                         break;
                     }
-#endif                                    
+#endif
             }
         }
 
@@ -5103,8 +5327,8 @@ namespace NSS.Blast.Interpretor
 
                 case BlastVectorSizes.float2:
                     {
-                        bool2 b2 = pop_f2(code_pointer + 1) != 0; 
-                       
+                        bool2 b2 = pop_f2(code_pointer + 1) != 0;
+
                         for (int i = 2; i <= c; i++)
                         {
                             bool2 b22 = pop_f2(code_pointer + 1) != 0;
@@ -5152,7 +5376,7 @@ namespace NSS.Blast.Interpretor
                         f.x = math.select(0f, 1f, b4.x);
                         f.y = math.select(0f, 1f, b4.y);
                         f.z = math.select(0f, 1f, b4.z);
-                        f.w = math.select(0f, 1f, b4.w); 
+                        f.w = math.select(0f, 1f, b4.w);
                         vector_size = 4;
                         break;
                     }
@@ -5321,7 +5545,7 @@ namespace NSS.Blast.Interpretor
 
         }
 
-        #endregion 
+        #endregion
         #endregion
         #endregion
 
@@ -5567,7 +5791,7 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion 
+        #endregion
 
         #region ByteCode Execution
 
@@ -5727,7 +5951,7 @@ namespace NSS.Blast.Interpretor
             while (code_pointer < package.CodeSize)
             {
                 bool last_is_bool_or_math_operation = false;
-                prev_op = op; 
+                prev_op = op;
                 op = code[code_pointer];
 
                 // process operation, put any value in f4, set current_op if something else
@@ -5872,7 +6096,7 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.assignfe:
                     case blast_operation.assignfn:
                     case blast_operation.assignfen:
-                    case blast_operation.assignv: 
+                    case blast_operation.assignv:
                         Assert.IsTrue(false, $"BlastInterpretor.GetCompound: operation {(blast_operation)op} not allowed in compounds, codepointer = {code_pointer}");
                         break;
 
@@ -5889,7 +6113,7 @@ namespace NSS.Blast.Interpretor
                         Assert.IsTrue(false, "should not be nesting compounds... compiler did not do its job wel");
                         break;
 
-#endif                      
+#endif
 #if DEVELOPMENT_BUILD || TRACE
 #endif
 
@@ -5932,7 +6156,7 @@ namespace NSS.Blast.Interpretor
                     // math utils 
                     case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.fmod: get_fmod_result(ref code_pointer, ref vector_size, out f4); break; 
+                    case blast_operation.fmod: get_fmod_result(ref code_pointer, ref vector_size, out f4); break;
 
                     // mula family
                     case blast_operation.mula: get_mula_result(ref code_pointer, ref vector_size, out f4); break;
@@ -6012,11 +6236,11 @@ namespace NSS.Blast.Interpretor
                         }
                         break;
 
-#if DEVELOPMENT_BUILD || TRACE 
+#if DEVELOPMENT_BUILD || TRACE
                     case blast_operation.seed:
                         Assert.IsTrue(false, "NOT IMPLEMENTED YET");
                         break;
-#endif 
+#endif
 
                     case blast_operation.pi:
                     case blast_operation.inv_pi:
@@ -6281,23 +6505,23 @@ namespace NSS.Blast.Interpretor
                 if ((minus || not) && !last_is_bool_or_math_operation && prev_op != 0)
                 {
 #if STANDALONE_VSBUILD
-                    if(minus && not)
+                    if (minus && not)
                     {
-                        Debug.LogError("minus and not together active: error"); 
+                        Debug.LogError("minus and not together active: error");
                     }
-#endif 
+#endif
                     if (minus)
                     {
                         f4_result = -f4_result;
                         minus = false;
                     }
-                    if(not)
+                    if (not)
                     {
                         f4_result = math.select((float4)0, (float4)1, f4_result == 0);
                         not = false;
                     }
                 }
-          
+
                 //minus = minus && !last_is_bool_or_math_operation;
 
                 // reset current operation if last thing was a value 
@@ -6416,7 +6640,7 @@ namespace NSS.Blast.Interpretor
                             byte assignee_op = code[code_pointer];
 
                             // determine indexer 
-                            bool is_indexed = assignee_op < opt_id; 
+                            bool is_indexed = assignee_op < opt_id;
                             blast_operation indexer = (blast_operation)math.select(0, assignee_op, is_indexed);
                             code_pointer = math.select(code_pointer, code_pointer + 1, is_indexed);
                             assignee_op = code[code_pointer];  // reading twice will probably be a lot faster then if() could test sometime.. todo
@@ -6432,13 +6656,13 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD || TRACE
                             // the compiler should have cought this, if it didt wel that would be noticed before going in release
                             // so we define this only for debug saving the if
-                                // cannot set a component from a vector (yet)
-                                if (vector_size != 1 && is_indexed)
-                                {
-                                    Debug.LogError($"blast.assignsingle: cannot set component from vector at #{code_pointer}, component: {indexer}");
-                                    return (int)BlastError.error_assign_component_from_vector;
-                                }
-#endif 
+                            // cannot set a component from a vector (yet)
+                            if (vector_size != 1 && is_indexed)
+                            {
+                                Debug.LogError($"blast.assignsingle: cannot set component from vector at #{code_pointer}, component: {indexer}");
+                                return (int)BlastError.error_assign_component_from_vector;
+                            }
+#endif
 
                             switch ((byte)vector_size)
                             {
@@ -6459,7 +6683,7 @@ namespace NSS.Blast.Interpretor
                                     // to that offset 
                                     fdata[offset] = ((float*)pdata)[0];
                                     break;
-                              
+
 
                                 case (byte)BlastVectorSizes.float2:
                                     if (s_assignee != 2)
@@ -6549,7 +6773,7 @@ namespace NSS.Blast.Interpretor
                             if (vector_size != 1 && is_indexed)
                             {
                                 Debug.LogError($"blast.assignf: cannot set component from vector at #{code_pointer}, component: {indexer}");
-                                return (int)BlastError.error_assign_component_from_vector; 
+                                return (int)BlastError.error_assign_component_from_vector;
                             }
 #endif
                             // set to assignee
@@ -6611,7 +6835,7 @@ namespace NSS.Blast.Interpretor
                             {
                                 case 1:
                                     int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                    fdata[offset] = -f4_register.x; 
+                                    fdata[offset] = -f4_register.x;
                                     break;
                                 case 2: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; break;
                                 case 3: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; break;
@@ -6664,7 +6888,7 @@ namespace NSS.Blast.Interpretor
                             {
                                 case 1:
                                     int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                    fdata[offset] = f4_register.x; 
+                                    fdata[offset] = f4_register.x;
                                     break;
                                 case 2: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; break;
                                 case 3: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; break;
@@ -6718,7 +6942,7 @@ namespace NSS.Blast.Interpretor
                             {
                                 case 1:
                                     int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                    fdata[assignee] = -f4_register.x; 
+                                    fdata[assignee] = -f4_register.x;
                                     break;
                                 case 2: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; break;
                                 case 3: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; break;
@@ -6759,7 +6983,7 @@ namespace NSS.Blast.Interpretor
                         {
                             // advance 1 if on assign 
                             code_pointer += math.select(0, 1, code[code_pointer] == (byte)blast_operation.assign);
-                            byte assignee_op = code[code_pointer]; 
+                            byte assignee_op = code[code_pointer];
 
                             // get any index, branch free
                             bool is_indexed = assignee_op < opt_id;
@@ -6814,7 +7038,7 @@ namespace NSS.Blast.Interpretor
                                 Debug.LogError($"blast.assign: cannot set component from vector at #{code_pointer}, component: {indexer}");
                                 return (int)BlastError.error_assign_component_from_vector;
                             }
-#endif 
+#endif
 
                             // set assigned data fields in stack 
                             switch ((byte)vector_size)

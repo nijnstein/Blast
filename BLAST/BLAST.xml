@@ -112,6 +112,16 @@
             Blast Engine
             </summary>
         </member>
+        <member name="P:NSS.Blast.Blast.Instance">
+            <summary>
+            the singleton instance if created 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Blast.IsInstantiated">
+            <summary>
+            returns TRUE if the static instance is initialized 
+            </summary>
+        </member>
         <member name="F:NSS.Blast.Blast.blaster">
             <summary>
             [ThreadStatic] default interpretor 
@@ -120,6 +130,11 @@
         <member name="F:NSS.Blast.Blast.ssmd_blaster">
             <summary>
             [ThreadStatic] ssmd interpretor
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.Blast.ScriptAPI">
+            <summary>
+            The API, initialize the instance before using static functions!
             </summary>
         </member>
         <member name="T:NSS.Blast.Blast.BlastExecute">
@@ -168,6 +183,13 @@
             <summary>
             simple object/lock method for some threadsafety
             </summary>
+        </member>
+        <member name="M:NSS.Blast.Blast.CreateInstance(NSS.Blast.BlastScriptAPI)">
+            <summary>
+            create a static instance, this instance will be used if no blast reference is given to functions that need it:
+            "Package, Compile, Prepare, Execute"  
+            </summary>
+            <param name="api">the api to use</param>
         </member>
         <member name="M:NSS.Blast.Blast.Create(Unity.Collections.Allocator)">
             <summary>
@@ -543,6 +565,19 @@
             <param name="vector_size"></param>
             <param name="byte_size"></param>
             <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Dispose">
+            <summary>
+            support dispose, to enable using clause
+            </summary>
+            <remarks>
+            using(Blast blast = Blast.Create(Allocator.Persistant))
+            {
+            
+            
+            
+            }
+            </remarks>
         </member>
         <member name="T:NSS.Blast.Compiler.BlastCompilerOptions">
             <summary>
@@ -2673,26 +2708,6 @@
             <param name="inlined_function"></param>
             <returns></returns>
         </member>
-        <member name="T:NSS.Blast.Compiler.BlastScriptInlineFunction">
-            <summary>
-            an inlined script function definition 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.Compiler.BlastScriptInlineFunction.Name">
-            <summary>
-            inlined function name
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.Compiler.BlastScriptInlineFunction.ParameterCount">
-            <summary>
-            parameter count as defined in script 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.Compiler.BlastScriptInlineFunction.Node">
-            <summary>
-            root node of function 
-            </summary>
-        </member>
         <member name="T:NSS.Blast.Compiler.BlastIntermediate">
             <summary>
             intermediate bytecode data for use by compiler 
@@ -3634,6 +3649,26 @@
             <param name="list"></param>
             <param name="node"></param>
             <returns></returns>
+        </member>
+        <member name="T:NSS.Blast.Compiler.BlastScriptInlineFunction">
+            <summary>
+            an inlined script function definition 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastScriptInlineFunction.Name">
+            <summary>
+            inlined function name
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastScriptInlineFunction.ParameterCount">
+            <summary>
+            parameter count as defined in script 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastScriptInlineFunction.Node">
+            <summary>
+            root node of function 
+            </summary>
         </member>
         <member name="T:NSS.Blast.BlastRuntimeVersions">
             <summary>
@@ -4864,468 +4899,14 @@
             error in input or output define, the default set could not be interpreted into the correct datatype
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastError.error_enumerate_attributed_external_functions">
+            <summary>
+            failure enumerating all function attributed with the BlastFunctionAttribute, most probably blast could not match the method definition to a matching delegate
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Cache.blast.max(System.Single,System.Single)">
             <summary>
             hmmmmz we would neeed very many overloads when supporting 63 parameters... 
-            </summary>
-        </member>
-        <member name="T:NSS.Blast.BlastScriptFunctionFlag">
-            <summary>
-            flags for extra information on script functions
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunctionFlag.Reserved">
-            <summary>
-            function targets a blast reserved function (seed, push, peek) 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunctionFlag.NativeFunction">
-            <summary>
-            function uses a native function pointer for execution
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunctionFlag.Inlined">
-            <summary>
-            function is an inlined temporary object that only exists during compilation
-            </summary>
-        </member>
-        <member name="T:NSS.Blast.ReservedBlastScriptFunctionIds">
-            <summary>
-            IDs reserved for functions used in blast, these get registered to blast with a name (that doesnt need to be equal) 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Input">
-            <summary>
-            input mapping function - reserved for internal use
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Output">
-            <summary>
-            output mapping function - reserved for internal use
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Yield">
-            <summary>
-            Yield execution 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Pop">
-            <summary>
-            Pop something from the stack 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Peek">
-            <summary>
-            Peek stack top 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Seed">
-            <summary>
-            Seed the random number generator 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Push">
-            <summary>
-            Push something to the stack 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.PushFunction">
-            <summary>
-            Push a function's return value to the stack 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.PushCompound">
-            <summary>
-            Push the result from executing a compound onto the stack 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.PushVector">
-            <summary>
-            Push a vector directly onto the stack 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Debug">
-            <summary>
-            Output debuginformation to the debug stream about given parameter 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.DebugStack">
-            <summary>
-            Output debuginformation to the debug stream
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Offset">
-            <summary>
-            all other functions start indexing from this offset
-            </summary>
-        </member>
-        <member name="T:NSS.Blast.BlastScriptFunction">
-            <summary>
-            burst compatible function description 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunction.NativeFunctionPointer">
-            <summary>
-            a native function pointer (1st member, makes sure its aligned if this struct is)
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunction.FunctionId">
-            <summary>
-            function Id, doubles as index into function tables
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunction.Match">
-            <summary>
-            char array to match to in lowercase, only ASCII
-            - length == Blast.MaximumFunctionNameLength
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunction.MinParameterCount">
-            <summary>
-            minimal number of parameters 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunction.MaxParameterCount">
-            <summary>
-            maximal number of parameters, 0 for none, max = 31 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunction.ReturnsVectorSize">
-            <summary>
-            vectorsize of returnvalue, 0 if no value is returned
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunction.AcceptsVectorSize">
-            <summary>
-            vectorsize of accepted values in parameters, set to 0 to perform no check
-            - TODO, V2/3/4?? could make this more strict
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunction.Flags">
-            <summary>
-            Flags: 
-            - reserved: function targets a reserved function
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunction.ScriptOp">
-            <summary>
-            Built-in functions directly compile into a script operation
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunction.ExtendedScriptOp">
-            <summary>
-            Built-in functions directly compile into a script operation
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptFunction.IsReserved">
-            <summary>
-            true if the function targets a reserved function name 
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptFunction.IsExternalCall">
-            <summary>
-            True if the functioncall is an external functionpointer
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptFunction.IsPopVariant">
-            <summary>
-            true if function encodes a pop function
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptFunction.IsPushVariant">
-            <summary>
-            true function encodes a push operation 
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptFunction.CanHaveParameters">
-            <summary>
-            true if the function can have parameters
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptFunction.HasVariableParameterCount">
-            <summary>
-            returns true if the function accepts a variable sized list of paramaters 
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptFunction.IsNotValid">
-            <summary>
-            returns if the function is NOT valid (checks id, assumes memory is initialized to zeros)
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptFunction.IsValid">
-            <summary>
-            returns if the function is valid (checks id, assumes memory is initialized to zeros)
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptFunction.Generic``1">
-            <summary>
-            cast our functionpointer into the delegate used to call it
-            </summary>
-            <typeparam name="T">the delegate type</typeparam>
-            <returns></returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptFunction.GetFunctionName">
-            <summary>
-            rebuilds the functionname from a native character array (expensive operation) 
-            </summary>
-            <returns>the string representing the functionname</returns>
-        </member>
-        <member name="T:NSS.Blast.BlastScriptFunctionInfo">
-            <summary>
-            managed information on functions 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunctionInfo.Function">
-            <summary>
-            the native function data contains id, information and function pointer 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunctionInfo.Match">
-            <summary>
-            the identifier to match the function to = function name
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunctionInfo.CSName">
-            <summary>
-            the identifier used in CS code - DONT USE
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptFunctionInfo.Parameters">
-            <summary>
-            [Optional] parameter names, these dont dictate min/max parametercount 
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptFunctionInfo.ToString">
-            <summary>
-            tostring override for better view in debugger
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptFunctionInfo.HasVariableParameterCount">
-            <summary>
-            true if the function has a variable length parameter list
-            </summary>
-        </member>
-        <member name="T:NSS.Blast.BlastScriptAPI">
-            <summary>
-            For now, just a collection of function pointers that holds a native list with function information
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptAPI.Name">
-            <summary>
-            name of the api
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptAPI.Functions">
-            <summary>
-            native function definition info 
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptAPI.FunctionInfo">
-            <summary>
-            managed information, includes a copy of the native info
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastScriptAPI.Allocator">
-            <summary>
-            allocated to be used for any data comming from this api
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptAPI.IsInitialized">
-            <summary>
-            true if native function pointer data is initialized/allocated
-            </summary>
-        </member>
-        <member name="P:NSS.Blast.BlastScriptAPI.FunctionCount">
-            <summary>
-            number of functions defined in this api
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.#ctor(Unity.Collections.Allocator)">
-            <summary>
-            Constructor for a new blastscriptapi instance, provides native allocator
-            </summary>
-            <param name="allocator"></param>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.Initialize">
-            <summary>
-            Initialize native function pointer stack 
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.Dispose">
-            <summary>
-            dispose of any native memory that could be allocated for holding function pointer information 
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.Destroy">
-            <summary>
-            destroy native allocations, return to uninitialized state 
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(NSS.Blast.ReservedBlastScriptFunctionIds,System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.blast_operation)">
-            <summary>
-            Register a function with blast
-            </summary>
-            <param name="id">a reserved function id</param>
-            <param name="name">functino name</param>
-            <param name="min_param_count">minimal parameter count</param>
-            <param name="max_param_count">maximum parameter count</param>
-            <param name="accept_vector_size">accepted vector size, 0 for any</param>
-            <param name="return_vector_size">returned verctor size, 0 for any</param>
-            <param name="op">blast operation used to encode it</param>
-            <returns>returns a unique (within the blast instance) function id</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(NSS.Blast.ReservedBlastScriptFunctionIds,System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.extended_blast_operation)">
-            <summary>
-            Register a function with blast
-            </summary>
-            <param name="id">a reserved function id</param>
-            <param name="name">functino name</param>
-            <param name="min_param_count">minimal parameter count</param>
-            <param name="max_param_count">maximum parameter count</param>
-            <param name="accept_vector_size">minimal vector size, 0 for any</param>
-            <param name="return_vector_size">max verctor size, 0 for any</param>
-            <param name="op">extended blast operation used to encode it</param>
-            <returns>returns a unique (within the blast instance) function id</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.IntPtr,System.Int32,System.Int32,System.Int32)">
-            <summary>
-            Register a function with blast
-            </summary>
-            <param name="nativefunction">a native function pointer</param>
-            <param name="name">functino name</param>
-            <param name="parameter_count">parameter count</param>
-            <param name="accept_vector_size">minimal vector size, 0 for any</param>
-            <param name="return_vector_size">max verctor size, 0 for any</param>
-            <returns>returns a unique (within the blast instance) function id</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.blast_operation)">
-            <summary>
-            Register a function with blast
-            </summary>
-            <param name="name">functino name</param>
-            <param name="min_param_count">minimal parameter count</param>
-            <param name="max_param_count">maximum parameter count</param>
-            <param name="accept_vector_size">minimal vector size, 0 for any</param>
-            <param name="return_vector_size">max verctor size, 0 for any</param>
-            <param name="op">blast operation used to encode it</param>
-            <returns>returns a unique (within the blast instance) function id</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.extended_blast_operation)">
-            <summary>
-            Register a function with blast
-            </summary>
-            <param name="name">functino name</param>
-            <param name="min_param_count">minimal parameter count</param>
-            <param name="max_param_count">maximum parameter count</param>
-            <param name="accept_vector_size">minimal vector size, 0 for any</param>
-            <param name="return_vector_size">max verctor size, 0 for any</param>
-            <param name="op">blast operation used to encode it</param>
-            <returns>returns a unique (within the blast instance) function id</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,NSS.Blast.BlastVariableDataType,System.String[])">
-            <summary>
-            register an external function name within the blast script API, while no functionpointer is supplied 
-            the name is registered for later use
-            </summary>
-            <remarks>
-            
-            </remarks>
-            <param name="name">the functionname, which is asserted to be unique</param>
-            <param name="returns">the variable type returned</param>
-            <param name="parameters">a list of parameter names, used for visualization only</param>
-            <returns>an unique id for this function</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.IntPtr,System.String,NSS.Blast.BlastVariableDataType,System.String[])">
-            <summary>
-            register functionpointer as an external call 
-            </summary>
-            <param name="fp">the function pointer, if null a reservation is still made for the id</param>
-            <param name="name">the function name, may not contain tokens or reserved words</param>
-            <param name="returns">the returned datatype</param>
-            <param name="parameters">array of parameter names, used for visualizations only</param>
-            <returns>an unique id for this function, negative errorcodes on error</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.UpdateRegistration(System.Int32,System.IntPtr)">
-            <summary>
-            Update the function pointer belonging to a registration 
-            </summary>
-            <param name="id">the function's id, it is asserted to exist</param>
-            <param name="fp">the function pointer, may update to zero</param>
-            <returns>success or error code</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionByOpCode(NSS.Blast.blast_operation)">
-            <summary>
-            lookup a function definition that is directly linked to an interpretor operation 
-            </summary>
-            <param name="op">the operation that should translate to a function used during interpretation</param>
-            <returns>a function definition</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.FunctionExists(System.String)">
-            <summary>
-            check if a function exists by its name 
-            </summary>
-            <param name="name"></param>
-            <returns></returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionByName(System.String)">
-            <summary>
-            lookup a function definition that is directly linked to an interpretor operation 
-            </summary>
-            <param name="name">the name of the function to lookup</param>
-            <returns>a function definition</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionById(NSS.Blast.ReservedBlastScriptFunctionIds)">
-            <summary>
-            lookup a function definition that is directly linked to an interpretor operation 
-            </summary>
-            <param name="function_id">the reserved id of the function to lookup</param>
-            <returns>a function definition</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionById(System.Int32)">
-            <summary>
-            lookup a function definition that is directly linked to an interpretor operation 
-            </summary>
-            <param name="function_id">the unique id of the function to lookup</param>
-            <returns>a function definition</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionDataById(System.Int32)">
-            <summary>
-            Directly get a function using the id as an index 
-            </summary>
-            <param name="id">function id/index</param>
-            <returns>the script function object</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.TryGetFunctionCallById(System.Int32,NSS.Blast.BlastScriptFunction@)">
-            <summary>
-            try to get a function by id, in release it just gets it, in debug it checks  
-            </summary>
-            <param name="id">function id/index</param>
-            <param name="function">function</param>
-            <returns>true if found</returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.IsVariableParamFunction(NSS.Blast.blast_operation)">
-            <summary>
-            returns true if the function accepts a variable sized list of paramaters 
-            </summary>
-            <param name="op">the operation mapping to a function</param>
-            <returns>true if the function exists and has a variable parameter list</returns>
-        </member>
-        <member name="T:NSS.Blast.CoreAPI">
-            <summary>
-            Implements Core-API functionality 
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.CoreAPI.#ctor(Unity.Collections.Allocator)">
-            <summary>
-            Extend BlastScriptAPI (core just is a shell) 
-            </summary>
-            <param name="allocator"></param>
-        </member>
-        <member name="M:NSS.Blast.CoreAPI.RegisterCoreAPI">
-            <summary>
-            register all base functions
             </summary>
         </member>
         <member name="M:NSS.Blast.CodeUtils.GetBytesView(System.Byte*,System.Int32,System.Int32,System.Boolean)">
@@ -6341,22 +5922,42 @@
             </summary>
             <param name="index">data index</param>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f1(Unity.Mathematics.float4*,System.Void**,System.Int32)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f1(Unity.Mathematics.float4*,System.Void**,System.Int32@)">
             <summary>
             set a dest.x buffer from data[offset]
             </summary>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f2(Unity.Mathematics.float4*,System.Void**,System.Int32)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f1(Unity.Mathematics.float4*,System.Void**,System.Int32@,System.Boolean@,System.Boolean@)">
+            <summary>
+            set a dest.x buffer from data[offset]
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f2(Unity.Mathematics.float4*,System.Void**,System.Int32@)">
             <summary>
             set a dest.xy buffer from data[offset]
             </summary>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f3(Unity.Mathematics.float4*,System.Void**,System.Int32)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f2(Unity.Mathematics.float4*,System.Void**,System.Int32@,System.Boolean@,System.Boolean@)">
+            <summary>
+            set a dest.xy buffer from data[offset]
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f3(Unity.Mathematics.float4*,System.Void**,System.Int32@)">
             <summary>
             set a dest.xyz buffer from data[offset]
             </summary>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f4(Unity.Mathematics.float4*,System.Void**,System.Int32)">
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f3(Unity.Mathematics.float4*,System.Void**,System.Int32@,System.Boolean@,System.Boolean@)">
+            <summary>
+            set a dest.xyz buffer from data[offset]
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f4(Unity.Mathematics.float4*,System.Void**,System.Int32@)">
+            <summary>
+            set a dest.xyzw buffer from data[offset]
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_from_data_f4(Unity.Mathematics.float4*,System.Void**,System.Int32@,System.Boolean@,System.Boolean@)">
             <summary>
             set a dest.xyzw buffer from data[offset]
             </summary>
@@ -6662,6 +6263,26 @@
             <summary>
             data for ssmd operation modes: data-stack only
             - only used as pointer, fields handy in debugger
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.a">
+            <summary>
+            fictional - for debug view only
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.b">
+            <summary>
+            fictional - for debug view only
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.c">
+            <summary>
+            fictional - for debug view only
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.d">
+            <summary>
+            fictional - for debug view only
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastPackageData">
@@ -7181,6 +6802,11 @@
             find all hpc jobs compiled into the assemblies loaded 
             </summary>
         </member>
+        <member name="M:NSS.Blast.Register.BlastReflect.FindBlastFunctionAttributes">
+            <summary>
+            get a list of all methods implementing the BlastFunctionAttribute 
+            </summary>
+        </member>
         <member name="T:NSS.Blast.Register.BlastScriptRegistry">
             <summary>
             Here we maintain all scripts registered, either by manually calling Register(script)
@@ -7294,6 +6920,12 @@
             <param name="id">a unique id</param>
             <returns>a blast script</returns>
         </member>
+        <member name="M:NSS.Blast.BlastScript.Prepare(System.Boolean)">
+            <summary>
+            Prepare the script for execution
+            </summary>
+            <returns>success if all is ok </returns>
+        </member>
         <member name="M:NSS.Blast.BlastScript.Prepare(System.IntPtr,System.Boolean)">
             <summary>
             Prepare the script for execution
@@ -7310,9 +6942,16 @@
             <param name="caller">[ooptional] caller data</param>
             <returns>success if all is ok</returns>
         </member>
-        <member name="M:NSS.Blast.BlastScript.Execute">
+        <member name="M:NSS.Blast.BlastScript.Execute(System.IntPtr)">
             <summary>
             execute the script
+            </summary>
+            <param name="blast">reference to blast</param>
+            <returns>success if all is ok</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.Execute">
+            <summary>
+            execute the script using static blast instance 
             </summary>
             <returns></returns>
         </member>
@@ -7337,6 +6976,19 @@
             <summary>
             release package memory, nulls reference to it and free;s any native package memory with it 
             </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScript.Item(System.String)">
+            <summary>
+            get/set variable by name
+            </summary>
+            <param name="name">caseinsensitive name of variable to get|set</param>
+        </member>
+        <member name="P:NSS.Blast.BlastScript.Item(System.Int32)">
+            <summary>
+            get|set a variable by index
+            </summary>
+            <param name="index">0 based index of variable, blast wil index them in order of appearance in script</param>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.BlastScript.GetVariable(System.Int32,System.Boolean)">
             <summary>
@@ -7644,6 +7296,534 @@
                    public override string Code => @"a = a + 1;";
             }
             
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.BlastScriptFunctionFlag">
+            <summary>
+            flags for extra information on script functions
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionFlag.Reserved">
+            <summary>
+            function targets a blast reserved function (seed, push, peek) 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionFlag.NativeFunction">
+            <summary>
+            function uses a native function pointer for execution
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionFlag.Inlined">
+            <summary>
+            function is an inlined temporary object that only exists during compilation
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionFlag.ShortDefine">
+            <summary>
+            definition of the function omits pointers to engine and environment
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.ReservedBlastScriptFunctionIds">
+            <summary>
+            IDs reserved for functions used in blast, these get registered to blast with a name (that doesnt need to be equal) 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Input">
+            <summary>
+            input mapping function - reserved for internal use
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Output">
+            <summary>
+            output mapping function - reserved for internal use
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Yield">
+            <summary>
+            Yield execution 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Pop">
+            <summary>
+            Pop something from the stack 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Peek">
+            <summary>
+            Peek stack top 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Seed">
+            <summary>
+            Seed the random number generator 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Push">
+            <summary>
+            Push something to the stack 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.PushFunction">
+            <summary>
+            Push a function's return value to the stack 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.PushCompound">
+            <summary>
+            Push the result from executing a compound onto the stack 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.PushVector">
+            <summary>
+            Push a vector directly onto the stack 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Debug">
+            <summary>
+            Output debuginformation to the debug stream about given parameter 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.DebugStack">
+            <summary>
+            Output debuginformation to the debug stream
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.ReservedBlastScriptFunctionIds.Offset">
+            <summary>
+            all other functions start indexing from this offset
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.BlastScriptFunction">
+            <summary>
+            burst compatible function description 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.NativeFunctionPointer">
+            <summary>
+            a native function pointer (1st member, makes sure its aligned if this struct is)
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.FunctionId">
+            <summary>
+            function Id, doubles as index into function tables
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.Match">
+            <summary>
+            char array to match to in lowercase, only ASCII
+            - length == Blast.MaximumFunctionNameLength
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.MinParameterCount">
+            <summary>
+            minimal number of parameters 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.MaxParameterCount">
+            <summary>
+            maximal number of parameters, 0 for none, max = 31 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.ReturnsVectorSize">
+            <summary>
+            vectorsize of returnvalue, 0 if no value is returned
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.AcceptsVectorSize">
+            <summary>
+            vectorsize of accepted values in parameters, set to 0 to perform no check
+            - TODO, V2/3/4?? could make this more strict
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.Flags">
+            <summary>
+            Flags: 
+            - reserved: function targets a reserved function
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.ScriptOp">
+            <summary>
+            Built-in functions directly compile into a script operation
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunction.ExtendedScriptOp">
+            <summary>
+            Built-in functions directly compile into a script operation
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsReserved">
+            <summary>
+            true if the function targets a reserved function name 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsShortDefinition">
+            <summary>
+            true if the function targets a reserved function name 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsExternalCall">
+            <summary>
+            True if the functioncall is an external functionpointer
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsPopVariant">
+            <summary>
+            true if function encodes a pop function
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsPushVariant">
+            <summary>
+            true function encodes a push operation 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.CanHaveParameters">
+            <summary>
+            true if the function can have parameters
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.HasVariableParameterCount">
+            <summary>
+            returns true if the function accepts a variable sized list of paramaters 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsNotValid">
+            <summary>
+            returns if the function is NOT valid (checks id, assumes memory is initialized to zeros)
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunction.IsValid">
+            <summary>
+            returns if the function is valid (checks id, assumes memory is initialized to zeros)
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptFunction.Generic``1">
+            <summary>
+            cast our functionpointer into the delegate used to call it
+            </summary>
+            <typeparam name="T">the delegate type</typeparam>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptFunction.GetFunctionName">
+            <summary>
+            rebuilds the functionname from a native character array (expensive operation) 
+            </summary>
+            <returns>the string representing the functionname</returns>
+        </member>
+        <member name="T:NSS.Blast.BlastScriptFunctionInfo">
+            <summary>
+            managed information on functions 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionInfo.Function">
+            <summary>
+            the native function data contains id, information and function pointer 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionInfo.FunctionDelegate">
+            <summary>
+            managed delegate to any external function 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionInfo.Match">
+            <summary>
+            the identifier to match the function to = function name
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionInfo.CSName">
+            <summary>
+            the identifier used in CS code - DONT USE
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptFunctionInfo.Parameters">
+            <summary>
+            [Optional] parameter names, these dont dictate min/max parametercount 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptFunctionInfo.ToString">
+            <summary>
+            tostring override for better view in debugger
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptFunctionInfo.HasVariableParameterCount">
+            <summary>
+            true if the function has a variable length parameter list
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.BlastFunctionAttribute">
+            <summary>
+            attribute used to mark functions to register as external functions in the blast script api
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastFunctionAttribute.Name">
+            <summary>
+            name to use in blast api registration
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastFunctionAttribute.#ctor">
+            <summary>
+            default constructor
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastFunctionAttribute.#ctor(System.String)">
+            <summary>
+            constructor to set the name 
+            </summary>
+            <param name="name"></param>
+        </member>
+        <member name="T:NSS.Blast.BlastScriptAPI">
+            <summary>
+            For now, just a collection of function pointers that holds a native list with function information
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptAPI.Name">
+            <summary>
+            name of the api
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptAPI.Functions">
+            <summary>
+            native function definition info 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptAPI.FunctionInfo">
+            <summary>
+            managed information, includes a copy of the native info
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastScriptAPI.Allocator">
+            <summary>
+            allocated to be used for any data comming from this api
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptAPI.IsInitialized">
+            <summary>
+            true if native function pointer data is initialized/allocated
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptAPI.FunctionCount">
+            <summary>
+            number of functions defined in this api
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.#ctor(Unity.Collections.Allocator)">
+            <summary>
+            Constructor for a new blastscriptapi instance, provides native allocator
+            </summary>
+            <param name="allocator"></param>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.Initialize(System.Boolean)">
+            <summary>
+            Initialize native function pointer stack 
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.Dispose">
+            <summary>
+            dispose of any native memory that could be allocated for holding function pointer information 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.Destroy">
+            <summary>
+            destroy native allocations, return to uninitialized state 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(NSS.Blast.ReservedBlastScriptFunctionIds,System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.blast_operation)">
+            <summary>
+            Register a function with blast
+            </summary>
+            <param name="id">a reserved function id</param>
+            <param name="name">functino name</param>
+            <param name="min_param_count">minimal parameter count</param>
+            <param name="max_param_count">maximum parameter count</param>
+            <param name="accept_vector_size">accepted vector size, 0 for any</param>
+            <param name="return_vector_size">returned verctor size, 0 for any</param>
+            <param name="op">blast operation used to encode it</param>
+            <returns>returns a unique (within the blast instance) function id</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(NSS.Blast.ReservedBlastScriptFunctionIds,System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.extended_blast_operation)">
+            <summary>
+            Register a function with blast
+            </summary>
+            <param name="id">a reserved function id</param>
+            <param name="name">functino name</param>
+            <param name="min_param_count">minimal parameter count</param>
+            <param name="max_param_count">maximum parameter count</param>
+            <param name="accept_vector_size">minimal vector size, 0 for any</param>
+            <param name="return_vector_size">max verctor size, 0 for any</param>
+            <param name="op">extended blast operation used to encode it</param>
+            <returns>returns a unique (within the blast instance) function id</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.IntPtr,System.Int32,System.Int32,System.Int32,System.Boolean)">
+            <summary>
+            Register a function with blast
+            </summary>
+            <param name="nativefunction">a native function pointer</param>
+            <param name="name">functino name</param>
+            <param name="parameter_count">parameter count</param>
+            <param name="accept_vector_size">minimal vector size, 0 for any</param>
+            <param name="return_vector_size">max verctor size, 0 for any</param>
+            <param name="short_definition">the function is defined without enviroment and engine pointers </param>
+            <returns>returns a unique (within the blast instance) function id</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.blast_operation)">
+            <summary>
+            Register a function with blast
+            </summary>
+            <param name="name">functino name</param>
+            <param name="min_param_count">minimal parameter count</param>
+            <param name="max_param_count">maximum parameter count</param>
+            <param name="accept_vector_size">minimal vector size, 0 for any</param>
+            <param name="return_vector_size">max verctor size, 0 for any</param>
+            <param name="op">blast operation used to encode it</param>
+            <returns>returns a unique (within the blast instance) function id</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,System.Int32,System.Int32,System.Int32,System.Int32,NSS.Blast.extended_blast_operation)">
+            <summary>
+            Register a function with blast
+            </summary>
+            <param name="name">functino name</param>
+            <param name="min_param_count">minimal parameter count</param>
+            <param name="max_param_count">maximum parameter count</param>
+            <param name="accept_vector_size">minimal vector size, 0 for any</param>
+            <param name="return_vector_size">max verctor size, 0 for any</param>
+            <param name="op">blast operation used to encode it</param>
+            <returns>returns a unique (within the blast instance) function id</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.String,NSS.Blast.BlastVariableDataType,System.String[])">
+            <summary>
+            register an external function name within the blast script API, while no functionpointer is supplied 
+            the name is registered for later use
+            </summary>
+            <remarks>
+            
+            </remarks>
+            <param name="name">the functionname, which is asserted to be unique</param>
+            <param name="returns">the variable type returned</param>
+            <param name="parameters">a list of parameter names, used for visualization only</param>
+            <returns>an unique id for this function</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.IntPtr,System.String,NSS.Blast.BlastVariableDataType,System.String[])">
+            <summary>
+            register functionpointer as an external call 
+            </summary>
+            <param name="fp">the function pointer, if null a reservation is still made for the id</param>
+            <param name="name">the function name, may not contain tokens or reserved words</param>
+            <param name="returns">the returned datatype</param>
+            <param name="parameters">array of parameter names, used for visualizations only</param>
+            <returns>an unique id for this function, negative errorcodes on error</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionByOpCode(NSS.Blast.blast_operation)">
+            <summary>
+            lookup a function definition that is directly linked to an interpretor operation 
+            </summary>
+            <param name="op">the operation that should translate to a function used during interpretation</param>
+            <returns>a function definition</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.FunctionExists(System.String)">
+            <summary>
+            check if a function exists by its name 
+            </summary>
+            <param name="name"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionByName(System.String)">
+            <summary>
+            lookup a function definition that is directly linked to an interpretor operation 
+            </summary>
+            <param name="name">the name of the function to lookup</param>
+            <returns>a function definition</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionById(NSS.Blast.ReservedBlastScriptFunctionIds)">
+            <summary>
+            lookup a function definition that is directly linked to an interpretor operation 
+            </summary>
+            <param name="function_id">the reserved id of the function to lookup</param>
+            <returns>a function definition</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionById(System.Int32)">
+            <summary>
+            lookup a function definition that is directly linked to an interpretor operation 
+            </summary>
+            <param name="function_id">the unique id of the function to lookup</param>
+            <returns>a function definition</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.GetFunctionDataById(System.Int32)">
+            <summary>
+            Directly get a function using the id as an index 
+            </summary>
+            <param name="id">function id/index</param>
+            <returns>the script function object</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.TryGetFunctionCallById(System.Int32,NSS.Blast.BlastScriptFunction@)">
+            <summary>
+            try to get a function by id, in release it just gets it, in debug it checks  
+            </summary>
+            <param name="id">function id/index</param>
+            <param name="function">function</param>
+            <returns>true if found</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.IsVariableParamFunction(NSS.Blast.blast_operation)">
+            <summary>
+            returns true if the function accepts a variable sized list of paramaters 
+            </summary>
+            <param name="op">the operation mapping to a function</param>
+            <returns>true if the function exists and has a variable parameter list</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.EnumerateFunctionAttributes">
+            <summary>
+            enumerate and register all static methods marked with the [BlastFunctionAttribute] as external functions
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.Delegate,System.String,System.Int32,System.Boolean)">
+            <summary>
+            register an external function with this api 
+            </summary>
+            <param name="function_delegate"></param>
+            <param name="name"></param>
+            <param name="parameter_count"></param>
+            <param name="short_definition">short define: without engine and environment pointers</param>
+            <param name="is_short"></param>
+            <returns>a positive function id, or if negative a blasterror </returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.UpdateRegistration(System.Int32,System.Delegate)">
+            <summary>
+            update an external functions delegate and functionpointer 
+            </summary>
+            <param name="function_id"></param>
+            <param name="function_delegate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.UpdateFunctionDelegate(System.Int32,System.Delegate)">
+            <summary>
+            update the managed delegate 
+            </summary>
+            <param name="id"></param>
+            <param name="function_delegate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAPI.UpdateNativeFunctionPointer(System.Int32,System.IntPtr)">
+            <summary>
+            Update the function pointer belonging to a registration 
+            </summary>
+            <param name="id">the function's id, it is asserted to exist</param>
+            <param name="fp">the function pointer, may update to zero</param>
+            <returns>success or error code</returns>
+        </member>
+        <member name="T:NSS.Blast.CoreAPI">
+            <summary>
+            Implements Core-API functionality 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.CoreAPI.#ctor(Unity.Collections.Allocator)">
+            <summary>
+            Extend BlastScriptAPI (core just is a shell) 
+            </summary>
+            <param name="allocator"></param>
+        </member>
+        <member name="M:NSS.Blast.CoreAPI.RegisterCoreAPI">
+            <summary>
+            register all base functions
             </summary>
         </member>
     </members>

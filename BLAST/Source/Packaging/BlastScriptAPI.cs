@@ -19,6 +19,8 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using NSS.Blast.Compiler;
+using NSS.Blast.Register;
+using System.Reflection;
 
 namespace NSS.Blast
 {
@@ -43,6 +45,11 @@ namespace NSS.Blast
         /// function is an inlined temporary object that only exists during compilation
         /// </summary>
         Inlined = 4,
+
+        /// <summary>
+        /// definition of the function omits pointers to engine and environment
+        /// </summary>
+        ShortDefine = 8
     }
 
 
@@ -109,7 +116,7 @@ namespace NSS.Blast
         /// <summary>
         /// Output debuginformation to the debug stream
         /// </summary>
-        DebugStack = 12, 
+        DebugStack = 12,
 
         /// <summary>
         /// all other functions start indexing from this offset
@@ -139,7 +146,7 @@ namespace NSS.Blast
         /// char array to match to in lowercase, only ASCII
         /// - length == Blast.MaximumFunctionNameLength
         /// </summary>
-        unsafe public fixed char Match[Blast.MaximumFunctionNameLength];  
+        unsafe public fixed char Match[Blast.MaximumFunctionNameLength];
 
         /// <summary>
         /// minimal number of parameters 
@@ -192,10 +199,20 @@ namespace NSS.Blast
         }
 
         /// <summary>
+        /// true if the function targets a reserved function name 
+        /// </summary>
+        public bool IsShortDefinition
+        {
+            get
+            {
+                return (Flags & BlastScriptFunctionFlag.ShortDefine) == BlastScriptFunctionFlag.ShortDefine;
+            }
+        }
+
+        /// <summary>
         /// True if the functioncall is an external functionpointer
         /// </summary>
-        public bool IsExternalCall => NativeFunctionPointer != IntPtr.Zero
-            &&
+        public bool IsExternalCall => 
             ExtendedScriptOp == extended_blast_operation.call
             &&
             ScriptOp == blast_operation.ex_op
@@ -243,7 +260,7 @@ namespace NSS.Blast
         /// returns if the function is NOT valid (checks id, assumes memory is initialized to zeros)
         /// </summary>
         public bool IsNotValid => FunctionId < 0;
-        
+
         /// <summary>
         /// returns if the function is valid (checks id, assumes memory is initialized to zeros)
         /// </summary>
@@ -273,17 +290,17 @@ namespace NSS.Blast
         {
             unsafe
             {
-                StringBuilder sb = StringBuilderCache.Acquire(); 
-                for(int i = 0; i < Blast.MaximumFunctionNameLength; i++)
+                StringBuilder sb = StringBuilderCache.Acquire();
+                for (int i = 0; i < Blast.MaximumFunctionNameLength; i++)
                 {
                     char ch = Match[i];
                     if (ch > (char)0)
                     {
                         sb.Append(Match[i]);
                     }
-                    else break; 
+                    else break;
                 }
-                return StringBuilderCache.GetStringAndRelease(ref sb); 
+                return StringBuilderCache.GetStringAndRelease(ref sb);
             }
         }
     }
@@ -324,13 +341,13 @@ namespace NSS.Blast
                 };
                 unsafe
                 {
-                   // fixed (char* pch = f.Match)
+                    // fixed (char* pch = f.Match)
                     {
                         CodeUtils.FillCharArray(f.Match, Name.ToLower().Trim(), Blast.MaximumFunctionNameLength);
                     }
                 }
 
-                return f; 
+                return f;
             }
         }
 
@@ -344,7 +361,12 @@ namespace NSS.Blast
         /// <summary>
         /// the native function data contains id, information and function pointer 
         /// </summary>
-        public BlastScriptFunction Function; 
+        public BlastScriptFunction Function;
+
+        /// <summary>
+        /// managed delegate to any external function 
+        /// </summary>
+        public Delegate FunctionDelegate; 
 
         /// <summary>
         /// the identifier to match the function to = function name
@@ -354,7 +376,7 @@ namespace NSS.Blast
         /// <summary>
         /// the identifier used in CS code - DONT USE
         /// </summary>
-        public string CSName; 
+        public string CSName;
 
         /// <summary>
         /// [Optional] parameter names, these dont dictate min/max parametercount 
@@ -386,6 +408,65 @@ namespace NSS.Blast
     }
 
 
+#pragma warning disable CS1591
+    public delegate float BlastDelegate_f0(IntPtr engine, IntPtr data, IntPtr caller);
+
+    // externals, float params, up until 16
+    public delegate float BlastDelegate_f1(IntPtr engine, IntPtr data, IntPtr caller, float a);
+    public delegate float BlastDelegate_f11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b);
+    public delegate float BlastDelegate_f111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c);
+    public delegate float BlastDelegate_f1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d);
+    public delegate float BlastDelegate_f1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e);
+    public delegate float BlastDelegate_f1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f);
+    public delegate float BlastDelegate_f1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g);
+    public delegate float BlastDelegate_f1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h);
+
+    public delegate float BlastDelegate_f1111_1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i);
+    public delegate float BlastDelegate_f1111_1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j);
+    public delegate float BlastDelegate_f1111_1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k);
+    public delegate float BlastDelegate_f1111_1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l);
+    public delegate float BlastDelegate_f1111_1111_1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m);
+    public delegate float BlastDelegate_f1111_1111_1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n);
+    public delegate float BlastDelegate_f1111_1111_1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o);
+    public delegate float BlastDelegate_f1111_1111_1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o, float p);
+
+    // short external defines 
+    public delegate float BlastDelegate_f0_s();
+    public delegate float BlastDelegate_f1_s(float a);
+    public delegate float BlastDelegate_f11_s(float a, float b);
+
+#pragma warning restore CS1591
+
+
+    /// <summary>
+    /// attribute used to mark functions to register as external functions in the blast script api
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method, Inherited = false)]
+    public class BlastFunctionAttribute : Attribute
+    {
+        /// <summary>
+        /// name to use in blast api registration
+        /// </summary>
+        public string Name { get; set; } = null;
+
+        /// <summary>
+        /// default constructor
+        /// </summary>
+        public BlastFunctionAttribute()
+        {
+            Name = null; 
+        }
+
+        /// <summary>
+        /// constructor to set the name 
+        /// </summary>
+        /// <param name="name"></param>
+        public BlastFunctionAttribute(string name)
+        {
+            Name = name; 
+        }
+    }
+
     /// <summary>
     /// For now, just a collection of function pointers that holds a native list with function information
     /// </summary>
@@ -409,7 +490,7 @@ namespace NSS.Blast
         /// <summary>
         /// allocated to be used for any data comming from this api
         /// </summary>
-        public Allocator Allocator; 
+        public Allocator Allocator;
 
 
         /// <summary>
@@ -429,7 +510,7 @@ namespace NSS.Blast
         /// <param name="allocator"></param>
         public BlastScriptAPI(Allocator allocator)
         {
-            FunctionInfo = new List<BlastScriptFunctionInfo>(); 
+            FunctionInfo = new List<BlastScriptFunctionInfo>();
             Allocator = allocator;
             IsInitialized = false;
 
@@ -444,9 +525,21 @@ namespace NSS.Blast
         /// Initialize native function pointer stack 
         /// </summary>
         /// <returns></returns>
-        public BlastScriptAPI Initialize()
+        public BlastScriptAPI Initialize(bool enumerate_attributes = true)
         {
-            Assert.IsFalse(IsInitialized, "BlastScriptAPI: already initialized"); 
+            Assert.IsFalse(IsInitialized, "BlastScriptAPI: already initialized");
+
+            // enum all methods marked as blast external and register them with this api
+            if (enumerate_attributes)
+            {
+                BlastError res = EnumerateFunctionAttributes();
+                if(res != BlastError.success)
+                {
+                    Debug.LogError("BlastScriptAPI: could not register all functions marked as a blastfunction through attributes"); 
+                }
+            }
+
+            // create native information
             if (FunctionInfo.Count > 0)
             {
                 unsafe
@@ -463,14 +556,14 @@ namespace NSS.Blast
                         }
                         else
                         {
-                            Functions[i] = default; 
+                            Functions[i] = default;
                         }
                     }
 
                     IsInitialized = true;
                 }
             }
-            return this; 
+            return this;
         }
 
 
@@ -479,9 +572,9 @@ namespace NSS.Blast
         /// </summary>
         public void Dispose()
         {
-            Destroy(); 
+            Destroy();
         }
-        
+
         /// <summary>
         /// destroy native allocations, return to uninitialized state 
         /// </summary>
@@ -497,7 +590,7 @@ namespace NSS.Blast
                     }
                     Allocator = Allocator.None;
                 }
-            IsInitialized = false; 
+            IsInitialized = false;
         }
 
         #endregion 
@@ -515,18 +608,18 @@ namespace NSS.Blast
         /// <param name="return_vector_size">returned verctor size, 0 for any</param>
         /// <param name="op">blast operation used to encode it</param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        public int RegisterFunction(ReservedBlastScriptFunctionIds id, string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, blast_operation op)
+        internal int RegisterFunction(ReservedBlastScriptFunctionIds id, string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, blast_operation op)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
 
-            if (IsInitialized) Destroy(); 
+            if (IsInitialized) Destroy();
 
             BlastScriptFunctionInfo info = new BlastScriptFunctionInfo();
             info.Function.FunctionId = (int)id;
 
             // reserved functions always have the same ids 
-            while (FunctionInfo.Count < info.Function.FunctionId + 1) FunctionInfo.Add(null); 
+            while (FunctionInfo.Count < info.Function.FunctionId + 1) FunctionInfo.Add(null);
             FunctionInfo[info.Function.FunctionId] = info;
 
             unsafe
@@ -536,17 +629,17 @@ namespace NSS.Blast
             }
 
             info.Function.Flags = BlastScriptFunctionFlag.Reserved;
-            
+
             info.Function.MinParameterCount = (byte)min_param_count;
             info.Function.MaxParameterCount = (byte)max_param_count;
-            info.Function.AcceptsVectorSize = (byte)accept_vector_size; 
+            info.Function.AcceptsVectorSize = (byte)accept_vector_size;
             info.Function.ReturnsVectorSize = (byte)return_vector_size;
-            
-            info.Function.ScriptOp = op; 
+
+            info.Function.ScriptOp = op;
             info.Function.ExtendedScriptOp = extended_blast_operation.nop;
             info.Function.NativeFunctionPointer = IntPtr.Zero;
 
-            return info.Function.FunctionId; 
+            return info.Function.FunctionId;
         }
 
         /// <summary>
@@ -560,7 +653,7 @@ namespace NSS.Blast
         /// <param name="return_vector_size">max verctor size, 0 for any</param>
         /// <param name="op">extended blast operation used to encode it</param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        public int RegisterFunction(ReservedBlastScriptFunctionIds id, string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, extended_blast_operation op)
+        internal int RegisterFunction(ReservedBlastScriptFunctionIds id, string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, extended_blast_operation op)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
@@ -602,8 +695,9 @@ namespace NSS.Blast
         /// <param name="parameter_count">parameter count</param>
         /// <param name="accept_vector_size">minimal vector size, 0 for any</param>
         /// <param name="return_vector_size">max verctor size, 0 for any</param>
+        /// <param name="short_definition">the function is defined without enviroment and engine pointers </param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        public int RegisterFunction(string name, IntPtr nativefunction, int parameter_count, int accept_vector_size, int return_vector_size)
+        internal int RegisterFunction(string name, IntPtr nativefunction, int parameter_count, int accept_vector_size, int return_vector_size, bool short_definition)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
@@ -621,13 +715,19 @@ namespace NSS.Blast
             }
 
             info.Function.MinParameterCount = (byte)parameter_count;
-            info.Function.MaxParameterCount = (byte)parameter_count; 
+            info.Function.MaxParameterCount = (byte)parameter_count;
             info.Function.AcceptsVectorSize = (byte)accept_vector_size;
             info.Function.ReturnsVectorSize = (byte)return_vector_size;
 
             info.Function.ScriptOp = blast_operation.ex_op;
             info.Function.ExtendedScriptOp = extended_blast_operation.call;
             info.Function.NativeFunctionPointer = nativefunction;
+            info.Function.Flags = BlastScriptFunctionFlag.NativeFunction;
+
+            if(short_definition)
+            {
+                info.Function.Flags |= BlastScriptFunctionFlag.ShortDefine;
+            }
 
             return info.Function.FunctionId;
         }
@@ -642,7 +742,7 @@ namespace NSS.Blast
         /// <param name="return_vector_size">max verctor size, 0 for any</param>
         /// <param name="op">blast operation used to encode it</param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        public int RegisterFunction(string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, blast_operation op)
+        internal int RegisterFunction(string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, blast_operation op)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
@@ -681,7 +781,7 @@ namespace NSS.Blast
         /// <param name="return_vector_size">max verctor size, 0 for any</param>
         /// <param name="op">blast operation used to encode it</param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        public int RegisterFunction(string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, extended_blast_operation op)
+        internal int RegisterFunction(string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, extended_blast_operation op)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
@@ -691,10 +791,10 @@ namespace NSS.Blast
             BlastScriptFunctionInfo info = new BlastScriptFunctionInfo();
             info.Function.FunctionId = FunctionInfo.Count;
             FunctionInfo.Add(info);
-            
-            unsafe 
-            { 
-                fixed( char* pch = info.Function.Match) 
+
+            unsafe
+            {
+                fixed (char* pch = info.Function.Match)
                     CodeUtils.FillCharArray(pch, name.ToLower().Trim(), Blast.MaximumFunctionNameLength);
             }
 
@@ -709,11 +809,6 @@ namespace NSS.Blast
 
             return info.Function.FunctionId;
         }
-
-        #endregion
-
-        #region Register External Functions
-
 
         //
         //  if register after api init:      functions add to end op api list, rebuilds api pointers 
@@ -732,7 +827,7 @@ namespace NSS.Blast
         /// <param name="returns">the variable type returned</param>
         /// <param name="parameters">a list of parameter names, used for visualization only</param>
         /// <returns>an unique id for this function</returns>
-        public int RegisterFunction(string name, BlastVariableDataType returns, string[] parameters)
+        internal int RegisterFunction(string name, BlastVariableDataType returns, string[] parameters)
         {
             return RegisterFunction(IntPtr.Zero, name, returns, parameters);
         }
@@ -746,20 +841,20 @@ namespace NSS.Blast
         /// <param name="returns">the returned datatype</param>
         /// <param name="parameters">array of parameter names, used for visualizations only</param>
         /// <returns>an unique id for this function, negative errorcodes on error</returns>
-        public int RegisterFunction(IntPtr fp, string name, BlastVariableDataType returns, string[] parameters)
+        internal int RegisterFunction(IntPtr fp, string name, BlastVariableDataType returns, string[] parameters)
         {
             if (IsInitialized) Destroy();
 
             Assert.IsFalse(string.IsNullOrWhiteSpace(name));
-            Assert.IsNotNull(FunctionInfo); 
+            Assert.IsNotNull(FunctionInfo);
 
-            if(FunctionExists(name))
+            if (FunctionExists(name))
             {
 #if DEVELOPMENT_BUILD || TRACE
                 // consider this an error in program flow
                 Debug.LogError($"blast.scriptapi.register: a function with the name '{name}' already exists and thus cannot be registered again.");
 #endif
-                return (int)BlastError.error_scriptapi_function_already_exists; 
+                return (int)BlastError.error_scriptapi_function_already_exists;
             }
 
             int id = FunctionInfo.Count;
@@ -789,52 +884,7 @@ namespace NSS.Blast
 
             return finfo.Function.FunctionId;
         }
- 
-        /// <summary>
-        /// Update the function pointer belonging to a registration 
-        /// </summary>
-        /// <param name="id">the function's id, it is asserted to exist</param>
-        /// <param name="fp">the function pointer, may update to zero</param>
-        /// <returns>success or error code</returns>
-        public BlastError UpdateRegistration(int id, IntPtr fp)
-        {
-            Assert.IsNotNull(FunctionInfo); 
 
-            BlastScriptFunctionInfo info = GetFunctionById(id);
-
-            // program flow error if not already registred 
-            if(info == null)
-            {
-#if DEVELOPMENT_BUILD || TRACE
-                Debug.LogError($"blast.scriptapi.updateregistration: a function with the id '{id}' could not be found in the registry.");
-#endif
-                return BlastError.error_scriptapi_function_not_registered; 
-            }
-
-#if TRACE
-            if(fp == IntPtr.Zero)
-            {
-                Debug.LogWarning($"blast.scriptapi.updateregistration: a function with the id '{id}' is updated to a null function pointer, is this intended?");
-            }
-#endif 
-
-            // update function pointer 
-            info.Function.NativeFunctionPointer = fp; 
-
-            if(IsInitialized)
-            {
-                unsafe
-                {
-                    if (id >= 32 || id < FunctionCount) // doesnt hurt to be sure
-                    {
-                        Functions[id] = info.Function;
-                    }
-                }
-            }
-
-            // return success 
-            return BlastError.success; 
-        }
 
 
         #endregion
@@ -868,10 +918,10 @@ namespace NSS.Blast
             for (int i = 0; i < FunctionInfo.Count; i++)
                 if (string.Compare(name, FunctionInfo[i].Match, true) == 0)
                 {
-                    return true; 
+                    return true;
                 }
 
-            return false; 
+            return false;
         }
 
 
@@ -934,7 +984,7 @@ namespace NSS.Blast
 #if DEVELOPMENT_BUILD || TRACE
                 Assert.IsTrue(Functions != null && id < FunctionInfo.Count); // in release,a the ref to functioninfo is removed, after that this would burstcompile, if only assertions would be correctly handled in burst... 
 #endif
-                return Functions[id]; 
+                return Functions[id];
             }
         }
 
@@ -946,11 +996,12 @@ namespace NSS.Blast
         /// <returns>true if found</returns>
         public bool TryGetFunctionCallById(int id, out BlastScriptFunction function)
         {
-            unsafe {
+            unsafe
+            {
 #if DEVELOPMENT_BUILD || TRACE
                 if (Functions != null && id >= 0 && id < FunctionInfo.Count && Functions[id].FunctionId == id)
                 {
-                    function = Functions[id]; 
+                    function = Functions[id];
                     return true;
                 }
                 else
@@ -988,9 +1039,301 @@ namespace NSS.Blast
             return info.HasVariableParameterCount;
         }
 
+        #endregion
 
+        #region Attribute Enumeration (reflection)
+
+        /// <summary>
+        /// enumerate and register all static methods marked with the [BlastFunctionAttribute] as external functions
+        /// </summary>
+        protected BlastError EnumerateFunctionAttributes()
+        {
+            bool has_error = false; 
+            List<MethodInfo> methods = BlastReflect.FindBlastFunctionAttributes();
+            
+            foreach(MethodInfo method in methods)
+            {
+                ParameterInfo[] parameters = method.GetParameters();
+                int parameter_count = parameters != null ? parameters.Length : 0;
+
+                if(method.ReturnParameter == null || method.ReturnParameter.ParameterType != typeof(float))
+                {
+                    Debug.LogError($"blast.scriptapi.enumeratefunctionattributes: cannot add function {method.Name}, it has an unsupported return type. only float is supported");
+                    has_error = true; 
+                    continue; 
+                }
+
+                // fast out on simlest case 
+                string name = method.GetCustomAttribute<BlastFunctionAttribute>().Name;
+                name = string.IsNullOrWhiteSpace(name) ? method.Name : name;
+
+                if (parameter_count == 0)
+                {
+                    // simplest case
+                    Register((BlastDelegate_f0_s)method.CreateDelegate(typeof(BlastDelegate_f0_s)), name);
+                    continue; 
+                }
+
+
+                bool is_short = parameter_count == 0;
+                if (!is_short) is_short = parameters[0].ParameterType != typeof(IntPtr);
+
+                // all parameters must map to a float or intptr 
+                foreach (ParameterInfo info in parameters)
+                {
+                    Type matchto = typeof(float);
+                    if (info.Position < 3 && !is_short)
+                    {
+                        matchto = typeof(IntPtr);
+                    }
+                    if (info.ParameterType != matchto)
+                    {
+                        Debug.LogError($"blast.scriptapi.enumeratefunctionattributes: cannot add function {method.Name}, parameter '{info.Name}' not of the correct type, only floats or intptrs are supported at select positions");
+                        has_error = true;
+                        continue;
+                    }
+                }
+
+                // Register the method;'s delegate with blast 
+                int result = -1; 
+                if (is_short)
+                {
+                    switch(parameter_count)
+                    {
+                        case 1: result = Register((BlastDelegate_f1_s)method.CreateDelegate(typeof(BlastDelegate_f1_s)), name); break;
+                        case 2: result = Register((BlastDelegate_f11_s)method.CreateDelegate(typeof(BlastDelegate_f11_s)), name); break;
+                        default:
+                            Debug.LogError($"blast.scriptapi.enumeratefunctionattributes: cannot add function {method.Name}, function template not yet implemented");
+                            break; 
+                    }
+                }
+                else
+                {
+                    switch(parameter_count)
+                    {
+                        case 1: result = Register((BlastDelegate_f1)method.CreateDelegate(typeof(BlastDelegate_f1)), name); break;
+                        case 2: result = Register((BlastDelegate_f11)method.CreateDelegate(typeof(BlastDelegate_f11)), name); break;
+                        case 3: result = Register((BlastDelegate_f111)method.CreateDelegate(typeof(BlastDelegate_f111)), name); break;
+                        case 4: result = Register((BlastDelegate_f1111)method.CreateDelegate(typeof(BlastDelegate_f1111)), name); break;
+
+                        case 5: result = Register((BlastDelegate_f1111_1)method.CreateDelegate(typeof(BlastDelegate_f1111_1)), name); break;
+                        case 6: result = Register((BlastDelegate_f1111_11)method.CreateDelegate(typeof(BlastDelegate_f1111_11)), name); break;
+                        case 7: result = Register((BlastDelegate_f1111_111)method.CreateDelegate(typeof(BlastDelegate_f1111_111)), name); break;
+                        case 8: result = Register((BlastDelegate_f1111_1111)method.CreateDelegate(typeof(BlastDelegate_f1111_1111)), name); break;
+
+                        case 9: result =  Register((BlastDelegate_f1111_1111_1)method.CreateDelegate(typeof(BlastDelegate_f1111_1111_1)), name); break;
+                        case 10: result = Register((BlastDelegate_f1111_1111_11)method.CreateDelegate(typeof(BlastDelegate_f1111_1111_11)), name); break;
+                        case 11: result = Register((BlastDelegate_f1111_1111_111)method.CreateDelegate(typeof(BlastDelegate_f1111_1111_111)), name); break;
+                        case 12: result = Register((BlastDelegate_f1111_1111_1111)method.CreateDelegate(typeof(BlastDelegate_f1111_1111_1111)), name); break;
+                        case 13: result = Register((BlastDelegate_f1111_1111_1111_1)method.CreateDelegate(typeof(BlastDelegate_f1111_1111_1111_1)), name); break;
+                        case 14: result = Register((BlastDelegate_f1111_1111_1111_11)method.CreateDelegate(typeof(BlastDelegate_f1111_1111_1111_11)), name); break;
+                        case 15: result = Register((BlastDelegate_f1111_1111_1111_111)method.CreateDelegate(typeof(BlastDelegate_f1111_1111_1111_111)), name); break;
+                        case 16: result = Register((BlastDelegate_f1111_1111_1111_1111)method.CreateDelegate(typeof(BlastDelegate_f1111_1111_1111_1111)), name); break;
+                        default:
+                            Debug.LogError($"blast.scriptapi.enumeratefunctionattributes: cannot add function {method.Name}, function template not yet implemented");
+                            break;
+                    }
+                }
+                if (result < 0) has_error = true;
+            }
+
+            if (has_error) return BlastError.error_enumerate_attributed_external_functions;
+            else return BlastError.success;
+        }
 
         #endregion 
+
+        #region External Functions (public registrations) 
+#pragma warning disable CS1591
+        public int Register(BlastDelegate_f0 function, string name = null) { return RegisterFunction(function, name, 0); }
+        public int Register(BlastDelegate_f1 function, string name = null) { return RegisterFunction(function, name, 1); }
+        public int Register(BlastDelegate_f11 function, string name = null) { return RegisterFunction(function, name, 2); }
+        public int Register(BlastDelegate_f111 function, string name = null) { return RegisterFunction(function, name, 3); }
+        public int Register(BlastDelegate_f1111 function, string name = null) { return RegisterFunction(function, name, 4); }
+        public int Register(BlastDelegate_f1111_1 function, string name = null) { return RegisterFunction(function, name, 5); }
+        public int Register(BlastDelegate_f1111_11 function, string name = null) { return RegisterFunction(function, name, 6); }
+        public int Register(BlastDelegate_f1111_111 function, string name = null) { return RegisterFunction(function, name, 7); }
+        public int Register(BlastDelegate_f1111_1111 function, string name = null) { return RegisterFunction(function, name, 8); }
+        public int Register(BlastDelegate_f1111_1111_1 function, string name = null) { return RegisterFunction(function, name, 9); }
+        public int Register(BlastDelegate_f1111_1111_11 function, string name = null) { return RegisterFunction(function, name, 10); }
+        public int Register(BlastDelegate_f1111_1111_111 function, string name = null) { return RegisterFunction(function, name, 11); }
+        public int Register(BlastDelegate_f1111_1111_1111 function, string name = null) { return RegisterFunction(function, name, 12); }
+        public int Register(BlastDelegate_f1111_1111_1111_1 function, string name = null) { return RegisterFunction(function, name, 13); }
+        public int Register(BlastDelegate_f1111_1111_1111_11 function, string name = null) { return RegisterFunction(function, name, 14); }
+        public int Register(BlastDelegate_f1111_1111_1111_111 function, string name = null) { return RegisterFunction(function, name, 15); }
+        public int Register(BlastDelegate_f1111_1111_1111_1111 function, string name = null) { return RegisterFunction(function, name, 16); }
+
+        public int Register(BlastDelegate_f0_s function, string name = null) { return RegisterFunction(function, name, 0, true); }
+        public int Register(BlastDelegate_f1_s function, string name = null) { return RegisterFunction(function, name, 1, true); }
+        public int Register(BlastDelegate_f11_s function, string name = null) { return RegisterFunction(function, name, 2, true); }
+
+#pragma warning restore CS1591
+
+
+        /// <summary>
+        /// register an external function with this api 
+        /// </summary>
+        /// <param name="function_delegate"></param>
+        /// <param name="name"></param>
+        /// <param name="parameter_count"></param>
+        /// <param name="short_definition">short define: without engine and environment pointers</param>
+        /// <param name="is_short"></param>
+        /// <returns>a positive function id, or if negative a blasterror </returns>
+        internal int RegisterFunction(Delegate function_delegate, string name, int parameter_count, bool short_definition = false) 
+        {
+            Assert.IsNotNull(function_delegate);
+
+            if(string.IsNullOrWhiteSpace(name))
+            {
+                name = function_delegate.Method.Name; 
+            }
+
+            int function_id = RegisterFunction(name, IntPtr.Zero, parameter_count, 1, 1, short_definition);
+      
+            BlastError res = UpdateFunctionDelegate(function_id, function_delegate);
+            if(res != BlastError.success)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.scriptapi.Register: function {name} not registered|updated");
+#endif
+                return (int)res; 
+            }
+
+
+#if !STANDALONE_VSBUILD
+            IntPtr fp = BurstCompilerUtil<T>.CompileFunctionPointer(f11, function_id, 5);
+            BlastError res = UpdateRegistration(int id, fp); 
+            if(res != BlastError.success)
+            {
+                Debug.LogError($"blast.scriptapi.Register: function {name}, native function pointer not registered|updated");
+                return (int)res; 
+            }
+#endif
+
+
+#if DEVELOPMENT_BUILD || TRACE
+            // show an overview of the functions available in the log 
+            Debug.Log($"BlastScriptAPI: registered function {function_id} {name}");
+#endif
+
+
+            return function_id;
+        }
+
+        /// <summary>
+        /// update an external functions delegate and functionpointer 
+        /// </summary>
+        /// <param name="function_id"></param>
+        /// <param name="function_delegate"></param>
+        /// <returns></returns>
+        public BlastError UpdateRegistration(int function_id, Delegate function_delegate)
+        {
+            BlastError res = UpdateFunctionDelegate(function_id, function_delegate);
+            if (res != BlastError.success) return res;
+
+#if !STANDALONE_VSBUILD
+            IntPtr fp = BurstCompilerUtil<T>.CompileFunctionPointer(f11, function_id, 5);
+            BlastError res = UpdateRegistration(int id, fp); 
+            if (res != BlastError.success) return res;
+#endif
+            return BlastError.success;
+        }
+
+
+        /// <summary>
+        /// update the managed delegate 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="function_delegate"></param>
+        /// <returns></returns>
+        internal BlastError UpdateFunctionDelegate(int id, Delegate function_delegate)
+        {
+            Assert.IsNotNull(FunctionInfo);
+
+            BlastScriptFunctionInfo info = GetFunctionById(id);
+            // program flow error if not already registred 
+            if (info == null)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.scriptapi.updateregistration: a function with the id '{id}' could not be found in the registry.");
+#endif
+                return BlastError.error_scriptapi_function_not_registered;
+            }
+
+
+#if DEVELOPMENT_BUILD || TRACE
+            if (function_delegate == null)
+            {
+                Debug.LogWarning($"blast.scriptapi.updateregistration: a function with the id '{id}' is updated to a null function delegate, is this intended?");
+            }
+#endif 
+
+            info.FunctionDelegate = function_delegate;
+            return BlastError.success; 
+        }
+
+
+        /// <summary>
+        /// Update the function pointer belonging to a registration 
+        /// </summary>
+        /// <param name="id">the function's id, it is asserted to exist</param>
+        /// <param name="fp">the function pointer, may update to zero</param>
+        /// <returns>success or error code</returns>
+        internal BlastError UpdateNativeFunctionPointer(int id, IntPtr fp)
+        {
+            Assert.IsNotNull(FunctionInfo);
+
+            BlastScriptFunctionInfo info = GetFunctionById(id);
+
+            // program flow error if not already registred 
+            if (info == null)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.scriptapi.updateregistration: a function with the id '{id}' could not be found in the registry.");
+#endif
+                return BlastError.error_scriptapi_function_not_registered;
+            }
+
+#if DEVELOPMENT_BUILD || TRACE
+            if (fp == IntPtr.Zero)
+            {
+                Debug.LogWarning($"blast.scriptapi.updateregistration: a function with the id '{id}' is updated to a null function pointer, is this intended?");
+            }
+#endif 
+
+            // update function pointer 
+            info.Function.NativeFunctionPointer = fp;
+
+            // update native data if initialized already
+            if (IsInitialized)
+            {
+                unsafe
+                {
+                    if (id >= 32 || id < FunctionCount) // doesnt hurt to be sure
+                    {
+                        Functions[id] = info.Function;
+                    }
+                }
+            }
+
+            // return success 
+            return BlastError.success;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="del_function"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+     //   public int Register(Func<IntPtr, IntPtr, IntPtr, float, float, float> del_function, string name)
+     //   {
+    //        return Register(del_function, name);
+     //   }
+
+
+
+        #endregion
     }
 
 
@@ -1005,7 +1348,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="allocator"></param>
         public CoreAPI(Allocator allocator) : base(allocator)
-        {               
+        {
             RegisterCoreAPI();
         }
 
@@ -1052,7 +1395,7 @@ namespace NSS.Blast
             RegisterFunction("idy", 1, 1, 0, 1, blast_operation.index_y);
             RegisterFunction("idz", 1, 1, 0, 1, blast_operation.index_z);
             RegisterFunction("idw", 1, 1, 0, 1, blast_operation.index_w);
-            
+
             RegisterFunction("sin", 1, 1, 0, 0, extended_blast_operation.sin);
             RegisterFunction("cos", 1, 1, 0, 0, extended_blast_operation.cos);
             RegisterFunction("tan", 1, 1, 0, 0, extended_blast_operation.tan);
@@ -1089,7 +1432,6 @@ namespace NSS.Blast
             RegisterFunction("ceillog2", 1, 1, 0, 0, extended_blast_operation.ceillog2);
             RegisterFunction("floorlog2", 1, 1, 0, 0, extended_blast_operation.floorlog2);
             RegisterFunction("ceilpow2", 1, 1, 0, 0, extended_blast_operation.ceilpow2);
-
 
             return this;
         }

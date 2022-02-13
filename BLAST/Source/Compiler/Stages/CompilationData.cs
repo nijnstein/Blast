@@ -703,11 +703,9 @@ namespace NSS.Blast.Compiler
                                     sb.Append("call ");
 
                                     // next 4 bytes are the function id 
-                                    int id = this.code[i + 1].code << 24;
-                                    id += this.code[i + 2].code << 16;
-                                    id += this.code[i + 3].code << 8;
-                                    id += this.code[i + 4].code;
-                                    i += 4;
+                                    int id = this.code[i + 1].code << 8;
+                                    id += this.code[i + 2].code;
+                                    i += 2;
 
                                     if (id > 0)
                                     {

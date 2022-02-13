@@ -559,8 +559,8 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         // encode function id (4 byte int)
                         int id = ast_function.function.FunctionId;
-                        code.Add((byte)((uint)id >> 24));
-                        code.Add((byte)(((uint)id >> 16) & 0b1111_1111));
+                        //code.Add((byte)((uint)id >> 24));
+                        //code.Add((byte)(((uint)id >> 16) & 0b1111_1111));
                         code.Add((byte)(((uint)id >> 8) & 0b1111_1111));
                         code.Add((byte)((uint)id & 0b1111_1111));
                     }

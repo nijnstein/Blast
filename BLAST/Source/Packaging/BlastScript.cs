@@ -89,6 +89,17 @@ namespace NSS.Blast
             };
         }
 
+        /// <summary>
+        /// Prepare the script for execution
+        /// </summary>
+        /// <returns>success if all is ok </returns>
+        public BlastError Prepare(bool prepare_variable_info = true)
+        {
+            if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized; 
+            return Prepare(Blast.Instance.Engine, prepare_variable_info); 
+        }
+
+
 
         /// <summary>
         /// Prepare the script for execution
@@ -127,7 +138,6 @@ namespace NSS.Blast
 
                 return BlastError.success; 
             }
-
         }
 
         /// <summary>
@@ -137,39 +147,42 @@ namespace NSS.Blast
         /// <param name="environment">[optional] pointer to environment data</param>
         /// <param name="caller">[ooptional] caller data</param>
         /// <returns>success if all is ok</returns>
-       public BlastError Execute(IntPtr blast, IntPtr environment, IntPtr caller)
+        public BlastError Execute(IntPtr blast, IntPtr environment, IntPtr caller)
         {
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (!IsPackaged)
             {
                 BlastError res = Prepare(blast);
-                if (res != BlastError.success) return res; 
+                if (res != BlastError.success) return res;
             }
-            return Package.Execute(blast, environment, caller); 
+            return Package.Execute(blast, environment, caller);
         }
 
         /// <summary>
         /// execute the script
         /// </summary>
+        /// <param name="blast">reference to blast</param>
+        /// <returns>success if all is ok</returns>
+        public BlastError Execute(IntPtr blast)
+        {
+            return Package.Execute(blast, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// execute the script using static blast instance 
+        /// </summary>
         /// <returns></returns>
         public BlastError Execute()
         {
-            Blast blast = Blast.Create(Allocator.Persistent);
-            try
-            {
-                if (!IsPackaged)
-                {
-                    BlastError res = Prepare(blast.Engine);
-                    if (res != BlastError.success) return res;
-                }
+            if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized; 
 
-                return Package.Execute(blast.Engine, IntPtr.Zero, IntPtr.Zero);
-            }
-            finally
+            if (!IsPackaged)
             {
-                // mainly for clean return, blast shouldnt throw any exceptions normally 
-                blast.Destroy(); 
+                BlastError res = Prepare(Blast.Instance.Engine);
+                if (res != BlastError.success) return res;
             }
+
+            return Package.Execute(Blast.Instance.Engine, IntPtr.Zero, IntPtr.Zero);
         }
 
         /// <summary>
@@ -233,6 +246,147 @@ namespace NSS.Blast
                 Package = null; 
             }
         }
+
+
+        #region Variable Indexers 
+
+        /// <summary>
+        /// get/set variable by name
+        /// </summary>
+        /// <param name="name">caseinsensitive name of variable to get|set</param>
+        public object this[string name]
+        {
+            get
+            {
+                BlastVariable v = GetVariable(name, true);
+                if (v == null) return null; 
+
+                int offset = Package.VariableOffsets[v.Id];
+
+                unsafe
+                {
+                    if (GetDataPointer(out float* data, out int l))
+                    {
+                        switch (v.VectorSize)
+                        {
+                            case 1: return data[offset];
+                            case 2: return ((float2*)(void*)&data[offset])[0];
+                            case 3: return ((float3*)(void*)&data[offset])[0];
+                            case 4: return ((float4*)(void*)&data[offset])[0];
+                        }
+                    }
+                }
+#if ENABLE_UNITY_COLLECTIONS_CHECKS || DEVELOPMENT_BUILD
+                Assert.IsTrue(false, $"variable {v.Id} '{Name}' vectorsize {v.VectorSize} out of range");
+#endif
+                return null;                 
+            }
+
+            set
+            {
+                BlastVariable v = GetVariable(name, true);
+                if (v == null) return;
+
+                int offset = Package.VariableOffsets[v.Id];
+
+                unsafe
+                {
+                    if (GetDataPointer(out float* data, out int l))
+                    {
+                        switch (v.VectorSize)
+                        {
+                            case 1: data[offset] = (float)value;break;
+                            case 2: ((float2*)(void*)&data[offset])[0] = (float2)value; break;
+                            case 3: ((float3*)(void*)&data[offset])[0] = (float3)value; break;
+                            case 4: ((float4*)(void*)&data[offset])[0] = (float4)value; break;
+#if ENABLE_UNITY_COLLECTIONS_CHECKS || DEVELOPMENT_BUILD
+                            default:
+                                Assert.IsTrue(false, $"variable {v.Id} '{Name}' vectorsize {v.VectorSize} out of range");
+                                break; 
+#endif
+                        }
+                    }
+                }
+                return;
+            }
+        }
+
+
+        /// <summary>
+        /// get|set a variable by index
+        /// </summary>
+        /// <param name="index">0 based index of variable, blast wil index them in order of appearance in script</param>
+        /// <returns></returns>
+        public object this[int index]
+        {
+            get
+            {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS || DEVELOPMENT_BUILD
+                if (index < 0 || index >= GetVariableCount())
+                {
+                    Assert.IsTrue(false, $"variable index {index} out of range");
+                    return null;
+                }
+#endif
+                int offset = Package.VariableOffsets[index];
+
+                unsafe
+                {
+                    if (GetDataPointer(out float* data, out int l))
+                    {
+                        switch (Package.Variables[index].VectorSize)
+                        {
+                            case 1: return data[offset];
+                            case 2: return ((float2*)(void*)&data[offset])[0];
+                            case 3: return ((float3*)(void*)&data[offset])[0];
+                            case 4: return ((float4*)(void*)&data[offset])[0];
+                        }
+                    }
+                }
+#if ENABLE_UNITY_COLLECTIONS_CHECKS || DEVELOPMENT_BUILD
+                Assert.IsTrue(false, $"variable {index} '{Package.Variables[index].Name}', vectorsize {Package.Variables[index].VectorSize} out of range");
+#endif
+                return null;
+            }
+
+            set
+            {
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS || DEVELOPMENT_BUILD
+                if (index < 0 || index >= GetVariableCount())
+                {
+                    Assert.IsTrue(false, $"variable index {index} out of range");
+                    return;
+                }
+#endif
+
+                int offset = Package.VariableOffsets[index];
+
+                unsafe
+                {
+                    if (GetDataPointer(out float* data, out int l))
+                    {
+                        switch (Package.Variables[index].VectorSize)
+                        {
+                            case 1: data[offset] = (float)value; break;
+                            case 2: ((float2*)(void*)&data[offset])[0] = (float2)value; break;
+                            case 3: ((float3*)(void*)&data[offset])[0] = (float3)value; break;
+                            case 4: ((float4*)(void*)&data[offset])[0] = (float4)value; break;
+#if ENABLE_UNITY_COLLECTIONS_CHECKS || DEVELOPMENT_BUILD
+                            default:
+                                Assert.IsTrue(false, $"variable {index} '{Package.Variables[index].Name}' vectorsize {Package.Variables[index].VectorSize} out of range");
+                                break;
+#endif
+                        }
+                    }
+                }
+                return;
+            }
+        }
+
+
+#endregion
+
 
 
 #region Variables 
@@ -1128,7 +1282,7 @@ namespace NSS.Blast
         }
 
 
-        #region data verify helpers 
+#region data verify helpers 
         /// <summary>
         /// get index for named variable data, verify its datatype and log errors on fail
         /// </summary>

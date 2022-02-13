@@ -100,5 +100,44 @@ namespace NSS.Blast.Register
                 return new List<IBlastHPCScriptJob>(); 
             }
         }
-    } 
+
+
+
+
+        /// <summary>
+        /// get a list of all methods implementing the BlastFunctionAttribute 
+        /// </summary>
+        static public List<MethodInfo> FindBlastFunctionAttributes()
+        {
+            try
+            {
+                Type t = typeof(BlastFunctionAttribute);
+                List<MethodInfo> results = new List<MethodInfo>();
+
+                foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    List<Type> types = GetLoadableTypes(asm).ToList();
+                    for (int i = 0; i < types.Count; i++)
+                    {
+                        foreach(MethodInfo method in types[i].GetMethods())
+                        {
+                            if(method.IsStatic && method.IsDefined(t))
+                            {
+                                results.Add(method); 
+                            }
+                        }
+                    }
+                }
+                return results;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("BlastReflect.FindBlastFunctionAttributes: failed to enumerate blast script to pre-compile: " + ex.ToString());
+                return null;
+            }
+        }
+
+
+
+    }
 }

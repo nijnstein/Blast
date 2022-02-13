@@ -28,8 +28,16 @@ using Unity.Burst;
 
 using Random = Unity.Mathematics.Random;
 using System.Runtime.CompilerServices;
-using System.Linq;
 
+/// <summary>
+/// BLAST Namespace
+/// </summary>
+/// <remarks>
+/// Using Blast: https://github.com/nijnstein/BLAST-Documentation/blob/main/samples.md
+/// 
+/// BlastScript Language Reference: https://github.com/nijnstein/BLAST-Documentation/blob/main/LanguageReference.md
+///  
+/// </remarks>
 namespace NSS.Blast
 {
     /// <summary>
@@ -172,7 +180,11 @@ namespace NSS.Blast
         /// <returns>true if possibly valid</returns>
         public bool CanBeAValidFunctionId(int id)
         {
-            return id > 0 && id < FunctionCount && FunctionPointers[id] != IntPtr.Zero; 
+#if STANDALONE_VSBUILD
+            return id > 0 && id < FunctionCount;
+#else
+            return id > 0 && id < FunctionCount && FunctionPointers[id] != IntPtr.Zero;
+#endif
         }
 
         /// <summary>
@@ -233,12 +245,21 @@ namespace NSS.Blast
         public static implicit operator BlastEngineDataPtr(IntPtr p) => new BlastEngineDataPtr() { ptr = p };
     }
 
-
     /// <summary>
     /// Blast Engine
     /// </summary>
-    unsafe public struct Blast
+    unsafe public class Blast : IDisposable
     {
+        /// <summary>
+        /// the singleton instance if created 
+        /// </summary>
+        static public Blast Instance { get; protected set; } 
+
+        /// <summary>
+        /// returns TRUE if the static instance is initialized 
+        /// </summary>
+        static public bool IsInstantiated => Instance != null && Instance.IsCreated;
+
         /// <summary>
         /// [ThreadStatic] default interpretor 
         /// </summary>
@@ -252,6 +273,24 @@ namespace NSS.Blast
         static public BlastSSMDInterpretor ssmd_blaster = default;
 
         /// <summary>
+        /// The API, initialize the instance before using static functions!
+        /// </summary>
+        static public BlastScriptAPI ScriptAPI 
+        { 
+            get 
+            {
+                if (IsInstantiated) return Instance.API;
+                else
+                {
+                    if (script_api == null) script_api = new CoreAPI(Allocator.Persistent);
+                    return script_api;
+                }                                
+            }
+        }
+        static private BlastScriptAPI script_api = null; 
+
+
+        /// <summary>
         /// delegate used to execute scripts
         /// </summary>
         /// <param name="scriptid">the id of the script</param>
@@ -260,19 +299,6 @@ namespace NSS.Blast
         /// <param name="caller">caller data</param>
         /// <returns></returns>
         public delegate int BlastExecute(int scriptid, [NoAlias]float* p_stack, [NoAlias]IntPtr data, [NoAlias]IntPtr caller);
-
-
-#pragma warning disable CS1591 
-        public delegate float BlastDelegate_f0(IntPtr engine, IntPtr data, IntPtr caller);
-        public delegate float BlastDelegate_f1(IntPtr engine, IntPtr data, IntPtr caller, float a);
-        public delegate float BlastDelegate_f2(IntPtr engine, IntPtr data, IntPtr caller, float a, float b);
-        public delegate float BlastDelegate_f3(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c);
-        public delegate float BlastDelegate_f4(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d);
-        public delegate float BlastDelegate_f5(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e);
-        public delegate float BlastDelegate_f6(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f);
-        public delegate float BlastDelegate_f7(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g);
-        public delegate float BlastDelegate_f8(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h);
-#pragma warning restore CS1591 
 
         /// <summary>
         /// the comment character 
@@ -321,11 +347,25 @@ namespace NSS.Blast
         #region Create / Destroy
 
         /// <summary>
+        /// create a static instance, this instance will be used if no blast reference is given to functions that need it:
+        /// "Package, Compile, Prepare, Execute"  
+        /// </summary>
+        /// <param name="api">the api to use</param>
+        public unsafe static void CreateInstance(BlastScriptAPI api = null)
+        {
+            if (!IsInstantiated)
+            {
+                Instance = Create(api == null ? script_api : api);
+            }
+        }
+
+
+        /// <summary>
         /// create a new instance of BLAST use the core scriptfunction api
         /// </summary>
         /// <param name="allocator">allocator to use, dont use temp allocator for bursted code</param>
         /// <returns>the blast struct</returns>
-        public unsafe static Blast Create(Allocator allocator)
+        public unsafe static Blast Create(Allocator allocator = Allocator.Persistent)
         {
             return Create(null, allocator);
         }
@@ -337,9 +377,9 @@ namespace NSS.Blast
         /// <param name="api">function api to use</param>
         /// <param name="allocator">allocator to use, dont use temp allocator for bursted code</param>
         /// <returns>the blast struct|class should refactor TODO</returns>
-        public unsafe static Blast Create(BlastScriptAPI api, Allocator allocator)
+        public unsafe static Blast Create(BlastScriptAPI api, Allocator allocator = Allocator.Persistent)
         {
-            Blast blast;
+            Blast blast = new Blast();// default;
             if (mt_lock == null) mt_lock = new object();
             blast.allocator = allocator;
             blast.data = (BlastEngineData*)UnsafeUtils.Malloc(sizeof(BlastEngineData), 8, blast.allocator);
@@ -356,14 +396,27 @@ namespace NSS.Blast
             // setup api 
             if (api == null)
             {
+                api = script_api;
+                blast.OwnScriptAPIMemory = false;
+            }
+            else
+            {
+                blast.OwnScriptAPIMemory = false;
+            }
+            if (api == null)
+            {
                 api = (new CoreAPI(allocator)).Initialize();
                 blast.OwnScriptAPIMemory = true;
             }
             else
             {
                 blast.OwnScriptAPIMemory = false;
-                Assert.IsTrue(api.IsInitialized, "Blast: script api not initialized");
             }
+            if (!api.IsInitialized)
+            {
+                api.Initialize(); 
+            }
+            Assert.IsTrue(api.IsInitialized, "Blast: script api not initialized");
 
             blast.API = api;
             blast.data->FunctionCount = api.FunctionCount;
@@ -395,7 +448,6 @@ namespace NSS.Blast
                 if (f.IsValid)
                 {
                     fsb.AppendLine($"{i.ToString().PadLeft(6)} {f.FunctionId.ToString().PadLeft(6)}   {f.GetFunctionName().PadRight(32)} {f.ScriptOp.ToString().PadRight(12)} {f.ExtendedScriptOp.ToString().PadRight(12)}");
-                    blast.data->FunctionPointers[i] = api.FunctionInfo[i].Function.NativeFunctionPointer;
                 }
             }
             fsb.AppendLine("".PadRight(80, '-'));
@@ -501,7 +553,6 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="package">the package data</param>
         /// <returns>succes or an error code</returns>
-        [BurstDiscard]
         public BlastError Execute(in BlastPackageData package)
         {
             return Execute(Engine, in package, IntPtr.Zero, IntPtr.Zero);
@@ -1830,6 +1881,27 @@ namespace NSS.Blast
         }
 #endif
         #endregion
+
+
+        /// <summary>
+        /// support dispose, to enable using clause
+        /// </summary>
+        /// <remarks>
+        /// using(Blast blast = Blast.Create(Allocator.Persistant))
+        /// {
+        /// 
+        /// 
+        /// 
+        /// }
+        /// </remarks>
+        public void Dispose()
+        {
+            if (IsCreated)
+            {
+                Destroy();
+            }
+        }
+
 
     }
 

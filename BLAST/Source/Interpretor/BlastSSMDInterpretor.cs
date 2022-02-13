@@ -5,6 +5,7 @@
 //##########################################################################################################
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
+    using System.Reflection; 
 #else
     using UnityEngine;
 #endif 
@@ -3146,7 +3147,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// set a dest.x buffer from data[offset]
         /// </summary>
-        void set_from_data_f1([NoAlias]float4* destination, [NoAlias]void** data, int offset)
+        void set_from_data_f1([NoAlias]float4* destination, [NoAlias]void** data, in int offset)
         {
             for (int i = 0; i < ssmd_datacount; i++)
             {
@@ -3155,9 +3156,35 @@ namespace NSS.Blast.SSMD
         }
 
         /// <summary>
+        /// set a dest.x buffer from data[offset]
+        /// </summary>
+        void set_from_data_f1([NoAlias]float4* destination, [NoAlias]void** data, in int offset, in bool minus, in bool not)
+        {
+            if (minus)
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i].x = -((float*)data[i])[offset];
+                }
+                return;
+            }
+
+            if (not)
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i].x = math.select(0, 1, ((float*)data[i])[offset] == 0);
+                }
+                return;
+            }
+
+            set_from_data_f1(destination, data, offset);
+        }
+
+        /// <summary>
         /// set a dest.xy buffer from data[offset]
         /// </summary>
-        void set_from_data_f2([NoAlias]float4* destination, [NoAlias]void** data, int offset)
+        void set_from_data_f2([NoAlias]float4* destination, [NoAlias]void** data,in int offset)
         {
             int offsetb = offset + 1;
             for (int i = 0; i < ssmd_datacount; i++)
@@ -3168,9 +3195,38 @@ namespace NSS.Blast.SSMD
         }
 
         /// <summary>
+        /// set a dest.xy buffer from data[offset]
+        /// </summary>
+        void set_from_data_f2([NoAlias]float4* destination, [NoAlias]void** data, in int offset, in bool minus, in bool not)
+        {
+            int offsetb = offset + 1;
+            if (minus)
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i].x = -((float*)data[i])[offset];
+                    destination[i].y = -((float*)data[i])[offsetb];
+                }
+                return;
+            }
+            if (not)
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i].x = math.select(0f, 1f, ((float*)data[i])[offset] == 0);
+                    destination[i].y = math.select(0f, 1f, ((float*)data[i])[offsetb] == 0);
+                }
+                return;
+            }
+
+            set_from_data_f2(destination, data, offset);
+        }
+
+
+        /// <summary>
         /// set a dest.xyz buffer from data[offset]
         /// </summary>
-        void set_from_data_f3([NoAlias]float4* destination, [NoAlias]void** data, int offset)
+        void set_from_data_f3([NoAlias]float4* destination, [NoAlias]void** data, in int offset)
         {
             int offsetb = offset + 1;
             int offsetc = offset + 2;
@@ -3178,19 +3234,76 @@ namespace NSS.Blast.SSMD
             {
                 destination[i].x = ((float*)data[i])[offset];
                 destination[i].y = ((float*)data[i])[offsetb];
-                destination[i].y = ((float*)data[i])[offsetc];
+                destination[i].z = ((float*)data[i])[offsetc];
+            }
+        }
+
+        /// <summary>
+        /// set a dest.xyz buffer from data[offset]
+        /// </summary>
+        void set_from_data_f3([NoAlias]float4* destination, [NoAlias]void** data, in int offset, in bool minus, in bool not)
+        {
+            int offsetb = offset + 1;
+            int offsetc = offset + 2;
+            if (minus)
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i].x = -((float*)data[i])[offset];
+                    destination[i].y = -((float*)data[i])[offsetb];
+                    destination[i].z = -((float*)data[i])[offsetc];
+                }
+                return;
+            }
+            if (not)
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i].x = math.select(0f, 1f, ((float*)data[i])[offset] == 0);
+                    destination[i].y = math.select(0f, 1f, ((float*)data[i])[offsetb] == 0);
+                    destination[i].z = math.select(0f, 1f, ((float*)data[i])[offsetc] == 0);
+                }
+                return;
+            }
+
+            set_from_data_f3(destination, data, offset);
+        }
+
+
+        /// <summary>
+        /// set a dest.xyzw buffer from data[offset]
+        /// </summary>
+        void set_from_data_f4([NoAlias]float4* destination, [NoAlias]void** data, in int offset)
+        {
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                destination[i] = ((float4*)(void*)&((float*)data[i])[offset])[0];
             }
         }
 
         /// <summary>
         /// set a dest.xyzw buffer from data[offset]
         /// </summary>
-        void set_from_data_f4([NoAlias]float4* destination, [NoAlias]void** data, int offset)
+        void set_from_data_f4([NoAlias]float4* destination, [NoAlias]void** data, in int offset, in bool minus, in bool not)
         {
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (minus)
             {
-                destination[i] = ((float4*)(void*)&((float*)data[i])[offset])[0];
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i] = -((float4*)(void*)&((float*)data[i])[offset])[0];
+                }
+                return;
             }
+            if (not)
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i] = math.select((float4)0f, (float4)1f, ((float4*)(void*)&((float*)data[i])[offset])[0] == (float4)0f);
+                }
+                return;
+            }
+
+            set_from_data_f4(destination, data, offset);
         }
 
 
@@ -6882,16 +6995,16 @@ namespace NSS.Blast.SSMD
         {
             // get int id from next 4 ops/bytes 
             int id =
-                (code[code_pointer + 1] << 24)
+                //(code[code_pointer + 1] << 24)
+                //+
+                //(code[code_pointer + 2] << 16)
+                //+
+                (code[code_pointer + 1] << 8)
                 +
-                (code[code_pointer + 2] << 16)
-                +
-                (code[code_pointer + 3] << 8)
-                +
-                code[code_pointer + 4];
+                code[code_pointer + 2];
 
             // advance code pointer beyond the script id
-            code_pointer += 4;
+            code_pointer += 2;//4;
 
             // get function pointer 
 #if DEVELOPMENT_BUILD || TRACE
@@ -6936,126 +7049,213 @@ namespace NSS.Blast.SSMD
                 vector_size = 1; 
 #endif
 
-                //
-                // as we enforce vectorsize == 1 on external function calls, we can cast all down to float and save memory
-                //
+                // first gather up to MinParameterCount parameter components 
+                int p_count = 0;
+                float* p_data = stackalloc float[p.MinParameterCount * ssmd_datacount];
 
-                switch (p.MinParameterCount)
+                while (p_count < p.MinParameterCount)
                 {
-                    // zero parameters 
-                    case 0:
-                        FunctionPointer<Blast.BlastDelegate_f0> fp0 = p.Generic<Blast.BlastDelegate_f0>();
-                        if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
-                        {
-                            vector_size = 1;
+                    byte vsize;
+                    code_pointer++;
 
+                    pop_op_meta(code[code_pointer], out BlastVariableDataType dtype, out vsize);
+
+                    switch (vsize)
+                    {
+                        case 0:
+                        case 4:
+                            vsize = 4; 
+                            pop_fx_into<float4>(code_pointer, (float4*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
+
+                        case 1:
+                            pop_fx_into<float>(code_pointer, (float*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
+
+                        case 2:
+                            pop_fx_into<float2>(code_pointer, (float2*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
+
+                        case 3:
+                            pop_fx_into<float3>(code_pointer, (float3*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
+                    }
+
+                    for (int i = 0; i < vsize && p_count < p.MinParameterCount; i++)
+                    {
+                        p_count++;
+                    }
+                }
+
+
+#if STANDALONE_VSBUILD
+                MethodInfo mi = Blast.ScriptAPI.FunctionInfo[id].FunctionDelegate.Method;
+
+
+                object[] param = new object[p.MinParameterCount + (p.IsShortDefinition ? 0 : 3)];
+
+                int iparam = 0; 
+
+                if (!p.IsShortDefinition)
+                {
+                    param[0] = new IntPtr(engine_ptr);
+                    param[1] = environment_ptr;
+                    param[2] = IntPtr.Zero; // SSMD has no caller data
+                    iparam = 3; 
+                }
+
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    for (int j = 0; j < p.MinParameterCount; j++)
+                    {
+                        param[j + iparam] = p_data[j * ssmd_datacount + i];
+                    }
+
+                    f4[i].x = (float)mi.Invoke(null, param);
+                }
+
+                vector_size = 1;
+                return;
+#else
+                // the native bursted version is a little more invloved ... 
+
+
+                if (p.IsShortDefinition)
+                {
+
+                    switch (p.MinParameterCount)
+                    {
+                        // failure case -> could not map delegate
+                        case 112:
+#if DEVELOPMENT_BUILD || TRACE
+                            Debug.LogError($"blast.ssmd.interpretor.call_external: error mapping external fuction pointer, function id {p.FunctionId} parametercount = {p.MinParameterCount}");
+#endif
                             for (int i = 0; i < ssmd_datacount; i++)
                             {
-                                f4[i].x = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero);
+                                f4[i].x = float.NaN; 
+                            }                            
+                            break;
+
+                        case 0:
+                            FunctionPointer<BlastDelegate_f0_s> fp0_s = p.Generic<BlastDelegate_f0_s>();
+                            if (fp0_s.IsCreated && fp0_s.Value != IntPtr.Zero)
+                            {
+                                for (int i = 0; i < ssmd_datacount; i++) f4[i].x = fp0_s.Invoke();
+                                return;
+                            }
+                            goto case 112;
+
+
+                        case 1:
+                            FunctionPointer<BlastDelegate_f1_s> fp1_s = p.Generic<BlastDelegate_f1_s>();
+                            if (fp1_s.IsCreated && fp1_s.Value != IntPtr.Zero)
+                            {
+                               for (int i = 0; i < ssmd_datacount; i++) f4[i].x = fp1_s.Invoke(p_data[i]);
+                               return;
+                            }
+                            goto case 112;
+
+                        case 2:
+                        FunctionPointer<BlastDelegate_f11_s> fp11_s = p.Generic<BlastDelegate_f11_s>();
+                        if (fp11_s.IsCreated && fp11_s.Value != IntPtr.Zero)
+                        {
+                            for (int i = 0; i < ssmd_datacount; i++) 
+                            {
+                                f4 = fp11_s.Invoke(p_data[i], p_data[1 * ssmd_datacount + i]);
                             }
                             return;
                         }
-                        break;
+                        goto case 112;
 
-                    //
-                    // obviously this would be a whole lot more efficient if we vectorize the external functions 
-                    // - this is however not always good: 
-                    // - if the function is expensive to execute there would be very little benefit
-                    // - small lightweight functions would benefit greatly
-                    // - user should be able to optionally register a vectorized variant and we use that here if present
-                    // 
-                    case 1:
-                        FunctionPointer<Blast.BlastDelegate_f1> fp1 = p.Generic<Blast.BlastDelegate_f1>();
-                        if (fp1.IsCreated && fp1.Value != IntPtr.Zero)
-                        {
-                            pop_f1_into(code_pointer + 1, (float*)temp);
-
-                            code_pointer++;
-
-                            for (int i = 0; i < ssmd_datacount; i++)
+                    }
+                }
+                else
+                {
+                    switch (p.MinParameterCount)
+                    {
+                        // zero parameters 
+                        case 0:
+                            FunctionPointer<BlastDelegate_f0> fp0 = p.Generic<BlastDelegate_f0>();
+                            if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
                             {
-                                f4[i].x = fp1.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, ((float*)temp)[i]);
+                                vector_size = 1;
+
+                                for (int i = 0; i < ssmd_datacount; i++)
+                                {
+                                    f4[i].x = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero);
+                                }
+                                return;
                             }
-                            return;
-                        }
-                        break;
+                            break;
 
-                    case 2:
-                        FunctionPointer<Blast.BlastDelegate_f2> fp2 = p.Generic<Blast.BlastDelegate_f2>();
-                        if (fp2.IsCreated && fp2.Value != IntPtr.Zero)
-                        {
-                            float* fpa = (float*)temp;
-                            float* fpb = &fpa[ssmd_datacount]; // this works because temp is of size full vector
-
-                            pop_f1_into(code_pointer + 1, fpa);
-                            pop_f1_into(code_pointer + 2, fpb);
-
-                            code_pointer += 2;
-                            for (int i = 0; i < ssmd_datacount; i++)
+                        //
+                        // obviously this would be a whole lot more efficient if we vectorize the external functions 
+                        // - this is however not always good: 
+                        // - if the function is expensive to execute there would be very little benefit
+                        // - small lightweight functions would benefit greatly
+                        // - user should be able to optionally register a vectorized variant and we use that here if present
+                        // 
+                        case 1:
+                            FunctionPointer<BlastDelegate_f1> fp1 = p.Generic<BlastDelegate_f1>();
+                            if (fp1.IsCreated && fp1.Value != IntPtr.Zero)
                             {
-                                f4[i].x = fp2.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, fpa[i], fpb[i]);
+                                for (int i = 0; i < ssmd_datacount; i++)
+                                {
+                                    f4[i].x = fp1.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i]);
+                                }
+                                return;
                             }
+                            break;
 
-                            return;
-                        }
-                        break;
-
-                    case 3:
-                        FunctionPointer<Blast.BlastDelegate_f3> fp3 = p.Generic<Blast.BlastDelegate_f3>();
-                        if (fp3.IsCreated && fp3.Value != IntPtr.Zero)
-                        {
-                            float* fpa = (float*)temp;
-                            float* fpb = &fpa[ssmd_datacount];
-                            float* fpc = &fpb[ssmd_datacount];
-
-                            pop_f1_into(code_pointer + 1, fpa);
-                            pop_f1_into(code_pointer + 2, fpb);
-                            pop_f1_into(code_pointer + 3, fpc);
-
-                            code_pointer += 3;
-                            for (int i = 0; i < ssmd_datacount; i++)
+                        case 2:
+                            FunctionPointer<BlastDelegate_f11> fp2 = p.Generic<BlastDelegate_f11>();
+                            if (fp2.IsCreated && fp2.Value != IntPtr.Zero)
                             {
-                                f4[i].x = fp3.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, fpa[i], fpb[i], fpc[i]);
+                                for (int i = 0; i < ssmd_datacount; i++)
+                                {
+                                    f4[i].x = fp2.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i]);
+                                }
+                                return;
                             }
-                            return;
-                        }
-                        break;
+                            break;
 
-                    case 4:
-                        FunctionPointer<Blast.BlastDelegate_f4> fp4 = p.Generic<Blast.BlastDelegate_f4>();
-                        if (fp4.IsCreated && fp4.Value != IntPtr.Zero)
-                        {
-                            float* fpa = (float*)temp;
-                            float* fpb = &fpa[ssmd_datacount];
-                            float* fpc = &fpb[ssmd_datacount];
-                            float* fpd = &fpc[ssmd_datacount];
-
-                            pop_f1_into(code_pointer + 1, fpa);
-                            pop_f1_into(code_pointer + 2, fpb);
-                            pop_f1_into(code_pointer + 3, fpc);
-                            pop_f1_into(code_pointer + 4, fpd);
-
-                            code_pointer += 4;
-                            for (int i = 0; i < ssmd_datacount; i++)
+                        case 3:
+                            FunctionPointer<BlastDelegate_f111> fp3 = p.Generic<BlastDelegate_f111>();
+                            if (fp3.IsCreated && fp3.Value != IntPtr.Zero)
                             {
-                                f4[i].x = fp4.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, fpa[i], fpb[i], fpc[i], fpd[i]);
+                                for (int i = 0; i < ssmd_datacount; i++)
+                                {
+                                    f4[i].x = fp3.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i], p_data[2 * ssmd_datacount + i]);
+                                }
+                                return;
                             }
-                            return;
-                        }
-                        break;
+                            break;
 
-                    //
-                    // For 5 6 and 7 parameters we can re-use the memory in f4 although it is sparse... 
-                    // might be better to stackalloc some for more parameters 
-                    // 
+                        case 4:
+                            FunctionPointer<BlastDelegate_f1111> fp4 = p.Generic<BlastDelegate_f1111>();
+                            if (fp4.IsCreated && fp4.Value != IntPtr.Zero)
+                            {
+                                for (int i = 0; i < ssmd_datacount; i++)
+                                {
+                                    f4[i].x = fp3.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i], p_data[2 * ssmd_datacount + i], p_data[3 * ssmd_datacount + i]);
+                                }
+                                return;
+                            }
+                            break;
+
 
 
 #if DEVELOPMENT_BUILD || TRACE
-                    default:
-                        Debug.LogError($"blast.ssmd.interpretor.call-external: function id {id}, with parametercount {p.MinParameterCount} is not supported yet");
-                        break;
+                        default:
+                            Debug.LogError($"blast.ssmd.interpretor.call-external: function id {id}, with parametercount {p.MinParameterCount} is not supported yet");
+                            break;
 #endif
+                    }
                 }
+
+#endif
+
+
 #if DEVELOPMENT_BUILD || TRACE
             }
 #endif
@@ -7410,7 +7610,7 @@ namespace NSS.Blast.SSMD
                             // -> pop into f4 temp buffer if another operation
                             // ! this saves 2 copies ! when prev_op == 0
 
-                            pop_fn_into(code_pointer, prev_op == 0 ? f4_result : f4, minus, out vector_size);
+                            pop_fn_into(code_pointer, current_op == 0 ? f4_result : f4, minus, out vector_size);
                             minus = false;
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -7421,7 +7621,7 @@ namespace NSS.Blast.SSMD
                             }
 #endif
                             vector_size = (byte)math.select(vector_size, 4, vector_size == 0);
-                            if (prev_op == 0)
+                            if (current_op == 0)
                             {
                                 // this is the first datapoint, nothing can happen to it so jump
                                 code_pointer++;
@@ -7455,26 +7655,47 @@ namespace NSS.Blast.SSMD
                     case blast_operation.index_z:
                     case blast_operation.index_w:
                     case blast_operation.ex_op:
-                        
-                        // ### optimization depending on callchain ###
-                        //
-                        // if on the first token (prevop = 0)    (saves multiple copies)
-                        // 
-                        // - copy directly into f4_result, continue to next iteration like on minus
-                        //
-                        // if not minus and not not       (save 1 copy)
-                        // 
-                        // - into f4_result,  set skipset flag
-                        //
-                        // else
-                        //
-                        // - into f4 -> normal flow
-                        //
 
-                               //   todo
-                     
-
-                        GetFunctionResult(f4_temp, ref code_pointer, ref vector_size, ref f4); break;
+                        // on no operation pending
+                        if (current_op == 0)
+                        {
+                            // move directly to result
+                            GetFunctionResult(f4_temp, ref code_pointer, ref vector_size, ref f4_result);
+                            if(minus || not)
+                            {
+                                if(minus)
+                                {
+                                    switch(vector_size)
+                                    {
+                                        case 0:
+                                        case 4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = -f4_result[i]; vector_size = 4; break;
+                                        case 1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = -f4_result[i].x; vector_size = 1; break;
+                                        case 2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = -f4_result[i].xy; vector_size = 2; break;
+                                        case 3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = -f4_result[i].xyz; vector_size = 3; break;
+                                    }                                                                  
+                                }
+                                if(not)
+                                {
+                                    switch (vector_size)
+                                    {
+                                        case 0:
+                                        case 4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = math.select((float4)0f, (float4)1f, f4_result[i] == 0); vector_size = 4; break;
+                                        case 1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = math.select((float)0f, (float)1f, f4_result[i].x == 0); vector_size = 1; break;
+                                        case 2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = math.select((float2)0f, (float2)1f, f4_result[i].xy == 0); vector_size = 2; break;
+                                        case 3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = math.select((float3)0f, (float3)1f, f4_result[i].xyz == 0); vector_size = 3; break;
+                                    }
+                                }
+                                minus = false;
+                                not = false; 
+                            }
+                            code_pointer++; 
+                            continue;
+                        } 
+                        else
+                        {
+                            GetFunctionResult(f4_temp, ref code_pointer, ref vector_size, ref f4);
+                            break; 
+                        }
 
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -7535,16 +7756,25 @@ namespace NSS.Blast.SSMD
                     case blast_operation.inv_value_270:
                     case blast_operation.inv_value_360:
                         {
+                            // assign directly to result if this is the first operation (save a copy)                            
+                            float4* f4_value = current_op != 0 ? f4 : f4_result; 
+
                             // set constant, if a minus is present apply it 
                             float constant = engine_ptr->constants[op];
-                            constant = math.select(constant, -constant, minus);
-                            minus = false;
+                            if (not || minus)
+                            {
+                                // these should not be both active 
+                                constant = math.select(constant, -constant, minus);
+                                constant = math.select(constant, constant == 0 ? 1 : 0, not);
+                                minus = false;
+                                not = false; 
+                            }
                             switch ((BlastVectorSizes)vector_size)
                             {
-                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4[i].x = constant; break;
-                                case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4[i].xy = constant; break;
-                                case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4[i].xyz = constant; break;
-                                case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4[i].xyzw = constant; break;
+                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_value[i].x = constant; break;
+                                case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_value[i].xy = constant; break;
+                                case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_value[i].xyz = constant; break;
+                                case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_value[i].xyzw = constant; break;
 #if DEVELOPMENT_BUILD || TRACE
                                 default:
                                     Debug.LogError($"SSMD Interpretor, set constantvalue, codepointer: {code_pointer} => {code[code_pointer]}, error: vectorsize {vector_size} not supported");
@@ -7552,26 +7782,57 @@ namespace NSS.Blast.SSMD
 #endif
                             }
                         }
+                        // if setting the first value, just start the loop again 
+                        if(current_op == 0)
+                        {
+                            code_pointer++;
+                            continue; 
+                        }
                         break;
 
 
                     // handle identifiers/variables
                     default:
                         {
-                            if (op >= BlastInterpretor.opt_id) // only exop is higher and that is handled earlier so this check is safe 
+                            if (op >= BlastInterpretor.opt_id) // only exop is higher and that is handled before default so this check is safe 
                             {
                                 // lookup identifier value
                                 byte id = (byte)(op - BlastInterpretor.opt_id);
                                 byte this_vector_size = BlastInterpretor.GetMetaDataSize(metadata, id);
 
-                                // and put it in f4 
-                                switch ((BlastVectorSizes)this_vector_size)
+                                // if no operation is active
+                                float4* f4_value = current_op == blast_operation.nop ? f4_result : f4;
+
+                                // these should not possibly both be active 
+                                if (not || minus)
                                 {
-                                    case BlastVectorSizes.float1: set_from_data_f1(f4, data, id); vector_size = 1; break;
-                                    case BlastVectorSizes.float2: set_from_data_f2(f4, data, id); vector_size = 2; break;
-                                    case BlastVectorSizes.float3: set_from_data_f3(f4, data, id); vector_size = 3; break;
-                                    case 0:
-                                    case BlastVectorSizes.float4: set_from_data_f4(f4, data, id); vector_size = 4; break;
+                                    switch ((BlastVectorSizes)this_vector_size)
+                                    {
+                                        case BlastVectorSizes.float1: set_from_data_f1(f4_value, data, id, minus, not); vector_size = 1; break;
+                                        case BlastVectorSizes.float2: set_from_data_f2(f4_value, data, id, minus, not); vector_size = 2; break;
+                                        case BlastVectorSizes.float3: set_from_data_f3(f4_value, data, id, minus, not); vector_size = 3; break;
+                                        case 0:
+                                        case BlastVectorSizes.float4: set_from_data_f4(f4_value, data, id, minus, not); vector_size = 4; break;
+                                    }
+                                    minus = false;
+                                    not = false;
+                                }
+                                else
+                                {
+                                    // and put it in f4 
+                                    switch ((BlastVectorSizes)this_vector_size)
+                                    {
+                                        case BlastVectorSizes.float1: set_from_data_f1(f4_value, data, id); vector_size = 1; break;
+                                        case BlastVectorSizes.float2: set_from_data_f2(f4_value, data, id); vector_size = 2; break;
+                                        case BlastVectorSizes.float3: set_from_data_f3(f4_value, data, id); vector_size = 3; break;
+                                        case 0:
+                                        case BlastVectorSizes.float4: set_from_data_f4(f4_value, data, id); vector_size = 4; break;
+                                    }
+                                }
+                                if (current_op == blast_operation.nop)
+                                {
+                                    code_pointer++;
+                                    continue;
                                 }
                             }
                             else
