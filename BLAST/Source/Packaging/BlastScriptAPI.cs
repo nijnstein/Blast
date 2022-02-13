@@ -1179,18 +1179,18 @@ namespace NSS.Blast
         /// <param name="short_definition">short define: without engine and environment pointers</param>
         /// <param name="is_short"></param>
         /// <returns>a positive function id, or if negative a blasterror </returns>
-        internal int RegisterFunction(Delegate function_delegate, string name, int parameter_count, bool short_definition = false) 
+        internal int RegisterFunction<T>(T function_delegate, string name, int parameter_count, bool short_definition = false) where T:class 
         {
             Assert.IsNotNull(function_delegate);
 
             if(string.IsNullOrWhiteSpace(name))
             {
-                name = function_delegate.Method.Name; 
+                name = (function_delegate as Delegate).Method.Name; 
             }
 
             int function_id = RegisterFunction(name, IntPtr.Zero, parameter_count, 1, 1, short_definition);
       
-            BlastError res = UpdateFunctionDelegate(function_id, function_delegate);
+            BlastError res = UpdateFunctionDelegate(function_id, (function_delegate as Delegate));
             if(res != BlastError.success)
             {
 #if DEVELOPMENT_BUILD || TRACE
@@ -1201,8 +1201,8 @@ namespace NSS.Blast
 
 
 #if !STANDALONE_VSBUILD
-            IntPtr fp = BurstCompilerUtil<T>.CompileFunctionPointer(f11, function_id, 5);
-            BlastError res = UpdateRegistration(int id, fp); 
+            IntPtr fp = BurstCompilerUtil<T>.CompileFunctionPointer(function_delegate);
+            res = UpdateNativeFunctionPointer(function_id, fp); 
             if(res != BlastError.success)
             {
                 Debug.LogError($"blast.scriptapi.Register: function {name}, native function pointer not registered|updated");
@@ -1226,14 +1226,17 @@ namespace NSS.Blast
         /// <param name="function_id"></param>
         /// <param name="function_delegate"></param>
         /// <returns></returns>
-        public BlastError UpdateRegistration(int function_id, Delegate function_delegate)
+        public BlastError UpdateRegistration<T>(int function_id, T function_delegate) where T: class
         {
-            BlastError res = UpdateFunctionDelegate(function_id, function_delegate);
+            Assert.IsNotNull(function_delegate);
+            Assert.IsTrue(function_id > 0);
+            
+            BlastError res = UpdateFunctionDelegate(function_id, function_delegate as Delegate);
             if (res != BlastError.success) return res;
 
 #if !STANDALONE_VSBUILD
-            IntPtr fp = BurstCompilerUtil<T>.CompileFunctionPointer(f11, function_id, 5);
-            BlastError res = UpdateRegistration(int id, fp); 
+            IntPtr fp = BurstCompilerUtil<T>.CompileFunctionPointer(function_delegate);
+            res = UpdateNativeFunctionPointer(function_id, fp); 
             if (res != BlastError.success) return res;
 #endif
             return BlastError.success;

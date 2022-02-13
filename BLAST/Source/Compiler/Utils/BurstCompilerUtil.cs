@@ -107,15 +107,12 @@ namespace NSS.Blast
                 }
             }
         }
-    /*
-        public static unsafe NonGenericFunctionPointer CompileFunctionPointer(T del, int id, int parameter_count)
+    
+        public static unsafe IntPtr CompileFunctionPointer(T del)
         {
             var obj = compileMethodInfo.Invoke(null, new object[] { del, true });
-            var ptr = Pointer.Unbox(obj);
-            var intPtr = new IntPtr(ptr);
-
-            return new NonGenericFunctionPointer(intPtr, id, parameter_count);
-        }*/
+            return new IntPtr(Pointer.Unbox(obj)); 
+        }
     }
 
 #endif

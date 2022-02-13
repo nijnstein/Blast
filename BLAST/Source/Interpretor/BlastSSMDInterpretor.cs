@@ -7161,7 +7161,7 @@ namespace NSS.Blast.SSMD
                         {
                             for (int i = 0; i < ssmd_datacount; i++) 
                             {
-                                f4 = fp11_s.Invoke(p_data[i], p_data[1 * ssmd_datacount + i]);
+                                f4[i].x = fp11_s.Invoke(p_data[i], p_data[1 * ssmd_datacount + i]);
                             }
                             return;
                         }
@@ -7237,7 +7237,7 @@ namespace NSS.Blast.SSMD
                             {
                                 for (int i = 0; i < ssmd_datacount; i++)
                                 {
-                                    f4[i].x = fp3.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i], p_data[2 * ssmd_datacount + i], p_data[3 * ssmd_datacount + i]);
+                                    f4[i].x = fp4.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i], p_data[2 * ssmd_datacount + i], p_data[3 * ssmd_datacount + i]);
                                 }
                                 return;
                             }
