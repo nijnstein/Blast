@@ -352,7 +352,7 @@ namespace NSS.Blast
         /// "Package, Compile, Prepare, Execute"  
         /// </summary>
         /// <param name="api">the api to use</param>
-        public unsafe static void CreateInstance(BlastScriptAPI api = null)
+        public unsafe static void Initialize(BlastScriptAPI api = null)
         {
             if (!IsInstantiated)
             {

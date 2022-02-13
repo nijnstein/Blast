@@ -2535,9 +2535,9 @@ namespace NSS.Blast.SSMD
         }
 
 
-#endregion
+        #endregion
 
-#region pop_fx_with_op_into_f4
+        #region pop_fx_with_op_into_f4
         /// <summary>
         /// pop a float1 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to m11
         /// </summary>
@@ -2549,7 +2549,7 @@ namespace NSS.Blast.SSMD
         {
 #if DEVELOPMENT_BUILD || TRACE
 
-            Assert.IsFalse((void*)output == (void*)buffer, "dont use equal buffers, output wil overwrite future input when growing into a larger vectorsize");
+            Assert.IsFalse((void*)output == (void*)buffer, $"dont use equal buffers [{(ulong)(void*)output}] == [{(ulong)(void*)buffer}], output wil overwrite future input when growing into a larger vectorsize");
 
             if (!Blast.IsOperationSSMDHandled(op))
             {
