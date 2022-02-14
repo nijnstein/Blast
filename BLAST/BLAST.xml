@@ -127,9 +127,19 @@
             default interpretor 
             </summary>
         </member>
+        <member name="F:NSS.Blast.Blast.CompilerOptions">
+            <summary>
+            default compiler options for script packages 
+            </summary>
+        </member>
         <member name="F:NSS.Blast.Blast.ssmd_blaster">
             <summary>
             ssmd interpretor
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Blast.SSMDCompilerOptions">
+            <summary>
+            default options for compiler to use packaging ssmd scripts 
             </summary>
         </member>
         <member name="P:NSS.Blast.Blast.ScriptAPI">
@@ -190,6 +200,21 @@
             "Package, Compile, Prepare, Execute"  
             </summary>
             <param name="api">the api to use</param>
+        </member>
+        <member name="M:NSS.Blast.Blast.Silent">
+            <summary>
+            disable all non essential logging 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Blast.Verbose">
+            <summary>
+            enable verbose logging 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Blast.Trace">
+            <summary>
+            enable trace logging 
+            </summary>
         </member>
         <member name="M:NSS.Blast.Blast.Create(Unity.Collections.Allocator)">
             <summary>
@@ -681,14 +706,12 @@
         </member>
         <member name="P:NSS.Blast.Compiler.BlastCompilerOptions.Default">
             <summary>
-            Default compiler options:
-            BS1 - Normal - Optimizing
+            Default compiler options
             </summary>
         </member>
         <member name="P:NSS.Blast.Compiler.BlastCompilerOptions.SSMD">
             <summary>
-            Default SSMD compiler options:
-            BS1 - SSMD Packagemode - Optimizing
+            Default SSMD compiler options
             </summary>
         </member>
         <member name="P:NSS.Blast.Compiler.BlastCompilerOptions.Entity">

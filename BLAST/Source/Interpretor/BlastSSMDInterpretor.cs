@@ -8,6 +8,7 @@
     using System.Reflection; 
 #else
     using UnityEngine;
+    using Unity.Burst.CompilerServices;
 #endif 
 
 
@@ -19,7 +20,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Collections;
 using System.Runtime.CompilerServices;
-using Unity.Burst.CompilerServices;
 
 namespace NSS.Blast.SSMD
 {
@@ -156,7 +156,9 @@ namespace NSS.Blast.SSMD
         /// <param name="ssmddata"></param>
         /// <param name="ssmd_data_count"></param>
         /// <returns></returns>
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         public int Execute([NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]BlastSSMDDataStack* ssmddata, int ssmd_data_count)
         {
             if (!blast.IsCreated) return (int)BlastError.error_blast_not_initialized;
@@ -5517,7 +5519,9 @@ namespace NSS.Blast.SSMD
 
         #region Dual input functions: math.pow fmod cross etc. 
 
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_fmod_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
         {
             BlastVariableDataType datatype;
@@ -5606,7 +5610,9 @@ namespace NSS.Blast.SSMD
             code_pointer += 2;
         }
 
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_pow_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
         {
             BlastVariableDataType datatype;
@@ -5698,7 +5704,9 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// only accepts size 3 vectors 
         /// </summary>
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_cross_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
         {
             BlastVariableDataType datatype;
@@ -5748,7 +5756,9 @@ namespace NSS.Blast.SSMD
         /// <param name="code_pointer"></param>
         /// <param name="vector_size"></param>
         /// <param name="register"></param>
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_dot_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* register)
         {
             BlastVariableDataType datatype;
@@ -5857,7 +5867,9 @@ namespace NSS.Blast.SSMD
         /// 
         /// Assembly sample with vectors: <c>a = select((1 1), (2 2), 1) => setf a select 1 pop pop nop</c>
         /// </remarks>
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_select_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* f4)
         {
             // upon entry code_pointer is located on the function operation 
@@ -6017,7 +6029,9 @@ namespace NSS.Blast.SSMD
         /// 
         /// </code>
         /// </remarks>
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_clamp_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
         {
             BlastVariableDataType datatype;
@@ -6145,7 +6159,9 @@ namespace NSS.Blast.SSMD
         /// - if they are always allocated move every case with stackalloc into its own function ? code explosin without templates/generics
         ///  
         /// </remarks>
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_lerp_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
         {
             BlastVariableDataType datatype;
@@ -6310,7 +6326,9 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// undo lerp 
         /// </summary>
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_unlerp_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
         {
             BlastVariableDataType datatype;
@@ -6411,7 +6429,9 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// sperical lerp on quaternions 
         /// </summary>
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_slerp_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
         {
             BlastVariableDataType datatype;
@@ -6459,7 +6479,9 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// normalized lerp on quaternions
         /// </summary>
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_nlerp_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
         {
             BlastVariableDataType datatype;
@@ -7032,7 +7054,9 @@ namespace NSS.Blast.SSMD
 
         #region External Function Handler 
 
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         void get_external_function_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
         {
             // get int id from next 4 ops/bytes 
@@ -7461,7 +7485,9 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// process a sequence of operations into a new register value 
         /// </summary>        
+#if !STANDALONE_VSBUILD
         [SkipLocalsInit]
+#endif
         int GetSequenceResult([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
         {
             byte op = 0, prev_op;
@@ -8639,7 +8665,9 @@ namespace NSS.Blast.SSMD
         /// <param name="ssmd_data_count">should be divisable by 8</param>
         /// <param name="f4_register"></param>
         /// <returns></returns>
+        #if !STANDALONE_VSBUILD 
         [SkipLocalsInit]
+        #endif
         int Execute([NoAlias]byte* syncbuffer, [NoAlias]byte** datastack, int ssmd_data_count, [NoAlias]float4* f4_register)
         {
             data = (void**)datastack;

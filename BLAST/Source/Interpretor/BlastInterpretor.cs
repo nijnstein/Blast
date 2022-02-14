@@ -7,6 +7,7 @@
 using NSS.Blast.Standalone;
 #else
     using UnityEngine;
+    using Unity.Burst.CompilerServices;
 #endif
 
 using System;
@@ -16,7 +17,6 @@ using UnityEngine.Assertions;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
-using Unity.Burst.CompilerServices;
 
 namespace NSS.Blast.Interpretor
 {
