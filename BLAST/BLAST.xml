@@ -124,12 +124,12 @@
         </member>
         <member name="F:NSS.Blast.Blast.blaster">
             <summary>
-            [ThreadStatic] default interpretor 
+            default interpretor 
             </summary>
         </member>
         <member name="F:NSS.Blast.Blast.ssmd_blaster">
             <summary>
-            [ThreadStatic] ssmd interpretor
+            ssmd interpretor
             </summary>
         </member>
         <member name="P:NSS.Blast.Blast.ScriptAPI">
@@ -184,7 +184,7 @@
             simple object/lock method for some threadsafety
             </summary>
         </member>
-        <member name="M:NSS.Blast.Blast.CreateInstance(NSS.Blast.BlastScriptAPI)">
+        <member name="M:NSS.Blast.Blast.Initialize(NSS.Blast.BlastScriptAPI)">
             <summary>
             create a static instance, this instance will be used if no blast reference is given to functions that need it:
             "Package, Compile, Prepare, Execute"  
@@ -4904,6 +4904,16 @@
             failure enumerating all function attributed with the BlastFunctionAttribute, most probably blast could not match the method definition to a matching delegate
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastError.error_invalid_ssmd_count">
+            <summary>
+            invalid data count for ssmd loops, should be > 0 and smaller then 32x1024
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_execute_ssmddata_null">
+            <summary>
+            ssmd interpretor error: datasegment buffer == null 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Cache.blast.max(System.Single,System.Single)">
             <summary>
             hmmmmz we would neeed very many overloads when supporting 63 parameters... 
@@ -5903,7 +5913,7 @@
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f3_with_op_into_f4(System.Int32@,Unity.Mathematics.float3*,Unity.Mathematics.float4*,NSS.Blast.blast_operation)">
             <summary>
-            pop a float2 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to m11
+            pop a float3 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to m11
             </summary>
             <param name="code_pointer"></param>
             <param name="buffer"></param>
@@ -6263,26 +6273,6 @@
             <summary>
             data for ssmd operation modes: data-stack only
             - only used as pointer, fields handy in debugger
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.a">
-            <summary>
-            fictional - for debug view only
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.b">
-            <summary>
-            fictional - for debug view only
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.c">
-            <summary>
-            fictional - for debug view only
-            </summary>
-        </member>
-        <member name="F:NSS.Blast.BlastSSMDDataStack.d">
-            <summary>
-            fictional - for debug view only
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastPackageData">
@@ -6979,9 +6969,19 @@
         </member>
         <member name="P:NSS.Blast.BlastScript.Item(System.String)">
             <summary>
-            get/set variable by name
+            Get|Set variable by name
             </summary>
             <param name="name">caseinsensitive name of variable to get|set</param>
+            <returns>boxed object</returns>
+            <remarks>
+            
+            Lookup variable by name and set its value: 
+            
+            <code language="cs">
+                script["a"] = 12f;
+                script["v3"] = new float3(1, 1, 1);
+            </code>
+            </remarks>
         </member>
         <member name="P:NSS.Blast.BlastScript.Item(System.Int32)">
             <summary>
@@ -7775,7 +7775,7 @@
             enumerate and register all static methods marked with the [BlastFunctionAttribute] as external functions
             </summary>
         </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction(System.Delegate,System.String,System.Int32,System.Boolean)">
+        <member name="M:NSS.Blast.BlastScriptAPI.RegisterFunction``1(``0,System.String,System.Int32,System.Boolean)">
             <summary>
             register an external function with this api 
             </summary>
@@ -7786,7 +7786,7 @@
             <param name="is_short"></param>
             <returns>a positive function id, or if negative a blasterror </returns>
         </member>
-        <member name="M:NSS.Blast.BlastScriptAPI.UpdateRegistration(System.Int32,System.Delegate)">
+        <member name="M:NSS.Blast.BlastScriptAPI.UpdateRegistration``1(System.Int32,``0)">
             <summary>
             update an external functions delegate and functionpointer 
             </summary>

@@ -1398,7 +1398,7 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             // identifier, possibly a nested function 
                             case BlastScriptToken.Identifier:
-                                current_nodes.Add(n_function.SetChild(scan_and_parse_identifier(data, tokens, ref idx, idx_end)));
+                                current_nodes.Add(n_function.SetChild(scan_and_parse_identifier(data, tokens, ref idx, end_function_parenthesis)));
                                 break;
 
                             // seperator 
@@ -1440,7 +1440,7 @@ namespace NSS.Blast.Compiler.Stage
                                     }
                                 }
 
-                                if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx + 1, idx_max, out idx_end, true, false))
+                                if (find_next(data, tokens, BlastScriptToken.CloseParenthesis, idx + 1, end_function_parenthesis, out idx_end, true, false))
                                 {
                                     current_nodes.Add(n_function.SetChild(parse_sequence(data, tokens, ref idx, idx_end)));
                                 }
