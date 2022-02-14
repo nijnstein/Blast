@@ -120,16 +120,26 @@ namespace NSS.Blast.Compiler
         public bool Experimental = false;
 
         /// <summary>
-        /// Default compiler options:
-        /// BS1 - Normal - Optimizing
+        /// Default compiler options
         /// </summary>
-        public static BlastCompilerOptions Default => new BlastCompilerOptions();
+#if DEVELOPMENT_BUILD
+        public static BlastCompilerOptions Default => new BlastCompilerOptions().Verbose(); 
+#elif TRACE
+        public static BlastCompilerOptions Default => new BlastCompilerOptions().Trace();
+#else
+        public static BlastCompilerOptions Default => new BlastCompilerOptions().Silent(); 
+#endif
 
         /// <summary>
-        /// Default SSMD compiler options:
-        /// BS1 - SSMD Packagemode - Optimizing
+        /// Default SSMD compiler options
         /// </summary>
-        public static BlastCompilerOptions SSMD => new BlastCompilerOptions().SetPackageMode(BlastPackageMode.SSMD).PackageWithoutStack();
+#if DEVELOPMENT_BUILD
+        public static BlastCompilerOptions SSMD => new BlastCompilerOptions().SetPackageMode(BlastPackageMode.SSMD).PackageWithoutStack().Verbose();
+#elif TRACE
+        public static BlastCompilerOptions SSMD => new BlastCompilerOptions().SetPackageMode(BlastPackageMode.SSMD).PackageWithoutStack().Trace();
+#else
+        public static BlastCompilerOptions SSMD => new BlastCompilerOptions().SetPackageMode(BlastPackageMode.SSMD).PackageWithoutStack().Silent();
+#endif
 
         /// <summary>
         /// Default compiler options for packaging entities:

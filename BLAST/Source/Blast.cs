@@ -268,10 +268,20 @@ namespace NSS.Blast
         static public BlastInterpretor blaster = default;
 
         /// <summary>
+        /// default compiler options for script packages 
+        /// </summary>
+        static public BlastCompilerOptions CompilerOptions = BlastCompilerOptions.Default; 
+
+        /// <summary>
         /// ssmd interpretor
         /// </summary>
         [ThreadStatic]
         static public BlastSSMDInterpretor ssmd_blaster = default;
+
+        /// <summary>
+        /// default options for compiler to use packaging ssmd scripts 
+        /// </summary>
+        static public BlastCompilerOptions SSMDCompilerOptions = BlastCompilerOptions.SSMD; 
 
         /// <summary>
         /// The API, initialize the instance before using static functions!
@@ -352,14 +362,44 @@ namespace NSS.Blast
         /// "Package, Compile, Prepare, Execute"  
         /// </summary>
         /// <param name="api">the api to use</param>
-        public unsafe static void Initialize(BlastScriptAPI api = null)
+        public static Blast Initialize(BlastScriptAPI api = null)
         {
             if (!IsInstantiated)
             {
                 Instance = Create(api == null ? script_api : api);
             }
+            return Instance;
         }
 
+        /// <summary>
+        /// disable all non essential logging 
+        /// </summary>
+        public Blast Silent()
+        {
+            CompilerOptions.Silent();
+            SSMDCompilerOptions.Silent();
+            return Instance;
+        }
+
+        /// <summary>
+        /// enable verbose logging 
+        /// </summary>
+        public Blast Verbose()
+        {
+            CompilerOptions.Verbose();
+            SSMDCompilerOptions.Verbose();
+            return Instance; 
+        }
+
+        /// <summary>
+        /// enable trace logging 
+        /// </summary>
+        public Blast Trace()
+        {
+            CompilerOptions.Trace();
+            SSMDCompilerOptions.Trace();
+            return Instance; 
+        }
 
         /// <summary>
         /// create a new instance of BLAST use the core scriptfunction api

@@ -111,24 +111,19 @@ namespace NSS.Blast
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (IsPackaged) return BlastError.error_already_packaged;
 
-#if DEVELOPMENT_BUILD || TRACE
-            BlastCompilerOptions options = BlastCompilerOptions.Default.Trace();
-#else
-            BlastCompilerOptions options = BlastCompilerOptions.Default; 
-#endif
             if(prepare_variable_info)
             {
-                BlastError res = BlastCompiler.CompilePackage(blast, this, options);
+                BlastError res = BlastCompiler.CompilePackage(blast, this, Blast.CompilerOptions);
                 return res;                 
             }
             else
             {
                 this.Package = new BlastScriptPackage();
 
-                IBlastCompilationData data = BlastCompiler.Compile(blast, this, options);
+                IBlastCompilationData data = BlastCompiler.Compile(blast, this, Blast.CompilerOptions);
                 if (!data.IsOK) return BlastError.error_compilation_failure;
 
-                this.Package.Package = BlastCompiler.Package(data, options);
+                this.Package.Package = BlastCompiler.Package(data, Blast.CompilerOptions);
                 if (!data.IsOK) return BlastError.compile_packaging_error;
 
                 //if (!this.Package.HasInputs && this.Package.HasVariables)

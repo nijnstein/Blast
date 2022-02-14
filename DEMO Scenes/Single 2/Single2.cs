@@ -11,12 +11,9 @@ public class Single2 : MonoBehaviour
 
 #input position float3 0 0 0
 
-position.x = position.x + random(-0.01, 0.01);
-position.y = position.y + random(-0.01, 0.01);
-position.z = position.z + random(-0.01, 0.01);
+position = position + random(-0.01, 0.01);
 
-position = min((100 100 100), position);
-position = max((-100 -100 -100), position);
+position = min((100 100 100), max((-100, -100, -100), position));
 
 ";
     BlastScript script;
@@ -24,7 +21,7 @@ position = max((-100 -100 -100), position);
 
     void Start()
     {
-        Blast.Initialize();
+        Blast.Initialize().Silent().Verbose().Trace();
 
         // prepare the script once 
         script = BlastScript.FromText(Script);

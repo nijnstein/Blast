@@ -16,6 +16,7 @@ using UnityEngine.Assertions;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+using Unity.Burst.CompilerServices;
 
 namespace NSS.Blast.Interpretor
 {
@@ -23,9 +24,7 @@ namespace NSS.Blast.Interpretor
     /// <summary>
     /// 
     /// </summary>
-#if !STANDALONE_VSBUILD
     [BurstCompile]
-#endif
 
     unsafe public struct BlastInterpretor
     {
