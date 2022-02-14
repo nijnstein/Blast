@@ -262,13 +262,13 @@ namespace NSS.Blast
         static public bool IsInstantiated => Instance != null && Instance.IsCreated;
 
         /// <summary>
-        /// [ThreadStatic] default interpretor 
+        /// default interpretor 
         /// </summary>
         [ThreadStatic]
         static public BlastInterpretor blaster = default;
 
         /// <summary>
-        /// [ThreadStatic] ssmd interpretor
+        /// ssmd interpretor
         /// </summary>
         [ThreadStatic]
         static public BlastSSMDInterpretor ssmd_blaster = default;
@@ -527,7 +527,7 @@ namespace NSS.Blast
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public NSS.Blast.Jobs.blast_execute_package_ssmd_burst_job CreateSSMDJob(BlastPackageData package, IntPtr ssmd_data, int ssmd_count)
         {
-            return CreateSSMDJob(package, ssmd_data, IntPtr.Zero, ssmd_count); 
+            return CreateSSMDJob(package, IntPtr.Zero, ssmd_data, ssmd_count); 
         }
 
         [BurstCompile]

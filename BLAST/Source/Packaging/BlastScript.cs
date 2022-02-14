@@ -250,10 +250,21 @@ namespace NSS.Blast
 
         #region Variable Indexers 
 
+
         /// <summary>
-        /// get/set variable by name
+        /// Get|Set variable by name
         /// </summary>
         /// <param name="name">caseinsensitive name of variable to get|set</param>
+        /// <returns>boxed object</returns>
+        /// <remarks>
+        /// 
+        /// Lookup variable by name and set its value: 
+        /// 
+        /// <code language="cs">
+        ///     script["a"] = 12f;
+        ///     script["v3"] = new float3(1, 1, 1);
+        /// </code>
+        /// </remarks>
         public object this[string name]
         {
             get

@@ -144,7 +144,7 @@ namespace NSS.Blast.SSMD
             BlastError res = SetPackage(packagedata);
             if (res != BlastError.success) return (int)res;
 
-            return Execute(blast, environment, ssmddata, ssmd_datacount);
+            return Execute(blast, environment, ssmddata, ssmd_data_count);
         }
 
         /// <summary>
@@ -158,23 +158,31 @@ namespace NSS.Blast.SSMD
         public int Execute([NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]BlastSSMDDataStack* ssmddata, int ssmd_data_count)
         {
             if (!blast.IsCreated) return (int)BlastError.error_blast_not_initialized;
+
+            if (ssmddata == null)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError("blast.ssmd.interpretor: data error, ssmd data == null");
+#endif
+                return (int)BlastError.error_execute_ssmddata_null;
+            }
             if (code == null)
             {
-#if DEVELOPMENT_BUILD || TRACE 
+#if DEVELOPMENT_BUILD || TRACE
                 Debug.LogError("blast.ssmd.interpretor: package not correctly set, code == null");
-#endif 
+#endif
                 return (int)BlastError.error_execute_package_not_correctly_set;
             }
             if (metadata == null)
             {
-#if DEVELOPMENT_BUILD || TRACE 
+#if DEVELOPMENT_BUILD || TRACE
                 Debug.LogError("blast.ssmd.interpretor: package not correctly set, metadata == null");
-#endif 
+#endif
                 return (int)BlastError.error_execute_package_not_correctly_set;
             }
             if (IntPtr.Zero == package.CodeSegmentPtr)
             {
-#if DEVELOPMENT_BUILD || TRACE 
+#if DEVELOPMENT_BUILD || TRACE
                 Debug.LogError("blast.ssmd.interpretor: package not correctly set, codesegmentptr == null");
 #endif
                 return (int)BlastError.error_execute_package_not_correctly_set;
@@ -191,8 +199,12 @@ namespace NSS.Blast.SSMD
             byte** datastack = stackalloc byte*[ssmd_data_count];
             int datastack_stride = package.SSMDDataSize;
 
+            // although we allocate everything in 1 block, we will index a pointer to every block,
+            // this will allow us to accept non-block aligned lists of memory pointers 
             for (int i = 0; i < ssmd_data_count; i++)
+            {                   
                 datastack[i] = ((byte*)ssmddata) + (datastack_stride * i);
+            }
 
             // setup sync buffer 
             syncbuffer_level = 0;
@@ -766,6 +778,10 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void pop_fx_into<T>(in int code_pointer, [NoAlias]T* destination) where T : unmanaged
         {
+#if DEVELOPMENT_BUILD || TRACE
+            Assert.IsFalse(destination == null, $"blast.ssmd.interpretor.pop_fx_into<T>: destination NULL");
+#endif
+
             int vector_size = sizeof(T) / 4;
 
             // we get either a pop instruction or an instruction to get a value 
@@ -2324,6 +2340,9 @@ namespace NSS.Blast.SSMD
         void pop_f4_with_op_into_f4(in int code_pointer, [NoAlias]float4* buffer, [NoAlias]float4* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD || TRACE
+            Assert.IsFalse(buffer == null, $"blast.ssmd.interpretor.pop_f4_with_op_into_f4: buffer NULL");
+            Assert.IsFalse(output == null, $"blast.ssmd.interpretor.pop_f4_with_op_into_f4: output NULL");
+
             if (!Blast.IsOperationSSMDHandled(op))
             {
                 Debug.LogError($"blast.pop_f4_with_op_into_f4: -> unsupported operation supplied: {op}, only + - * / are supported");
@@ -2535,9 +2554,9 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
 
-        #region pop_fx_with_op_into_f4
+#region pop_fx_with_op_into_f4
         /// <summary>
         /// pop a float1 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to m11
         /// </summary>
@@ -2548,8 +2567,10 @@ namespace NSS.Blast.SSMD
         void pop_f1_with_op_into_f4(in int code_pointer, [NoAlias]float* buffer, [NoAlias]float4* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD || TRACE
+            Assert.IsFalse(buffer == null, $"blast.ssmd.interpretor.pop_f1_with_op_into_f4: buffer NULL");
+            Assert.IsFalse(output == null, $"blast.ssmd.interpretor.pop_f1_with_op_into_f4: output NULL");
 
-            Assert.IsFalse((void*)output == (void*)buffer, $"dont use equal buffers [{(ulong)(void*)output}] == [{(ulong)(void*)buffer}], output wil overwrite future input when growing into a larger vectorsize");
+            Assert.IsFalse((void*)output == (void*)buffer, $"blast.ssmd.interpretor.pop_f1_with_op_into_f4: dont use equal buffers [{(ulong)(void*)output}] == [{(ulong)(void*)buffer}], output wil overwrite future input when growing into a larger vectorsize");
 
             if (!Blast.IsOperationSSMDHandled(op))
             {
@@ -2737,7 +2758,9 @@ namespace NSS.Blast.SSMD
         void pop_f2_with_op_into_f4(in int code_pointer, [NoAlias]float2* buffer, [NoAlias]float4* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD || TRACE
-            Assert.IsFalse((void*)output == (void*)buffer, "dont use equal buffers, output wil overwrite future input when growing into a larger vectorsize");
+            Assert.IsFalse(buffer == null, $"blast.ssmd.interpretor.pop_f2_with_op_into_f4: buffer NULL");
+            Assert.IsFalse(output == null, $"blast.ssmd.interpretor.pop_f2_with_op_into_f4: output NULL");
+            Assert.IsFalse((void*)output == (void*)buffer, "blast.ssmd.interpretor.pop_f2_with_op_into_f4: dont use equal buffers, output wil overwrite future input when growing into a larger vectorsize");
 
             if (!Blast.IsOperationSSMDHandled(op))
             {
@@ -2917,7 +2940,7 @@ namespace NSS.Blast.SSMD
         }
 
         /// <summary>
-        /// pop a float2 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to m11
+        /// pop a float3 value from data/stack/constants and perform arithmetic op ( + - * / ) with buffer, writing the value back to m11
         /// </summary>
         /// <param name="code_pointer"></param>
         /// <param name="buffer"></param>
@@ -2926,7 +2949,9 @@ namespace NSS.Blast.SSMD
         void pop_f3_with_op_into_f4(in int code_pointer, [NoAlias]float3* buffer, [NoAlias]float4* output, blast_operation op)
         {
 #if DEVELOPMENT_BUILD || TRACE
-            Assert.IsFalse((void*)output == (void*)buffer, "dont use equal buffers, output wil overwrite future input when growing into a larger vectorsize");
+            Assert.IsFalse(buffer == null, $"blast.ssmd.interpretor.pop_f3_with_op_into_f4: buffer NULL");
+            Assert.IsFalse(output == null, $"blast.ssmd.interpretor.pop_f3_with_op_into_f4: output NULL");
+            Assert.IsFalse((void*)output == (void*)buffer, "blast.ssmd.interpretor.pop_f3_with_op_into_f4: dont use equal buffers, output wil overwrite future input when growing into a larger vectorsize");
 
             if (!Blast.IsOperationSSMDHandled(op))
             {
@@ -6790,6 +6815,11 @@ namespace NSS.Blast.SSMD
         /// <param name="operation">operation to take on the vectors</param>
         void get_op_a_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]ref float4* f4, blast_operation operation)
         {
+#if DEVELOPMENT_BUILD || TRACE
+            Assert.IsFalse(temp == null, $"blast.ssmd.interpretor.get_op_a_result: temp buffer NULL");
+            Assert.IsFalse(f4 == null, $"blast.ssmd.interpretor.get_op_a_result: output f4 NULL");
+#endif
+
             // decode parametercount and vectorsize from code in 62 format 
             code_pointer++;
             byte c = BlastInterpretor.decode62(code[code_pointer], ref vector_size);
@@ -8235,6 +8265,10 @@ namespace NSS.Blast.SSMD
         /// </summary>
         BlastError assigns(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
         {
+#if DEVELOPMENT_BUID || TRACE
+            Assert.IsFalse(temp == null, "blast.ssmd.interpretor.assigns: temp buffer = NULL");
+#endif
+
             // assign 1 value
             byte assignee_op = code[code_pointer];
 
@@ -8308,6 +8342,10 @@ namespace NSS.Blast.SSMD
         /// </summary>
         BlastError assign(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
         {
+#if DEVELOPMENT_BUID || TRACE
+            Assert.IsFalse(temp == null, "blast.ssmd.interpretor.assign: temp buffer = NULL");
+#endif
+
             // advance 1 if on assign 
             code_pointer += math.select(0, 1, code[code_pointer] == (byte)blast_operation.assign);
             byte assignee_op = code[code_pointer];
@@ -8408,6 +8446,10 @@ namespace NSS.Blast.SSMD
 
         BlastError assignf(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp, bool minus)
         {
+#if DEVELOPMENT_BUID || TRACE
+            Assert.IsFalse(temp == null, "blast.ssmd.interpretor.assignf: temp buffer = NULL"); 
+#endif
+
             // get assignee 
             byte assignee_op = code[code_pointer];
 
@@ -8456,6 +8498,10 @@ namespace NSS.Blast.SSMD
 
         BlastError assignfe(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp, bool minus)
         {
+#if DEVELOPMENT_BUID || TRACE
+            Assert.IsFalse(temp == null, "blast.ssmd.interpretor.assignfe: temp buffer = NULL");
+#endif
+
             // get assignee 
             byte assignee_op = code[code_pointer];
 
@@ -8506,6 +8552,10 @@ namespace NSS.Blast.SSMD
 
         BlastError assignv(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
         {
+#if DEVELOPMENT_BUID || TRACE
+            Assert.IsFalse(temp == null, "blast.ssmd.interpretor.assignv: temp buffer = NULL");
+#endif
+
             byte assignee_op = code[code_pointer];
 
             // determine indexer 
@@ -8583,6 +8633,11 @@ namespace NSS.Blast.SSMD
             ssmd_datacount = ssmd_data_count;
             register = f4_register;
 
+            if (ssmd_datacount <= 0 || ssmd_datacount > 1024 * 64)  
+            {
+                return (int)BlastError.error_invalid_ssmd_count; 
+            }
+
             // run with internal stacks? 
             if (package.HasStack)
             {
@@ -8629,6 +8684,12 @@ namespace NSS.Blast.SSMD
             // local temp buffer 
             void* temp = stackalloc float4[ssmd_datacount];  //temp buffer of max vectorsize * 4 * ssmd_datacount 
 
+#if DEVELOPMENT_BUILD || TRACE
+
+            Assert.IsTrue(data != null, $"blast.ssmd.interpretor: data == null");
+            Assert.IsTrue(register != null, $"blast.ssmd.interpretor: register allocation failed: ssmd_datacount = {ssmd_datacount}");
+            Assert.IsTrue(temp != null, $"blast.ssmd.interpretor: stack allocation failed: ssmd_datacount = {ssmd_datacount}");
+#endif
             // assume all data is set 
             int iterations = 0;
             int ires = 0; // anything < 0 == error

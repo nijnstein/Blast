@@ -1396,6 +1396,14 @@ namespace NSS.Blast
         /// failure enumerating all function attributed with the BlastFunctionAttribute, most probably blast could not match the method definition to a matching delegate
         /// </summary>
         error_enumerate_attributed_external_functions = -69,
+        /// <summary>
+        /// invalid data count for ssmd loops, should be > 0 and smaller then 32x1024
+        /// </summary>
+        error_invalid_ssmd_count = -70,
+        /// <summary>
+        /// ssmd interpretor error: datasegment buffer == null 
+        /// </summary>
+        error_execute_ssmddata_null = -71,
     }
 
 }

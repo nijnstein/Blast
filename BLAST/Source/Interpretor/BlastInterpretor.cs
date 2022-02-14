@@ -5406,7 +5406,7 @@ namespace NSS.Blast.Interpretor
 
             // for random, c specifies range:
             // 0 = 0..1  == default
-            // 2 =  2 ops with values after this op    min..max 
+            // 2 = 2 ops with values after this op    min..max 
             // 1 = 1 ops   0...max 
 
             switch ((BlastVectorSizes)vector_size)
