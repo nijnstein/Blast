@@ -30,7 +30,43 @@ namespace NSS.Blast.SSMD
     [BurstCompile]
     unsafe public struct BlastSSMDInterpretor
     {
-#region Internal Data 
+        #region Constant Compiletime Defines 
+#if DEVELOPMENT_BUILD
+        /// <summary>
+        /// true if compiled in devmode 
+        /// </summary>
+        public const bool IsDevelopmentBuild = true;
+#else 
+        /// <summary>
+        /// false if compiled in releasemode 
+        /// </summary>
+        public const bool IsDevelopmentBuild = false;
+#endif
+#if TRACE 
+        /// <summary>
+        /// TRUE if compiled with TRACE define enabled
+        /// </summary>
+        public const bool IsTrace = true;
+#else
+        /// <summary>
+        /// TRUE if compiled with TRACE define enabled
+        /// </summary>
+        public const bool IsTrace = false; 
+#endif
+#if AUTO_EXPAND
+        /// <summary>
+        /// TRUE if scalars are automatically expanded on assignment to the assigned vectorsize 
+        /// </summary>
+        public const bool IsAutoExpanding = true;
+#else
+        /// <summary>
+        /// TRUE if scalars are automatically expanded on assignment to the assigned vectorsize 
+        /// </summary>
+        public const bool IsAutoExpanding = false;
+#endif
+        #endregion 
+
+        #region Internal Data 
         internal BlastPackageData package;
 
         internal int code_pointer;
@@ -776,6 +812,141 @@ namespace NSS.Blast.SSMD
 #endif
             }
         }
+
+
+        /// <summary>
+        /// pop|data data[1] and expand into a vector of size n [2,3,4]
+        /// </summary>
+        void expand_f1_into_fn(in int expand_into_n, in int code_pointer, [NoAlias]float4* destination)
+        {
+            // we get either a pop instruction or an instruction to get a value 
+            byte c = code[code_pointer];
+
+            if (c >= BlastInterpretor.opt_id)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
+                int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
+                if (size != 1 || type != BlastVariableDataType.Numeric)
+                {
+                    Debug.LogError($"blast.ssmd.stack.expand_f1_into_f4 -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
+                    return;
+                }
+#endif
+                // variable acccess
+                switch(expand_into_n)
+                {
+                    case 2: for (int i = 0; i < ssmd_datacount; i++) destination[i].xy = ((float*)data[i])[c - BlastInterpretor.opt_id]; break;
+                    case 3: for (int i = 0; i < ssmd_datacount; i++) destination[i].xyz = ((float*)data[i])[c - BlastInterpretor.opt_id]; break;
+                    case 4: for (int i = 0; i < ssmd_datacount; i++) destination[i].xyzw = ((float*)data[i])[c - BlastInterpretor.opt_id]; break;
+#if DEVELOPMENT_BUILD || TRACE
+                    default:
+                        Debug.LogError($"blast.ssmd.stack.expand_f1_into_f4 -> expanding into unsupported vectorsize {expand_into_n} at data offset {c - BlastInterpretor.opt_id}");
+                        return;
+#endif 
+                }
+            }
+            else
+            if (c == (byte)blast_operation.pop)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                BlastVariableDataType type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
+                int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
+                if (size != 1 || type != BlastVariableDataType.Numeric)
+                {
+                    Debug.LogError($"blast.ssmd.stack.pop_f1_into_f4 -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
+                    return;
+                }
+#endif
+                // stack pop 
+                stack_offset = stack_offset - 1;
+                switch (expand_into_n)
+                {
+                    case 2:
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            float f = ((float*)stack[i])[stack_offset];
+                            destination[i].x = f;
+                            destination[i].y = f;
+                        }
+                        break;
+                    case 3:
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            float f = ((float*)stack[i])[stack_offset];
+                            destination[i].x = f;
+                            destination[i].y = f;
+                            destination[i].z = f;
+                        }
+                        break;
+                    case 4:
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            float f = ((float*)stack[i])[stack_offset];
+                            destination[i].x = f;
+                            destination[i].y = f;
+                            destination[i].z = f;
+                            destination[i].w = f;
+                        }
+                        break;
+#if DEVELOPMENT_BUILD || TRACE
+                    default:
+                        Debug.LogError($"blast.ssmd.stack.expand_f1_into_f4 -> expanding into unsupported vectorsize {expand_into_n} at data offset {c - BlastInterpretor.opt_id}");
+                        return;
+#endif 
+                }
+            }
+            else
+            if (c >= BlastInterpretor.opt_value)
+            {
+                float constant = engine_ptr->constants[c];
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i].x = constant;
+                }
+                switch (expand_into_n)
+                {
+                    case 2:
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            destination[i].x = constant;
+                            destination[i].y = constant;
+                        }
+                        break;
+                    case 3:
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            destination[i].x = constant;
+                            destination[i].y = constant;
+                            destination[i].z = constant;
+                        }
+                        break;
+                    case 4:
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            destination[i].x = constant;
+                            destination[i].y = constant;
+                            destination[i].z = constant;
+                            destination[i].w = constant;
+                        }
+                        break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                    default:
+                        Debug.LogError($"blast.ssmd.stack.expand_f1_into_f4 -> expanding into unsupported vectorsize {expand_into_n} at data offset {c - BlastInterpretor.opt_id}");
+                        return;
+#endif 
+                }
+            }
+            else
+            {
+                // error or.. constant by operation value.... 
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.stack.expand_f1_into_f4 -> select op by constant value {c} is not supported");
+#endif
+            }
+        }
+
 
         /// <summary>
         /// pop a float[1|2|3|4] value form stack data or constant source and put it in destination 
@@ -5517,6 +5688,7 @@ namespace NSS.Blast.SSMD
         #endregion
         #endregion
 
+ 
         #region Dual input functions: math.pow fmod cross etc. 
 
 #if !STANDALONE_VSBUILD
@@ -7372,6 +7544,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.index_z: get_index_result(temp, ref code_pointer, ref vector_size, f4_result, 2); break;
                 case blast_operation.index_w: get_index_result(temp, ref code_pointer, ref vector_size, f4_result, 3); break;
 
+                case blast_operation.expand_v2: expand_f1_into_fn(2, code_pointer + 1, f4_result); code_pointer++; vector_size = 2; break;
+                case blast_operation.expand_v3: expand_f1_into_fn(3, code_pointer + 1, f4_result); code_pointer++; vector_size = 3; break;
+                case blast_operation.expand_v4: expand_f1_into_fn(4, code_pointer + 1, f4_result); code_pointer++; vector_size = 4; break;
+
                 case blast_operation.ex_op:
                     {
                         code_pointer++;
@@ -7723,6 +7899,9 @@ namespace NSS.Blast.SSMD
                     case blast_operation.index_y:
                     case blast_operation.index_z:
                     case blast_operation.index_w:
+                    case blast_operation.expand_v2:
+                    case blast_operation.expand_v3:
+                    case blast_operation.expand_v4:
                     case blast_operation.ex_op:
 
                         // on no operation pending

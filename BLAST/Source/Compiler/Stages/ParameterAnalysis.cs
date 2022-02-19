@@ -190,6 +190,10 @@ namespace NSS.Blast.Compiler.Stage
                                 {
                                     case blast_operation.mina:
                                     case blast_operation.maxa:
+                                    case blast_operation.index_w:
+                                    case blast_operation.index_y:
+                                    case blast_operation.index_z:
+                                    case blast_operation.index_x: 
                                         // these always return a single value 
                                         current.vector_size = 1;
                                         break;
@@ -200,6 +204,10 @@ namespace NSS.Blast.Compiler.Stage
                                             fsize = 1;
                                             foreach (node fc in current.children)
                                             {
+                                                // determine childtype
+                                                // - if function ? 
+
+
                                                 fsize = math.max(fsize, fc.vector_size);
                                             }
                                             current.vector_size = fsize;
@@ -367,21 +375,15 @@ namespace NSS.Blast.Compiler.Stage
 
                                 if (current.type == nodetype.function)
                                 {
-                                    if (current.function.AcceptsVectorSize == 0 
+                                    if (current.function.AcceptsVectorSize == 0
                                         ||
                                         size == current.function.AcceptsVectorSize)
                                     {
-                                        set_function_vector_size(size, current); 
+                                        set_function_vector_size(size, current);
                                     }
                                     else
                                     {
                                         // errorrr 
-                                       ///  
-
-                                        /// 
-                                        // /  / / / / / / // 
-
-
                                         data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {current.function.GetFunctionName()} at {current}, function allows vectorsize {current.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {size} ");
                                         return;
                                     }
@@ -414,6 +416,13 @@ namespace NSS.Blast.Compiler.Stage
                                                 current.children[0].SetIsVector(i_vectorsize_estimate, true);
                                             }
                                         }
+                                    }
+
+                                    if (!current.HasIndexers)
+                                    {
+                                        // re-set vectorsize of assignee as there is more information know any initial estimate could be wrong
+                                        current.variable.IsVector = current.is_vector;
+                                        current.variable.VectorSize = current.vector_size;
                                     }
                                 }
                             }

@@ -265,7 +265,7 @@ namespace NSS.Blast
             get
             {
                 BlastVariable v = GetVariable(name, true);
-                if (v == null) return null; 
+                if (v == null) return null;
 
                 int offset = Package.VariableOffsets[v.Id];
 
@@ -285,7 +285,7 @@ namespace NSS.Blast
 #if ENABLE_UNITY_COLLECTIONS_CHECKS || DEVELOPMENT_BUILD
                 Assert.IsTrue(false, $"variable {v.Id} '{Name}' vectorsize {v.VectorSize} out of range");
 #endif
-                return null;                 
+                return null;
             }
 
             set
@@ -293,27 +293,7 @@ namespace NSS.Blast
                 BlastVariable v = GetVariable(name, true);
                 if (v == null) return;
 
-                int offset = Package.VariableOffsets[v.Id];
-
-                unsafe
-                {
-                    if (GetDataPointer(out float* data, out int l))
-                    {
-                        switch (v.VectorSize)
-                        {
-                            case 1: data[offset] = (float)value;break;
-                            case 2: ((float2*)(void*)&data[offset])[0] = (float2)value; break;
-                            case 3: ((float3*)(void*)&data[offset])[0] = (float3)value; break;
-                            case 4: ((float4*)(void*)&data[offset])[0] = (float4)value; break;
-#if ENABLE_UNITY_COLLECTIONS_CHECKS || DEVELOPMENT_BUILD
-                            default:
-                                Assert.IsTrue(false, $"variable {v.Id} '{Name}' vectorsize {v.VectorSize} out of range");
-                                break; 
-#endif
-                        }
-                    }
-                }
-                return;
+                Set(v.VectorSize, Package.VariableOffsets[v.Id], value);
             }
         }
 
@@ -368,25 +348,7 @@ namespace NSS.Blast
 
                 int offset = Package.VariableOffsets[index];
 
-                unsafe
-                {
-                    if (GetDataPointer(out float* data, out int l))
-                    {
-                        switch (Package.Variables[index].VectorSize)
-                        {
-                            case 1: data[offset] = (float)value; break;
-                            case 2: ((float2*)(void*)&data[offset])[0] = (float2)value; break;
-                            case 3: ((float3*)(void*)&data[offset])[0] = (float3)value; break;
-                            case 4: ((float4*)(void*)&data[offset])[0] = (float4)value; break;
-#if ENABLE_UNITY_COLLECTIONS_CHECKS || DEVELOPMENT_BUILD
-                            default:
-                                Assert.IsTrue(false, $"variable {index} '{Package.Variables[index].Name}' vectorsize {Package.Variables[index].VectorSize} out of range");
-                                break;
-#endif
-                        }
-                    }
-                }
-                return;
+                Set(Package.Variables[index].VectorSize, Package.VariableOffsets[index], value);
             }
         }
 
@@ -439,7 +401,7 @@ namespace NSS.Blast
         /// <summary>
         /// get variable offset into datasegment 
         /// </summary>
-        /// <param name="name">name of script variable</param>
+        /// <param name="variable_name">name of script variable</param>
         /// <param name="assert_on_fail">assert on failure to locate variable, default = true</param>
         /// <returns>the variable offset or -1 if not found</returns>
         public int GetVariableOffset(string variable_name, bool assert_on_fail = true)
@@ -625,9 +587,93 @@ namespace NSS.Blast
             }
         }
 
-#endregion
+        #endregion
 
-#region Static Get|Set Data overloads
+
+
+        /// <summary>
+        /// set data given an object 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="vector_size"></param>
+        /// <param name="offset"></param>
+        /// <param name="value"></param>
+        unsafe protected void Set(int vector_size, int offset, object value)
+        {
+            if (GetDataPointer(out float* data, out int l))
+            {
+
+                switch (vector_size)
+                {
+                    case 1:
+                        switch (value)
+                        {
+                            case float s1: data[offset] = (float)s1; break;
+                            case int i1: data[offset] = (float)i1; break;
+                            case uint ui1: data[offset] = (float)ui1; break;
+                            case long i1: data[offset] = (float)i1; break;
+                            case ulong ui1: data[offset] = (float)ui1; break;
+                            case half h1: data[offset] = (float)h1; break;
+                            case double d1: data[offset] = (float)d1; break;
+                            case decimal d1: data[offset] = (float)d1; break;
+                            case byte b1: data[offset] = (float)b1; break;
+                            case char b1: data[offset] = (float)(byte)b1; break;
+                            case sbyte sb1: data[offset] = (float)sb1; break;
+                            case bool bool1: data[offset] = bool1 ? 1f : 0f; break;
+                            case short i16: data[offset] = (float)i16; break;
+                            case ushort i16: data[offset] = (float)i16; break;
+                            default: data[offset] = (float)value; break;
+                        }
+                        break;
+
+                    case 2:
+                        switch (value)
+                        {
+                            case float2 f2: ((float2*)(void*)&data[offset])[0] = f2; break;
+                            case System.Numerics.Vector2 v2: data[offset] = v2.X; data[offset + 1] = v2.Y; break;
+#if !STANDALONE_VSBUILD
+                                    case UnityEngine.Vector2 v2: data[offset] = v2.x; data[offset + 1] = v2.y; break;
+#endif
+                            default: ((float2*)(void*)&data[offset])[0] = (float2)value; break;
+                        }
+                        break;
+
+                    case 3:
+                        switch (value)
+                        {
+                            case float3 f3: ((float3*)(void*)&data[offset])[0] = f3; break;
+                            case System.Numerics.Vector3 v3: data[offset] = v3.X; data[offset + 1] = v3.Y; data[offset + 2] = v3.Z; break;
+#if !STANDALONE_VSBUILD
+                                    case UnityEngine.Vector3 v3: data[offset] = v3.x; data[offset + 1] = v3.y; data[offset + 2] = v3.z; break;
+#endif
+                            default: ((float3*)(void*)&data[offset])[0] = (float3)value; break;
+                        }
+                        break;
+
+                    case 4:
+                        switch (value)
+                        {
+                            case float4 f4: ((float4*)(void*)&data[offset])[0] = f4; break;
+                            case System.Numerics.Vector4 v4: data[offset] = v4.X; data[offset + 1] = v4.Y; data[offset + 2] = v4.Z; data[offset + 3] = v4.W; break;
+#if !STANDALONE_VSBUILD
+                                    case UnityEngine.Vector4 v4: data[offset] = v4.x; data[offset + 1] = v4.y; data[offset + 2] = v4.z; data[offset + 3] = v4.w; break;
+#endif
+                            default: ((float4*)(void*)&data[offset])[0] = (float4)value; break;
+                        }
+                        break;
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS || DEVELOPMENT_BUILD
+                    default:
+                        Assert.IsTrue(false, $"variable at offset {offset} vectorsize {vector_size} out of range");
+                        break;
+#endif
+                }
+            }
+        }
+
+
+
+        #region Static Get|Set Data overloads
 
         /// <summary>
         /// set variable in package data

@@ -615,6 +615,201 @@ namespace NSS.Blast.Compiler.Stage
             return res; 
         }
 
+        /// <summary>
+        /// 
+        /// replace a vector definition of equal elements into a functional expansion, this function assumes n is a non-nested vector definition 
+        ///
+        /// <code>
+        /// (1 1 1) => expand3(1)                             
+        /// (-1, -1, -1) == ((-1) (-1) (-1)) => expand3(-1)
+        /// (a a a) => expand3(a) 
+        /// </code>                              
+        /// </summary>
+        bool transform_into_vector_expansion(IBlastCompilationData data, node n)
+        {
+            if (n.ChildCount <= 1) return false;
+
+            // examine nodes, all equal intent and:
+            //
+            // - constants 
+            // - direct value offsets
+            // - negated compound of constant 
+            // - negated compound of variableoffset 
+            //
+            // nothing else is allowed
+            // 
+
+            bool is_constant;
+            bool is_negation_compound;
+            float id; // either from constant or variable 
+
+            if (!classify_constant_vector_component(n.FirstChild, out is_constant, out id, out is_negation_compound))
+            {
+                return false;
+            }
+
+            for (int i = 1; i < n.children.Count; i++)
+            {
+                if (classify_constant_vector_component(n.children[i], out bool isc, out float id2, out bool isneg))
+                {
+                    if (isc == is_constant && id2 == id && isneg == is_negation_compound)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            // reaching here all children are the same and valid 
+            // transform this node into a expand function 
+
+            // - validate vectorsize -> if not a supported size we should report that 
+            if (n.ChildCount > 4)
+            {
+                data.LogError($"blast.compiler.transform: vector size {n.ChildCount} is not supported in node {n}", (int)BlastError.error_vector_size_not_supported);
+                return false;
+            }
+
+            
+            int vector_size = n.ChildCount;
+            
+            n.type = nodetype.function;
+            n.identifier = "expand" + vector_size.ToString();
+
+            n.children.RemoveRange(1, vector_size - 1);
+            n.variable = null;
+            n.is_vector = true;
+            n.vector_size = vector_size;
+            n.token = BlastScriptToken.Nop; 
+
+            switch (vector_size)
+            {
+                case 2:
+                    n.constant_op = blast_operation.expand_v2;
+                    n.identifier = "expand2";
+                    break;
+
+                case 3:
+                    n.constant_op = blast_operation.expand_v3;
+                    n.identifier = "expand3";
+                    break;
+
+                case 4:
+                    n.constant_op = blast_operation.expand_v4;
+                    n.identifier = "expand4";
+                    break;
+            }
+
+            unsafe
+            {
+                n.function = data.Blast.Data->GetFunction(n.identifier);
+            }
+
+            if (!n.function.IsValid)
+            {
+                data.LogError($"blast.compiler.transform: {n.identifier} function not found in current blast api");
+                return false;
+            }
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// determine if a vectorcomponent is one of the following things: 
+        /// - constant
+        /// - offset 
+        /// - or a negated compound of the above   
+        /// </summary>
+        bool classify_constant_vector_component(in node node, out bool is_constant, out float id, out bool is_negation_compound)
+        {
+            id = 0;
+            is_constant = false;
+            is_negation_compound = false;
+
+            if (node.IsCompound)
+            {
+                is_negation_compound = true;
+
+                if (node.ChildCount == 2
+                    &&
+                    node.FirstChild.IsOperation && node.FirstChild.token == BlastScriptToken.Substract)
+                {
+                    // second element may be a constant, a value and nothign more
+                    if (node.LastChild.IsScriptVariable)
+                    {
+                        is_constant = false;
+                        id = node.LastChild.variable.Id;
+                        return true;
+                    }
+                    if (node.LastChild.is_constant)
+                    {
+                        is_constant = true;
+                        id = node.LastChild.AsFloat;
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                if (node.ChildCount == 0)
+                {
+                    if (node.is_constant)
+                    {
+                        is_constant = true;
+                        id = node.AsFloat;
+                        return true; 
+                    }
+                    if (node.IsScriptVariable)
+                    {
+                        is_constant = false;
+                        id = node.variable.Id;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="ast_root"></param>
+        /// <returns></returns>
+        BlastError locate_and_transform_vector_expansions(IBlastCompilationData data, node ast_root)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(ast_root);
+
+            BlastError res = BlastError.success;
+            List<node> work = NodeListCache.Acquire();
+
+            work.Push(ast_root);
+            while (work.TryPop(out node current))
+            {
+                if (current.IsCompound && current.IsNonNestedVectorDefinition())
+                {
+                    transform_into_vector_expansion(data, current);
+                }
+                else
+                {
+                    work.PushRange(current.children);
+                }
+            }
+
+            NodeListCache.Release(work);
+            return res;
+        }
+
 
         /// <summary>
         /// run transform depending on nodetype 
@@ -666,8 +861,7 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         // dont iterate through inline functions, only after they are inlined
                         return BlastError.success;
-                    }
-
+                    }                               
 
                 default:
                     {
@@ -717,6 +911,13 @@ namespace NSS.Blast.Compiler.Stage
             if(res != BlastError.success)
             {
                 return (int)res; 
+            }
+
+            // check for possible replacements of vector defines into expandn functions 
+            res = locate_and_transform_vector_expansions(data, data.AST);
+            if (res != BlastError.success)
+            {
+                return (int)res;
             }
 
             return data.IsOK ? (int)BlastError.success : (int)BlastError.error;

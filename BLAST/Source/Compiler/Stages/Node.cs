@@ -536,6 +536,17 @@ namespace NSS.Blast.Compiler
 
                 switch (child.type)
                 {
+                    case nodetype.function:
+                        {
+                            if (!child.function.IsPopVariant)
+                            {
+                                op = blast_operation.nop;
+                                op_count = 0;
+                                first_op_in_sequence = null;
+                            }
+                        }
+                        break;
+
                     case nodetype.operation:
                         {
                             blast_operation node_op = Blast.GetBlastOperationFromToken(child.token);

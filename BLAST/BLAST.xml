@@ -1513,6 +1513,12 @@
             <param name="operation_count">the number of operations to replace if > 0</param>
             <returns></returns>
         </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastOptimizer.CanReplaceOperationSequence(NSS.Blast.Compiler.node@,System.Int32,System.Int32)">
+            <summary>
+            check if we can replace sequence 
+            - containts no functions other then pop 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastOptimizer.Execute(NSS.Blast.Compiler.IBlastCompilationData)">
             <summary>
             Optimize operations expressed by the ast if optimization is enabled through compiler settings 
@@ -1973,6 +1979,34 @@
         <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.transform_indexers(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
             <summary>
             find and transform all indexers
+            </summary>
+            <param name="data"></param>
+            <param name="ast_root"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.transform_into_vector_expansion(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+             <summary>
+             
+             replace a vector definition of equal elements into a functional expansion, this function assumes n is a non-nested vector definition 
+            
+             <code>
+             (1 1 1) => expand3(1)                             
+             (-1, -1, -1) == ((-1) (-1) (-1)) => expand3(-1)
+             (a a a) => expand3(a) 
+             </code>                              
+             </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.classify_constant_vector_component(NSS.Blast.Compiler.node@,System.Boolean@,System.Single@,System.Boolean@)">
+            <summary>
+            determine if a vectorcomponent is one of the following things: 
+            - constant
+            - offset 
+            - or a negated compound of the above   
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastTransform.locate_and_transform_vector_expansions(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
+            <summary>
+            
             </summary>
             <param name="data"></param>
             <param name="ast_root"></param>
@@ -4101,6 +4135,15 @@
             index the vector of n size with an m size indexer: x, xy, zzz etc. 
             </summary>
         </member>
+        <member name="F:NSS.Blast.blast_operation.expand_v2">
+            <summary>
+            expand vector from given size to wanted size, if input = size 1, then the input is set to each component. otherwise 0 is set to new vector components
+            </summary>
+            <remarks>
+            <c>expand(1, 4)</c>   expands value 1 to a vector of size 4: (1 1 1 1) 
+            <c>expand(a, 4)</c>   expands variable a to a vector of size 4, if a = 1: (1 1 1 1), if a = (1 1), then result is (1 1 0 0) 
+            </remarks>
+        </member>
         <member name="F:NSS.Blast.blast_operation.pi">
             <summary>
             PI
@@ -4983,6 +5026,21 @@
             
             </summary>
         </member>
+        <member name="F:NSS.Blast.Interpretor.BlastInterpretor.IsDevelopmentBuild">
+            <summary>
+            true if compiled in devmode 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Interpretor.BlastInterpretor.IsTrace">
+            <summary>
+            TRUE if compiled with TRACE define enabled
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Interpretor.BlastInterpretor.IsAutoExpanding">
+            <summary>
+            TRUE if scalars are automatically expanded on assignment to the assigned vectorsize 
+            </summary>
+        </member>
         <member name="F:NSS.Blast.Interpretor.BlastInterpretor.opt_value">
             <summary>
             >= if the opcode between opt_value and (including) opt_id then its an opcode for a constant
@@ -4995,7 +5053,7 @@
         </member>
         <member name="F:NSS.Blast.Interpretor.BlastInterpretor.max_iterations">
             <summary>
-            maxiumum iteration count, usefull to avoid endless loop bugs
+            maxiumum iteration count, usefull to avoid endless loop bugs in input
             </summary>
         </member>
         <member name="F:NSS.Blast.Interpretor.BlastInterpretor.engine_ptr">
@@ -5646,6 +5704,15 @@
             
             </summary>
         </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.get_expand_result(System.Int32@,System.Byte@,System.Byte@,Unity.Mathematics.float4@)">
+            <summary>
+            grow from 1 element to an n-vector 
+            </summary>
+            <param name="code_pointer"></param>
+            <param name="vector_size"></param>
+            <param name="expand_to"></param>
+            <param name="f4"></param>
+        </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.pop_f1_with_minus(System.Int32,System.Int32@)">
             <summary>
             pop 1 value from input stream, checks if its the minus sign, if so reads next value and negates it, otherwise returns current value 
@@ -5688,6 +5755,21 @@
         <member name="T:NSS.Blast.SSMD.BlastSSMDInterpretor">
             <summary>
             The SSMD Interpretor 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.IsDevelopmentBuild">
+            <summary>
+            true if compiled in devmode 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.IsTrace">
+            <summary>
+            TRUE if compiled with TRACE define enabled
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.IsAutoExpanding">
+            <summary>
+            TRUE if scalars are automatically expanded on assignment to the assigned vectorsize 
             </summary>
         </member>
         <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.engine_ptr">
@@ -5831,6 +5913,11 @@
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f1_into_f4(System.Int32@,Unity.Mathematics.float4*)">
             <summary>
             pop an f1 from stack|data|constant and move it into f4.x
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.expand_f1_into_fn(System.Int32@,System.Int32@,Unity.Mathematics.float4*)">
+            <summary>
+            pop|data data[1] and expand into a vector of size n [2,3,4]
             </summary>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into``1(System.Int32@,``0*)">
@@ -6296,6 +6383,26 @@
             <summary>
             data for ssmd operation modes: data-stack only
             - only used as pointer, fields handy in debugger
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.a">
+            <summary>
+            fictional - for debug view only
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.b">
+            <summary>
+            fictional - for debug view only
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.c">
+            <summary>
+            fictional - for debug view only
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastSSMDDataStack.d">
+            <summary>
+            fictional - for debug view only
             </summary>
         </member>
         <member name="T:NSS.Blast.BlastPackageData">
@@ -7033,7 +7140,7 @@
             <summary>
             get variable offset into datasegment 
             </summary>
-            <param name="name">name of script variable</param>
+            <param name="variable_name">name of script variable</param>
             <param name="assert_on_fail">assert on failure to locate variable, default = true</param>
             <returns>the variable offset or -1 if not found</returns>
         </member>
@@ -7098,6 +7205,15 @@
             <summary>
             get a float4 input/output value, asserts on errors
             </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.Set(System.Int32,System.Int32,System.Object)">
+            <summary>
+            set data given an object 
+            </summary>
+            <param name="data"></param>
+            <param name="vector_size"></param>
+            <param name="offset"></param>
+            <param name="value"></param>
         </member>
         <member name="M:NSS.Blast.BlastScript.SetData(System.Int32@,Unity.Collections.NativeArray{NSS.Blast.BlastPackageData}@,Unity.Collections.NativeArray{System.Single}@)">
             <summary>

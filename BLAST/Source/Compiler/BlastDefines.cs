@@ -443,9 +443,18 @@ namespace NSS.Blast
         /// </summary>
         index_n,
 
-        reserved5,
-        reserved6,
-        reserved7,
+        /// <summary>
+        /// expand vector from given size to wanted size, if input = size 1, then the input is set to each component. otherwise 0 is set to new vector components
+        /// </summary>
+        /// <remarks>
+        /// <c>expand(1, 4)</c>   expands value 1 to a vector of size 4: (1 1 1 1) 
+        /// <c>expand(a, 4)</c>   expands variable a to a vector of size 4, if a = 1: (1 1 1 1), if a = (1 1), then result is (1 1 0 0) 
+        /// </remarks>
+        expand_v2,
+
+        expand_v3,
+        expand_v4,
+
         reserved8,
         reserved9,
         reserved0,

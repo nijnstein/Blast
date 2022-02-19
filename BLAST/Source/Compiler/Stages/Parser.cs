@@ -2063,14 +2063,23 @@ namespace NSS.Blast.Compiler.Stage
                     return BlastError.error_inlinefunction_declaration_syntax;
                 }
 
-                n.identifier = ftokens[1].Item2;
+                n.identifier = ftokens[1].Item2.ToLower().Trim();
 
                 // check if another function exists at this point with this name, all other identifiers get
                 // mapped out in the next stage 
                 if (data.AST.HasInlineFunction(n.identifier))
                 {
-                    data.LogError("blast.parser.parseinlinefunction: failed to parse functionname");
+                    data.LogError($"blast.parser.parseinlinefunction: a function with the name '{n.identifier}' is already defined elsewhere");
                     return BlastError.error_inlinefunction_already_exists;
+                }
+                              
+                unsafe
+                {
+                    if (data.Blast.Data->TryGetFunctionByName(n.identifier, out BlastScriptFunction existing))
+                    {
+                        data.LogError($"blast.parser.parseinlinefunction: a function with the name '{n.identifier}' is already defined in the script api with id: {existing.FunctionId}");
+                        return BlastError.error_inlinefunction_already_exists;
+                    }
                 }
 
                 // get the parameters 
