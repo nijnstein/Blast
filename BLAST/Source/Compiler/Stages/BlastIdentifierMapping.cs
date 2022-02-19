@@ -17,6 +17,7 @@ namespace NSS.Blast.Compiler.Stage
     /// - confirm inputs used (warnings if not) and outputs set (not set = error)
     /// - validate correct parameter usage
     /// </summary>
+    [System.Runtime.InteropServices.Guid("AFB826E6-A220-4D6E-A214-B447179C69F1")]
     public class BlastIdentifierMapping : IBlastCompilerStage
     {
 
@@ -74,6 +75,12 @@ namespace NSS.Blast.Compiler.Stage
                         }                               
                     }
 
+                    // also skip if already set to be a constant
+                    if(current.is_constant && current.constant_op != blast_operation.nop)
+                    {
+                        is_parameter = true; 
+                    }
+                    
                     if (!is_parameter)
                     {
                         // is it a constant 
@@ -227,7 +234,9 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // if a parameter and not already mapped to something 
-            if (ast_node.type == nodetype.parameter && ast_node.variable == null)
+            if (ast_node.type == nodetype.parameter && ast_node.variable == null
+                &&
+                !(ast_node.is_constant && ast_node.constant_op != blast_operation.nop))
             {
                 CompilationData cdata = data as CompilationData;
 

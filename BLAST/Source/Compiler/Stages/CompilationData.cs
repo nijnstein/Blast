@@ -644,17 +644,18 @@ namespace NSS.Blast.Compiler
                         case blast_operation.inv_value_24: sb.Append((1f / 24f).ToString("0.000") + " "); break;
                         case blast_operation.inv_value_30: sb.Append((1f / 30f).ToString("0.000") + " "); break;
                         case blast_operation.inv_value_32: sb.Append((1f / 32f).ToString("0.000") + " "); break;
-                        case blast_operation.inv_value_45: sb.Append((1f / 45f).ToString("0.000") + " "); break;
                         case blast_operation.inv_value_64: sb.Append((1f / 64f).ToString("0.000") + " "); break;
-                        case blast_operation.inv_value_90: sb.Append((1f / 90f).ToString("0.000") + " "); break;
                         case blast_operation.inv_value_100: sb.Append((1f / 100f).ToString("0.000") + " "); break;
                         case blast_operation.inv_value_128: sb.Append((1f / 128f).ToString("0.000") + " "); break;
-                        case blast_operation.inv_value_180: sb.Append((1f / 180f).ToString("0.000") + " "); break;
                         case blast_operation.inv_value_256: sb.Append((1f / 256f).ToString("0.000") + " "); break;
-                        case blast_operation.inv_value_270: sb.Append((1f / 270f).ToString("0.000") + " "); break;
-                        case blast_operation.inv_value_360: sb.Append((1f / 360f).ToString("0.000") + " "); break;
                         case blast_operation.inv_value_512: sb.Append((1f / 512f).ToString("0.000") + " "); break;
                         case blast_operation.inv_value_1024: sb.Append((1f / 1024f).ToString("0.000") + " "); break;
+
+                        case blast_operation.fixeddeltatime: sb.Append("fixeddeltatime "); break;
+                        case blast_operation.deltatime: sb.Append("deltatime "); break;
+                        case blast_operation.framecount: sb.Append("framecount "); break;
+                        case blast_operation.fixedtime: sb.Append("fixedtime "); break;
+                        case blast_operation.time: sb.Append("time "); break;
 
                         case blast_operation.ex_op:
                             i++;

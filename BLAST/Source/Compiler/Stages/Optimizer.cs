@@ -153,7 +153,25 @@ namespace NSS.Blast.Compiler.Stage
             return BlastError.success;
         }
 
-         
+
+        /// <summary>
+        /// check if we can replace sequence 
+        /// - containts no functions other then pop 
+        /// </summary>
+        bool CanReplaceOperationSequence(in node n, int from, int count)
+        {
+            Assert.IsNotNull(n);
+            Assert.IsTrue(from >= 0 && count > 0 && from + count <= n.ChildCount); 
+
+            for(int i = from; i < count; i++)
+            {
+                if (n.children[i].IsFunction && !n.children[i].function.IsPopVariant)
+                {
+                    return false; 
+                }
+            }
+            return true; 
+        }
 
 
         BlastError OptimizeNonVectorAssignment(IBlastCompilationData data, node node)
@@ -178,12 +196,15 @@ namespace NSS.Blast.Compiler.Stage
             {
                 if (Blast.HasSequenceOperation(op))
                 {
-                    // transform the sequence into a function call matching the operation 
-                    res = ReplaceSequence(data.Blast, node, op, Blast.GetSequenceOperation(op));
-                    if (res != BlastError.success) return BlastError.error_optimizer_failed_to_replace_sequence;
+                    if (CanReplaceOperationSequence(node, 0, node.ChildCount))
+                    {
+                        // transform the sequence into a function call matching the operation 
+                        res = ReplaceSequence(data.Blast, node, op, Blast.GetSequenceOperation(op));
+                        if (res != BlastError.success) return BlastError.error_optimizer_failed_to_replace_sequence;
 
-                    // no use to look any further 
-                    return BlastError.success;
+                        // no use to look any further 
+                        return BlastError.success;
+                    }
                 }
             }
 
