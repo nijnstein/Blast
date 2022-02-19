@@ -14,7 +14,32 @@
         <member name="F:NSS.Blast.BlastEngineData.constants">
             <summary>
             constant values selected by opcodes and shared among threads 
-            - these are set by the constant value operations and they can be replaced with other values... if you are mad
+            - these are set by the constant value operations and they can be replaced with other values... if you are brave|mad|both
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastEngineData.DeltaTime">
+            <summary>
+            constant values linked to constants == UnityEngine.Time.deltaTime 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastEngineData.FixedDeltaTime">
+            <summary>
+            the constant: FixedDeltaTime == UnityEngine.Time.fixedDeltaTime
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastEngineData.Time">
+            <summary>
+            the constant: Time == UnityEngine.Time.Time
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastEngineData.FixedTime">
+            <summary>
+            the constant: FixedTime == UnityEngine.Time.FixedTime 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastEngineData.FrameCount">
+            <summary>
+            the constant: FrameCount == UnityEngine.Time.FrameCount 
             </summary>
         </member>
         <member name="F:NSS.Blast.BlastEngineData.Functions">
@@ -201,6 +226,16 @@
             </summary>
             <param name="api">the api to use</param>
         </member>
+        <member name="M:NSS.Blast.Blast.ReInitialize(NSS.Blast.BlastScriptAPI)">
+            <summary>
+            initialize blast, force destroy if already initialized
+            </summary>
+            <param name="api"></param>
+            <returns></returns>
+            <remarks>
+            mainly used in unittests for loading different external calls in test batches 
+            </remarks>
+        </member>
         <member name="M:NSS.Blast.Blast.Silent">
             <summary>
             disable all non essential logging 
@@ -210,6 +245,13 @@
             <summary>
             enable verbose logging 
             </summary>
+        </member>
+        <member name="M:NSS.Blast.Blast.Seed(System.UInt32)">
+            <summary>
+            seed the base random number generator and regenerate the randomizers in the interpretors for this thread  
+            </summary>
+            <param name="seed"></param>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.Blast.Trace">
             <summary>
@@ -394,7 +436,7 @@
         </member>
         <member name="F:NSS.Blast.Blast.Constant">
             <summary>
-            Constant Values, these can be overwritten 
+            Constant Values
             </summary>
         </member>
         <member name="M:NSS.Blast.Blast.GetConstantValueDefault(NSS.Blast.blast_operation)">
@@ -403,25 +445,6 @@
             </summary>
             <param name="op">the operation to return the constant for</param>
             <returns>a constant float value</returns>
-        </member>
-        <member name="M:NSS.Blast.Blast.SetConstantDefault(NSS.Blast.blast_operation,System.Single)">
-            <summary>
-            overwrite a constantvalue, blast uses a lookup table to convert some constants
-            into byte sized operations. This is used for the most frequent numbers.
-            They can be overloaded with for important numbers for the given simulation 
-            saving 3 bytes for each in the package, this can stack to huge savings if used correctly
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.Blast.SetConstantDefault(System.Byte,System.Single)">
-            <summary>
-            overwrite constant default value
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.Blast.GetRewritableConstantCount">
-            <summary>
-            get number of constants that can be overwritten 
-            </summary>
-            <returns></returns>
         </member>
         <member name="M:NSS.Blast.Blast.GetConstantValueDefaultOperation(System.String,System.Single)">
             <summary>
@@ -439,6 +462,26 @@
         <member name="M:NSS.Blast.Blast.GetNamedSystemConstantValue(System.String)">
             <summary>
             get the value of a named system constant 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Blast.TryGetNamedConstant(System.String,NSS.Blast.blast_operation@)">
+            <summary>
+            lookup if identifier matches a named constant and return the matching operation 
+            </summary>
+            <param name="identifier"></param>
+            <param name="constant_op"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.Blast.Synchronize(System.Boolean,System.Boolean)">
+            <summary>
+            - synchronize constant data (for example, it updates deltatime value) 
+            - update randomizers for this thread in interpretors 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Blast.SetConstantValue(NSS.Blast.blast_operation,System.Single,System.Boolean)">
+            <summary>
+            used to synchronize constant value data (deltatime is, for blastscript, a constant) 
+            can also be used to update constant values for tighter code
             </summary>
         </member>
         <member name="F:NSS.Blast.Blast.Tokens">
@@ -5087,6 +5130,11 @@
             metadata segment pointer
             </summary>
         </member>
+        <member name="F:NSS.Blast.Interpretor.BlastInterpretor.random">
+            <summary>
+            a random number generetor set once and if needed updated by scripts with the seed instruction
+            </summary>
+        </member>
         <member name="F:NSS.Blast.Interpretor.BlastInterpretor.ValidationMode">
             <summary>
             if true, the script is executed in validation mode:
@@ -5816,6 +5864,11 @@
         <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.syncbuffer_level">
             <summary>
             current maximum synclevel
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.random">
+            <summary>
+            a random number generetor set once and if needed updated by scripts with the seed instruction
             </summary>
         </member>
         <member name="F:NSS.Blast.SSMD.BlastSSMDInterpretor.ValidationMode">

@@ -142,6 +142,11 @@ namespace NSS.Blast.SSMD
         internal byte syncbuffer_level;
 
         /// <summary>
+        /// a random number generetor set once and if needed updated by scripts with the seed instruction
+        /// </summary>
+        internal Unity.Mathematics.Random random;
+
+        /// <summary>
         /// if true, the script is executed in validation mode:
         /// - external calls just return 0's
         /// </summary>
@@ -7998,11 +8003,11 @@ namespace NSS.Blast.SSMD
                     case blast_operation.inv_value_1000:
                     case blast_operation.inv_value_1024:
                     case blast_operation.inv_value_30:
-                    case blast_operation.inv_value_45:
-                    case blast_operation.inv_value_90:
-                    case blast_operation.inv_value_180:
-                    case blast_operation.inv_value_270:
-                    case blast_operation.inv_value_360:
+                    case blast_operation.framecount:
+                    case blast_operation.fixedtime:
+                    case blast_operation.time:
+                    case blast_operation.fixeddeltatime:
+                    case blast_operation.deltatime:
                         {
                             // assign directly to result if this is the first operation (save a copy)                            
                             float4* f4_value = current_op != 0 ? f4 : f4_result; 

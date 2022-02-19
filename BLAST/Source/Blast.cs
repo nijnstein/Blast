@@ -51,9 +51,59 @@ namespace NSS.Blast
     {
         /// <summary>
         /// constant values selected by opcodes and shared among threads 
-        /// - these are set by the constant value operations and they can be replaced with other values... if you are mad
+        /// - these are set by the constant value operations and they can be replaced with other values... if you are brave|mad|both
         /// </summary>
         public float* constants;
+
+        /// <summary>
+        /// constant values linked to constants == UnityEngine.Time.deltaTime 
+        /// </summary>
+        public float DeltaTime 
+            =>
+#if DEVELOPMENT_BUILD || TRACE
+            constants == null ? -1f :
+#endif 
+            constants[(int)blast_operation.deltatime - BlastInterpretor.opt_value];
+
+        /// <summary>
+        /// the constant: FixedDeltaTime == UnityEngine.Time.fixedDeltaTime
+        /// </summary>
+        public float FixedDeltaTime
+            =>
+#if DEVELOPMENT_BUILD || TRACE
+            constants == null ? -1f :
+#endif 
+            constants[(int)blast_operation.fixeddeltatime - BlastInterpretor.opt_value];
+
+        /// <summary>
+        /// the constant: Time == UnityEngine.Time.Time
+        /// </summary>
+        public float Time
+            =>
+#if DEVELOPMENT_BUILD || TRACE
+            constants == null ? -1f :
+#endif 
+            constants[(int)blast_operation.time - BlastInterpretor.opt_value];
+
+        /// <summary>
+        /// the constant: FixedTime == UnityEngine.Time.FixedTime 
+        /// </summary>
+        public float FixedTime
+            =>
+#if DEVELOPMENT_BUILD || TRACE
+            constants == null ? -1f :
+#endif 
+            constants[(int)blast_operation.fixedtime - BlastInterpretor.opt_value];
+
+        /// <summary>
+        /// the constant: FrameCount == UnityEngine.Time.FrameCount 
+        /// </summary>
+        public float FrameCount
+            =>
+#if DEVELOPMENT_BUILD || TRACE
+            constants == null ? -1f:
+#endif 
+            constants[(int)blast_operation.framecount - BlastInterpretor.opt_value];
 
         /// <summary>
         /// external function info array. these provide api access to the script  
@@ -82,14 +132,7 @@ namespace NSS.Blast
         /// <param name="i">the new seed value</param>
         public void Seed(uint i)
         {
-            if (i == 0)
-            {
-                random.InitState();
-            }
-            else
-            {
-                random.InitState(i);
-            }
+            random.InitState(i);
         }
 
         /// <summary>
@@ -203,7 +246,7 @@ namespace NSS.Blast
             }
 
             return false; 
-        }
+        }   
     }
 
     /// <summary>
@@ -355,7 +398,7 @@ namespace NSS.Blast
 
 
 
-        #region Create / Destroy
+#region Create / Destroy
 
         /// <summary>
         /// create a static instance, this instance will be used if no blast reference is given to functions that need it:
@@ -368,6 +411,25 @@ namespace NSS.Blast
             {
                 Instance = Create(api == null ? script_api : api);
             }
+            return Instance;
+        }
+
+        /// <summary>
+        /// initialize blast, force destroy if already initialized
+        /// </summary>
+        /// <param name="api"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// mainly used in unittests for loading different external calls in test batches 
+        /// </remarks>
+        public static Blast ReInitialize(BlastScriptAPI api = null)
+        {
+            if (IsInstantiated)
+            {
+                Instance.Destroy(); 
+            }
+
+            Instance = Create(api == null ? script_api : api);            
             return Instance;
         }
 
@@ -389,6 +451,18 @@ namespace NSS.Blast
             CompilerOptions.Verbose();
             SSMDCompilerOptions.Verbose();
             return Instance; 
+        }
+
+        /// <summary>
+        /// seed the base random number generator and regenerate the randomizers in the interpretors for this thread  
+        /// </summary>
+        /// <param name="seed"></param>
+        /// <returns></returns>
+        public Blast Seed(uint seed = 1851936439)
+        {
+            Assert.IsTrue(IsInstantiated);
+            this.data->random.InitState(seed);
+            return this; 
         }
 
         /// <summary>
@@ -427,6 +501,10 @@ namespace NSS.Blast
             blast.data->constants = (float*)UnsafeUtils.Malloc(4 * 256 * 2, 4, blast.allocator);
             blast.data->random = Random.CreateFromIndex(1);
 
+            // setup randomizers in interpretors
+            // - note: this only initializes them in -this- thread 
+            blaster.random = Random.CreateFromIndex(blast.data->random.NextUInt());
+            ssmd_blaster.random = Random.CreateFromIndex(blast.data->random.NextUInt());
 
             // setup constant data 
             for (int b = 0; b < 256; b++)
@@ -534,9 +612,9 @@ namespace NSS.Blast
             is_created = false;
         }
 
-        #endregion
+#endregion
 
-        #region Execute 
+#region Execute 
         //
         // create jobs for use in unity with burst 
         //
@@ -756,9 +834,9 @@ namespace NSS.Blast
         }
 
 
-        #endregion
+#endregion
 
-        #region Package
+#region Package
 
         /// <summary>
         /// Complile the code and package into blastscriptpackage 
@@ -841,9 +919,9 @@ namespace NSS.Blast
             return BlastCompiler.Compile(blast, script, options);
         }
 
-        #endregion 
+#endregion
 
-        #region Constants 
+#region Constants 
 
         /// <summary>
         /// list all value operations, these operations directly encode constant values 
@@ -898,15 +976,15 @@ namespace NSS.Blast
             blast_operation.inv_value_1000,
             blast_operation.inv_value_1024,
             blast_operation.inv_value_30,
-            blast_operation.inv_value_45,
-            blast_operation.inv_value_90,
-            blast_operation.inv_value_180,
-            blast_operation.inv_value_270,
-            blast_operation.inv_value_360
+            blast_operation.framecount,
+            blast_operation.fixedtime,
+            blast_operation.time,
+            blast_operation.fixeddeltatime,
+            blast_operation.deltatime
         };
 
         /// <summary>
-        /// Constant Values, these can be overwritten 
+        /// Constant Values
         /// </summary>
         public static float[] Constant = new float[]
         {
@@ -956,11 +1034,11 @@ namespace NSS.Blast
             1f / 1000f,
             1f / 1024f,
             1f / 30f,
-            1f / 45f,
-            1f / 90f,
-            1f / 180f,
-            1f / 270f,
-            1f / 360f,
+            -1f, // framecount
+            -1f, // fixedtime
+            -1f, // time
+            -1f, // fixeddeltatime
+            -1f, // deltatime
         };
 
         /// <summary>
@@ -1024,11 +1102,11 @@ namespace NSS.Blast
                 case blast_operation.inv_value_1000: return 1f / 1000f;
                 case blast_operation.inv_value_1024: return 1f / 1024f;
                 case blast_operation.inv_value_30: return 1f / 30f;
-                case blast_operation.inv_value_45: return 1f / 45f;
-                case blast_operation.inv_value_90: return 1f / 90f;
-                case blast_operation.inv_value_180: return 1f / 180f;
-                case blast_operation.inv_value_270: return 1f / 270f;
-                case blast_operation.inv_value_360: return 1f / 360f;
+                case blast_operation.framecount: return Constant[(int)(blast_operation.framecount - BlastInterpretor.opt_value)];
+                case blast_operation.fixedtime: return Constant[(int)(blast_operation.framecount - BlastInterpretor.opt_value)];
+                case blast_operation.time: return Constant[(int)(blast_operation.framecount - BlastInterpretor.opt_value)];
+                case blast_operation.fixeddeltatime: return Constant[(int)(blast_operation.framecount - BlastInterpretor.opt_value)];
+                case blast_operation.deltatime: return Constant[(int)(blast_operation.framecount - BlastInterpretor.opt_value)];
 
                 // what to do? screw up intentionally? yeah :)
                 default:
@@ -1043,46 +1121,7 @@ namespace NSS.Blast
                     return float.NaN;
             }          
         }
-
-
-        /// <summary>
-        /// overwrite a constantvalue, blast uses a lookup table to convert some constants
-        /// into byte sized operations. This is used for the most frequent numbers.
-        /// They can be overloaded with for important numbers for the given simulation 
-        /// saving 3 bytes for each in the package, this can stack to huge savings if used correctly
-        /// </summary>
-        public static bool SetConstantDefault(blast_operation constant, float constantvalue)
-        {
-            if(constant >= blast_operation.value_3 && constant < blast_operation.id)
-            {
-                // ok 
-                return SetConstantDefault(constant - blast_operation.value_3, constantvalue);
-            }
-            return false; 
-        }
-
-        /// <summary>
-        /// overwrite constant default value
-        /// </summary>
-        public static bool SetConstantDefault(byte constant_index, float constantvalue)
-        {
-            if (blast_operation.id - 1 - constant_index >= blast_operation.value_3)
-            {
-                Constant[Constant.Length - 1 - constant_index] = constantvalue;
-                return true; 
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// get number of constants that can be overwritten 
-        /// </summary>
-        /// <returns></returns>
-        public static int GetRewritableConstantCount()
-        {
-            return blast_operation.id - blast_operation.value_3 - 1;
-        }
-        
+ 
         /// <summary>
         /// get the script_op belonging to a constant value, eiter by name or value 
         /// </summary>
@@ -1130,11 +1169,16 @@ namespace NSS.Blast
             switch (name.Trim().ToLower())
             {
                 case "pi": return blast_operation.pi;
-                //case "deltatime": return script_op.deltatime;
                 case "epsilon": return blast_operation.epsilon;
                 case "infinity": return blast_operation.infinity;
+                case "inf": return blast_operation.infinity;
                 case "nan": return blast_operation.nan;
                 case "flt_min": return blast_operation.min_value;
+                case "deltatime": return blast_operation.deltatime;
+                case "fixeddeltatime": return blast_operation.fixeddeltatime;
+                case "framecount": return blast_operation.framecount; 
+                case "time": return blast_operation.time; 
+                case "fixedtime": return blast_operation.fixedtime; 
                 default: return blast_operation.nop;
             }
         }
@@ -1157,10 +1201,66 @@ namespace NSS.Blast
             }
         }
 
+        /// <summary>
+        /// lookup if identifier matches a named constant and return the matching operation 
+        /// </summary>
+        /// <param name="identifier"></param>
+        /// <param name="constant_op"></param>
+        /// <returns></returns>
+        [BurstDiscard]
+        public static bool TryGetNamedConstant(string identifier, out blast_operation constant_op)
+        {
+            identifier = identifier.ToLower().ToLower(); // TODO we do this WAY to often
+            constant_op = IsNamedSystemConstant(identifier);
+            return constant_op != blast_operation.nop; 
+        }
 
-        #endregion
+        /// <summary>
+        /// - synchronize constant data (for example, it updates deltatime value) 
+        /// - update randomizers for this thread in interpretors 
+        /// </summary>
+        [BurstDiscard]
+        public void Synchronize(bool update_static = true, bool update_randomizers = true)
+        {
+#if !STANDALONE_VSBUILD
 
-        #region Tokens 
+            SetConstantValue(blast_operation.time, UnityEngine.Time.time, update_static);
+            SetConstantValue(blast_operation.fixedtime, UnityEngine.Time.fixedTime, update_static);
+            SetConstantValue(blast_operation.framecount, UnityEngine.Time.frameCount, update_static);
+            SetConstantValue(blast_operation.deltatime, UnityEngine.Time.deltaTime, update_static);
+            SetConstantValue(blast_operation.fixeddeltatime, UnityEngine.Time.fixedDeltaTime, update_static);
+#endif
+            if(update_randomizers)
+            {
+                blaster.random = Random.CreateFromIndex(data->random.NextUInt());
+                ssmd_blaster.random = Random.CreateFromIndex(data->random.NextUInt());
+            }
+        }
+
+        /// <summary>
+        /// used to synchronize constant value data (deltatime is, for blastscript, a constant) 
+        /// can also be used to update constant values for tighter code
+        /// </summary>
+        [BurstDiscard]
+        public void SetConstantValue(blast_operation op, float value, bool update_static = true)
+        {
+            Assert.IsFalse(op < blast_operation.pi || op >= blast_operation.id);
+
+            int index = (int)(op - blast_operation.pi); 
+            if (update_static)
+            {
+                Constant[index] = value;
+            }
+            if(data != null)
+            {
+                data->constants[index] = value;                      
+            }
+        }
+
+
+#endregion
+
+#region Tokens 
 
         /// <summary>
         /// defines tokens that can be used in script, not all tokens are referenced here, only those not built on keywords (if then/ switch etc.)
@@ -1340,9 +1440,9 @@ namespace NSS.Blast
             }
         }
 
-        #endregion
+#endregion
 
-        #region Functions 
+#region Functions 
 
      
         /// <summary>
@@ -1384,9 +1484,9 @@ namespace NSS.Blast
             return false;
         }
 
-        #endregion
+#endregion
 
-        #region Blast Script API:   Compiletime Function Pointers 
+#region Blast Script API:   Compiletime Function Pointers 
 
         /// <summary>
         /// the current set of script accessible functions, check OwnScriptAPIMemory to see if this instance of blast is the owner of the memory used in the API
@@ -1399,9 +1499,9 @@ namespace NSS.Blast
         private bool OwnScriptAPIMemory; 
 
 
-        #endregion
+#endregion
 
-        #region Designtime CompileRegistry
+#region Designtime CompileRegistry
 
         /// <summary>
         /// Enumerates all scripts known by blast 
@@ -1444,9 +1544,9 @@ namespace NSS.Blast
             }
         }
 #endif
-        #endregion
+#endregion
 
-        #region Runtime compilation of configuration into compiletime script for use next compilation
+#region Runtime compilation of configuration into compiletime script for use next compilation
 
         /// <summary>
         /// compile the script into the designtime registry 
@@ -1502,9 +1602,9 @@ namespace NSS.Blast
         }
 
 
-        #endregion
+#endregion
 
-        #region HPC Jobs 
+#region HPC Jobs 
         static Dictionary<int, IBlastHPCScriptJob> _hpc_jobs = null;
         [BurstDiscard]
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'Blast.HPCJobs'
@@ -1546,9 +1646,9 @@ namespace NSS.Blast
             }
             return null;
         }
-        #endregion
+#endregion
 
-        #region bytecode reading / tostring
+#region bytecode reading / tostring
 
         /// <summary>
         /// get somewhat readable assembly from bytes
@@ -1680,18 +1780,19 @@ namespace NSS.Blast
                     case blast_operation.inv_value_24: sb.Append((1f / 24f).ToString("0.000") + " "); break;
                     case blast_operation.inv_value_30: sb.Append((1f / 30f).ToString("0.000") + " "); break;
                     case blast_operation.inv_value_32: sb.Append((1f / 32f).ToString("0.000") + " "); break;
-                    case blast_operation.inv_value_45: sb.Append((1f / 45f).ToString("0.000") + " "); break;
                     case blast_operation.inv_value_64: sb.Append((1f / 64f).ToString("0.000") + " "); break;
-                    case blast_operation.inv_value_90: sb.Append((1f / 90f).ToString("0.000") + " "); break;
                     case blast_operation.inv_value_100: sb.Append((1f / 100f).ToString("0.000") + " "); break;
                     case blast_operation.inv_value_128: sb.Append((1f / 128f).ToString("0.000") + " "); break;
-                    case blast_operation.inv_value_180: sb.Append((1f / 180f).ToString("0.000") + " "); break;
                     case blast_operation.inv_value_256: sb.Append((1f / 256f).ToString("0.000") + " "); break;
-                    case blast_operation.inv_value_270: sb.Append((1f / 270f).ToString("0.000") + " "); break;
-                    case blast_operation.inv_value_360: sb.Append((1f / 360f).ToString("0.000") + " "); break;
                     case blast_operation.inv_value_512: sb.Append((1f / 512f).ToString("0.000") + " "); break;
                     case blast_operation.inv_value_1024: sb.Append((1f / 1024f).ToString("0.000") + " "); break;
 
+                    case blast_operation.fixeddeltatime: sb.Append("fixeddeltatime "); break;
+                    case blast_operation.deltatime: sb.Append("deltatime "); break;
+                    case blast_operation.framecount: sb.Append("framecount "); break;
+                    case blast_operation.fixedtime: sb.Append("fixedtime "); break;
+                    case blast_operation.time: sb.Append("time "); break;
+                    
                     case blast_operation.ex_op:
                         i++;
                         extended_blast_operation ex = (extended_blast_operation)bytes[i];
@@ -1832,9 +1933,9 @@ namespace NSS.Blast
             return false;
         }
 
-        #endregion
+#endregion
 
-        #region Execute Scripts (UNITY)
+#region Execute Scripts (UNITY)
 #if !STANDALONE_VSBUILD && FALSE
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
@@ -1921,7 +2022,7 @@ namespace NSS.Blast
             return 0;
         }
 #endif
-        #endregion
+#endregion
 
 
         /// <summary>

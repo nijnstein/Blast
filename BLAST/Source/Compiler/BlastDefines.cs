@@ -648,11 +648,12 @@ namespace NSS.Blast
         inv_value_1024,
 
         inv_value_30,
-        inv_value_45,
-        inv_value_90,
-        inv_value_180,
-        inv_value_270,
-        inv_value_360 = 127,
+        
+        framecount,
+        fixedtime,
+        time,
+        fixeddeltatime,
+        deltatime = 127,
 
         //------------------------
         id = 128,             // parameter id's start from here up until 254

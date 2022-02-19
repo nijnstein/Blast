@@ -1238,8 +1238,40 @@ namespace NSS.Blast.Compiler.Stage
             }
 
 
-            // step 2> create identifier from tokens 
-            //
+            // is is a named constant?
+            if(Blast.TryGetNamedConstant(tokens[minus ? idx + 1 : idx].Item2, out blast_operation constant_op))
+            {
+                node n_constant = new node(null);
+
+                if (minus) idx++; 
+
+                n_constant.is_constant = true;
+                n_constant.identifier = tokens[idx].Item2;
+                n_constant.vector_size = 1;
+                n_constant.type = nodetype.parameter;
+                n_constant.constant_op = constant_op;
+
+                idx++; 
+
+                if (minus)
+                {
+                    if (constant_op == blast_operation.infinity)
+                    {
+                        n_constant.identifier = "negative_" + n_constant.identifier;
+                        n_constant.constant_op = blast_operation.negative_infinity;
+                        return n_constant;
+                    }
+                    else
+                    {
+                        // encapsulate constant in (-constant) 
+                        return NegateNodeInCompound(true, n_constant);
+                    }
+                }
+                else
+                {
+                    return n_constant;
+                }
+            }
 
             
             // is it a function defined by blast? 
@@ -1272,6 +1304,9 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
         }
+
+
+    
 
         /// <summary>
         /// if minus:

@@ -128,6 +128,11 @@ namespace NSS.Blast.Interpretor
         internal unsafe byte* metadata;
 
         /// <summary>
+        /// a random number generetor set once and if needed updated by scripts with the seed instruction
+        /// </summary>
+        internal Unity.Mathematics.Random random; 
+
+        /// <summary>
         /// if true, the script is executed in validation mode:
         /// - external calls just return 0's
         /// </summary>
@@ -5451,9 +5456,9 @@ namespace NSS.Blast.Interpretor
                                 break;
                             }
 
-                        case 0: f4 = engine_ptr->random.NextFloat(); break;
-                        case 1: f4 = engine_ptr->random.NextFloat(pop_f1(code_pointer + 1)); code_pointer++; break;
-                        case 2: f4 = engine_ptr->random.NextFloat(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)); code_pointer += 2; break;
+                        case 0: f4 = random.NextFloat(); break;
+                        case 1: f4 = random.NextFloat(pop_f1(code_pointer + 1)); code_pointer++; break;
+                        case 2: f4 = random.NextFloat(pop_f1(code_pointer + 1), pop_f1(code_pointer + 2)); code_pointer += 2; break;
                     }
                     vector_size = 1;
                     break;
@@ -5470,9 +5475,9 @@ namespace NSS.Blast.Interpretor
                                 break;
                             }
 
-                        case 0: f4 = new float4(engine_ptr->random.NextFloat2(), 0, 0); break;
-                        case 1: f4 = new float4(engine_ptr->random.NextFloat2(pop_f2(code_pointer + 1)), 0, 0); code_pointer++; break;
-                        case 2: f4 = new float4(engine_ptr->random.NextFloat2(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), 0, 0); code_pointer += 2; break;
+                        case 0: f4 = new float4(random.NextFloat2(), 0, 0); break;
+                        case 1: f4 = new float4(random.NextFloat2(pop_f2(code_pointer + 1)), 0, 0); code_pointer++; break;
+                        case 2: f4 = new float4(random.NextFloat2(pop_f2(code_pointer + 1), pop_f2(code_pointer + 2)), 0, 0); code_pointer += 2; break;
                     }
                     vector_size = 2;
                     break;
@@ -5490,9 +5495,9 @@ namespace NSS.Blast.Interpretor
                                 break;
                             }
 
-                        case 0: f4 = new float4(engine_ptr->random.NextFloat3(), 0); break;
-                        case 1: f4 = new float4(engine_ptr->random.NextFloat3(pop_f3(code_pointer + 1)), 0); code_pointer++; break;
-                        case 2: f4 = new float4(engine_ptr->random.NextFloat3(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), 0); code_pointer += 2; break;
+                        case 0: f4 = new float4(random.NextFloat3(), 0); break;
+                        case 1: f4 = new float4(random.NextFloat3(pop_f3(code_pointer + 1)), 0); code_pointer++; break;
+                        case 2: f4 = new float4(random.NextFloat3(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), 0); code_pointer += 2; break;
                     }
                     vector_size = 3;
                     break;
@@ -5510,9 +5515,9 @@ namespace NSS.Blast.Interpretor
                                 break;
                             }
 
-                        case 0: f4 = engine_ptr->random.NextFloat4(); break;
-                        case 1: f4 = engine_ptr->random.NextFloat4(pop_f4(code_pointer + 1)); code_pointer++; break;
-                        case 2: f4 = engine_ptr->random.NextFloat4(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)); code_pointer += 2; break;
+                        case 0: f4 = random.NextFloat4(); break;
+                        case 1: f4 = random.NextFloat4(pop_f4(code_pointer + 1)); code_pointer++; break;
+                        case 2: f4 = random.NextFloat4(pop_f4(code_pointer + 1), pop_f4(code_pointer + 2)); code_pointer += 2; break;
                     }
                     vector_size = 4;
                     break;
@@ -6377,11 +6382,11 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.inv_value_1000:
                     case blast_operation.inv_value_1024:
                     case blast_operation.inv_value_30:
-                    case blast_operation.inv_value_45:
-                    case blast_operation.inv_value_90:
-                    case blast_operation.inv_value_180:
-                    case blast_operation.inv_value_270:
-                    case blast_operation.inv_value_360:
+                    case blast_operation.framecount:
+                    case blast_operation.fixedtime:
+                    case blast_operation.time:
+                    case blast_operation.fixeddeltatime:
+                    case blast_operation.deltatime:
                         {
                             // read value
                             switch ((BlastVectorSizes)vector_size)
@@ -6706,7 +6711,7 @@ namespace NSS.Blast.Interpretor
 
                     case blast_operation.seed:
                         f4_register.x = pop_or_value(++code_pointer);
-                        engine_ptr->Seed(math.asuint(f4_register.x));
+                        random = Unity.Mathematics.Random.CreateFromIndex((uint)f4_register.x);
                         break;
 
                     case blast_operation.begin:
