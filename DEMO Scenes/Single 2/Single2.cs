@@ -6,16 +6,19 @@ using UnityEngine;
 
 public class Single2 : MonoBehaviour
 {
+    
+
     [TextArea(8, 20)]
     public string Script = @"
 
 #input position float3 0 0 0
 
-position = position + random(-0.01, 0.01);
+position = position + random(-0.1, 0.1);
 
-position = min((100 100 100), max((-100, -100, -100), position));
+position = min((10 10 10), max((-10, -10, -10), position));
 
 ";
+
     BlastScript script;
 
 
