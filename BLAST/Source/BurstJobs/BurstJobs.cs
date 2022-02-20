@@ -25,7 +25,7 @@ namespace NSS.Blast.Jobs
 
 
     [BurstCompile]
-    public struct blast_execute_package_ssmd_burst_job : IBlastJob, IJob
+    public struct blast_execute_package_ssmd_burst_job : IJob
     {
         public BlastSSMDInterpretor blaster;
         public NSS.Blast.BlastPackageData package;
@@ -61,7 +61,7 @@ namespace NSS.Blast.Jobs
     }
 
     [BurstCompile]
-    public struct blast_execute_package_burst_job : IBlastJob, IJob
+    public struct blast_execute_package_burst_job : IJob
     {
         public BlastInterpretor blaster;
         public NSS.Blast.BlastPackageData package;
