@@ -1261,6 +1261,34 @@ namespace NSS.Blast
             return BlastError.success;
         }
 
+        /// <summary>
+        /// execute the script using the data pointer as datasegment   
+        /// </summary>
+        /// <param name="blast"></param>
+        /// <param name="environment"></param>
+        /// <param name="caller"></param>
+        /// <param name="data"></param>
+        /// <param name="reset_defaults"></param>
+        /// <returns></returns>
+        unsafe public BlastError Execute(IntPtr blast, IntPtr environment, IntPtr caller, void* data)
+        {
+            if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
+            if (!IsAllocated) return BlastError.error_package_not_allocated;
+
+            switch (Package.PackageMode)
+            {
+                case BlastPackageMode.Normal:
+                    Blast.blaster.SetPackage(Package, data);
+                    return (BlastError)Blast.blaster.Execute(blast, environment, caller);
+
+                case BlastPackageMode.Entity:
+                case BlastPackageMode.Compiler:
+                case BlastPackageMode.SSMD:
+                    return BlastError.error_packagemode_not_supported_for_direct_execution;
+            }
+
+            return BlastError.success;
+        }
 
 
         /// <summary>

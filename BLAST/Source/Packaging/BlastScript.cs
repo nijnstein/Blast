@@ -192,6 +192,11 @@ namespace NSS.Blast
             return Package.Execute(blast, IntPtr.Zero, IntPtr.Zero);
         }
 
+        unsafe public BlastError Execute(IntPtr blast, void* data)
+        {
+            return Package.Execute(blast, IntPtr.Zero, IntPtr.Zero, data); 
+        }
+
         /// <summary>
         /// execute the script using static blast instance 
         /// </summary>
@@ -207,6 +212,22 @@ namespace NSS.Blast
             }
 
             return Package.Execute(Blast.Instance.Engine, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// execute the script using the static blast instance and a external data segment 
+        /// </summary>
+        unsafe public BlastError Execute(void* data)
+        {
+            if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized;
+
+            if (!IsPackaged)
+            {
+                BlastError res = Prepare(Blast.Instance.Engine);
+                if (res != BlastError.success) return res;
+            }
+
+            return Package.Execute(Blast.Instance.Engine, IntPtr.Zero, IntPtr.Zero, data);
         }
 
         /// <summary>

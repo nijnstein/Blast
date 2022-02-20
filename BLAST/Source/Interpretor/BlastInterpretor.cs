@@ -121,6 +121,14 @@ namespace NSS.Blast.Interpretor
         internal unsafe void* data;
 
         /// <summary>
+        /// data segment pointer
+        /// - for now each data element is 4 bytes long FIXED
+        /// </summary>
+        [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
+        internal unsafe void* stack;
+
+        /// <summary>
         /// metadata segment pointer
         /// </summary>
         [NoAlias]
@@ -149,28 +157,47 @@ namespace NSS.Blast.Interpretor
 #pragma warning restore CS1573 // Parameter 'pkg' has no matching param tag in the XML comment for 'BlastInterpretor.Reset(BlastEngineData*, BlastPackageData)' (but other parameters do)
         {
             engine_ptr = blast;
-            SetPackage(pkg);
+            SetPackage(pkg, true);
         }
 
         /// <summary>
         /// we might need to know if we need to copy back data  (or we use a dummy)
         /// </summary>
-        public void SetPackage(BlastPackageData pkg)
+        public void SetPackage(BlastPackageData pkg, bool on_reset_dont_update_pointers = false)
         {
             package = pkg;
 
             // the compiler supllies its own pointers to various segments 
-            if (pkg.PackageMode != BlastPackageMode.Compiler)
+            if (pkg.PackageMode != BlastPackageMode.Compiler && !on_reset_dont_update_pointers)
             {
                 code = package.Code;
                 data = package.Data;
+                stack = data; 
                 metadata = package.Metadata;
             }
+            
             code_pointer = 0;
 
             // stack starts at an aligned point in the datasegment
             stack_offset = package.DataSegmentStackOffset / 4; // package talks in bytes, interpretor uses elements in data made of 4 bytes 
         }
+
+
+        /// <summary>
+        /// set package and attach a seperate buffer for the datasegment 
+        /// </summary>
+        /// <param name="pkg"></param>
+        /// <param name="datasegment"></param>
+        public void SetPackage(BlastPackageData pkg, void* datasegment)
+        {
+            SetPackage(pkg);
+            //
+            // update datasegment pointer
+            // stackoffset doesnt change, it will still index the same data in the package
+            //
+            data = datasegment; 
+        }
+
 
         /// <summary>
         /// set package data from package and seperate buffers 
@@ -185,6 +212,7 @@ namespace NSS.Blast.Interpretor
             package = pkg;
             code = _code;
             data = _data;
+            stack = _data; 
             metadata = _metadata;
 
             code_pointer = 0;
@@ -284,7 +312,7 @@ namespace NSS.Blast.Interpretor
         void push(float f)
         {
             // set stack value 
-            ((float*)data)[stack_offset] = f;
+            ((float*)stack)[stack_offset] = f;
 
             // update metadata with type set 
             SetMetaData(metadata, BlastVariableDataType.Numeric, 1, (byte)stack_offset);
@@ -297,7 +325,7 @@ namespace NSS.Blast.Interpretor
         void push(float2 f2)
         {
             // really... wonder how this compiles (should be simple 8byte move) TODO 
-            ((float2*)(void*)&((float*)data)[stack_offset])[0] = f2;
+            ((float2*)(void*)&((float*)stack)[stack_offset])[0] = f2;
 
             SetMetaData(metadata, BlastVariableDataType.Numeric, 2, (byte)stack_offset);
 
@@ -307,7 +335,7 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void push(float3 f3)
         {
-            ((float3*)(void*)&((float*)data)[stack_offset])[0] = f3;
+            ((float3*)(void*)&((float*)stack)[stack_offset])[0] = f3;
 
             SetMetaData(metadata, BlastVariableDataType.Numeric, 3, (byte)stack_offset);
 
@@ -318,7 +346,7 @@ namespace NSS.Blast.Interpretor
         void push(float4 f4)
         {
             // really... wonder how this compiles (should be simple 16byte move) TODO 
-            ((float4*)(void*)&((float*)data)[stack_offset])[0] = f4;
+            ((float4*)(void*)&((float*)stack)[stack_offset])[0] = f4;
 
             SetMetaData(metadata, BlastVariableDataType.Numeric, 4, (byte)stack_offset);
 
@@ -336,7 +364,7 @@ namespace NSS.Blast.Interpretor
                 return;
             }
 #endif
-            ((int*)data)[stack_offset] = i;
+            ((int*)stack)[stack_offset] = i;
             SetMetaData(metadata, BlastVariableDataType.ID, 1, (byte)stack_offset);
             stack_offset += 1;
         }
@@ -368,7 +396,7 @@ namespace NSS.Blast.Interpretor
             }
 #endif
 
-            f = ((float*)data)[stack_offset];
+            f = ((float*)stack)[stack_offset];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -398,7 +426,7 @@ namespace NSS.Blast.Interpretor
             }
 #endif
 
-            i = ((int*)data)[stack_offset];
+            i = ((int*)stack)[stack_offset];
         }
 
 
@@ -429,7 +457,7 @@ namespace NSS.Blast.Interpretor
                 return;
             }
 #endif
-            float* fdata = (float*)data;
+            float* fdata = (float*)stack;
             f.x = fdata[stack_offset];
             f.y = fdata[stack_offset + 1];
             f.z = fdata[stack_offset + 2];
@@ -463,7 +491,7 @@ namespace NSS.Blast.Interpretor
                 return;
             }
 #endif
-            int* idata = (int*)data;
+            int* idata = (int*)stack;
             i.x = idata[stack_offset];
             i.y = idata[stack_offset + 1];
             i.z = idata[stack_offset + 2];
@@ -788,7 +816,7 @@ namespace NSS.Blast.Interpretor
 
                 stack_offset -= math.select(vector_size, 4, vector_size == 0);
 
-                return &((float*)data)[stack_offset];
+                return &((float*)stack)[stack_offset];
             }
             else
             if (c >= opt_value)
@@ -854,7 +882,7 @@ namespace NSS.Blast.Interpretor
                 }
 #endif
                 // stack pop 
-                return ((float*)data)[stack_offset];
+                return ((float*)stack)[stack_offset];
             }
             else
             if (c >= opt_value)
@@ -925,8 +953,8 @@ namespace NSS.Blast.Interpretor
                     return float.NaN;
                 }
 #endif
-                float* stack = (float*)data;
-                return new float4(stack[stack_offset + 0], stack[stack_offset + 1], stack[stack_offset + 2], stack[stack_offset + 3]);
+                float* fstack = (float*)stack;
+                return new float4(fstack[stack_offset + 0], fstack[stack_offset + 1], fstack[stack_offset + 2], fstack[stack_offset + 3]);
             }
             else
             if (c >= opt_value)
@@ -5696,7 +5724,7 @@ namespace NSS.Blast.Interpretor
             else
             {
                 // else push 1 float of data
-                float* fdata = (float*)data;
+                float* fdata = (float*)stack;
                 push(fdata[code[code_pointer++] - opt_id]);
             }
         }
