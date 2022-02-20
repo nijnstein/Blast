@@ -472,10 +472,9 @@
             <param name="constant_op"></param>
             <returns></returns>
         </member>
-        <member name="M:NSS.Blast.Blast.Synchronize(System.Boolean,System.Boolean)">
+        <member name="M:NSS.Blast.Blast.Synchronize(System.Boolean)">
             <summary>
             - synchronize constant data (for example, it updates deltatime value) 
-            - update randomizers for this thread in interpretors 
             </summary>
         </member>
         <member name="M:NSS.Blast.Blast.SetConstantValue(NSS.Blast.blast_operation,System.Single,System.Boolean)">
@@ -5794,6 +5793,7 @@
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.execute(NSS.Blast.BlastEngineData*,System.IntPtr,System.IntPtr)">
             <summary>
             
+            
             </summary>
             <param name="blast"></param>
             <param name="environment"></param>
@@ -7042,6 +7042,27 @@
             <param name="name">the case insensitive name to lookup</param>
             <param name="reference_id">the script id</param>
             <returns>true if a script with the given name was found</returns>
+        </member>
+        <member name="T:NSS.Blast.BlastScriptAttribute">
+            <summary>
+            attribute used to mark strings to be compiled during build as blastscripts into burst function pointers through the hpc compiler 
+            </summary>
+        </member>
+        <member name="P:NSS.Blast.BlastScriptAttribute.Name">
+            <summary>
+            name to use in blast api registration
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAttribute.#ctor">
+            <summary>
+            default constructor
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptAttribute.#ctor(System.String)">
+            <summary>
+            constructor to set the name 
+            </summary>
+            <param name="name"></param>
         </member>
         <member name="T:NSS.Blast.BlastScript">
             <summary>

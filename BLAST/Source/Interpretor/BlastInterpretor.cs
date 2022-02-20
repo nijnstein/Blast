@@ -5501,8 +5501,11 @@ namespace NSS.Blast.Interpretor
                             float3 f31 = pop_f3(code_pointer + 1);
                             float3 f32 = pop_f3(code_pointer + 2);
 
-                            f4 = new float4(random.NextFloat3(f31, f32), 0); 
-                            
+                            f4.x = random.NextFloat(f31.x, f32.x);
+                            f4.y = random.NextFloat(f31.y, f32.y);
+                            f4.z = random.NextFloat(f31.z, f32.z);
+                            f4.w = 0f; 
+
                             code_pointer += 2; 
                             break;
                     }
@@ -6638,6 +6641,7 @@ namespace NSS.Blast.Interpretor
 
 
         /// <summary>
+        /// 
         /// 
         /// </summary>
         /// <param name="blast"></param>

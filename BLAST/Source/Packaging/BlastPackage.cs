@@ -442,8 +442,9 @@ namespace NSS.Blast
         {
             get
             {
-                // in every mode this is O3
-                return O3;
+                return (ushort)math.select(O3, O3 - O2, PackageMode == BlastPackageMode.Normal); 
+
+                //return O3;
             }
         }
 
@@ -1252,9 +1253,8 @@ namespace NSS.Blast
             switch (Package.PackageMode)
             {
                 case BlastPackageMode.Normal:
-                    BlastInterpretor blaster = default;
-                    blaster.SetPackage(Package);
-                    return (BlastError)blaster.Execute(blast, environment, caller);
+                    Blast.blaster.SetPackage(Package);
+                    return (BlastError)Blast.blaster.Execute(blast, environment, caller);
 
                 case BlastPackageMode.Entity:
                 case BlastPackageMode.Compiler:

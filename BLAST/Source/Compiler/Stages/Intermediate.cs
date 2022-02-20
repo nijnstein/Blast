@@ -471,7 +471,7 @@ namespace NSS.Blast.Compiler
             {
                 // estimate stack size while at it: set stack memory too all INF's, 
                 // this assumes the intermediate has more then enough stack
-                float* stack = pdata + initial_stack_offset;
+                float* stack = &pdata[initial_stack_offset];
                 for (int i = 0; i < package.StackCapacity; i++)
                 {
                     stack[i] = math.INFINITY;
