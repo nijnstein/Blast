@@ -14,7 +14,9 @@ public class Sample2 : MonoBehaviour
     [TextArea(8, 20)]
     public string Script = "#input a float 1.88\n\na = a + 1;";
 
-    
+
+    public bool Verbose = false; 
+
     /// <summary>
     /// the values to input 
     /// </summary>
@@ -36,7 +38,6 @@ public class Sample2 : MonoBehaviour
     private void Start()
     {
         last_script = string.Empty;
-        Blast.Initialize();
     }
 
 
@@ -45,8 +46,7 @@ public class Sample2 : MonoBehaviour
     void Update()
     {
         if (string.IsNullOrWhiteSpace(Script)) return;
-        if (!Blast.IsInstantiated) Blast.Initialize(); 
-
+    
         // remember the last script so we dont run the same script twice 
         if (string.Compare(Script, last_script, true) == 0)
         {
@@ -55,6 +55,15 @@ public class Sample2 : MonoBehaviour
         }
 
         last_script = Script;
+
+        if (Verbose)
+        {
+            Blast.ReInitialize().Verbose();
+        }
+        else
+        {
+            Blast.ReInitialize().Silent();
+        }
 
         // initialize script from inputs
         BlastScript script = BlastScript.FromText(Script);

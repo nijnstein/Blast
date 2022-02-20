@@ -1414,6 +1414,18 @@ namespace NSS.Blast
         /// ssmd interpretor error: datasegment buffer == null 
         /// </summary>
         error_execute_ssmddata_null = -71,
+        /// <summary>
+        /// the script defines no variables and as such they cannot be set 
+        /// </summary>
+        error_script_has_no_variables = -72,
+        /// <summary>
+        /// the script is not yet packaged|compiled|prepared 
+        /// </summary>
+        error_script_not_packaged = -73,
+        /// <summary>
+        /// attempted to set data with a buffer that doesnt have the correct size
+        /// </summary>
+        error_setdata_size_mismatch = -74,
     }
 
 }

@@ -7723,7 +7723,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
                                         Debug.LogError($"SSMD Interpretor: Possible BUG: encountered non mathematical operation '{next_op}' after compound in statement at codepointer {code_pointer + 1}, expecting nop or assign");
 #else
-                                    Debug.LogWarning($"SSMD Interpretor: Possible BUG: encountered non mathematical operation '{next_op}' after compound in statement at codepointer {code_pointer + 1}, expecting nop or assign");
+                                    //Debug.LogWarning($"SSMD Interpretor: Possible BUG: encountered non mathematical operation '{next_op}' after compound in statement at codepointer {code_pointer + 1}, expecting nop or assign");
 #endif
                                     }
                                 }
@@ -8488,7 +8488,7 @@ namespace NSS.Blast.SSMD
         /// </summary>
         BlastError assigns(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
         {
-#if DEVELOPMENT_BUID || TRACE
+#if DEVELOPMENT_BUILD || TRACE
             Assert.IsFalse(temp == null, "blast.ssmd.interpretor.assigns: temp buffer = NULL");
 #endif
 
@@ -8741,9 +8741,7 @@ namespace NSS.Blast.SSMD
             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
             code_pointer++;
-
-            Debug.LogError("exteranl  todo");
-            // CallExternalFunction(temp, ref code_pointer, ref vector_size, ref register);
+            get_external_function_result(temp, ref code_pointer, ref vector_size, register); 
             code_pointer++;
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -8862,6 +8860,12 @@ namespace NSS.Blast.SSMD
             if (ssmd_datacount <= 0 || ssmd_datacount > 1024 * 64)  
             {
                 return (int)BlastError.error_invalid_ssmd_count; 
+            }
+
+            // init random state if needed 
+            if (engine_ptr != null && random.state == 0)
+            {
+                random = Unity.Mathematics.Random.CreateFromIndex(engine_ptr->random.NextUInt());
             }
 
             // run with internal stacks? 

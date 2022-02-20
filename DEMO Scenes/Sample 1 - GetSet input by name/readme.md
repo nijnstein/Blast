@@ -1,4 +1,4 @@
-﻿### Sample 2
+﻿### Sample 1
 
 Demonstrates setting script inputs and reading them back for use elsewhere. 
 

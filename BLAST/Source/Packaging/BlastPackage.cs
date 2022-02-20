@@ -598,7 +598,7 @@ namespace NSS.Blast
 
                     default:
                         Debug.LogError($"BlastPackageData.Clone: PackageMode {PackageMode} is not supported");
-                        break; 
+                        return default; 
                 }
             }
             return clone; 
@@ -631,7 +631,9 @@ namespace NSS.Blast
         {
             if (PackageMode == BlastPackageMode.Compiler)
             {
+#if TRACE
                 Debug.LogError($"CloneData: packagemode {PackageMode} not supported");
+#endif 
                 return false;
             }
             return true; 
@@ -755,7 +757,7 @@ namespace NSS.Blast
             }
         }
 
-        #endregion 
+#endregion
 
         /// <summary>
         /// free any memory allocated 
@@ -772,7 +774,7 @@ namespace NSS.Blast
                         UnsafeUtils.Free(P2.ToPointer(), (Unity.Collections.Allocator)Allocator);
                     }
                 }
-#if DEVELOPMENT_BUILD || TRACE 
+#if DEVELOPMENT_BUILD || TRACE
                 CodeSegmentPtr = IntPtr.Zero;
                 P2 = IntPtr.Zero;
                 Allocator = (byte)Unity.Collections.Allocator.None;
@@ -1012,7 +1014,7 @@ namespace NSS.Blast
             IsBurstCompiled = false;
         }
 
-        #region ToString + getxxxxText()
+#region ToString + getxxxxText()
 
         /// <summary>
         /// ToString overload for more information during debugging
@@ -1080,7 +1082,7 @@ namespace NSS.Blast
 
                 unsafe
                 {
-                    StringBuilder sb = new StringBuilder();
+                    StringBuilder sb = StringBuilderCache.Acquire(); 
                     sb.Append($"Data Segment, data = {Package.DataSize } bytes, metadata = {Package.MetadataSize} bytes, stack = {Package.StackSize} bytes \n");
 
                     float* data_segment = Package.Data;
@@ -1095,22 +1097,16 @@ namespace NSS.Blast
 
                         string value = string.Empty;
 
-                        if (v.IsVector)
+                        name += $" [{v.VectorSize}]";
+                        for (int j = 0; j < v.VectorSize; j++)
                         {
-                            name += $" [{v.VectorSize}]";
-                            for (int j = 0; j < v.VectorSize; j++)
-                            {
-                                value += $"{data_segment[o + j].ToString("R")} ";
-                            }
+                            value += $"{data_segment[o + j].ToString("R")} ";
                         }
-                        else
-                        {
-                            value = data_segment[o].ToString("R");
-                        }
+
                         sb.Append($" var {(i + 1).ToString().PadRight(4, ' ')} {name.PadRight(40, ' ')} value = {value.PadRight(32, ' ')} refcount = {(i < Variables.Length ? Variables[i].ReferenceCount.ToString() : "")}\n");
                     }
 
-                    return sb.ToString();
+                    return StringBuilderCache.GetStringAndRelease(ref sb); 
                 }
             }
             else
@@ -1189,7 +1185,7 @@ namespace NSS.Blast
             }
         }
 
-        #endregion
+#endregion
 
         /// <summary>
         /// true if the script uses variables 

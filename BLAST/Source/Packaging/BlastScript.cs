@@ -64,7 +64,7 @@ namespace NSS.Blast
         /// Target language vesion, depending on compilation settings it might change in the package
         /// but the user should ensure that the code is compatible; 
         /// </summary>
-        public BlastLanguageVersion LanguageVersion { get; internal set; } = BlastLanguageVersion.BS1; 
+        public BlastLanguageVersion LanguageVersion { get; internal set; } = BlastLanguageVersion.BS1;
 
         /// <summary>
         /// Blast scriptid, used to uniquely identify the script. It is used throughout blast to id the packaged script
@@ -75,7 +75,7 @@ namespace NSS.Blast
         /// The name of the script as used in messages 
         /// </summary>
         public string Name { get; internal set; }
-        
+
         /// <summary>
         /// the actual scriptcode conforming to the languageversion set
         /// </summary>
@@ -111,7 +111,7 @@ namespace NSS.Blast
         {
             return new BlastScript()
             {
-                LanguageVersion = BlastLanguageVersion.BS1, 
+                LanguageVersion = BlastLanguageVersion.BS1,
                 Id = id,
                 Name = string.IsNullOrWhiteSpace(name) ? string.Empty : name,
                 Code = code
@@ -124,8 +124,8 @@ namespace NSS.Blast
         /// <returns>success if all is ok </returns>
         public BlastError Prepare(bool prepare_variable_info = true)
         {
-            if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized; 
-            return Prepare(Blast.Instance.Engine, prepare_variable_info); 
+            if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized;
+            return Prepare(Blast.Instance.Engine, prepare_variable_info);
         }
 
 
@@ -140,10 +140,10 @@ namespace NSS.Blast
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (IsPackaged) return BlastError.error_already_packaged;
 
-            if(prepare_variable_info)
+            if (prepare_variable_info)
             {
                 BlastError res = BlastCompiler.CompilePackage(blast, this, Blast.CompilerOptions);
-                return res;                 
+                return res;
             }
             else
             {
@@ -160,7 +160,7 @@ namespace NSS.Blast
                 //    this.Package.DefineInputsFromVariables(); 
                 //}
 
-                return BlastError.success; 
+                return BlastError.success;
             }
         }
 
@@ -198,7 +198,7 @@ namespace NSS.Blast
         /// <returns></returns>
         public BlastError Execute()
         {
-            if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized; 
+            if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized;
 
             if (!IsPackaged)
             {
@@ -256,7 +256,7 @@ namespace NSS.Blast
         /// </summary>
         public void Dispose()
         {
-            ReleasePackage(); 
+            ReleasePackage();
         }
 
         /// <summary>
@@ -267,7 +267,7 @@ namespace NSS.Blast
             if (IsPackaged)
             {
                 Package.Destroy();
-                Package = null; 
+                Package = null;
             }
         }
 
@@ -382,11 +382,9 @@ namespace NSS.Blast
         }
 
 
-#endregion
+        #endregion
 
-
-
-#region Variables 
+        #region Variables 
 
         /// <summary>
         /// Lookup a variable by its index, the script must be prepared first
@@ -397,7 +395,7 @@ namespace NSS.Blast
         public BlastVariable GetVariable(int index, bool assert_on_fail = true)
         {
             Assert.IsTrue(IsPrepared, $"BlastScript.GetVariable: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
-            if(assert_on_fail) Assert.IsFalse(Package.Variables == null || index < 0 || index >= Package.Variables.Length, $"BlastScript.GetVariable: script {Id} {Name}, variable index {index} is out of range");
+            if (assert_on_fail) Assert.IsFalse(Package.Variables == null || index < 0 || index >= Package.Variables.Length, $"BlastScript.GetVariable: script {Id} {Name}, variable index {index} is out of range");
             return Package.Variables[index];
         }
 
@@ -410,21 +408,21 @@ namespace NSS.Blast
         public BlastVariable GetVariable(string name, bool assert_on_fail = true)
         {
             Assert.IsTrue(IsPrepared, $"BlastScript.GetVariable: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
-            if(assert_on_fail) Assert.IsFalse(Package.Variables == null || Package.Variables.Length == 0, $"BlastScript.GetVariable: script {Id} {Name}, variable '{name}' could not be found");
+            if (assert_on_fail) Assert.IsFalse(Package.Variables == null || Package.Variables.Length == 0, $"BlastScript.GetVariable: script {Id} {Name}, variable '{name}' could not be found");
 
-            foreach(BlastVariable v in Package.Variables)
+            foreach (BlastVariable v in Package.Variables)
             {
                 if (v != null && !string.IsNullOrWhiteSpace(v.Name))
                 {
-                    if(string.Compare(v.Name, name, true) == 0)
+                    if (string.Compare(v.Name, name, true) == 0)
                     {
-                        return v; 
+                        return v;
                     }
                 }
             }
 
             if (assert_on_fail) Assert.IsFalse(Package.Variables == null || Package.Variables.Length == 0, $"BlastScript.GetVariable: script {Id} {Name}, variable '{name}' could not be found");
-            return null; 
+            return null;
         }
 
         /// <summary>
@@ -488,7 +486,7 @@ namespace NSS.Blast
         public int GetVariableCount()
         {
             Assert.IsTrue(IsPrepared, $"BlastScript.GetVariable: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
-            return Package.Variables == null ? 0 : Package.Variables.Length; 
+            return Package.Variables == null ? 0 : Package.Variables.Length;
         }
 
         /// <summary>
@@ -501,12 +499,12 @@ namespace NSS.Blast
             Assert.IsTrue(IsPrepared, $"BlastScript.GetVariableOffset: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
             Assert.IsTrue(variable_index >= 0 && variable_index < Package.Variables.Length, $"BlastScriptOffset.GetVariable: script {Id} {Name}, variable index {variable_index} out of range");
 
-            return Package.VariableOffsets[variable_index]; 
+            return Package.VariableOffsets[variable_index];
         }
 
-#endregion
+        #endregion
 
-#region Inputs|Outputs 
+        #region Inputs|Outputs 
 
         //
         // if the script does not define inputs or outputs then the compiler should create a list
@@ -521,7 +519,7 @@ namespace NSS.Blast
 #endif
         }
         void assert_is_valid_input_size(in int input_index, in int size)
-        { 
+        {
 #if DEVELOPMENT_BUILD || TRACE
             Assert.IsTrue(IsPrepared, $"BlastScript: script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
             Assert.IsTrue(Package.Inputs != null && input_index >= 0 && input_index < Package.Inputs.Length, $"GetVariable: script {Id} {Name}, input index {input_index} invalid");
@@ -542,7 +540,7 @@ namespace NSS.Blast
 #endif
             return Package != null ? (Package.Inputs == null ? 0 : Package.Inputs.Length) : 0;
         }
-        
+
         /// <summary>
         /// get variable representing input_index 
         /// </summary>
@@ -661,7 +659,7 @@ namespace NSS.Blast
                             case float2 f2: ((float2*)(void*)&data[offset])[0] = f2; break;
                             case System.Numerics.Vector2 v2: data[offset] = v2.X; data[offset + 1] = v2.Y; break;
 #if !STANDALONE_VSBUILD
-                                    case UnityEngine.Vector2 v2: data[offset] = v2.x; data[offset + 1] = v2.y; break;
+                            case UnityEngine.Vector2 v2: data[offset] = v2.x; data[offset + 1] = v2.y; break;
 #endif
                             default: ((float2*)(void*)&data[offset])[0] = (float2)value; break;
                         }
@@ -673,7 +671,7 @@ namespace NSS.Blast
                             case float3 f3: ((float3*)(void*)&data[offset])[0] = f3; break;
                             case System.Numerics.Vector3 v3: data[offset] = v3.X; data[offset + 1] = v3.Y; data[offset + 2] = v3.Z; break;
 #if !STANDALONE_VSBUILD
-                                    case UnityEngine.Vector3 v3: data[offset] = v3.x; data[offset + 1] = v3.y; data[offset + 2] = v3.z; break;
+                            case UnityEngine.Vector3 v3: data[offset] = v3.x; data[offset + 1] = v3.y; data[offset + 2] = v3.z; break;
 #endif
                             default: ((float3*)(void*)&data[offset])[0] = (float3)value; break;
                         }
@@ -685,7 +683,7 @@ namespace NSS.Blast
                             case float4 f4: ((float4*)(void*)&data[offset])[0] = f4; break;
                             case System.Numerics.Vector4 v4: data[offset] = v4.X; data[offset + 1] = v4.Y; data[offset + 2] = v4.Z; data[offset + 3] = v4.W; break;
 #if !STANDALONE_VSBUILD
-                                    case UnityEngine.Vector4 v4: data[offset] = v4.x; data[offset + 1] = v4.y; data[offset + 2] = v4.z; data[offset + 3] = v4.w; break;
+                            case UnityEngine.Vector4 v4: data[offset] = v4.x; data[offset + 1] = v4.y; data[offset + 2] = v4.z; data[offset + 3] = v4.w; break;
 #endif
                             default: ((float4*)(void*)&data[offset])[0] = (float4)value; break;
                         }
@@ -725,7 +723,7 @@ namespace NSS.Blast
                     packages[i].Data[variable_offset] = data[i];
                 }
             }
-                        
+
             return true;
         }
 
@@ -747,7 +745,7 @@ namespace NSS.Blast
             {
                 for (int i = 0; i < packages.Length; i++)
                 {
-                    ((float2*)(void*)&packages[i].Data[variable_offset])[0] = data[i]; 
+                    ((float2*)(void*)&packages[i].Data[variable_offset])[0] = data[i];
                 }
             }
 
@@ -799,7 +797,7 @@ namespace NSS.Blast
             {
                 for (int i = 0; i < packages.Length; i++)
                 {
-                    ((float4*)(void*)&packages[i].Data[variable_offset])[0] = data[i]; 
+                    ((float4*)(void*)&packages[i].Data[variable_offset])[0] = data[i];
                 }
             }
 
@@ -896,7 +894,7 @@ namespace NSS.Blast
         {
             if (IsPackaged && IsPrepared)
             {
-                Package.ResetDefaults(); 
+                Package.ResetDefaults();
             }
         }
 
@@ -984,19 +982,68 @@ namespace NSS.Blast
             {
                 data = null;
                 data_length = 0;
-                return false; 
+                return false;
             }
         }
 
-#endregion
+        #endregion
 
-#region SetData 
+        #region SetData 
+
+        /// <summary>
+        /// directly copy memory into the datasegment 
+        /// </summary>
+        unsafe public BlastError SetData<T>(T* data) where T : unmanaged
+        {
+            if (!IsPackaged) return BlastError.error_script_not_packaged;
+            if (!(HasInputs || HasVariables)) return BlastError.error_script_has_no_variables;
+
+            int c = sizeof(T);
+
+            if (c > Package.Package.DataSize)
+            {
+                // datapackage size much larger or input too small, * may be aligned to 4 bytes 
+                return BlastError.error_setdata_size_mismatch;
+            }
+
+
+            UnsafeUtility.MemCpy(Package.Package.Data, data, c);
+            return BlastError.success;
+        }
+
+
+        /// <summary>
+        /// directly copy data from segment into a memory buffer 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        unsafe public BlastError GetData<T>(T* data) where T : unmanaged
+        {
+            if (!IsPackaged) return BlastError.error_script_not_packaged;
+            if (!(HasInputs || HasVariables)) return BlastError.error_script_has_no_variables;
+
+            int c = /*sizeof(T); */  UnsafeUtility.SizeOf<T>(); 
+
+            if (c > Package.Package.DataSize)
+            {
+                // datapackage size much larger or input too small, * may be aligned to 4 bytes 
+                return BlastError.error_setdata_size_mismatch;
+            }
+            
+            UnsafeUtility.MemCpy(data, Package.Package.Data, c);
+            return BlastError.success;
+        }
+
+
+
+
 
         /// <summary>
         /// set variable data from a collection of variable-name-value tuples
         /// </summary>
         /// <param name="values">collection of name-value tuples</param>
-        public BlastScript SetData<T>(params Tuple<string, object>[] values) 
+        public BlastScript SetData<T>(params Tuple<string, object>[] values)  
         {
             // ok if called with empty list 
             if (values == null || values.Length == 0) return this;

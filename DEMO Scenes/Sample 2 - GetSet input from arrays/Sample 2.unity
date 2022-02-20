@@ -150,7 +150,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 343.53366, y: 252.8228, z: 101.95288}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
@@ -167,7 +166,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4defb9de1e09dad4c966efceb0299758, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Script: "#input a float\t     \n\n \na = a + 1;    "
+  Script: "#input a float\t     \n\n \na = a + 1;      "
+  Verbose: 0
   Values:
   - 1.88
   Results: '2,88
@@ -262,7 +262,6 @@ Transform:
   m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
@@ -346,7 +345,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
