@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [ExecuteInEditMode]
-public class SingleSample : MonoBehaviour
+public class Sample2 : MonoBehaviour
 {
     /// <summary>
     /// the script to run 

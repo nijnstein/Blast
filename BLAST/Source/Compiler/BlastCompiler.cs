@@ -393,7 +393,6 @@ namespace NSS.Blast.Compiler
     }
 
 
-
     namespace Stage
     {
         /// <summary>
@@ -1150,7 +1149,7 @@ namespace NSS.Blast.Compiler
                 }
             }
 
-            if (result.HasErrors || options.VerboseLogging || options.TraceLogging)
+            if (result.HasErrors || options.TraceLogging)
             {
                 if (result.HasErrors || options.TraceLogging) Debug.Log(result.AST.ToNodeTreeString());
                 switch(result.CompilerOptions.Language)

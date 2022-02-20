@@ -25,6 +25,35 @@ using Unity.Collections;
 namespace NSS.Blast
 {
 
+    /// <summary>
+    /// attribute used to mark strings to be compiled during build as blastscripts into burst function pointers through the hpc compiler 
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Class, Inherited = false)]
+    public class BlastScriptAttribute : Attribute
+    {
+        /// <summary>
+        /// name to use in blast api registration
+        /// </summary>
+        public string Name { get; set; } = null;
+
+        /// <summary>
+        /// default constructor
+        /// </summary>
+        public BlastScriptAttribute()
+        {
+            Name = null;
+        }
+
+        /// <summary>
+        /// constructor to set the name 
+        /// </summary>
+        /// <param name="name"></param>
+        public BlastScriptAttribute(string name)
+        {
+            Name = name;
+        }
+    }
+
 
     /// <summary>
     /// A BLAST Script
