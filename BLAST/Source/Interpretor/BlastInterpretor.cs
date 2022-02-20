@@ -189,11 +189,11 @@ namespace NSS.Blast.Interpretor
 
             code_pointer = 0;
             stack_offset = initial_stack_offset;
-        }
+       }
 
-#endregion
+        #endregion
 
-#region Execute Overloads       
+        #region Execute Overloads       
         /// <summary>
         /// execute bytecode
         /// </summary>
@@ -5497,7 +5497,14 @@ namespace NSS.Blast.Interpretor
 
                         case 0: f4 = new float4(random.NextFloat3(), 0); break;
                         case 1: f4 = new float4(random.NextFloat3(pop_f3(code_pointer + 1)), 0); code_pointer++; break;
-                        case 2: f4 = new float4(random.NextFloat3(pop_f3(code_pointer + 1), pop_f3(code_pointer + 2)), 0); code_pointer += 2; break;
+                        case 2:
+                            float3 f31 = pop_f3(code_pointer + 1);
+                            float3 f32 = pop_f3(code_pointer + 2);
+
+                            f4 = new float4(random.NextFloat3(f31, f32), 0); 
+                            
+                            code_pointer += 2; 
+                            break;
                     }
                     vector_size = 3;
                     break;
@@ -6644,6 +6651,12 @@ namespace NSS.Blast.Interpretor
             engine_ptr = blast;
             environment_ptr = environment;
             caller_ptr = caller;
+
+            // init random state if needed 
+            if (engine_ptr != null && random.state == 0)
+            {
+                random = Unity.Mathematics.Random.CreateFromIndex(blast->random.NextUInt());
+            }
 
             float* fdata = (float*)data;
             float4 f4_register = 0;
