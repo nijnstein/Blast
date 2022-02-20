@@ -881,9 +881,9 @@ namespace NSS.Blast
         public bool IsVector = false;
 
         /// <summary>
-        /// vectorsize of the variable
+        /// vectorsize of the variable, default to size 1
         /// </summary>
-        public int VectorSize = 0;
+        public int VectorSize = 1;
 
         /// <summary>
         /// true if specified in inputs 

@@ -6781,7 +6781,7 @@
         </member>
         <member name="F:NSS.Blast.BlastVariable.VectorSize">
             <summary>
-            vectorsize of the variable
+            vectorsize of the variable, default to size 1
             </summary>
         </member>
         <member name="F:NSS.Blast.BlastVariable.IsInput">

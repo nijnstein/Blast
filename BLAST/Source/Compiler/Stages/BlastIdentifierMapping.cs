@@ -342,6 +342,32 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
 
+
+            // verify vectorsize of node, if its 0 we update from anything set by variable 
+            if (ast_node.vector_size == 0)
+            {
+
+
+                if (ast_node.type == nodetype.parameter)
+                {
+                    if (ast_node.variable != null)
+                    {
+                        ast_node.vector_size = ast_node.variable.VectorSize;
+                        ast_node.is_vector = ast_node.variable.VectorSize > 1;
+                    }
+                    else
+                    {
+                        // is it a constant ? 
+                        if (ast_node.is_constant && ast_node.constant_op != blast_operation.nop)
+                        {
+                            ast_node.vector_size = 1;
+                            ast_node.is_vector = false; 
+                        }
+                    }
+                }
+            }
+
+
             // map children (collection may change) 
             int i = 0;
             while (i < ast_node.ChildCount)

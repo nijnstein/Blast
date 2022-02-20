@@ -6434,8 +6434,9 @@ namespace NSS.Blast.Interpretor
                                     case BlastVectorSizes.float4: f4 = new float4(((float*)data)[id], ((float*)data)[id + 1], ((float*)data)[id + 2], ((float*)data)[id + 3]); break;
                                 }
 
+                                // grow current vector size 
 
-                                vector_size = vector_size > this_vector_size ? vector_size : this_vector_size; // probably massively incorrect but its too late 
+                                vector_size = vector_size > this_vector_size && current_op == blast_operation.nop ? vector_size : this_vector_size; // probably massively incorrect but its too late 
                             }
                             else
                             {
