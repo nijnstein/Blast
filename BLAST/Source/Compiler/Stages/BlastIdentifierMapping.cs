@@ -57,7 +57,7 @@ namespace NSS.Blast.Compiler.Stage
             // as soon as the identifier for the functioncall gets mapped it means that the inline function 
             // is actually called and we thus need to include any of its defined constants 
 
-            Stack<node> work = new Stack<node>();
+            List<node> work = NodeListCache.Acquire(); 
             work.Push(function.Node); 
 
             while(work.TryPop(out node current))
@@ -103,6 +103,7 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 // not a constant, functions may not declare variables
                                 data.LogError($"map_inline_identifiers: ({current.identifier}) could not identify node as a constant, variable declarations are not allowed inside inlined functions|macros", (int)BlastError.error_inlinefunction_may_not_declare_variables);
+                                NodeListCache.Release(work); 
                                 return false;
                             }
 
@@ -113,6 +114,7 @@ namespace NSS.Blast.Compiler.Stage
                             if (op == blast_operation.nan)
                             {
                                 data.LogError($"map_inline_identifiers: ({current.identifier}) could not convert to a float or use as mathematical constant (pi, epsilon, infinity, minflt, euler)");
+                                NodeListCache.Release(work); 
                                 return false;
                             }
 
@@ -166,7 +168,7 @@ namespace NSS.Blast.Compiler.Stage
             }
 
 
-
+            NodeListCache.Release(work); 
             return true;
         }
 

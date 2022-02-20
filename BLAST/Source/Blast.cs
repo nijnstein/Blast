@@ -502,7 +502,7 @@ namespace NSS.Blast
             blast.data->random = Random.CreateFromIndex(1);
 
             // setup randomizers in interpretors
-            // - note: this only initializes them in -this- thread 
+            // - note: this only initializes them in -this- thread and this might be useless ...  
             blaster.random = Random.CreateFromIndex(blast.data->random.NextUInt());
             ssmd_blaster.random = Random.CreateFromIndex(blast.data->random.NextUInt());
 
@@ -1217,10 +1217,9 @@ namespace NSS.Blast
 
         /// <summary>
         /// - synchronize constant data (for example, it updates deltatime value) 
-        /// - update randomizers for this thread in interpretors 
         /// </summary>
         [BurstDiscard]
-        public void Synchronize(bool update_static = true, bool update_randomizers = true)
+        public void Synchronize(bool update_static = true)
         {
 #if !STANDALONE_VSBUILD
 
@@ -1230,11 +1229,11 @@ namespace NSS.Blast
             SetConstantValue(blast_operation.deltatime, UnityEngine.Time.deltaTime, update_static);
             SetConstantValue(blast_operation.fixeddeltatime, UnityEngine.Time.fixedDeltaTime, update_static);
 #endif
-            if(update_randomizers)
-            {
-                blaster.random = Random.CreateFromIndex(data->random.NextUInt());
-                ssmd_blaster.random = Random.CreateFromIndex(data->random.NextUInt());
-            }
+        }
+
+        public static void SynchronizeConstants()
+        {
+            if (IsInstantiated) Instance.Synchronize(true); 
         }
 
         /// <summary>
@@ -1246,14 +1245,13 @@ namespace NSS.Blast
         {
             Assert.IsFalse(op < blast_operation.pi || op >= blast_operation.id);
 
-            int index = (int)(op - blast_operation.pi); 
             if (update_static)
             {
-                Constant[index] = value;
+                Constant[(int)(op - blast_operation.pi)] = value;
             }
             if(data != null)
             {
-                data->constants[index] = value;                      
+                data->constants[(int)op] = value;                      
             }
         }
 
