@@ -13,9 +13,7 @@ public class Sample5 : MonoBehaviour
 
     public data InputAndOutput = default; 
 
-    [TextArea(10, 20)]
-    public string DataView = "";
-
+ 
     /// <summary>
     /// the last executed script 
     /// </summary>

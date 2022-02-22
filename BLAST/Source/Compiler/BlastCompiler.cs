@@ -122,8 +122,8 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// Default compiler options
         /// </summary>
-#if DEVELOPMENT_BUILD
-        public static BlastCompilerOptions Default => new BlastCompilerOptions().Verbose(); 
+#if DEVELOPMENT_BUILD && TRACE
+        public static BlastCompilerOptions Default => new BlastCompilerOptions().Verbose().Trace(); 
 #elif TRACE
         public static BlastCompilerOptions Default => new BlastCompilerOptions().Trace();
 #else
@@ -133,8 +133,8 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// Default SSMD compiler options
         /// </summary>
-#if DEVELOPMENT_BUILD
-        public static BlastCompilerOptions SSMD => new BlastCompilerOptions().SetPackageMode(BlastPackageMode.SSMD).PackageWithoutStack().Verbose();
+#if DEVELOPMENT_BUILD && TRACE
+        public static BlastCompilerOptions SSMD => new BlastCompilerOptions().SetPackageMode(BlastPackageMode.SSMD).PackageWithoutStack().Verbose().Trace();
 #elif TRACE
         public static BlastCompilerOptions SSMD => new BlastCompilerOptions().SetPackageMode(BlastPackageMode.SSMD).PackageWithoutStack().Trace();
 #else
@@ -1151,7 +1151,7 @@ namespace NSS.Blast.Compiler
 
             if (result.HasErrors || options.TraceLogging)
             {
-                if (result.HasErrors || options.TraceLogging) Debug.Log(result.AST.ToNodeTreeString());
+                Debug.Log(result.AST.ToNodeTreeString());
                 switch(result.CompilerOptions.Language)
                 {
                     case BlastLanguageVersion.BS1:

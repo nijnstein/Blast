@@ -21,6 +21,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using NSS.Blast.Compiler;
 using NSS.Blast.Register;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace NSS.Blast
 {
@@ -409,31 +410,31 @@ namespace NSS.Blast
 
 
 #pragma warning disable CS1591
-    public delegate float BlastDelegate_f0(IntPtr engine, IntPtr data, IntPtr caller);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f0(IntPtr engine, IntPtr data, IntPtr caller);
 
     // externals, float params, up until 16
-    public delegate float BlastDelegate_f1(IntPtr engine, IntPtr data, IntPtr caller, float a);
-    public delegate float BlastDelegate_f11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b);
-    public delegate float BlastDelegate_f111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c);
-    public delegate float BlastDelegate_f1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d);
-    public delegate float BlastDelegate_f1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e);
-    public delegate float BlastDelegate_f1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f);
-    public delegate float BlastDelegate_f1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g);
-    public delegate float BlastDelegate_f1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1(IntPtr engine, IntPtr data, IntPtr caller, float a);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h);
 
-    public delegate float BlastDelegate_f1111_1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i);
-    public delegate float BlastDelegate_f1111_1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j);
-    public delegate float BlastDelegate_f1111_1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k);
-    public delegate float BlastDelegate_f1111_1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l);
-    public delegate float BlastDelegate_f1111_1111_1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m);
-    public delegate float BlastDelegate_f1111_1111_1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n);
-    public delegate float BlastDelegate_f1111_1111_1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o);
-    public delegate float BlastDelegate_f1111_1111_1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o, float p);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o, float p);
 
     // short external defines 
-    public delegate float BlastDelegate_f0_s();
-    public delegate float BlastDelegate_f1_s(float a);
-    public delegate float BlastDelegate_f11_s(float a, float b);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f0_s();
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1_s(float a);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f11_s(float a, float b);
 
 #pragma warning restore CS1591
 
@@ -1109,7 +1110,7 @@ namespace NSS.Blast
                 }
                 else
                 {
-                    switch(parameter_count)
+                    switch(parameter_count - 3)
                     {
                         case 1: result = Register((BlastDelegate_f1)method.CreateDelegate(typeof(BlastDelegate_f1)), name); break;
                         case 2: result = Register((BlastDelegate_f11)method.CreateDelegate(typeof(BlastDelegate_f11)), name); break;
@@ -1201,7 +1202,10 @@ namespace NSS.Blast
 
 
 #if !STANDALONE_VSBUILD
-            IntPtr fp = BurstCompilerUtil<T>.CompileFunctionPointer(function_delegate);
+
+            IntPtr fp = BurstCompiler.CompileFunctionPointer(function_delegate).Value;  
+
+            // IntPtr fp = BurstCompilerUtil<T>.CompileFunctionPointer(function_delegate);
             res = UpdateNativeFunctionPointer(function_id, fp); 
             if(res != BlastError.success)
             {
@@ -1211,7 +1215,7 @@ namespace NSS.Blast
 #endif
 
 
-#if DEVELOPMENT_BUILD || TRACE
+#if TRACE
             // show an overview of the functions available in the log 
             Debug.Log($"BlastScriptAPI: registered function {function_id} {name}");
 #endif

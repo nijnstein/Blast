@@ -4,9 +4,11 @@
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
-using NSS.Blast.Standalone;
+    using NSS.Blast.Standalone;
 #else
-    using UnityEngine;
+#define USE_BURST_JOBS
+using UnityEngine;
+using Unity.Jobs;
 #endif
 
 using NSS.Blast.Interpretor;
@@ -1203,35 +1205,6 @@ namespace NSS.Blast
         public bool HasInputs { get { return Inputs != null && Inputs.Length > 0; } }
 
 
-        /// <summary>
-        /// define inputs from variables, usefull if a script does not define inputs 
-        /// </summary>
-        /// <returns></returns>
-        public BlastError DefineInputsFromVariables() 
-        {
-            if (HasVariables)
-            {
-                Inputs = new BlastVariableMapping[Variables.Length];
-                int offset = 0; 
-                for(int i = 0; i < Variables.Length; i++)
-                {
-                    int bytesize = Variables[i].VectorSize * 4;
-
-                    Inputs[i] = new BlastVariableMapping()
-                    {
-                        ByteSize = bytesize,
-                        Offset = offset,
-                        Variable = Variables[i]
-                    };
-
-                    offset += bytesize; 
-                }
-
-                return BlastError.success;
-            }
-            return BlastError.compile_packaging_error; 
-        }
-
 
         /// <summary>
         /// execute the script in the given environment with the supplied data
@@ -1239,9 +1212,8 @@ namespace NSS.Blast
         /// <param name="blast">blastengine data</param>
         /// <param name="environment">[optional] pointer to environment data</param>
         /// <param name="caller">[ooptional] caller data</param>
-        /// <param name="reset_defaults">rewrite default values in datasegment, can be omitted on first execute with fresh datasegment</param>
         /// <returns>success if all is ok</returns>
-        public BlastError Execute(IntPtr blast, IntPtr environment, IntPtr caller, bool reset_defaults = true)
+        public BlastError Execute(IntPtr blast, IntPtr environment, IntPtr caller)
         {
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (!IsAllocated) return BlastError.error_package_not_allocated;
@@ -1249,8 +1221,20 @@ namespace NSS.Blast
             switch (Package.PackageMode)
             {
                 case BlastPackageMode.Normal:
+#if USE_BURST_JOBS 
+                    var job = new Jobs.blast_execute_package_burst_job()
+                    {
+                        engine = blast,
+                        package = Package,
+                        environment = environment,
+                        caller = caller
+                    };
+                    job.Run();
+                    return (BlastError)job.exitcode;
+#else 
                     Blast.blaster.SetPackage(Package);
                     return (BlastError)Blast.blaster.Execute(blast, environment, caller);
+#endif
 
                 case BlastPackageMode.Entity:
                 case BlastPackageMode.Compiler:
@@ -1270,7 +1254,7 @@ namespace NSS.Blast
         /// <param name="data"></param>
         /// <param name="reset_defaults"></param>
         /// <returns></returns>
-        unsafe public BlastError Execute(IntPtr blast, IntPtr environment, IntPtr caller, void* data)
+        unsafe public BlastError Execute(IntPtr blast, IntPtr environment, IntPtr caller, void* p_data_segment)
         {
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (!IsAllocated) return BlastError.error_package_not_allocated;
@@ -1278,8 +1262,24 @@ namespace NSS.Blast
             switch (Package.PackageMode)
             {
                 case BlastPackageMode.Normal:
-                    Blast.blaster.SetPackage(Package, data);
+#if USE_BURST_JOBS
+                    var job = new Jobs.blast_execute_package_with_multiple_data_burst_job()
+                    {
+                        engine = blast,
+                        package = Package,
+                        data = new IntPtr(p_data_segment),
+                        data_count = 1,
+                        data_size = 0,
+                        environment = environment,
+                        caller = caller
+                    };
+                    job.Run();
+                    return (BlastError)job.exitcode;
+#else
+                    Blast.blaster.SetPackage(Package, p_data_segment);
                     return (BlastError)Blast.blaster.Execute(blast, environment, caller);
+#endif
+
 
                 case BlastPackageMode.Entity:
                 case BlastPackageMode.Compiler:
@@ -1290,6 +1290,107 @@ namespace NSS.Blast
             return BlastError.success;
         }
 
+        /// <summary>
+        /// execute for each element in the data array 
+        /// </summary>
+        /// <param name="blast"></param>
+        /// <param name="environment"></param>
+        /// <param name="caller"></param>
+        /// <param name="data"></param>
+        /// <param name="reset_defaults"></param>
+        /// <returns></returns>
+        unsafe public BlastError Execute<T>(IntPtr blast, IntPtr environment, IntPtr caller, NativeArray<T> data, int max_ssmd_count = 1024 * 2) where T: unmanaged
+        {
+            if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
+            if (!IsAllocated) return BlastError.error_package_not_allocated;
+
+            switch (Package.PackageMode)
+            {
+                case BlastPackageMode.Normal:
+#if !USE_BURST_JOBS
+                    BlastError res = BlastError.success;
+
+                    // execute in SSMD if packaged as such
+                    if (Package.PackageMode == BlastPackageMode.SSMD)
+                    {
+                        byte** dataptrs = stackalloc byte*[max_ssmd_count];
+                        byte* p = (byte*)data.GetUnsafeReadOnlyPtr();
+                        int datasize = sizeof(T); 
+
+                        int i = 0; 
+
+                        while(i < data.Length && res == BlastError.success)
+                        {
+                            int j = 0;
+                            while (i < data.Length && j < max_ssmd_count)
+                            {
+                                dataptrs[j] = (byte*)&p[i * datasize];
+                                i++; 
+                                j++; 
+                            }
+                            if(j > 0)
+                            {
+                                // execute portion 
+                                Blast.ssmd_blaster.SetPackage(in Package);
+                                res = (BlastError)Blast.ssmd_blaster.Execute(in Package, blast, environment, (BlastSSMDDataStack*)(void*)dataptrs, j);
+                            }
+                        }     
+                    }    
+                    else
+                    {
+                        // execute all data elements as datasegments 
+                        T* p = (T*)data.GetUnsafeReadOnlyPtr();
+                        for (int i = 0; i < data.Length && res == BlastError.success; i++)
+                        {
+                            Blast.blaster.SetPackage(Package, &p[i]);
+                            res = (BlastError)Blast.blaster.Execute(blast, environment, caller);
+                        }
+                    }
+                    return res;
+#else
+                    if (Package.PackageMode == BlastPackageMode.SSMD)
+                    {
+                        var ssmd_job = new Jobs.blast_execute_package_ssmd_array_burst_job()
+                        {
+                            engine = blast,
+                            package = Package,
+                            environment = environment,
+                            data_count = data.Length,
+                            data_buffer = new IntPtr(data.GetUnsafeReadOnlyPtr()),
+                            data_size = sizeof(T),
+                            max_ssmd_count = 1024 
+                        };
+                        ssmd_job.Run();
+                        return (BlastError)ssmd_job.exitcode;
+                    }
+                    else
+                    {
+                        var job = new Jobs.blast_execute_package_with_multiple_data_burst_job()
+                        {
+                            engine = blast,
+                            package = Package,
+                            data = new IntPtr(data.GetUnsafeReadOnlyPtr()),
+                            data_count = data.Length,
+                            data_size = sizeof(T),
+                            environment = environment,
+                            caller = caller
+                        };
+                        job.Run();
+                        return (BlastError)job.exitcode;
+                    }                                              
+#endif
+
+                case BlastPackageMode.Entity:
+                case BlastPackageMode.Compiler:
+                case BlastPackageMode.SSMD:
+                    return BlastError.error_packagemode_not_supported_for_direct_execution;
+            }
+
+            return BlastError.success;
+        }
+
+
+#region Default Data  
 
         /// <summary>
         /// set default data from input or output data 
@@ -1328,6 +1429,37 @@ namespace NSS.Blast
                 }
             }
         }
+        /// <summary>
+        /// define inputs from variables 
+        /// </summary>
+        /// <returns></returns>
+        internal BlastError DefineInputsFromVariables()
+        { 
+            if (HasVariables)
+            {
+                Inputs = new BlastVariableMapping[Variables.Length];
+                int offset = 0;
+                for (int i = 0; i < Variables.Length; i++)
+                {
+                    int bytesize = Variables[i].VectorSize * 4;
+
+                    Inputs[i] = new BlastVariableMapping()
+                    {
+                        ByteSize = bytesize,
+                        Offset = offset,
+                        Variable = Variables[i]
+                    };
+
+                    offset += bytesize;
+                }
+
+                return BlastError.success;
+            }
+            return BlastError.compile_packaging_error;
+        }
+
+
+#endregion
 
     }
 

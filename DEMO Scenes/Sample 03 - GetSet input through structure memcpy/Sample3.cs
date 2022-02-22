@@ -62,8 +62,7 @@ public class Sample3 : MonoBehaviour
                                 
         // initialize script from inputs
         BlastScript script = BlastScript.FromText(Script);
-        script.Prepare();
-       
+        script.Prepare();            
         
         // copy data in 
         fixed(data* input = &Input)

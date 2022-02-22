@@ -1813,7 +1813,7 @@ namespace NSS.Blast.Interpretor
                     return;
                 }
 
-#if DEVELOPMENT_BUILD || TRACE
+#if TRACE
                 Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}, parmetercount = {p.MinParameterCount}");
 #endif
 

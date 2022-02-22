@@ -551,7 +551,7 @@ namespace NSS.Blast
                 }
             }
 
-#if DEVELOPMENT_BUILD || TRACE
+#if TRACE
             // show an overview of the functions available in the log 
             StringBuilder fsb = new StringBuilder(4098);
 

@@ -30,6 +30,8 @@ namespace NSS.Blast.Compiler
         /// </summary>
         Version Version { get; }
 
+        string CompileErrorMessage();
+
         /// <summary>
         /// blast engine data used in this compilation
         /// </summary>
@@ -412,8 +414,24 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public bool IsOK { get { return !HasErrors; } }
 
+        /// <summary>
+        /// generate a string\list from all messages (assuming its an error)
+        /// </summary>
+        /// <returns></returns>
+        public string CompileErrorMessage()
+        {
+            StringBuilder sb = StringBuilderCache.Acquire();
+            sb.Append($"error: ({LastError}) {LastErrorMessage}\n\n");
+            sb.Append("all compiler messages:\n");
+            foreach(Message msg in CompilerMessages)
+            {
+                sb.AppendLine(msg.Content); 
+            }
+            return StringBuilderCache.GetStringAndRelease(ref sb); 
+        }
 
-#endregion
+
+        #endregion
 
 
         /// <summary>

@@ -49,7 +49,7 @@ namespace NSS.Blast
 
         public static void Release(StringBuilder sb)
         {
-            if (sb.Capacity <= MAX_BUILDER_SIZE)
+            if (sb.Capacity <= MAX_BUILDER_SIZE * 4) // allow the cached ref to grow but not by too much
             {
                 StringBuilderCache.CachedInstance = sb;
             }

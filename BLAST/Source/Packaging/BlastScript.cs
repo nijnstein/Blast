@@ -122,7 +122,7 @@ namespace NSS.Blast
         /// Prepare the script for execution
         /// </summary>
         /// <returns>success if all is ok </returns>
-        public BlastError Prepare(bool prepare_variable_info = true)
+        public BlastError Prepare(bool prepare_variable_info = true, bool ssmd = false)
         {
             if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized;
             return Prepare(Blast.Instance.Engine, prepare_variable_info);
@@ -135,24 +135,29 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="blast">blast engine data</param>
         /// <returns>success if all is ok </returns>
-        public BlastError Prepare(IntPtr blast, bool prepare_variable_info = true)
+        public BlastError Prepare(IntPtr blast, bool prepare_variable_info = true, bool ssmd = false)
         {
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (IsPackaged) return BlastError.error_already_packaged;
 
+            BlastCompilerOptions options = ssmd ?
+                Blast.SSMDCompilerOptions
+                :
+                Blast.CompilerOptions; 
+
             if (prepare_variable_info)
             {
-                BlastError res = BlastCompiler.CompilePackage(blast, this, Blast.CompilerOptions);
+                BlastError res = BlastCompiler.CompilePackage(blast, this, options);
                 return res;
             }
             else
             {
                 this.Package = new BlastScriptPackage();
 
-                IBlastCompilationData data = BlastCompiler.Compile(blast, this, Blast.CompilerOptions);
+                IBlastCompilationData data = BlastCompiler.Compile(blast, this, options);
                 if (!data.IsOK) return BlastError.error_compilation_failure;
 
-                this.Package.Package = BlastCompiler.Package(data, Blast.CompilerOptions);
+                this.Package.Package = BlastCompiler.Package(data, options);
                 if (!data.IsOK) return BlastError.compile_packaging_error;
 
                 //if (!this.Package.HasInputs && this.Package.HasVariables)
@@ -229,6 +234,20 @@ namespace NSS.Blast
 
             return Package.Execute(Blast.Instance.Engine, IntPtr.Zero, IntPtr.Zero, data);
         }
+
+        public BlastError Execute<T>(NativeArray<T> data) where T: unmanaged
+        {
+            if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized;
+
+            if (!IsPackaged)
+            {
+                BlastError res = Prepare(Blast.Instance.Engine);
+                if (res != BlastError.success) return res;
+            }
+
+            return Package.Execute(Blast.Instance.Engine, IntPtr.Zero, IntPtr.Zero, data);
+        }
+
 
         /// <summary>
         /// Run (execute) the script 
