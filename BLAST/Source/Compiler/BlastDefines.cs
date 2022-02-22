@@ -455,11 +455,35 @@ namespace NSS.Blast
         expand_v3,
         expand_v4,
 
-        reserved8,
-        reserved9,
-        reserved0,
-        reserved10,
-        reserved11,
+        /// <summary>
+        /// inline constant definition of f1 
+        /// </summary>
+        constant_f1,
+        
+        /// <summary>
+        /// inline constant definition of f2 
+        /// </summary>
+        ref_f2,
+        
+        /// <summary>
+        /// inline constant definition of f3 
+        /// </summary>
+        ref_f3,
+        
+        /// <summary>
+        /// inline constant definition of f4 
+        /// </summary>
+        ref_f4,
+
+        /// <summary>
+        /// reference to earlier definition of a constant 
+        /// 3 bytes large -> for def_f1 total byte count = 5 so even with smallest datatype it saves 2 bytes referencing the constant
+        /// </summary>
+        /// <remarks>
+        /// ref_f -addressoffset (2 bytes)... ref_f2 data data 
+        /// </remarks>
+        ref_f,
+
         reserved12,
         reserved13,
         reserved14,
