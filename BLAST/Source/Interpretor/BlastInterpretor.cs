@@ -589,6 +589,141 @@ namespace NSS.Blast.Interpretor
             }
         }
 
+        /// <summary>
+        /// 
+        /// 
+        /// 
+        /// 
+        /// pop float of vectorsize 1, forced float type, verify type on debug   (equals pop_or_value)
+        /// 
+        /// 
+        /// 
+        /// 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float pop_f1_ref(ref int code_pointer)
+        {
+            // we get either a pop instruction or an instruction to get a value 
+            byte c = code[code_pointer];
+            code_pointer++;
+
+
+#if DEVELOPMENT_BUILD || TRACE
+            BlastVariableDataType type;
+            int size;
+#endif 
+
+            switch ((blast_operation)c)
+            {
+                //
+                // stack pop 
+                // 
+                case blast_operation.pop:
+#if DEVELOPMENT_BUILD || TRACE && CHECK_STACK
+                    type = GetMetaDataType(metadata, (byte)(stack_offset - 1));
+                    size = GetMetaDataSize(metadata, (byte)(stack_offset - 1));
+                    if (size != 1 || type != BlastVariableDataType.Numeric)
+                    {
+                        Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
+                        return float.NaN;
+                    }
+#endif
+                    // stack pop 
+                    stack_offset = stack_offset - 1;
+                    return ((float*)data)[stack_offset];
+
+                case blast_operation.constant_f1:
+                    break;
+                case blast_operation.constant_f1_h:
+                    break;
+                case blast_operation.constant_short_ref:
+                    break;
+                case blast_operation.constant_long_ref:
+                    break;
+ 
+                case blast_operation.pi:
+                case blast_operation.inv_pi:
+                case blast_operation.epsilon:
+                case blast_operation.infinity:
+                case blast_operation.negative_infinity:
+                case blast_operation.nan:
+                case blast_operation.min_value:
+                case blast_operation.value_0:
+                case blast_operation.value_1:
+                case blast_operation.value_2:
+                case blast_operation.value_3:
+                case blast_operation.value_4:
+                case blast_operation.value_8:
+                case blast_operation.value_10:
+                case blast_operation.value_16:
+                case blast_operation.value_24:
+                case blast_operation.value_32:
+                case blast_operation.value_64:
+                case blast_operation.value_100:
+                case blast_operation.value_128:
+                case blast_operation.value_256:
+                case blast_operation.value_512:
+                case blast_operation.value_1000:
+                case blast_operation.value_1024:
+                case blast_operation.value_30:
+                case blast_operation.value_45:
+                case blast_operation.value_90:
+                case blast_operation.value_180:
+                case blast_operation.value_270:
+                case blast_operation.value_360:
+                case blast_operation.inv_value_2:
+                case blast_operation.inv_value_3:
+                case blast_operation.inv_value_4:
+                case blast_operation.inv_value_8:
+                case blast_operation.inv_value_10:
+                case blast_operation.inv_value_16:
+                case blast_operation.inv_value_24:
+                case blast_operation.inv_value_32:
+                case blast_operation.inv_value_64:
+                case blast_operation.inv_value_100:
+                case blast_operation.inv_value_128:
+                case blast_operation.inv_value_256:
+                case blast_operation.inv_value_512:
+                case blast_operation.inv_value_1000:
+                case blast_operation.inv_value_1024:
+                case blast_operation.inv_value_30:
+                case blast_operation.framecount:
+                case blast_operation.fixedtime:
+                case blast_operation.time:
+                case blast_operation.fixeddeltatime:
+                case blast_operation.deltatime:
+                    return engine_ptr->constants[c];
+
+
+                default:
+                case blast_operation.id:
+#if DEVELOPMENT_BUILD || TRACE && CHECK_STACK
+
+                    if (c < opt_id)
+                    {
+                        // bug in compiler 
+                        Debug.LogError("pop_f1 -> select op by constant value is not supported");
+                        return float.NaN;
+                    }
+
+                    type = GetMetaDataType(metadata, (byte)(c - opt_id));
+                    size = GetMetaDataSize(metadata, (byte)(c - opt_id));
+                    if (size != 1 || type != BlastVariableDataType.Numeric)
+                    {
+                        Debug.LogError($"blast.stack, pop_or_value -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - opt_id}");
+                        return float.NaN;
+                    }
+#endif
+                    // variable acccess
+                    return ((float*)data)[c - opt_id];
+             }
+
+            // should never reach here
+            return float.NaN; 
+        }
+
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         float2 pop_f2(in int code_pointer)
         {
@@ -781,19 +916,18 @@ namespace NSS.Blast.Interpretor
             return float.NaN;
         }
 
-#endregion
+        #endregion
 
 
         /// <summary>
         /// get the next value from the datasegment, stack or constant dictionary 
         /// </summary>
+        /// <param name="code_pointer"></param>
         /// <param name="type">datatype of element popped</param>
         /// <param name="vector_size">vectorsize of element popped</param>
         /// <returns>pointer to data castable to valuetype*</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#pragma warning disable CS1573 // Parameter 'code_pointer' has no matching param tag in the XML comment for 'BlastInterpretor.pop_with_info(in int, out BlastVariableDataType, out byte)' (but other parameters do)
         internal void* pop_with_info(in int code_pointer, out BlastVariableDataType type, out byte vector_size)
-#pragma warning restore CS1573 // Parameter 'code_pointer' has no matching param tag in the XML comment for 'BlastInterpretor.pop_with_info(in int, out BlastVariableDataType, out byte)' (but other parameters do)
         {
             // we get either a pop instruction or an instruction to get a value 
             byte c = code[code_pointer];
@@ -827,7 +961,7 @@ namespace NSS.Blast.Interpretor
             }
             else
             {
-                // error or.. constant by operation value.... 
+                // error or.. constant by operation value....    (value < 77 not equal to pop)
 #if DEVELOPMENT_BUILD || TRACE
                 Debug.LogError($"BlastInterpretor: pop_or_value -> select op by constant value is not supported, at codepointer: {code_pointer} => {code[code_pointer]}");
 #endif
@@ -1759,11 +1893,11 @@ namespace NSS.Blast.Interpretor
             {
                 if (i < package.DataSegmentStackOffset / 4)
                 {
-                    Debug.Log($"DATA  {i} = {((float*)data)[i]}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
+                    Debug.Log($"DATA  {i} = {((float*)data)[i].ToString().PadRight(10)}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
                 }
                 else
                 {
-                    Debug.Log($"STACK {i} = {((float*)data)[i]}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
+                    Debug.Log($"STACK {i} = {((float*)data)[i].ToString().PadRight(10)}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
                 }
             }
 #endif
@@ -4896,6 +5030,7 @@ namespace NSS.Blast.Interpretor
             code_pointer = code_pointer + 1;
             byte c = code[code_pointer];
 
+
             // decode 62
             c = BlastInterpretor.decode62(in c, ref vector_size);
 
@@ -7648,7 +7783,7 @@ namespace NSS.Blast.Interpretor
 
 
 
-#endregion
+        #endregion
 
     };
 }

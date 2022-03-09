@@ -110,6 +110,19 @@ namespace NSS.Blast.Compiler
         public readonly bool ParallelCompilation = false;
 
         /// <summary>
+        /// inline any constant data in the codesegment, normally these would be put in the datasegment and referenced
+        /// but when executing many equal scripts with differing data its more usefull to have constantdata in the constant code
+        /// segment while only having variable data in the data segment. This does come at the cost of more control flow when 
+        /// interpretors need to locate the data for instructions, for this reason it is only supported for SSMD|Entity package modes
+        /// as the normal interpretor would have severe performance penalties from variable parameter/instruction length, normally 
+        /// it knows every datapoint is referenced with a single byte, this wont be true if a constant vector is inlined and all 
+        /// controlflow would need to account for that costing performance. In SSMD mode this performance cost is divided by all processed
+        /// datasegments while using less memory for storing each datasegment, it has the side effect of allowing more variable indices
+        /// to be allocated as there is no index into the datasegment reserved for constant data 
+        /// </summary>
+        public bool InlineConstantData = false; 
+
+        /// <summary>
         /// additional compiler defines 
         /// </summary>
         public Dictionary<string, string> Defines = new Dictionary<string, string>();
@@ -207,6 +220,7 @@ namespace NSS.Blast.Compiler
         public BlastCompilerOptions SetStackSize(int stack_size = 0)
         {
             this.DefaultStackSize = stack_size;
+            this.EstimateStackSize = stack_size <= 0 && (this.PackageMode == BlastPackageMode.Normal || this.PackageMode == BlastPackageMode.Compiler);
             return this;
         }
 
@@ -239,6 +253,21 @@ namespace NSS.Blast.Compiler
         public BlastCompilerOptions SetPackageMode(BlastPackageMode packagemode = BlastPackageMode.Normal)
         {
             this.PackageMode = packagemode;
+
+            // in ssmd force inlined constant data 
+            if(this.PackageMode == BlastPackageMode.SSMD)
+            {
+                this.InlineConstantData = true; 
+            }
+
+            // in normal it is not allowed 
+            if(this.PackageMode == BlastPackageMode.Normal)
+            {
+                this.InlineConstantData = false; 
+            }
+
+            // entity mode should decide for itself 
+
             return this;
         }
 
@@ -569,14 +598,15 @@ namespace NSS.Blast.Compiler
             // try to optimize common sequences 
             new BlastOptimizer(),
             
-            // cleanup unreference parameters, some might not be used anymore
+            // cleanup unreferenced parameters and determine constant data fields
             new BlastPreCompileCleanup(),
             
             // compile the ast into bytecode
             new BlastBytecodeCompiler(),
             
             // use pattern recognition to transfrom sequences of bytecode into more efficient ones 
-            new BlastBytecodeOptimizer(),
+            // - after all updates this became pretty useless and a bug source
+            // new BlastBytecodeOptimizer(),
             
             // resolve jumps 
             new BlastJumpResolver(),
@@ -960,6 +990,32 @@ namespace NSS.Blast.Compiler
                 while (((data_size + align_stack) % 8) != 0) align_stack++;
             }
 
+            //
+            //
+            // if using inlined constant data then constant data should not be packaged
+            // - this frees variable index space, normally constants cost variable indices
+            // - now the datasegment wont have repeating data on many in ssmd
+            //
+            // *> datasize gets 4x constantcount smaller (all constants are float1 and datasize is in bytes)
+            // *> metadatasize gets 1x constantcount smaller, 1 byte of metadata is used for all variables/stacklocations  (4 bytes per location = 5 bytes total per float of data)
+            //
+            //
+
+            int constant_count = 0;
+            if (cdata.CompilerOptions.InlineConstantData)
+            {
+                for (int i = 0; i < cdata.VariableCount; i++)
+                {
+                    if (cdata.Variables[i].IsConstant)
+                    {
+                        // if inlineconstant data is not enabled then we just treat everything ass a variable,
+                        // otherwise we substract constants from it while writing the package
+                        constant_count++;
+                    }
+                }
+            }
+
+
             // init package data
             BlastPackageData data = default;
             data.PackageMode = BlastPackageMode.SSMD;
@@ -969,13 +1025,13 @@ namespace NSS.Blast.Compiler
 
             // setup code and segment data
             data.O1 = (ushort)code_size;
-            data.O2 = (ushort)(code_size + metadata_size);
-            data.O3 = (ushort)(data_size + align_stack);
-            data.O4 = (ushort)(data_size + align_stack + stack_size);
+            data.O2 = (ushort)(code_size + metadata_size - constant_count);
+            data.O3 = (ushort)(data_size - (constant_count * 4) + align_stack);
+            data.O4 = (ushort)(data_size - (constant_count * 4) + align_stack + stack_size);
 
             unsafe 
             { 
-                data.CodeSegmentPtr = new IntPtr(UnsafeUtils.Malloc(code_size + metadata_size, 8, cdata.CompilerOptions.PackageAllocator));
+                data.CodeSegmentPtr = new IntPtr(UnsafeUtils.Malloc(code_size + metadata_size - constant_count, 8, cdata.CompilerOptions.PackageAllocator));
 
                 // copy code segment 
                 int i = 0;
@@ -987,23 +1043,23 @@ namespace NSS.Blast.Compiler
 
                 // copy metadata for variables 
                 i = 0;
-                while (i < cdata.Executable.data_count)
+                while (i < cdata.Executable.data_count - constant_count)
                 {
                     data.Metadata[i] = cdata.Executable.metadata[i];
                     i++;
                 }
-                while (i < metadata_size)
+                while (i < metadata_size - constant_count)
                 {
                     // fill stack metadata with 0's
                     data.Metadata[i] = 0;
                     i++;
                 }
 
-                data.P2 = new IntPtr(UnsafeUtils.Malloc(data_size + align_stack + stack_size, 8, cdata.CompilerOptions.PackageAllocator));
+                data.P2 = new IntPtr(UnsafeUtils.Malloc(data_size - (constant_count * 4) + align_stack + stack_size, 8, cdata.CompilerOptions.PackageAllocator));
 
                 // copy initial variable data => datasegment 
                 i = 0;
-                while (i < cdata.Executable.data_count)
+                while (i < cdata.Executable.data_count - constant_count)
                 {
                     data.Data[i] = cdata.Executable.data[i];
                     i++;

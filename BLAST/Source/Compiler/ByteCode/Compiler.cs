@@ -89,21 +89,92 @@ namespace NSS.Blast.Compiler.Stage
             else
             {
                 BlastVariable p_id = ast_param.variable;
-
                 if (p_id != null)
                 {
                     // numeric/id value, add its variableId to output code
                     // it should add p_id.Id as its offset into data 
-                    if(p_id.Id < 0 || p_id.Id >= data.OffsetCount)
+                    if (p_id.Id < 0 || p_id.Id >= data.OffsetCount)
                     {
                         data.LogError($"CompileParameter: node: <{ast_param}>, identifier/variable not correctly offset: '{ast_param.identifier}'");
-                        return false; 
+                        return false;
                     }
 
                     int offset = data.Offsets[p_id.Id];
-                    
-                    code.Add((byte)(offset + BlastCompiler.opt_ident));
-                    // code.Add((byte)(p_id.Id + BlastCompiler.opt_ident));
+
+                    // deterimine if the constantdata should be inlined, referenced or indexed 
+                    if (p_id.IsConstant && data.CompilerOptions.InlineConstantData)
+                    {
+                        // 
+                        // - inline the constant data if this is its first occurance
+                        // - reference constant data if this is a repeated occurance
+                        // 
+
+
+                        //
+                        // constant references are different from jumplabels in that they can have multiple sources
+                        // referencing the same target 
+                        //
+                        if (code.TryGetConstantReference(p_id, out IMJumpLabel label))
+                        {
+                            // reserve 2 bytes to reference the constant when resolving jumps 
+                            code.Add((byte)blast_operation.constant_short_ref, IMJumpLabel.ReferenceToConstant(label));
+                            code.Add((byte)blast_operation.nop, IMJumpLabel.OffsetToConstant(label));
+                            //code.Add((byte)blast_operation.nop, IMJumpLabel.OffsetToConstant(label));
+                        }
+                        else
+                        {
+                            // encode instruction depending on datatype/vectorsize 
+                            switch (p_id.DataType)
+                            {
+                                case BlastVariableDataType.Numeric:
+                                    switch (p_id.VectorSize)
+                                    {
+                                        case 1:
+
+                                            float f = p_id.Name.AsFloat(); 
+                                            unsafe
+                                            {
+                                                byte* p = (byte*)(void*)&f; 
+                                                {
+                                                    //
+                                                    // whole small integers will have the first 2 bytes set to 0
+                                                    // - leverage the space advantage by encoding this in the instruction used to get the constant data value
+                                                    //
+                                                    if(p[0] == 0 && p[1] == 0)
+                                                    {
+                                                        // encode it in 2 bytes 
+                                                        code.Add((byte)blast_operation.constant_f1_h, IMJumpLabel.Constant(p_id.Id.ToString()));
+                                                    }
+                                                    else
+                                                    {
+                                                        // encoding the float in 4 bytes 
+                                                        code.Add((byte)blast_operation.constant_f1, IMJumpLabel.Constant(p_id.Id.ToString()));
+                                                        code.Add(p[0]);
+                                                        code.Add(p[1]);
+                                                    }
+                                                    code.Add(p[2]);
+                                                    code.Add(p[3]);
+                                                }
+                                            }
+                                            break;
+
+                                        default: 
+                                        case 2:
+                                        case 3:
+                                        case 4:
+                                            // no support as of yet, only f1's
+                                            data.LogError($"CompileParameter: node: <{ast_param.parent}>.<{ast_param}>, inlining of constant '{ast_param.identifier}' not possible: the datatype {p_id.DataType} with vectorsize {p_id.VectorSize} is not supported as a constant value", (int)BlastError.error_compile_inlined_constant_datatype_not_supported);
+                                            break;
+                                    }
+                                    break;                            
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // index the constant data in the datasegment 
+                        code.Add((byte)(offset + BlastCompiler.opt_ident));
+                    }
                 }
                 else
                 {
@@ -1392,7 +1463,7 @@ namespace NSS.Blast.Compiler.Stage
 
             // make sure data offsets are calculated and set in im data. 
             // the packager creates this data but it might not have executed yet depending on configuration 
-            cdata.CalculateVariableOffsets(); 
+            cdata.CalculateVariableOffsets();
 
             // compile into bytecode 
             cdata.code = CompileAST(cdata);

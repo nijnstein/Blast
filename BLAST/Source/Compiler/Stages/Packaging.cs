@@ -21,10 +21,12 @@ namespace NSS.Blast.Compiler.Stage
         /// Packaging Stage -> creates package 
         /// </summary>
         public BlastCompilerStageType StageType => BlastCompilerStageType.Packaging;
-             
+
 
         /// <summary>
         /// package the compiled code into BlastIntermediate 
+        /// 
+        /// - offset variable indices so the interpretor doesnt have to lookup offsets in runtime
         /// </summary>
         /// <param name="cdata"></param>
         /// <param name="code">the code to package</param>
@@ -133,16 +135,28 @@ namespace NSS.Blast.Compiler.Stage
 
             for (int i = 0; i < code.Count; i++)
             {
-                is_call =
-                    i > 2
-                    &&
-                    code[i - 2].op == blast_operation.ex_op
-                    &&
-                    code[i - 1].code == (byte)extended_blast_operation.call;
-
-                if(is_call)
+                // skip hardcoded values, after call and constant define/reference
+                if (i > 0)
                 {
-                    next_is_hardcoded_value += 4;
+                    is_call =
+                        i > 2
+                        &&
+                        code[i - 2].op == blast_operation.ex_op
+                        &&
+                        code[i - 1].code == (byte)extended_blast_operation.call;
+
+                    if (is_call)
+                    {
+                        next_is_hardcoded_value += 2;// 4;  Using only 2 bytes now... 
+                    }
+
+                    // if inlined constantdata, skip data
+                    if (code[i - 1].op == blast_operation.constant_f1) next_is_hardcoded_value += 4;
+                    if (code[i - 1].op == blast_operation.constant_f1_h) next_is_hardcoded_value += 2;
+
+                    // if inlined constantref, skip reference 
+                    if (code[i - 1].op == blast_operation.constant_short_ref) next_is_hardcoded_value += 1;
+                    if (code[i - 1].op == blast_operation.constant_long_ref) next_is_hardcoded_value += 2;
                 }
 
                 if (next_is_hardcoded_value > 0)

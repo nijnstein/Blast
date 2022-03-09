@@ -9,11 +9,96 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using Unity.Mathematics;
+using UnityEngine.Assertions;
 
 namespace NSS.Blast.Compiler
 {
     namespace Stage
     {
+        /// <summary>
+        /// jump label types, used for reference during compilation 
+        /// </summary>
+        internal enum JumpLabelType
+        {
+            Jump,
+            Offset,
+            Label,
+            
+            Constant, // = Label, 
+            ReferenceToConstant // = Jump
+        }
+
+
+
+        /// <summary>
+        /// a jump label, for help keeping track of jump targets 
+        /// </summary>
+        public class IMJumpLabel
+        {
+            internal string id { get; private set; }
+            internal JumpLabelType type { get; private set; }
+            internal bool is_label => type == JumpLabelType.Label;
+            internal bool is_offset => type == JumpLabelType.Offset;
+            internal bool is_jump => type == JumpLabelType.Jump;
+            internal bool is_constant => type == JumpLabelType.Constant;
+            internal bool is_constantreference => type == JumpLabelType.ReferenceToConstant;
+            internal IMJumpLabel(string _id, JumpLabelType _type)
+            {
+                id = _id;
+                type = _type;
+            }
+
+            static internal IMJumpLabel Jump(string _id)
+            {
+                return new IMJumpLabel(_id, JumpLabelType.Jump);
+            }
+            static internal IMJumpLabel Label(string _id)
+            {
+                return new IMJumpLabel(_id, JumpLabelType.Label);
+            }
+
+            static internal IMJumpLabel Constant(string _id)
+            {
+                return new IMJumpLabel($"constant_{_id}", JumpLabelType.Constant);
+            }
+            static internal IMJumpLabel ReferenceToConstant(IMJumpLabel constantlabel)
+            {
+                Assert.IsNotNull(constantlabel);
+                Assert.IsTrue(constantlabel.is_constant); 
+                return new IMJumpLabel(constantlabel.id, JumpLabelType.ReferenceToConstant);
+            }
+
+            static internal IMJumpLabel Offset(string _id)
+            {
+                return new IMJumpLabel(_id, JumpLabelType.Offset);
+            }
+            static internal IMJumpLabel OffsetToConstant(IMJumpLabel constantlabel)
+            {
+                Assert.IsNotNull(constantlabel);
+                Assert.IsTrue(constantlabel.is_constant);
+                return new IMJumpLabel(constantlabel.id, JumpLabelType.Offset);
+            }
+
+            /// <summary>
+            /// tostring override
+            /// </summary>
+            public override string ToString()
+            {
+                switch (type)
+                {
+                    case JumpLabelType.Offset: return $"offset: {id}";
+                    case JumpLabelType.Jump: return $"jump to: {id}";
+
+                    default:
+                    case JumpLabelType.Label: return $"label: {id}";
+
+                    case JumpLabelType.Constant: return $"constant: {id}";
+                    case JumpLabelType.ReferenceToConstant: return $"constantreference: {id}"; 
+                }
+            }
+        }
+
+
         /// <summary>
         /// intermediate bytecode - can contain additional data
         /// </summary>
@@ -149,6 +234,7 @@ namespace NSS.Blast.Compiler
                 return list.Count - 1;
             }
 
+
             /// <summary>
             /// add op to code list
             /// </summary>
@@ -232,6 +318,43 @@ namespace NSS.Blast.Compiler
                 }
             }
 
+            internal bool TryGetConstantReference(BlastVariable p_id, out IMJumpLabel label)
+            {
+                Assert.IsNotNull(p_id); 
+
+                if (list != null || list.Count >= 0)
+                {
+                    string labelname = $"constant_{p_id.Id}";
+
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        IMByteCode code = list[i];
+                        if (code.labels != null && code.labels.Count > 0)
+                        {
+                            for (int j = 0; j < code.labels.Count; j++)
+                            {
+                                label = code.labels[j];
+
+                                if (label.is_constant)
+                                {
+                                    if (string.Compare(labelname, label.id, true) == 0)
+                                    {
+                                        return true;
+                                    }
+                                    else
+                                    {
+                                        // only 1 constant def per code byte is possible so skip any other label after the first 
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                label = null;
+                return false;                         
+            }
+          
             /// <summary>
             /// add all segments to this list clearing the segment list afterwards 
             /// </summary>

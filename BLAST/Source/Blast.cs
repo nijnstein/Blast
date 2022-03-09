@@ -1377,9 +1377,7 @@ namespace NSS.Blast
         {
             return (op >= blast_operation.add && op <= blast_operation.not_equals)
                 ||
-                op == blast_operation.max
-                ||
-                op == blast_operation.min; 
+                op == blast_operation.max || op == blast_operation.min;
         }
 
 
@@ -1660,10 +1658,18 @@ namespace NSS.Blast
             StringBuilder sb = new StringBuilder();
 
             int i = 0;
+            int asnumber = 0; 
 
             while (i < length)
             {
                 blast_operation op = (blast_operation)bytes[i];
+                if(asnumber > 0)
+                {
+                    asnumber--;
+                    sb.Append($"#{((byte)op).ToString().PadLeft(3, '0')} ");
+                    i++;
+                    continue; 
+                }
                 switch (op)
                 {
                     case blast_operation.nop: sb.Append("\n"); break;
@@ -1791,6 +1797,11 @@ namespace NSS.Blast
                     case blast_operation.fixedtime: sb.Append("fixedtime "); break;
                     case blast_operation.time: sb.Append("time "); break;
                     
+                    case blast_operation.constant_f1: sb.Append("cf1 "); asnumber = 4; break;
+                    case blast_operation.constant_f1_h: sb.Append("cf1h "); asnumber = 2; break;
+                    case blast_operation.constant_long_ref: sb.Append("clref "); asnumber = 2; break;
+                    case blast_operation.constant_short_ref: sb.Append("csref "); asnumber = 1; break;
+
                     case blast_operation.ex_op:
                         i++;
                         extended_blast_operation ex = (extended_blast_operation)bytes[i];

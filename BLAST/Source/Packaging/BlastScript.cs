@@ -12,6 +12,7 @@ using System.Linq;
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
     using UnityEngine.Assertions;
+    using Unity.Collections.LowLevel.Unsafe;
 #else
     using UnityEngine;
     using UnityEngine.Assertions;

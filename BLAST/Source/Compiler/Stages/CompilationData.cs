@@ -530,7 +530,7 @@ namespace NSS.Blast.Compiler
 
         unsafe void WriteHumanReadableCode(StringBuilder sb, List<byte> code, int columns = 10, bool index = true)
         {
-            int i = 0;
+            int i = 0, asnumber = 0;
             blast_operation prev = blast_operation.nop;
 
             for (; i < code.Count; i++)
@@ -541,6 +541,13 @@ namespace NSS.Blast.Compiler
                 {
                     if (i != 0) sb.Append("\n");
                     sb.Append("" + i.ToString().PadLeft(3, '0') + "| ");
+                }
+
+                if (asnumber > 0)
+                {
+                    asnumber--;
+                    sb.Append($"#{((byte)op).ToString().PadLeft(3, '0')} ");
+                    continue;
                 }
 
                 // starting a jump ? 
@@ -674,6 +681,11 @@ namespace NSS.Blast.Compiler
                         case blast_operation.framecount: sb.Append("framecount "); break;
                         case blast_operation.fixedtime: sb.Append("fixedtime "); break;
                         case blast_operation.time: sb.Append("time "); break;
+
+                        case blast_operation.constant_f1: sb.Append("cf1 "); asnumber = 4; break;
+                        case blast_operation.constant_f1_h: sb.Append("cf1h "); asnumber = 2; break;
+                        case blast_operation.constant_long_ref: sb.Append("clref "); asnumber = 2; break;
+                        case blast_operation.constant_short_ref: sb.Append("csref "); asnumber = 1; break;
 
                         case blast_operation.ex_op:
                             i++;

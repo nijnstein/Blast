@@ -87,7 +87,8 @@ namespace NSS.Blast.Compiler.Stage
                         }
 
                         // gather label indices 
-                        if (label.is_label)
+                        if (label.is_label || label.is_constant)
+
                         {
                             if (label_idx.ContainsKey(label.id))
                             {
@@ -167,15 +168,33 @@ namespace NSS.Blast.Compiler.Stage
                 }
                 else
                 {
-                    // verify jump is a JUMPBACK. it is the only instruction that can jump backward 
-                    if (op != blast_operation.jump_back)
+                    // verify jump is a JUMPBACK or constant reference, these are the only possible backward jumps 
+                    if (!(op == blast_operation.jump_back
+                        ||
+                        op == blast_operation.constant_long_ref
+                        ||
+                        op == blast_operation.constant_short_ref
+                        ))
                     {
                         cdata.LogError($"Compiler Failure: encountered invalid operation <{op}> for backward jump of size {jump_size}");
                         return false;
                     }
 
-                    // update jump offset (negative!!!)
-                    code[offset.Item2].UpdateOpCode((byte)(abs_jump_size));
+
+                    if (abs_jump_size > 255)
+                    {
+                        cdata.LogError($"Compiler Failure: constant reference jumpsize to large {jump_size}  TODO long reference.. ");
+                        return false;
+
+                    }
+                    else
+                    {
+
+                        // update jump offset (negative!!!)
+                        code[offset.Item2].UpdateOpCode((byte)(abs_jump_size));
+
+                    }
+
 
                     // if we updated the last item in the list to a jump offset
                     if(offset.Item2 == code.Count - 1)

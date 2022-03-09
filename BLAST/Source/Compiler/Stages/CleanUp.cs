@@ -44,7 +44,7 @@ namespace NSS.Blast.Compiler.Stage
             somewhat_sorted.AddRange(data.Variables.Where(x => x.IsConstant));
             data.Variables = somewhat_sorted;
 
-            // update id's 
+            // update data id's to match their index 
             for (int i = 0; i < data.Variables.Count; i++)
             {
                 data.Variables[i].Id = i;

@@ -736,6 +736,19 @@
             enable for partially parallel compilation [forcebly disabled]
             </summary>
         </member>
+        <member name="F:NSS.Blast.Compiler.BlastCompilerOptions.InlineConstantData">
+            <summary>
+            inline any constant data in the codesegment, normally these would be put in the datasegment and referenced
+            but when executing many equal scripts with differing data its more usefull to have constantdata in the constant code
+            segment while only having variable data in the data segment. This does come at the cost of more control flow when 
+            interpretors need to locate the data for instructions, for this reason it is only supported for SSMD|Entity package modes
+            as the normal interpretor would have severe performance penalties from variable parameter/instruction length, normally 
+            it knows every datapoint is referenced with a single byte, this wont be true if a constant vector is inlined and all 
+            controlflow would need to account for that costing performance. In SSMD mode this performance cost is divided by all processed
+            datasegments while using less memory for storing each datasegment, it has the side effect of allowing more variable indices
+            to be allocated as there is no index into the datasegment reserved for constant data 
+            </summary>
+        </member>
         <member name="F:NSS.Blast.Compiler.BlastCompilerOptions.Defines">
             <summary>
             additional compiler defines 
@@ -1465,6 +1478,21 @@
             <param name="data"></param>
             <returns></returns>
         </member>
+        <member name="T:NSS.Blast.Compiler.Stage.JumpLabelType">
+            <summary>
+            jump label types, used for reference during compilation 
+            </summary>
+        </member>
+        <member name="T:NSS.Blast.Compiler.Stage.IMJumpLabel">
+            <summary>
+            a jump label, for help keeping track of jump targets 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.Stage.IMJumpLabel.ToString">
+            <summary>
+            tostring override
+            </summary>
+        </member>
         <member name="T:NSS.Blast.Compiler.Stage.IMByteCode">
             <summary>
             intermediate bytecode - can contain additional data
@@ -1497,7 +1525,7 @@
             after that following stages might run using multithreading on the segments 
             </summary>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.IMByteCodeList.Add(System.Byte,NSS.Blast.Compiler.IMJumpLabel)">
+        <member name="M:NSS.Blast.Compiler.Stage.IMByteCodeList.Add(System.Byte,NSS.Blast.Compiler.Stage.IMJumpLabel)">
             <summary>
             add code to list
             </summary>
@@ -1505,7 +1533,7 @@
             <param name="label">optional jump label</param>
             <returns>returns index of opcode</returns>
         </member>
-        <member name="M:NSS.Blast.Compiler.Stage.IMByteCodeList.Add(NSS.Blast.blast_operation,NSS.Blast.Compiler.IMJumpLabel)">
+        <member name="M:NSS.Blast.Compiler.Stage.IMByteCodeList.Add(NSS.Blast.blast_operation,NSS.Blast.Compiler.Stage.IMJumpLabel)">
             <summary>
             add op to code list
             </summary>
@@ -2228,21 +2256,6 @@
             <param name="options"></param>
             <returns></returns>
         </member>
-        <member name="T:NSS.Blast.Compiler.JumpLabelType">
-            <summary>
-            jump label types, used for reference during compilation 
-            </summary>
-        </member>
-        <member name="T:NSS.Blast.Compiler.IMJumpLabel">
-            <summary>
-            a jump label, for help keeping track of jump targets 
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.Compiler.IMJumpLabel.ToString">
-            <summary>
-            tostring override
-            </summary>
-        </member>
         <member name="T:NSS.Blast.Compiler.CSCompilationData">
             <summary>
             compiler data for the C# compiler 
@@ -2597,6 +2610,12 @@
             <summary>
             true if everything went ok 
             </summary>
+        </member>
+        <member name="M:NSS.Blast.Compiler.CompilationData.CompileErrorMessage">
+            <summary>
+            generate a string\list from all messages (assuming its an error)
+            </summary>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.Compiler.CompilationData.#ctor(NSS.Blast.BlastEngineDataPtr,NSS.Blast.BlastScript,NSS.Blast.Compiler.BlastCompilerOptions)">
             <summary>
@@ -4186,6 +4205,49 @@
             <c>expand(a, 4)</c>   expands variable a to a vector of size 4, if a = 1: (1 1 1 1), if a = (1 1), then result is (1 1 0 0) 
             </remarks>
         </member>
+        <member name="F:NSS.Blast.blast_operation.expand_v3">
+            <summary>
+            expand vector from given size to wanted size, if input = size 1, then the input is set to each component. otherwise 0 is set to new vector components
+            </summary>
+            <remarks>
+            <c>expand(1, 4)</c>   expands value 1 to a vector of size 4: (1 1 1 1) 
+            <c>expand(a, 4)</c>   expands variable a to a vector of size 4, if a = 1: (1 1 1 1), if a = (1 1), then result is (1 1 0 0) 
+            </remarks>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.expand_v4">
+            <summary>
+            expand vector from given size to wanted size, if input = size 1, then the input is set to each component. otherwise 0 is set to new vector components
+            </summary>
+            <remarks>
+            <c>expand(1, 4)</c>   expands value 1 to a vector of size 4: (1 1 1 1) 
+            <c>expand(a, 4)</c>   expands variable a to a vector of size 4, if a = 1: (1 1 1 1), if a = (1 1), then result is (1 1 0 0) 
+            </remarks>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.constant_f1">
+            <summary>
+            packagemode ssmd|entity only: inline constant definition of f1 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.constant_f1_h">
+            <summary>
+            packagemode ssmd|entity only: inline constant definition of a float1 encoded in 2 bytes 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.constant_short_ref">
+            <summary>
+            packagemode ssmd|entity only: short (8bit) reference to earlier definition of a constant 
+            2 bytes large -> for def_f1 total byte count = 5 so even with smallest datatype it saves 3 bytes referencing the constant
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.blast_operation.constant_long_ref">
+            <summary>
+            packagemode ssmd|entity only: long (16bit) reference to earlier definition of a constant 
+            3 bytes large -> for def_f1 total byte count = 5 so even with smallest datatype it saves 2 bytes referencing the constant
+            </summary>
+            <remarks>
+            ref_f -addressoffset (2 bytes)... ref_f2 data data 
+            </remarks>
+        </member>
         <member name="F:NSS.Blast.blast_operation.pi">
             <summary>
             PI
@@ -5022,6 +5084,26 @@
             ssmd interpretor error: datasegment buffer == null 
             </summary>
         </member>
+        <member name="F:NSS.Blast.BlastError.error_script_has_no_variables">
+            <summary>
+            the script defines no variables and as such they cannot be set 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_script_not_packaged">
+            <summary>
+            the script is not yet packaged|compiled|prepared 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_setdata_size_mismatch">
+            <summary>
+            attempted to set data with a buffer that doesnt have the correct size
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.BlastError.error_compile_inlined_constant_datatype_not_supported">
+            <summary>
+            datatype is not supported as a constant that is to be inlined 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Cache.blast.max(System.Single,System.Single)">
             <summary>
             hmmmmz we would neeed very many overloads when supporting 63 parameters... 
@@ -5124,6 +5206,12 @@
             - for now each data element is 4 bytes long FIXED
             </summary>
         </member>
+        <member name="F:NSS.Blast.Interpretor.BlastInterpretor.stack">
+            <summary>
+            data segment pointer
+            - for now each data element is 4 bytes long FIXED
+            </summary>
+        </member>
         <member name="F:NSS.Blast.Interpretor.BlastInterpretor.metadata">
             <summary>
             metadata segment pointer
@@ -5146,10 +5234,17 @@
             </summary>
             <param name="blast">pointer to blast engine data</param>
         </member>
-        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.SetPackage(NSS.Blast.BlastPackageData)">
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.SetPackage(NSS.Blast.BlastPackageData,System.Boolean)">
             <summary>
             we might need to know if we need to copy back data  (or we use a dummy)
             </summary>
+        </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.SetPackage(NSS.Blast.BlastPackageData,System.Void*)">
+            <summary>
+            set package and attach a seperate buffer for the datasegment 
+            </summary>
+            <param name="pkg"></param>
+            <param name="datasegment"></param>
         </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.SetPackage(NSS.Blast.BlastPackageData,System.Byte*,System.Single*,System.Byte*,System.Int32)">
             <summary>
@@ -5221,10 +5316,24 @@
             pop float of vectorsize 1, forced float type, verify type on debug   (equals pop_or_value)
             </summary>
         </member>
+        <member name="M:NSS.Blast.Interpretor.BlastInterpretor.pop_f1_ref(System.Int32@)">
+            <summary>
+            
+            
+            
+            
+            pop float of vectorsize 1, forced float type, verify type on debug   (equals pop_or_value)
+            
+            
+            
+            
+            </summary>
+        </member>
         <member name="M:NSS.Blast.Interpretor.BlastInterpretor.pop_with_info(System.Int32@,NSS.Blast.BlastVariableDataType@,System.Byte@)">
             <summary>
             get the next value from the datasegment, stack or constant dictionary 
             </summary>
+            <param name="code_pointer"></param>
             <param name="type">datatype of element popped</param>
             <param name="vector_size">vectorsize of element popped</param>
             <returns>pointer to data castable to valuetype*</returns>
@@ -5986,6 +6095,15 @@
             <param name="code_pointer"></param>
             <param name="dataindex"></param>
         </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into_ref``1(System.Int32@,``0*)">
+            <summary>
+            
+            - code_pointer is expected to be on the first token to process
+            - code_pointer is 1 token after the last item processed 
+            
+            pop a float[1|2|3|4] value form stack data or constant source and put it in destination 
+            </summary>
+        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into_indexed(System.Int32@,System.Byte@,System.Byte@,System.Byte@,System.Byte@)">
             <summary>
             pop operation [stack/constant/variabledata] and move it into dataindex 
@@ -6186,6 +6304,18 @@
             handle operation a.x and b.x
             </summary>
         </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_single_op_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*,NSS.Blast.blast_operation@,NSS.Blast.extended_blast_operation@)">
+            <summary>
+            get result from a single input function
+            - the parameter fed may be negated, indexed and can be an inlined constant 
+            </summary>
+            <param name="temp"></param>
+            <param name="code_pointer"></param>
+            <param name="vector_size"></param>
+            <param name="register"></param>
+            <param name="op"></param>
+            <param name="ex_op"></param>
+        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_cross_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
             <summary>
             only accepts size 3 vectors 
@@ -6258,31 +6388,24 @@
             normalized lerp on quaternions
             </summary>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_mina_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
-            <summary>
-            get the minimal component from all arguments of any vectorsize
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_maxa_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
-            <summary>
-            get the max component from all arguments of any vectorsize
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_csum_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*)">
-            <summary>
-            get component sum of all arguments of any vectorsize
-            </summary>
-            <param name="temp"></param>
-            <param name="code_pointer"></param>
-            <param name="vector_size"></param>
-            <param name="f4"></param>
-        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_op_a_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*@,NSS.Blast.blast_operation)">
             <summary>
+            
+            - codepointer starts at first token and is left after the last
+            
             handle a sequence of operations
             - mula e62 p1 p2 .. pn
             - every parameter must be of same vector size 
             - future language versions might allow multiple vectorsizes in mula 
+            
+            
+            
+            
+            sequence of:  + - / * min max mina maxa
+            
+            
+            
+            
             </summary>
             <param name="temp">temp scratch data</param>
             <param name="code_pointer">current codepointer</param>
@@ -6299,6 +6422,10 @@
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.GetFunctionResult(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*@,System.Boolean)">
             <summary>
+            
+            - codepointer starts at first token of function
+            - codepointer is left directly after last token
+            
             get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
             although external calls should be directly called when possible
             </summary>
@@ -6934,21 +7061,36 @@
             true if package has inputs defined
             </summary>
         </member>
-        <member name="M:NSS.Blast.BlastScriptPackage.DefineInputsFromVariables">
-            <summary>
-            define inputs from variables, usefull if a script does not define inputs 
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:NSS.Blast.BlastScriptPackage.Execute(System.IntPtr,System.IntPtr,System.IntPtr,System.Boolean)">
+        <member name="M:NSS.Blast.BlastScriptPackage.Execute(System.IntPtr,System.IntPtr,System.IntPtr)">
             <summary>
             execute the script in the given environment with the supplied data
             </summary>
             <param name="blast">blastengine data</param>
             <param name="environment">[optional] pointer to environment data</param>
             <param name="caller">[ooptional] caller data</param>
-            <param name="reset_defaults">rewrite default values in datasegment, can be omitted on first execute with fresh datasegment</param>
             <returns>success if all is ok</returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.Execute(System.IntPtr,System.IntPtr,System.IntPtr,System.Void*)">
+            <summary>
+            execute the script using the data pointer as datasegment   
+            </summary>
+            <param name="blast"></param>
+            <param name="environment"></param>
+            <param name="caller"></param>
+            <param name="data"></param>
+            <param name="reset_defaults"></param>
+            <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.Execute``1(System.IntPtr,System.IntPtr,System.IntPtr,Unity.Collections.NativeArray{``0},System.Int32)">
+            <summary>
+            execute for each element in the data array 
+            </summary>
+            <param name="blast"></param>
+            <param name="environment"></param>
+            <param name="caller"></param>
+            <param name="data"></param>
+            <param name="reset_defaults"></param>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.BlastScriptPackage.SetDefaultData(NSS.Blast.BlastVariableMapping[],System.Single*)">
             <summary>
@@ -6959,6 +7101,12 @@
             <summary>
             reset datasegment to default data set by input and output defines 
             </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScriptPackage.DefineInputsFromVariables">
+            <summary>
+            define inputs from variables 
+            </summary>
+            <returns></returns>
         </member>
         <member name="T:NSS.Blast.Register.BlastReflect">
             <summary>
@@ -7114,13 +7262,13 @@
             <param name="id">a unique id</param>
             <returns>a blast script</returns>
         </member>
-        <member name="M:NSS.Blast.BlastScript.Prepare(System.Boolean)">
+        <member name="M:NSS.Blast.BlastScript.Prepare(System.Boolean,System.Boolean)">
             <summary>
             Prepare the script for execution
             </summary>
             <returns>success if all is ok </returns>
         </member>
-        <member name="M:NSS.Blast.BlastScript.Prepare(System.IntPtr,System.Boolean)">
+        <member name="M:NSS.Blast.BlastScript.Prepare(System.IntPtr,System.Boolean,System.Boolean)">
             <summary>
             Prepare the script for execution
             </summary>
@@ -7148,6 +7296,11 @@
             execute the script using static blast instance 
             </summary>
             <returns></returns>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.Execute(System.Void*)">
+            <summary>
+            execute the script using the static blast instance and a external data segment 
+            </summary>
         </member>
         <member name="M:NSS.Blast.BlastScript.Run(System.Boolean)">
             <summary>
@@ -7378,6 +7531,19 @@
             <summary>
             get a direct pointer to the data in the package 
             </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.SetData``1(``0*)">
+            <summary>
+            directly copy memory into the datasegment 
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.BlastScript.GetData``1(``0*)">
+            <summary>
+            directly copy data from segment into a memory buffer 
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="data"></param>
+            <returns></returns>
         </member>
         <member name="M:NSS.Blast.BlastScript.SetData``1(System.Tuple{System.String,System.Object}[])">
             <summary>

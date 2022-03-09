@@ -452,39 +452,49 @@ namespace NSS.Blast
         /// </remarks>
         expand_v2,
 
+        /// <summary>
+        /// expand vector from given size to wanted size, if input = size 1, then the input is set to each component. otherwise 0 is set to new vector components
+        /// </summary>
+        /// <remarks>
+        /// <c>expand(1, 4)</c>   expands value 1 to a vector of size 4: (1 1 1 1) 
+        /// <c>expand(a, 4)</c>   expands variable a to a vector of size 4, if a = 1: (1 1 1 1), if a = (1 1), then result is (1 1 0 0) 
+        /// </remarks>
         expand_v3,
+
+        /// <summary>
+        /// expand vector from given size to wanted size, if input = size 1, then the input is set to each component. otherwise 0 is set to new vector components
+        /// </summary>
+        /// <remarks>
+        /// <c>expand(1, 4)</c>   expands value 1 to a vector of size 4: (1 1 1 1) 
+        /// <c>expand(a, 4)</c>   expands variable a to a vector of size 4, if a = 1: (1 1 1 1), if a = (1 1), then result is (1 1 0 0) 
+        /// </remarks>
         expand_v4,
 
         /// <summary>
-        /// inline constant definition of f1 
+        /// packagemode ssmd|entity only: inline constant definition of f1 
         /// </summary>
         constant_f1,
-        
-        /// <summary>
-        /// inline constant definition of f2 
-        /// </summary>
-        ref_f2,
-        
-        /// <summary>
-        /// inline constant definition of f3 
-        /// </summary>
-        ref_f3,
-        
-        /// <summary>
-        /// inline constant definition of f4 
-        /// </summary>
-        ref_f4,
 
         /// <summary>
-        /// reference to earlier definition of a constant 
+        /// packagemode ssmd|entity only: inline constant definition of a float1 encoded in 2 bytes 
+        /// </summary>
+        constant_f1_h,
+
+        /// <summary>
+        /// packagemode ssmd|entity only: short (8bit) reference to earlier definition of a constant 
+        /// 2 bytes large -> for def_f1 total byte count = 5 so even with smallest datatype it saves 3 bytes referencing the constant
+        /// </summary>
+        constant_short_ref,
+
+        /// <summary>
+        /// packagemode ssmd|entity only: long (16bit) reference to earlier definition of a constant 
         /// 3 bytes large -> for def_f1 total byte count = 5 so even with smallest datatype it saves 2 bytes referencing the constant
         /// </summary>
         /// <remarks>
         /// ref_f -addressoffset (2 bytes)... ref_f2 data data 
         /// </remarks>
-        ref_f,
+        constant_long_ref,
 
-        reserved12,
         reserved13,
         reserved14,
         reserved15,
@@ -493,7 +503,8 @@ namespace NSS.Blast
         reserved18,
         reserved19,
         reserved20,
- 
+        reserved21,
+        reserved22,
 
 
 
@@ -1083,67 +1094,6 @@ namespace NSS.Blast
         }
     }
 
-    namespace Compiler
-    {
-        /// <summary>
-        /// jump label types, used for reference during compilation 
-        /// </summary>
-        internal enum JumpLabelType
-        {
-            Jump,
-            Offset,
-            Label
-        }
-
-
-
-        /// <summary>
-        /// a jump label, for help keeping track of jump targets 
-        /// </summary>
-        public class IMJumpLabel
-        {
-            internal string id { get; private set; }
-            internal JumpLabelType type { get; private set; }
-            internal bool is_label => type == JumpLabelType.Label;
-            internal bool is_offset => type == JumpLabelType.Offset;
-            internal bool is_jump => type == JumpLabelType.Jump;
-            internal IMJumpLabel(string _id, JumpLabelType _type)
-            {
-                id = _id;
-                type = _type;
-            }
-
-            static internal IMJumpLabel Jump(string _id)
-            {
-                return new IMJumpLabel(_id, JumpLabelType.Jump);
-            }
-            static internal IMJumpLabel Label(string _id)
-            {
-                return new IMJumpLabel(_id, JumpLabelType.Label);
-            }
-            static internal IMJumpLabel Offset(string _id)
-            {
-                return new IMJumpLabel(_id, JumpLabelType.Offset);
-            }
-
-            /// <summary>
-            /// tostring override
-            /// </summary>
-            public override string ToString()
-            {
-                switch (type)
-                {
-                    case JumpLabelType.Offset: return $"offset: {id}";
-                    case JumpLabelType.Jump: return $"jump to: {id}";
-
-                    default:
-                    case JumpLabelType.Label: return $"label: {id}";
-                }
-            }
-        }
-    }
-
-
     /// <summary>
     /// Errorcodes that can be returned by blast 
     /// </summary>
@@ -1450,6 +1400,10 @@ namespace NSS.Blast
         /// attempted to set data with a buffer that doesnt have the correct size
         /// </summary>
         error_setdata_size_mismatch = -74,
+        /// <summary>
+        /// datatype is not supported as a constant that is to be inlined 
+        /// </summary>
+        error_compile_inlined_constant_datatype_not_supported = -75,
     }
 
 }
