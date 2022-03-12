@@ -69,6 +69,20 @@ namespace NSS.Blast.Compiler.Stage
                 return false;
             }
 
+            // determine if indexed 
+            blast_operation indexer = blast_operation.nop; 
+            if(ast_param.HasIndexers && BlastTransform.ClassifyIndexer(ast_param, out indexer, out byte spec))
+            {
+                // this is an indexed constant|variable|anything
+                if(!data.CompilerOptions.InlineIndexers || data.CompilerOptions.PackageMode != BlastPackageMode.SSMD)
+                {
+                    data.LogError($"CompileParameter: cannot inline indexers, only allowed in SSMD packaging mode with 'InlineIndexers' option enabled, node:  <{ast_param.parent}>.<{ast_param}>");
+                    return false;
+                }
+
+                code.Add(indexer); 
+            }
+
             // encode any constant value that is frequently used 
             if (ast_param.constant_op != blast_operation.nop)
             {

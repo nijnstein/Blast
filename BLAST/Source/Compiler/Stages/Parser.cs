@@ -1545,7 +1545,30 @@ namespace NSS.Blast.Compiler.Stage
                         // - create a compound if more then one child 
                         if (current_nodes.Count > 1)
                         {
-                            n_function.CreateChild(nodetype.compound, BlastScriptToken.Nop, "").SetChildren(current_nodes);
+                            // check if its an negated constant, if so depending on options inline it
+                            if (current_nodes.Count == 2
+                                &&
+                                data.CompilerOptions.InlineConstantData
+                                &&
+                                current_nodes[0].token == BlastScriptToken.Substract
+                                &&
+                                current_nodes[1].is_constant)
+                            {
+                                // instead of pushing the sequence (- constant) we could inline the consant value 
+                                if (!float.IsNaN(CodeUtils.AsFloat(current_nodes[1].identifier)))
+                                {
+                                    node n = n_function.CreateChild(nodetype.parameter, BlastScriptToken.Nop, "-" + current_nodes[1].identifier);
+                                    n_function.children.Remove(current_nodes[0]);
+                                    n_function.children.Remove(current_nodes[1]);
+                                    n.variable = ((CompilationData)data).GetOrCreateVariable(n.identifier);
+                                    n.variable.IsConstant = true;
+                                    n.variable.VectorSize = 1;
+                                }
+                            }
+                            else
+                            {
+                                n_function.CreateChild(nodetype.compound, BlastScriptToken.Nop, "").SetChildren(current_nodes);
+                            }
                         }
                         else
                         {

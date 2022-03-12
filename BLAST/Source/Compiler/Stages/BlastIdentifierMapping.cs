@@ -127,10 +127,9 @@ namespace NSS.Blast.Compiler.Stage
 
                                 // if the value was negated before matching then add the minus sign before it
                                 // - this is cheaper then adding a full 32 bit value
-                                // - this makes it more easy to see for analyzers if stuff is negated 
                                 if (is_negated)
                                 {
-                                    NegateCompound(current, value);
+                                    NegateCompound(data, current, value);
                                 }
 
                                 // we know its constant, if no other vectorsize is set force 1
@@ -172,15 +171,42 @@ namespace NSS.Blast.Compiler.Stage
             return true;
         }
 
-        private static void NegateCompound(node current, string value)
+        /// <summary>
+        /// put this node in a compound
+        /// - effectively do this:  parent->child  ->  parent->compound->child
+        /// </summary>
+        /// <param name="current"></param>
+        /// <param name="value"></param>
+        private static void NegateCompound(IBlastCompilationData data, node current, string value)
         {
-            // put this node in a compound
-            // - effectively do this:  parent->child  ->  parent->compound->child
-            node compound = current.InsertParent(new node(nodetype.compound, BlastScriptToken.Identifier));
+            bool negate = true;
 
-            // and replace it at parent 
-            current.InsertBeforeThisNodeInParent(nodetype.operation, BlastScriptToken.Substract);
-            current.identifier = value; // update to the non-negated value 
+            if(data.CompilerOptions.InlineConstantData)
+            {
+                // if constant data is inlined
+                // and this is a numeric constant
+                // then inline its value in the code stream 
+
+                if (!float.IsNaN(CodeUtils.AsFloat(current.identifier)))
+                {
+                    current.constant_op = blast_operation.nop;
+
+                    CompilationData cdata = ((CompilationData)data);
+                    current.variable = cdata.GetOrCreateVariable(current.identifier);
+                    current.variable.IsConstant = true;
+                    current.variable.VectorSize = 1; 
+                    negate = false;
+                }
+            }
+
+            if (negate)
+            {
+                node compound = current.InsertParent(new node(nodetype.compound, BlastScriptToken.Identifier));
+
+                // and replace it at parent 
+                current.InsertBeforeThisNodeInParent(nodetype.operation, BlastScriptToken.Substract);
+                current.identifier = value; // update to the non-negated value 
+            }
         }
 
         void IsConstantDefinedIdentifier(IBlastCompilationData data, ref string identifier, out bool is_constant, out bool is_defined, out bool is_negated)
@@ -315,7 +341,7 @@ namespace NSS.Blast.Compiler.Stage
                             // - this makes it more easy to see for analyzers if stuff is negated 
                             if (is_negated)
                             {
-                                NegateCompound(ast_node, value);
+                                NegateCompound(data, ast_node, value);
                             }
 
                             // we know its constant, if no other vectorsize is set force 1

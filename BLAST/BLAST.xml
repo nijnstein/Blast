@@ -738,7 +738,7 @@
         </member>
         <member name="F:NSS.Blast.Compiler.BlastCompilerOptions.InlineConstantData">
             <summary>
-            inline any constant data in the codesegment, normally these would be put in the datasegment and referenced
+            [SSMD packaging mode] inline any constant data in the codesegment, normally these would be put in the datasegment and referenced
             but when executing many equal scripts with differing data its more usefull to have constantdata in the constant code
             segment while only having variable data in the data segment. This does come at the cost of more control flow when 
             interpretors need to locate the data for instructions, for this reason it is only supported for SSMD|Entity package modes
@@ -747,6 +747,11 @@
             controlflow would need to account for that costing performance. In SSMD mode this performance cost is divided by all processed
             datasegments while using less memory for storing each datasegment, it has the side effect of allowing more variable indices
             to be allocated as there is no index into the datasegment reserved for constant data 
+            </summary>
+        </member>
+        <member name="F:NSS.Blast.Compiler.BlastCompilerOptions.InlineIndexers">
+            <summary>
+            [SSMD packaging mode] optionally inline index- and expanding operations 
             </summary>
         </member>
         <member name="F:NSS.Blast.Compiler.BlastCompilerOptions.Defines">
@@ -1352,6 +1357,14 @@
             check mapping of inlined function
             </summary>
         </member>
+        <member name="M:NSS.Blast.Compiler.Stage.BlastIdentifierMapping.NegateCompound(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node,System.String)">
+            <summary>
+            put this node in a compound
+            - effectively do this:  parent->child  ->  parent->compound->child
+            </summary>
+            <param name="current"></param>
+            <param name="value"></param>
+        </member>
         <member name="M:NSS.Blast.Compiler.Stage.BlastIdentifierMapping.map_identifiers(NSS.Blast.Compiler.IBlastCompilationData,NSS.Blast.Compiler.node)">
             <summary>
             map identifiers to variables
@@ -1612,6 +1625,8 @@
         <member name="M:NSS.Blast.Compiler.Stage.BlastPackaging.PackageIntermediate(NSS.Blast.Compiler.CompilationData,NSS.Blast.Compiler.Stage.IMByteCodeList)">
             <summary>
             package the compiled code into BlastIntermediate 
+            
+            - offset variable indices so the interpretor doesnt have to lookup offsets in runtime
             </summary>
             <param name="cdata"></param>
             <param name="code">the code to package</param>
@@ -6061,12 +6076,6 @@
             - each element may have a diferent origen, we need to account for that 
             </summary>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.stack_pop_f1_into(System.Single*)">
-            <summary>
-            pop a float1 value from the stack and copy it into destination 
-            </summary>
-            <param name="destination">destination f1*</param>
-        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_f1_into(System.Int32@,System.Single*)">
             <summary>
             pop a float1 value form stack|data|constant source and put it in destination 
@@ -6094,6 +6103,11 @@
             <typeparam name="T"></typeparam>
             <param name="code_pointer"></param>
             <param name="dataindex"></param>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.stackpop_fn_info(System.Int32,Unity.Mathematics.float4*,System.Boolean,System.Int32,System.Byte@)">
+            <summary>
+            pop value from stack, codepointer should be on the pop 
+            </summary>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.pop_fx_into_ref``1(System.Int32@,``0*)">
             <summary>
@@ -6289,16 +6303,6 @@
             </summary>
             <param name="index">data index</param>
         </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_register_from_data_f1(System.Single*)">
-            <summary>
-            set register[n].x from data 
-            </summary>
-        </member>
-        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.set_register_from_data_f4(Unity.Mathematics.float4*)">
-            <summary>
-            set register[n].xyzw from data 
-            </summary>
-        </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.handle_op_f1_f1(NSS.Blast.blast_operation@,Unity.Mathematics.float4*,Unity.Mathematics.float4*,System.Byte@)">
             <summary>
             handle operation a.x and b.x
@@ -6308,6 +6312,7 @@
             <summary>
             get result from a single input function
             - the parameter fed may be negated, indexed and can be an inlined constant 
+            - the codepointer must be on the first value to read after op|function opcodes
             </summary>
             <param name="temp"></param>
             <param name="code_pointer"></param>
@@ -6391,7 +6396,7 @@
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.get_op_a_result(System.Void*,System.Int32@,System.Byte@,Unity.Mathematics.float4*@,NSS.Blast.blast_operation)">
             <summary>
             
-            - codepointer starts at first token and is left after the last
+            - token is just after function def
             
             handle a sequence of operations
             - mula e62 p1 p2 .. pn
@@ -6428,6 +6433,11 @@
             
             get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
             although external calls should be directly called when possible
+            </summary>
+        </member>
+        <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.RunDebugStack">
+            <summary>
+            
             </summary>
         </member>
         <member name="M:NSS.Blast.SSMD.BlastSSMDInterpretor.GetSequenceResult(System.Void*,System.Int32@,System.Byte@)">
@@ -6746,7 +6756,7 @@
             Stack[] pointer -> Data[last] == Stack[-1]
             </summary>
         </member>
-        <member name="P:NSS.Blast.BlastPackageData.HasStack">
+        <member name="P:NSS.Blast.BlastPackageData.HasStackPackaged">
             <summary>
             true if memory for stack is allocated, 
             false if not: 

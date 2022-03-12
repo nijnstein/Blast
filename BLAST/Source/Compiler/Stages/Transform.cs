@@ -563,6 +563,7 @@ namespace NSS.Blast.Compiler.Stage
                     f.parent.children.RemoveAt(idx);
                     f.parent.children.Insert(idx, f);
 
+                    // remove indexers
                     n.indexers.Clear();
                     unsafe
                     {
@@ -596,6 +597,7 @@ namespace NSS.Blast.Compiler.Stage
             Assert.IsNotNull(data);
             Assert.IsNotNull(ast_root);
 
+
             BlastError res = BlastError.success; 
             List<node> work = NodeListCache.Acquire(); 
 
@@ -604,8 +606,23 @@ namespace NSS.Blast.Compiler.Stage
             {
                 if(current.HasIndexers)
                 {
-                    res = transform_indexer(data, current);
-                    if (res != BlastError.success) break;                     
+                    bool allow_inline_indexer = data.CompilerOptions.InlineIndexers;
+                    // if indexers are inlined, allow inline indexer definition on:
+                    // - functions parameters
+                    // - TODO : expand cases 
+                    if (allow_inline_indexer)
+                    {
+                        if (current.parent == null || !current.parent.IsFunction)
+                        {
+                            allow_inline_indexer = false;
+                        }
+                    }
+
+                    if (!allow_inline_indexer)
+                    {
+                        res = transform_indexer(data, current);
+                        if (res != BlastError.success) break;
+                    }
                 }
 
                 work.PushRange(current.children);            

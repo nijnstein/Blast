@@ -110,7 +110,7 @@ namespace NSS.Blast.Compiler
         public readonly bool ParallelCompilation = false;
 
         /// <summary>
-        /// inline any constant data in the codesegment, normally these would be put in the datasegment and referenced
+        /// [SSMD packaging mode] inline any constant data in the codesegment, normally these would be put in the datasegment and referenced
         /// but when executing many equal scripts with differing data its more usefull to have constantdata in the constant code
         /// segment while only having variable data in the data segment. This does come at the cost of more control flow when 
         /// interpretors need to locate the data for instructions, for this reason it is only supported for SSMD|Entity package modes
@@ -120,7 +120,12 @@ namespace NSS.Blast.Compiler
         /// datasegments while using less memory for storing each datasegment, it has the side effect of allowing more variable indices
         /// to be allocated as there is no index into the datasegment reserved for constant data 
         /// </summary>
-        public bool InlineConstantData = false; 
+        public bool InlineConstantData = false;
+
+        /// <summary>
+        /// [SSMD packaging mode] optionally inline index- and expanding operations 
+        /// </summary>
+        public bool InlineIndexers = false; 
 
         /// <summary>
         /// additional compiler defines 
@@ -257,13 +262,15 @@ namespace NSS.Blast.Compiler
             // in ssmd force inlined constant data 
             if(this.PackageMode == BlastPackageMode.SSMD)
             {
-                this.InlineConstantData = true; 
+                this.InlineConstantData = true;
+                this.InlineIndexers = true; 
             }
 
-            // in normal it is not allowed 
+            // in normal it is not allowed (as of now... could be sometime..
             if(this.PackageMode == BlastPackageMode.Normal)
             {
-                this.InlineConstantData = false; 
+                this.InlineConstantData = false;
+                this.InlineIndexers = false;
             }
 
             // entity mode should decide for itself 

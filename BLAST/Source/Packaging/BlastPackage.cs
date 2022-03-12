@@ -376,7 +376,7 @@ namespace NSS.Blast
                         return 0;
 
                     case BlastPackageMode.Normal: return (ushort)(O4 - O1);
-                    case BlastPackageMode.SSMD: return O4;
+                    case BlastPackageMode.SSMD: return (ushort)math.select((int)O3, (int)O4, HasStackPackaged);
                     case BlastPackageMode.Entity: return O4;
                 }
             }
@@ -385,7 +385,7 @@ namespace NSS.Blast
         /// <summary>
         /// bytesize for needed BlastSSMDDataStack records
         /// </summary>
-        public readonly int SSMDDataSize => DataSegmentSize; 
+        public readonly int SSMDDataSize => DataSegmentSize;
 
         /// <summary>
         /// the size with stack included depending on flags
@@ -403,8 +403,8 @@ namespace NSS.Blast
                         return 0;
 
                     case BlastPackageMode.Normal: return 0;
-                    case BlastPackageMode.SSMD: return HasStack ? O4 : O3;
-                    case BlastPackageMode.Entity: return HasStack ? O4 : O3;
+                    case BlastPackageMode.SSMD: return HasStackPackaged ? O4 : O3;
+                    case BlastPackageMode.Entity: return HasStackPackaged ? O4 : O3;
                 }
             }
         }
@@ -544,7 +544,7 @@ namespace NSS.Blast
         /// - we call it TLS, thread level stack/storage 
         /// - Faster in small multithreaded bursts, benefit fades in very large bursts 
         /// </summary>
-        public readonly bool HasStack => (Flags & BlastPackageFlags.NoStack) != BlastPackageFlags.NoStack;
+        public readonly bool HasStackPackaged => (Flags & BlastPackageFlags.NoStack) != BlastPackageFlags.NoStack;
 
         /// <summary>
         /// true if memory has been allocated for this object

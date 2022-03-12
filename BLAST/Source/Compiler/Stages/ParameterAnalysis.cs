@@ -161,275 +161,283 @@ namespace NSS.Blast.Compiler.Stage
             // should only be called on a leaf node 
             if (leaf_node.children.Count > 0) return;
 
+
             // propagate type of paramters that are known
             node current = leaf_node;
             int fsize = 1;
             while (current != null && current.parent != null)
             {
-                if (current.is_vector)
+                if (current.HasIndexers)
                 {
-                    switch (current.type)
-                    {
-                        case nodetype.assignment:
-                            {
-                                BlastVariable v = data.GetVariable(current.identifier);
-                                v.IsVector = true;
-                                v.VectorSize = current.vector_size;
-                            }
-                            break;
-
-                        case nodetype.function:
-
-                            if (current.function.ReturnsVectorSize > 0)
-                            {
-                                current.vector_size = current.function.ReturnsVectorSize;
-                            }
-                            else
-                            {
-                                switch (current.function.ScriptOp)
-                                {
-                                    case blast_operation.mina:
-                                    case blast_operation.maxa:
-                                    case blast_operation.index_w:
-                                    case blast_operation.index_y:
-                                    case blast_operation.index_z:
-                                    case blast_operation.index_x: 
-                                        // these always return a single value 
-                                        current.vector_size = 1;
-                                        break;
-
-                                    default:
-                                        {// update vector size from children ( they should equal by now.. )
-                                         // same as compound 
-                                            fsize = 1;
-                                            foreach (node fc in current.children)
-                                            {
-                                                // determine childtype
-                                                // - if function ? 
-
-
-                                                fsize = math.max(fsize, fc.vector_size);
-                                            }
-                                            current.vector_size = fsize;
-                                        }
-                                        break;
-                                }
-                            }
-                            break;
-
-                        case nodetype.compound:
-                            fsize = 1;
-
-                            if (node.IsNonNestedVectorDefinition(current))
-                            {
-                                // count children (we can include the compound)
-                                fsize = current.ChildCount; //.CountChildTypes(nodetype.parameter, nodetype.compound); 
-                            }
-                            else
-                            {
-                                foreach (node fc in current.children)
-                                {
-                                    fsize = math.max(fsize, fc.vector_size);
-                                }
-                            }
-                            current.vector_size = fsize;
-                            break;
-                    }
+                    current.is_vector = false;
+                    current.vector_size = 1;
                 }
                 else
                 {
-                    // current is NOT a vector
-                    switch (current.type)
+                    if (current.is_vector)
                     {
-                        case nodetype.parameter:
-                            {
-                                BlastVariable v = data.GetVariable(current.identifier);
-                                if (v != null && v.IsVector)
+                        switch (current.type)
+                        {
+                            case nodetype.assignment:
                                 {
-                                    current.is_vector = true;
-                                    current.vector_size = v.VectorSize;
+                                    BlastVariable v = data.GetVariable(current.identifier);
+                                    v.IsVector = true;
+                                    v.VectorSize = current.vector_size;
                                 }
-                            }
-                            break;
+                                break;
 
-                        case nodetype.compound:
-                            {
-                                // - check (pop pop c)
-                                //
-                                // need way to get pop size by determining last push in parser
-                                // setdatasize would work but it would add branches.. 
+                            case nodetype.function:
 
-                                // does compound only contain values or pops?
-                                // we could say its a vector then but we should decide at assignment (i think)
-
-                                if (node.IsNonNestedVectorDefinition(current))
+                                if (current.function.ReturnsVectorSize > 0)
                                 {
-                                    fsize = current.ChildCount; // CountChildType(nodetype.parameter, nodetype.compound);
+                                    current.vector_size = current.function.ReturnsVectorSize;
                                 }
                                 else
                                 {
-                                    // update vector size from children 
-                                    // 
-                                    // TODO -> this assumes that when 2 vectors have a math operation the result is the largest vector... TODO
-                                    fsize = 1;
+                                    switch (current.function.ScriptOp)
+                                    {
+                                        case blast_operation.mina:
+                                        case blast_operation.maxa:
+                                        case blast_operation.index_w:
+                                        case blast_operation.index_y:
+                                        case blast_operation.index_z:
+                                        case blast_operation.index_x:
+                                            // these always return a single value 
+                                            current.vector_size = 1;
+                                            break;
+
+                                        default:
+                                            {// update vector size from children ( they should equal by now.. )
+                                             // same as compound 
+                                                fsize = 1;
+                                                foreach (node fc in current.children)
+                                                {
+                                                    // determine childtype
+                                                    // - if function ? 
+
+
+                                                    fsize = math.max(fsize, fc.vector_size);
+                                                }
+                                                current.vector_size = fsize;
+                                            }
+                                            break;
+                                    }
+                                }
+                                break;
+
+                            case nodetype.compound:
+                                fsize = 1;
+
+                                if (node.IsNonNestedVectorDefinition(current))
+                                {
+                                    // count children (we can include the compound)
+                                    fsize = current.ChildCount; //.CountChildTypes(nodetype.parameter, nodetype.compound); 
+                                }
+                                else
+                                {
                                     foreach (node fc in current.children)
                                     {
                                         fsize = math.max(fsize, fc.vector_size);
                                     }
                                 }
                                 current.vector_size = fsize;
-                                current.is_vector = current.vector_size > 1;
-                            }
-                            break;
-
-                        case nodetype.function:
-                        case nodetype.assignment:
-                            {
-                                // all children either operation or vector then also vector
-                                int size = 1;
-                                bool all_numeric = current.children.Count > 0 ? true : false;
-
-                                foreach (node c in current.children)
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        // current is NOT a vector
+                        switch (current.type)
+                        {
+                            case nodetype.parameter:
                                 {
-                                    switch (c.type)
+                                    BlastVariable v = data.GetVariable(current.identifier);
+                                    if (v != null && v.IsVector)
                                     {
-                                        case nodetype.parameter:
-                                            {
-                                                BlastVariable v = data.GetVariable(c.identifier);
-                                                if (v != null)
-                                                {
-                                                    size = math.max(size, v.VectorSize);
-                                                    all_numeric = true;
-                                                }
-                                                else
-                                                {
-                                                    if (c.is_constant && c.constant_op != blast_operation.nop)
-                                                    {
-                                                        // is a v1 constant, this essentially is a needles set
-                                                        size = math.max(size, 1);
-                                                        all_numeric = true;
-                                                    }
-                                                }
-                                                continue;
-                                            }
-                                        case nodetype.compound:
-                                            {
-                                                // expecting (1 2 3) but getting  ( (1 2 3) )  -> dual compound
-                                                // we could remove the outer safely here 
-
-                                                //remove dual compounds  TRANSFORM does that
-
-                                                if (!c.is_vector)
-                                                {
-                                                    int cest = wouldbe_vector_size_of_same_sized_elements(c);
-                                                    if (cest > 0) c.SetIsVector(cest, false); 
-                                                }
-                                                size = math.max(size, c.vector_size);
-                                                continue;
-                                            }
-                                        case nodetype.function:
-                                            {
-                                                if (c.children.Count == 0)
-                                                {
-                                                    c.vector_size = math.max(1, c.function.ReturnsVectorSize);
-                                                    c.is_vector = false; 
-                                                }
-                                                else
-                                                {
-                                                    if (c.function.ReturnsVectorSize > 0)
-                                                    {
-                                                        // returned vectorsize is fixed 
-                                                        fsize = c.function.ReturnsVectorSize; 
-                                                    }
-                                                    else
-                                                    {
-                                                        // update vector size from children 
-                                                        fsize = 1;
-                                                        foreach (node fc in c.children)
-                                                        {
-                                                            fsize = math.max(fsize, fc.vector_size);
-                                                        }
-
-                                                        if (c.function.AcceptsVectorSize == 0 || fsize == c.function.AcceptsVectorSize)
-                                                        {
-                                                            set_function_vector_size(fsize, c);
-                                                        }
-                                                        else
-                                                        {
-                                                            // errorrr 
-                                                            data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {c.function.GetFunctionName()} at {c}, function allows vectorsize {c.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {fsize} ");
-                                                            return;
-                                                        }
-                                                    }
-                                                }
-                                                size = math.max(size, c.vector_size);
-                                                all_numeric = true;
-                                            }
-                                            break;
-                                        case nodetype.operation:
-                                            {
-                                                continue;
-                                            }
+                                        current.is_vector = true;
+                                        current.vector_size = v.VectorSize;
                                     }
                                 }
+                                break;
 
-                                if (current.type == nodetype.function)
+                            case nodetype.compound:
                                 {
-                                    if (current.function.AcceptsVectorSize == 0
-                                        ||
-                                        size == current.function.AcceptsVectorSize)
+                                    // - check (pop pop c)
+                                    //
+                                    // need way to get pop size by determining last push in parser
+                                    // setdatasize would work but it would add branches.. 
+
+                                    // does compound only contain values or pops?
+                                    // we could say its a vector then but we should decide at assignment (i think)
+
+                                    if (node.IsNonNestedVectorDefinition(current))
                                     {
-                                        set_function_vector_size(size, current);
+                                        fsize = current.ChildCount; // CountChildType(nodetype.parameter, nodetype.compound);
                                     }
                                     else
                                     {
-                                        // errorrr 
-                                        data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {current.function.GetFunctionName()} at {current}, function allows vectorsize {current.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {size} ");
-                                        return;
-                                    }
-                                }
-                                else
-                                {
-                                    current.is_vector = size > 1 && all_numeric;
-                                    current.vector_size = size;
-
-                                    // if not a vector by now, lets see if we build one from components  
-                                    if (!current.is_vector && all_numeric)
-                                    {
-                                        if (current.ChildCount == 1 && current.children[0].type == nodetype.compound)
+                                        // update vector size from children 
+                                        // 
+                                        // TODO -> this assumes that when 2 vectors have a math operation the result is the largest vector... TODO
+                                        fsize = 1;
+                                        foreach (node fc in current.children)
                                         {
-                                            // a = (1 2 3)                             float3       
-                                            // b = (1 pop 2)                           float3
-                                            // c = ((1 2 3) (pop pop pop) (1 2 3))     float3x3 or float9
+                                            fsize = math.max(fsize, fc.vector_size);
+                                        }
+                                    }
+                                    current.vector_size = fsize;
+                                    current.is_vector = current.vector_size > 1;
+                                }
+                                break;
 
-                                            // each node must define the same number of elements  -> gets a mess otherwise 
+                            case nodetype.function:
+                            case nodetype.assignment:
+                                {
+                                    // all children either operation or vector then also vector
+                                    int size = 1;
+                                    bool all_numeric = current.children.Count > 0 ? true : false;
 
-                                            // attempt to get vector size from same sized elemetns in compound 
-                                            int i_vectorsize_estimate = wouldbe_vector_size_of_same_sized_elements(current.children[0]);
-                                            if (i_vectorsize_estimate <= 0)
-                                            {
-                                                //attempt to get from a calculus operation sequence: a = (1 2 3) * 4;  vectorsize = 3
-                                                i_vectorsize_estimate = wouldbe_vector_size_of_calculation(current.children[0]);
-                                            }
-                                            if (i_vectorsize_estimate > 0)
-                                            {
-                                                current.children[0].SetIsVector(i_vectorsize_estimate, true);
-                                            }
+                                    foreach (node c in current.children)
+                                    {
+                                        switch (c.type)
+                                        {
+                                            case nodetype.parameter:
+                                                {
+                                                    BlastVariable v = data.GetVariable(c.identifier);
+                                                    if (v != null)
+                                                    {
+                                                        size = math.max(size, v.VectorSize);
+                                                        all_numeric = true;
+                                                    }
+                                                    else
+                                                    {
+                                                        if (c.is_constant && c.constant_op != blast_operation.nop)
+                                                        {
+                                                            // is a v1 constant, this essentially is a needles set
+                                                            size = math.max(size, 1);
+                                                            all_numeric = true;
+                                                        }
+                                                    }
+                                                    continue;
+                                                }
+                                            case nodetype.compound:
+                                                {
+                                                    // expecting (1 2 3) but getting  ( (1 2 3) )  -> dual compound
+                                                    // we could remove the outer safely here 
+
+                                                    //remove dual compounds  TRANSFORM does that
+
+                                                    if (!c.is_vector)
+                                                    {
+                                                        int cest = wouldbe_vector_size_of_same_sized_elements(c);
+                                                        if (cest > 0) c.SetIsVector(cest, false);
+                                                    }
+                                                    size = math.max(size, c.vector_size);
+                                                    continue;
+                                                }
+                                            case nodetype.function:
+                                                {
+                                                    if (c.children.Count == 0)
+                                                    {
+                                                        c.vector_size = math.max(1, c.function.ReturnsVectorSize);
+                                                        c.is_vector = false;
+                                                    }
+                                                    else
+                                                    {
+                                                        if (c.function.ReturnsVectorSize > 0)
+                                                        {
+                                                            // returned vectorsize is fixed 
+                                                            fsize = c.function.ReturnsVectorSize;
+                                                        }
+                                                        else
+                                                        {
+                                                            // update vector size from children 
+                                                            fsize = 1;
+                                                            foreach (node fc in c.children)
+                                                            {
+                                                                fsize = math.max(fsize, fc.vector_size);
+                                                            }
+
+                                                            if (c.function.AcceptsVectorSize == 0 || fsize == c.function.AcceptsVectorSize)
+                                                            {
+                                                                set_function_vector_size(fsize, c);
+                                                            }
+                                                            else
+                                                            {
+                                                                // errorrr 
+                                                                data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {c.function.GetFunctionName()} at {c}, function allows vectorsize {c.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {fsize} ");
+                                                                return;
+                                                            }
+                                                        }
+                                                    }
+                                                    size = math.max(size, c.vector_size);
+                                                    all_numeric = true;
+                                                }
+                                                break;
+                                            case nodetype.operation:
+                                                {
+                                                    continue;
+                                                }
                                         }
                                     }
 
-                                    if (!current.HasIndexers)
+                                    if (current.type == nodetype.function)
                                     {
-                                        // re-set vectorsize of assignee as there is more information know any initial estimate could be wrong
-                                        current.variable.IsVector = current.is_vector;
-                                        current.variable.VectorSize = current.vector_size;
+                                        if (current.function.AcceptsVectorSize == 0
+                                            ||
+                                            size == current.function.AcceptsVectorSize)
+                                        {
+                                            set_function_vector_size(size, current);
+                                        }
+                                        else
+                                        {
+                                            // errorrr 
+                                            data.LogError($"parameter analysis: vectorsize mismatch in parameters of function {current.function.GetFunctionName()} at {current}, function allows vectorsize {current.function.AcceptsVectorSize} but is supplied with parameters of vectorsize {size} ");
+                                            return;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        current.is_vector = size > 1 && all_numeric;
+                                        current.vector_size = size;
+
+                                        // if not a vector by now, lets see if we build one from components  
+                                        if (!current.is_vector && all_numeric)
+                                        {
+                                            if (current.ChildCount == 1 && current.children[0].type == nodetype.compound)
+                                            {
+                                                // a = (1 2 3)                             float3       
+                                                // b = (1 pop 2)                           float3
+                                                // c = ((1 2 3) (pop pop pop) (1 2 3))     float3x3 or float9
+
+                                                // each node must define the same number of elements  -> gets a mess otherwise 
+
+                                                // attempt to get vector size from same sized elemetns in compound 
+                                                int i_vectorsize_estimate = wouldbe_vector_size_of_same_sized_elements(current.children[0]);
+                                                if (i_vectorsize_estimate <= 0)
+                                                {
+                                                    //attempt to get from a calculus operation sequence: a = (1 2 3) * 4;  vectorsize = 3
+                                                    i_vectorsize_estimate = wouldbe_vector_size_of_calculation(current.children[0]);
+                                                }
+                                                if (i_vectorsize_estimate > 0)
+                                                {
+                                                    current.children[0].SetIsVector(i_vectorsize_estimate, true);
+                                                }
+                                            }
+                                        }
+
+                                        if (!current.HasIndexers)
+                                        {
+                                            // re-set vectorsize of assignee as there is more information know any initial estimate could be wrong
+                                            current.variable.IsVector = current.is_vector;
+                                            current.variable.VectorSize = current.vector_size;
+                                        }
                                     }
                                 }
-                            }
-                            break;
+                                break;
+                        }
                     }
                 }
-
                 current = current.parent;
             }
         }
