@@ -670,7 +670,7 @@ namespace NSS.Blast.Compiler
         /// <param name="result">bytecode compiler data</param>
         /// <param name="blast">blast engine data</param>
         /// <returns>true if validation succeeded</returns>
-        static public bool Validate(IBlastCompilationData result, IntPtr blast)
+        static public bool ValidateResultsAndStacksize(IBlastCompilationData result, IntPtr blast)
         {
             if (!result.CompilerOptions.EstimateStackSize && !result.CanValidate)
             {
@@ -679,7 +679,7 @@ namespace NSS.Blast.Compiler
             }
 
             CompilationData cdata = result as CompilationData;
-            Assert.IsNotNull(cdata, "dont call validate on anything but normal script packages"); 
+            Assert.IsNotNull(cdata, "dont call validate on anything but normal script packages");
 
             // make sure offsets are set 
             if (result.HasVariables && !result.HasOffsets || result.VariableCount != result.OffsetCount)
@@ -688,11 +688,33 @@ namespace NSS.Blast.Compiler
                 if (result.VariableCount != result.OffsetCount)
                 {
                     result.LogError("validate: failure calculating variable offsets");
-                    return false; 
+                    return false;
                 }
             }
 
-            cdata.Executable.Validate(blast);
+            switch (result.CompilerOptions.PackageMode)
+            {
+                case BlastPackageMode.SSMD:
+                    {
+                        // in ssmd only estimate stacksize if needed
+                        if(result.CompilerOptions.EstimateStackSize)
+                        {
+                            /// EstimateSSMDStackSize()
+                        }
+                    }
+                    return result.IsOK;
+                    
+                case BlastPackageMode.Normal:
+                    {
+                        // run validations on normal package
+                        cdata.Executable.Validate(blast);
+                    }
+                    break;
+
+                default:
+                    result.LogError($"validate: packagemode {result.CompilerOptions.PackageMode} not supported");
+                    return false;
+            }
 
             // check results 
             if (result.Validations.Count > 0)
@@ -725,7 +747,7 @@ namespace NSS.Blast.Compiler
                     if (f_a < f_b - result.CompilerOptions.ConstantEpsilon || f_a > f_b + result.CompilerOptions.ConstantEpsilon)
                     {
                         result.LogError($"Validation failed on rule: {a} == {b} ({f_a} != {f_b})");
-                        continue; 
+                        continue;
                     }
                 }
             }
@@ -745,6 +767,7 @@ namespace NSS.Blast.Compiler
                     }
                 }
             }
+
             return result.IsOK;
         }
 
@@ -763,6 +786,7 @@ namespace NSS.Blast.Compiler
         {
             int yield = 0; 
             int max_size = 0;
+            bool is_defined = false; 
 
             BlastIntermediate exe = result.Executable;
 
@@ -803,6 +827,7 @@ namespace NSS.Blast.Compiler
                 if (int.TryParse(s_defined_size, out i_defined_size))
                 {
                     max_size = math.max(max_size, i_defined_size);
+                    is_defined = true; 
 
                     if (result.CompilerOptions.DefaultStackSize > 0)
                     {
@@ -819,6 +844,7 @@ namespace NSS.Blast.Compiler
                     if (int.TryParse(s_defined_size, out i_defined_size))
                     {
                         max_size = math.max(max_size, i_defined_size);
+                        is_defined = true; 
 
                         if (result.CompilerOptions.DefaultStackSize > 0)
                         {
@@ -827,6 +853,18 @@ namespace NSS.Blast.Compiler
                     }
                 }
             }
+
+
+            // is size is not determined, and 0 is not defined then attempt to 
+            // estimate the needed stack size from the number of push-pop pairs that 
+            // overlap 
+            if((max_size - yield) <= 0 && !is_defined)
+            {                                             
+                max_size = result.root.EstimateStackUse(yield);
+
+                result.LogTrace($"Package.EstimateStackSize: compiler estimated stack size from push-pop pairs, this will most likely not be optimal, max stacksize determined = {max_size + yield} bytes " + (yield > 0 ? $"(yield uses 20 bytes of additional stack)" : ""));
+            }
+
 
             if (result.CompilerOptions.DefaultStackSize > 0 && max_size > result.CompilerOptions.DefaultStackSize)
             {
@@ -1219,7 +1257,8 @@ namespace NSS.Blast.Compiler
                 {
                     case BlastLanguageVersion.BS1:
                     case BlastLanguageVersion.BSSMD1:
-                        CompilationData data = result as CompilationData; 
+                        CompilationData data = result as CompilationData;
+                        Debug.Log("Code: \n" + result.Script.Code + "\n"); 
                         Debug.Log(data.GetHumanReadableCode() + "\n");
                         Debug.Log(data.GetHumanReadableBytes() + "\n");
                         break; 
@@ -1239,7 +1278,7 @@ namespace NSS.Blast.Compiler
                         case BlastLanguageVersion.BS1:
                         case BlastLanguageVersion.BSSMD1:
                             CompilationData data = result as CompilationData;
-                            if(!Validate(data, blast.ptr))
+                            if(!ValidateResultsAndStacksize(data, blast.ptr))
                             {
                                 result.LogError("Compile: failed to validate script or estimate stack size"); 
                             }

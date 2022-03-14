@@ -779,6 +779,11 @@ namespace NSS.Blast
 
 
         /// <summary>
+        /// runtime validation of values, raises script errors if values are not equal
+        /// </summary>
+        validate = 251,
+
+        /// <summary>
         /// log stack contents in debugstream
         /// </summary>
         debugstack = 252,

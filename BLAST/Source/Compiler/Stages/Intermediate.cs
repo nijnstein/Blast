@@ -555,14 +555,11 @@ namespace NSS.Blast.Compiler
         }
 
         /// <summary>
-        /// validate intermediate 
+        /// validate intermediate package -> normal packaging mode 
         /// </summary>
         public int Validate(in IntPtr blast)
         {
-           
-            int results = Execute(in blast, true);
-
-            return results;
+            return Execute(in blast, true);
         }
 
         /// <summary>

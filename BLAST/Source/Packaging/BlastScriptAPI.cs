@@ -120,6 +120,11 @@ namespace NSS.Blast
         DebugStack = 12,
 
         /// <summary>
+        /// Validate 2 values to be equal, same as Assert.IsTrue(a == b)  
+        /// </summary>
+        Validate = 13,
+
+        /// <summary>
         /// all other functions start indexing from this offset
         /// </summary>
         Offset = 32
@@ -1376,6 +1381,7 @@ namespace NSS.Blast
             RegisterFunction(ReservedBlastScriptFunctionIds.Seed, "seed", 1, 1, 0, 0, blast_operation.seed);
             RegisterFunction(ReservedBlastScriptFunctionIds.Debug, "debug", 1, 1, 0, 0, extended_blast_operation.debug);
             RegisterFunction(ReservedBlastScriptFunctionIds.DebugStack, "debugstack", 0, 0, 0, 0, extended_blast_operation.debugstack);
+            RegisterFunction(ReservedBlastScriptFunctionIds.Validate, "validate", 2, 2, 0, 0, extended_blast_operation.validate); 
 
             RegisterFunction("return", 1, 1, 0, 0, blast_operation.ret);
 

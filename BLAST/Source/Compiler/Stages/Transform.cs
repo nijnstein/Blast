@@ -827,14 +827,14 @@ namespace NSS.Blast.Compiler.Stage
             return res;
         }
 
-
-        /// <summary>
-        /// run transform depending on nodetype 
-        /// - TODO -> would be nice if this all returned errors.. 
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="n"></param>
-        BlastError transform(IBlastCompilationData data, node n)
+   
+            /// <summary>
+            /// run transform depending on nodetype 
+            /// - TODO -> would be nice if this all returned errors.. 
+            /// </summary>
+            /// <param name="data"></param>
+            /// <param name="n"></param>
+            BlastError transform(IBlastCompilationData data, node n)
         {
             BlastError res = BlastError.success; 
 

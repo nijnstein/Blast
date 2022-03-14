@@ -687,6 +687,16 @@ namespace NSS.Blast.Compiler
                         case blast_operation.constant_long_ref: sb.Append("clref "); asnumber = 2; break;
                         case blast_operation.constant_short_ref: sb.Append("csref "); asnumber = 1; break;
 
+                        case blast_operation.index_n: sb.Append("idx_N "); asnumber = 1; break;
+                        case blast_operation.index_x: sb.Append("idx_X "); break;
+                        case blast_operation.index_y: sb.Append("idx_Y "); break;
+                        case blast_operation.index_z: sb.Append("idx_Z "); break;
+                        case blast_operation.index_w: sb.Append("idx_W "); break;
+
+                        case blast_operation.expand_v2: sb.Append("expand_v2 "); break;
+                        case blast_operation.expand_v3: sb.Append("expand_v3 "); break;
+                        case blast_operation.expand_v4: sb.Append("expand_v4 "); break;
+
                         case blast_operation.ex_op:
                             i++;
                             extended_blast_operation exop = (extended_blast_operation)code[i];
@@ -702,6 +712,7 @@ namespace NSS.Blast.Compiler
                                 case extended_blast_operation.dot: sb.Append("dot "); break;
                                 case extended_blast_operation.debug: sb.Append("debug "); break;
                                 case extended_blast_operation.debugstack: sb.Append("debugstack "); break;
+                                case extended_blast_operation.validate: sb.Append("validate "); break; 
                                 case extended_blast_operation.sqrt: sb.Append("sqrt "); break;
                                 case extended_blast_operation.rsqrt: sb.Append("rsqrt "); break;
                                 case extended_blast_operation.pow: sb.Append("pow "); break;
