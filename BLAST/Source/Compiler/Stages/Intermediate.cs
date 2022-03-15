@@ -57,10 +57,16 @@ namespace NSS.Blast.Compiler
                 return new IMJumpLabel(_id, JumpLabelType.Label);
             }
 
+            static internal string ConstantName(string _id)
+            {
+                return $"constant_{_id}";
+            }
+
             static internal IMJumpLabel Constant(string _id)
             {
-                return new IMJumpLabel($"constant_{_id}", JumpLabelType.Constant);
+                return new IMJumpLabel(ConstantName(_id), JumpLabelType.Constant);
             }
+
             static internal IMJumpLabel ReferenceToConstant(IMJumpLabel constantlabel)
             {
                 Assert.IsNotNull(constantlabel);
@@ -72,6 +78,7 @@ namespace NSS.Blast.Compiler
             {
                 return new IMJumpLabel(_id, JumpLabelType.Offset);
             }
+
             static internal IMJumpLabel OffsetToConstant(IMJumpLabel constantlabel)
             {
                 Assert.IsNotNull(constantlabel);

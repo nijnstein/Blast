@@ -316,14 +316,19 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// push register[n].xyz as float3 onto stack
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void push_register_f3()
+        {
+            push_f3(register);
+        }
+        void push_f3(float4* f4)
         {
             SetStackMetaData(BlastVariableDataType.Numeric, 3, (byte)stack_offset);
             for (int i = 0; i < ssmd_datacount; i++)
             {
-                ((float*)stack[i])[stack_offset] = register[i].x;
-                ((float*)stack[i])[stack_offset + 1] = register[i].y;
-                ((float*)stack[i])[stack_offset + 2] = register[i].z;
+                ((float*)stack[i])[stack_offset] = f4[i].x;
+                ((float*)stack[i])[stack_offset + 1] = f4[i].y;
+                ((float*)stack[i])[stack_offset + 2] = f4[i].z;
             }
             stack_offset += 3;  // size 3
         }
@@ -331,15 +336,21 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// push register[n] as float4 onto stack
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void push_register_f4()
+        {
+            push_f4(register);
+        }
+
+        void push_f4(float4* f4)
         {
             SetStackMetaData(BlastVariableDataType.Numeric, 4, (byte)stack_offset);
             for (int i = 0; i < ssmd_datacount; i++)
             {
-                ((float*)stack[i])[stack_offset] = register[i].x;
-                ((float*)stack[i])[stack_offset + 1] = register[i].y;
-                ((float*)stack[i])[stack_offset + 2] = register[i].z;
-                ((float*)stack[i])[stack_offset + 3] = register[i].w;
+                ((float*)stack[i])[stack_offset] = f4[i].x;
+                ((float*)stack[i])[stack_offset + 1] = f4[i].y;
+                ((float*)stack[i])[stack_offset + 2] = f4[i].z;
+                ((float*)stack[i])[stack_offset + 3] = f4[i].w;
             }
             stack_offset += 4;  // size 4
         }
@@ -348,9 +359,9 @@ namespace NSS.Blast.SSMD
         /// push a float1 value on te stack retrieved via 1 pop 
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void push_f1_pop_1_ref(ref int code_pointer)
+        void push_f1_pop_1_ref([NoAlias]void* temp, ref int code_pointer)
         {
-            push_pop_f(ref code_pointer, 1);
+            push_pop_f(temp, ref code_pointer, 1);
         }
 
         /// <summary>
@@ -358,9 +369,9 @@ namespace NSS.Blast.SSMD
         /// - each element may have a diferent origen, we need to account for that 
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void push_f2_pop_11(ref int code_pointer)
+        void push_f2_pop_11([NoAlias]void* temp, ref int code_pointer)
         {
-            push_pop_f(ref code_pointer, 2); 
+            push_pop_f(temp, ref code_pointer, 2); 
         }
 
         /// <summary>
@@ -368,9 +379,9 @@ namespace NSS.Blast.SSMD
         /// - each element may have a diferent origen, we need to account for that 
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void push_f3_pop_111(ref int code_pointer)
+        void push_f3_pop_111([NoAlias]void* temp, ref int code_pointer)
         {
-            push_pop_f(ref code_pointer, 3);
+            push_pop_f(temp, ref code_pointer, 3);
         }
 
         /// <summary>
@@ -378,9 +389,9 @@ namespace NSS.Blast.SSMD
         /// - each element may have a diferent origen, we need to account for that 
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void push_f4_pop_1111(ref int code_pointer)
+        void push_f4_pop_1111([NoAlias]void* temp, ref int code_pointer)
         {
-            push_pop_f(ref code_pointer, 4);
+            push_pop_f(temp, ref code_pointer, 4);
         }
 
         /// <summary>
@@ -585,7 +596,7 @@ namespace NSS.Blast.SSMD
                                 p[2] = code[code_pointer + 3];
                                 p[3] = code[code_pointer + 4];
                             }
-                            code_pointer += 5;
+                            code_pointer += 4; // function ends on this and should leave pointer at last processed token
 
                             constant = math.select(constant, -constant, substract);
                             expand_constant_into_n(expand_into_n, destination, constant);                           
@@ -603,7 +614,7 @@ namespace NSS.Blast.SSMD
                                 p[2] = code[code_pointer + 1];
                                 p[3] = code[code_pointer + 2];
                             }
-                            code_pointer += 3;
+                            code_pointer += 2;  // function ends on this and should leave pointer at last processed token
 
                             constant = math.select(constant, -constant, substract);
                             expand_constant_into_n(expand_into_n, destination, constant);
@@ -614,7 +625,7 @@ namespace NSS.Blast.SSMD
                         {
                             code_pointer += 1;
                             int c_index = code_pointer - code[code_pointer];
-                            code_pointer += 1;
+                            //code_pointer += 1;  // function ends on this and should leave pointer at last processed token
 
                             float constant = default;
                             byte* p = (byte*)(void*)&constant;
@@ -628,6 +639,13 @@ namespace NSS.Blast.SSMD
                             }
                             else
                             {
+#if DEVELOPMENT_BUILD || TRACE
+                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                                {
+                                    Debug.LogError($"blast.ssmd.expand_f1_into_fn: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                }
+#endif
+
                                 // 16 bit encoding
                                 p[0] = 0;
                                 p[1] = 0;
@@ -644,7 +662,7 @@ namespace NSS.Blast.SSMD
                         {
                             code_pointer += 1;
                             int c_index = code_pointer - (code[code_pointer] << 8 + code[code_pointer + 1]);
-                            code_pointer += 2;
+                            code_pointer += 1;      // += 2; function ends on this and should leave pointer at last processed token
 
                             float constant = default;
                             byte* p = (byte*)(void*)&constant;
@@ -658,6 +676,12 @@ namespace NSS.Blast.SSMD
                             }
                             else
                             {
+#if DEVELOPMENT_BUILD || TRACE
+                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                                {
+                                    Debug.LogError($"blast.ssmd.expand_f1_into_fn: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                }
+#endif
                                 // 16 bit encoding
                                 p[0] = 0;
                                 p[1] = 0;
@@ -1101,8 +1125,9 @@ namespace NSS.Blast.SSMD
 
                     case blast_operation.constant_short_ref:
                         {
-                            int c_index = code_pointer - code[code_pointer + 1];
-                            code_pointer += 2;
+                            code_pointer += 1;
+                            int c_index = code_pointer - code[code_pointer];
+                            code_pointer += 1;
 
                             if (code[c_index] == (byte)blast_operation.constant_f1)
                             {
@@ -1113,6 +1138,13 @@ namespace NSS.Blast.SSMD
                             }
                             else
                             {
+#if DEVELOPMENT_BUILD || TRACE
+                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                                {
+                                    Debug.LogError($"blast.ssmd.pop_fx_int_ref<t>: constant reference error, short constant reference at {code_pointer-1} points at invalid operation {code[c_index]} at {c_index}");
+                                }
+#endif
+
                                 // 16 bit encoding
                                 bf[0] = 0;
                                 bf[1] = 0;
@@ -1148,6 +1180,12 @@ namespace NSS.Blast.SSMD
                             }
                             else
                             {
+#if DEVELOPMENT_BUILD || TRACE
+                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                                {
+                                    Debug.LogError($"blast.ssmd.pop_fx_int_ref<t>: constant reference error, long constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                }
+#endif
                                 // 16 bit encoding
                                 bf[0] = 0;
                                 bf[1] = 0;
@@ -2413,7 +2451,7 @@ namespace NSS.Blast.SSMD
 
                 case blast_operation.constant_short_ref:
                     {
-                        int c_index = code_pointer - code[code_pointer];
+                        int c_index = code_pointer - code[code_pointer]; // + 1
                         code_pointer += 1;
 
                         if (code[c_index] == (byte)blast_operation.constant_f1)
@@ -2425,6 +2463,12 @@ namespace NSS.Blast.SSMD
                         }
                         else
                         {
+#if DEVELOPMENT_BUILD || TRACE
+                            if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                            {
+                                Debug.LogError($"blast.ssmd.pop_fx_with_op_into_fx_ref: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                            }
+#endif
                             // 16 bit encoding
                             bf[0] = 0;
                             bf[1] = 0;
@@ -2451,6 +2495,12 @@ namespace NSS.Blast.SSMD
                         }
                         else
                         {
+#if DEVELOPMENT_BUILD || TRACE
+                            if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                            {
+                                Debug.LogError($"blast.ssmd.pop_fx_with_op_into_fx_ref: constant reference error, long constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                            }
+#endif
                             // 16 bit encoding
                             bf[0] = 0;
                             bf[1] = 0;
@@ -3056,30 +3106,71 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// read codebyte, determine data location, pop data and push it on the stack
         /// </summary>
-        void push_pop_f(ref int code_pointer, in int vector_size)
+        void push_pop_f([NoAlias]void* temp, ref int code_pointer, in int vector_size)
         {
-            SetStackMetaData(BlastVariableDataType.Numeric, vector_size, (byte)stack_offset);
+            float* t1 = (float*)(void*)temp;
+            float* t2 = &t1[ssmd_datacount];
+            float* t3 = &t2[ssmd_datacount];
+            float* t4 = &t3[ssmd_datacount];
 
+            // could be that instructions below pop 1 thenwe push, this will result in wrong stack setting when multiple values are popped
             switch (vector_size)
             {
                 case 0:
                 case 4:
-                    pop_fx_into_ref<float>(ref code_pointer, null, stack, stack_offset + 0);
-                    pop_fx_into_ref<float>(ref code_pointer, null, stack, stack_offset + 1);
-                    pop_fx_into_ref<float>(ref code_pointer, null, stack, stack_offset + 2);
-                    pop_fx_into_ref<float>(ref code_pointer, null, stack, stack_offset + 3);
+                    pop_fx_into_ref<float>(ref code_pointer, t1); //null, stack, stack_offset + 0);      // -1
+                    pop_fx_into_ref<float>(ref code_pointer, t2); //null, stack, stack_offset + 1);      // -1
+                    pop_fx_into_ref<float>(ref code_pointer, t3); //null, stack, stack_offset + 2);      // -1
+                    pop_fx_into_ref<float>(ref code_pointer, t4); //null, stack, stack_offset + 3);      // -1
+
+                    SetStackMetaData(BlastVariableDataType.Numeric, 4, (byte)stack_offset);
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        ((float*)stack[i])[stack_offset] = t1[i];
+                        ((float*)stack[i])[stack_offset + 1] = t2[i];
+                        ((float*)stack[i])[stack_offset + 2] = t3[i];
+                        ((float*)stack[i])[stack_offset + 3] = t4[i];
+                    }
+                    stack_offset += 4;  // size 4
                     break;
+
                 case 1:
-                    pop_fx_into_ref<float>(ref code_pointer, null, stack, stack_offset);
+                    pop_fx_into_ref<float>(ref code_pointer, t1); //null, stack, stack_offset);
+
+                    SetStackMetaData(BlastVariableDataType.Numeric, 1, (byte)stack_offset);
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        ((float*)stack[i])[stack_offset] = t1[i];
+                    }
+                    stack_offset += 1; 
                     break;
+
                 case 2:
-                    pop_fx_into_ref<float>(ref code_pointer, null, stack, stack_offset + 0);
-                    pop_fx_into_ref<float>(ref code_pointer, null, stack, stack_offset + 1);
+                    pop_fx_into_ref<float>(ref code_pointer, t1); // null, stack, stack_offset + 0);
+                    pop_fx_into_ref<float>(ref code_pointer, t2); // null, stack, stack_offset + 1);
+
+                    SetStackMetaData(BlastVariableDataType.Numeric, 2, (byte)stack_offset);
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        ((float*)stack[i])[stack_offset] = t1[i];
+                        ((float*)stack[i])[stack_offset + 1] = t2[i];
+                    }
+                    stack_offset += 2; 
                     break;
+
                 case 3:
-                    pop_fx_into_ref<float>(ref code_pointer, null, stack, stack_offset + 0);
-                    pop_fx_into_ref<float>(ref code_pointer, null, stack, stack_offset + 1);
-                    pop_fx_into_ref<float>(ref code_pointer, null, stack, stack_offset + 2);
+                    pop_fx_into_ref<float>(ref code_pointer, t1); // null, stack, stack_offset + 0);
+                    pop_fx_into_ref<float>(ref code_pointer, t2); // null, stack, stack_offset + 1);
+                    pop_fx_into_ref<float>(ref code_pointer, t3); // null, stack, stack_offset + 2);
+
+                    SetStackMetaData(BlastVariableDataType.Numeric, 3, (byte)stack_offset);
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        ((float*)stack[i])[stack_offset] = t1[i];
+                        ((float*)stack[i])[stack_offset + 1] = t2[i];
+                        ((float*)stack[i])[stack_offset + 2] = t3[i];
+                    }
+                    stack_offset += 3;
                     break;
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -3089,8 +3180,6 @@ namespace NSS.Blast.SSMD
 #endif
 
             }
-
-            stack_offset += vector_size;
         }
 
 
@@ -4450,8 +4539,8 @@ namespace NSS.Blast.SSMD
                                     return;
 
                                 case extended_blast_operation.normalize:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = f2(data, source_index, i);
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = -f2(data, source_index, i);
+                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.normalize(f2(data, source_index, i));
+                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.normalize(-f2(data, source_index, i));
                                     return;
 
                                 case extended_blast_operation.saturate:
@@ -4623,8 +4712,8 @@ namespace NSS.Blast.SSMD
                                     return;
 
                                 case extended_blast_operation.normalize:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = f3(data, source_index, i);
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = -f3(data, source_index, i);
+                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.normalize(f3(data, source_index, i));
+                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.normalize(-f3(data, source_index, i));
                                     return;
 
                                 case extended_blast_operation.saturate:
@@ -5122,7 +5211,7 @@ namespace NSS.Blast.SSMD
 #endif
             }
 
-            code_pointer += 2;
+            code_pointer--;
         }
 
         /// <summary>
@@ -5168,7 +5257,7 @@ namespace NSS.Blast.SSMD
 #endif
             }
 
-            code_pointer += 2;
+            code_pointer--;
 
         }
 
@@ -5265,7 +5354,7 @@ namespace NSS.Blast.SSMD
 #endif
             }
 
-            code_pointer += 2;
+            code_pointer--;
             vector_size = 1;
         }
 
@@ -5354,7 +5443,7 @@ namespace NSS.Blast.SSMD
 #endif
             }
 
-            code_pointer += 2;
+            code_pointer--;
             vector_size = 1;
         }
 
@@ -5443,7 +5532,7 @@ namespace NSS.Blast.SSMD
                     pop_fx_into_ref<float2>(ref code_pointer, o21);
                     pop_fx_into_ref<float2>(ref code_pointer, o22);
                     
-                    pop_op_meta_cp(code_pointer + 1, out datatype, out vector_size_condition);
+                    pop_op_meta_cp(code_pointer, out datatype, out vector_size_condition);
 
                     if (vector_size_condition == 1)
                     {
@@ -5470,7 +5559,7 @@ namespace NSS.Blast.SSMD
                     pop_fx_into_ref<float3>(ref code_pointer, o31);
                     pop_fx_into_ref<float3>(ref code_pointer, o32);
                     
-                    pop_op_meta_cp(code_pointer + 1, out datatype, out vector_size_condition);
+                    pop_op_meta_cp(code_pointer, out datatype, out vector_size_condition);
 
                     if (vector_size_condition == 1)
                     {
@@ -5500,7 +5589,7 @@ namespace NSS.Blast.SSMD
 
                         pop_fx_into_ref<float4>(ref code_pointer, o41);
                         pop_fx_into_ref<float4>(ref code_pointer, o42);
-                        pop_op_meta_cp(code_pointer + 1, out datatype, out vector_size_condition);
+                        pop_op_meta_cp(code_pointer, out datatype, out vector_size_condition);
 
                         if (vector_size_condition == 1)
                         {
@@ -5528,7 +5617,7 @@ namespace NSS.Blast.SSMD
 #endif
             }
 
-            code_pointer += 3;
+            code_pointer--;
         }
 
 
@@ -5842,7 +5931,7 @@ namespace NSS.Blast.SSMD
 #endif
             }
 
-            code_pointer += 3;
+            code_pointer--;
         }
 
         /// <summary>
@@ -5947,7 +6036,7 @@ namespace NSS.Blast.SSMD
                         pop_fx_into_ref<float3>(ref code_pointer, fp_min);
                         pop_fx_into_ref<float3>(ref code_pointer, fp_max);
 
-                        pop_op_meta_cp(code_pointer + 1, out p_datatype, out p_vector_size);
+                        pop_op_meta_cp(code_pointer, out p_datatype, out p_vector_size);
 
 
                         // c param == size 1
@@ -5983,7 +6072,7 @@ namespace NSS.Blast.SSMD
                         pop_fx_into_ref<float4>(ref code_pointer, fp_min);
                         pop_fx_into_ref<float4>(ref code_pointer, fp_max);
 
-                        pop_op_meta_cp(code_pointer + 1, out p_datatype, out p_vector_size);
+                        pop_op_meta_cp(code_pointer, out p_datatype, out p_vector_size);
 
 
                         // c param == size 1
@@ -6015,8 +6104,7 @@ namespace NSS.Blast.SSMD
                     break;
 #endif
             }
-
-            code_pointer += 3;
+            code_pointer--;
         }
 
 
@@ -6119,7 +6207,7 @@ namespace NSS.Blast.SSMD
 #endif
             }
 
-            code_pointer += 3;
+            code_pointer--;
         }
 
 
@@ -6170,7 +6258,7 @@ namespace NSS.Blast.SSMD
 #endif
             }
 
-            code_pointer += 3;
+            code_pointer--;
         }
 
         /// <summary>
@@ -6220,7 +6308,7 @@ namespace NSS.Blast.SSMD
 #endif
             }
 
-            code_pointer += 3;
+            code_pointer--;
         }
 
 
@@ -6229,7 +6317,7 @@ namespace NSS.Blast.SSMD
         #endregion
 
         #region op-a    NON REFERENCE
-  
+
         /// <summary>
         /// 
         /// - token is just after function def
@@ -6347,6 +6435,8 @@ namespace NSS.Blast.SSMD
                     pop_fx_into_ref<float>(ref code_pointer, m11);
                     pop_fx_with_op_into_fx_ref(ref code_pointer, m11, m11, blast_operation.multiply);
                     pop_fx_with_op_into_fx_ref(ref code_pointer, m11, f4, blast_operation.add);
+                    // this is needed because pop_fx_with_op_into_fx_ref leaves codepointer after the last data while function should end at the last
+                    code_pointer--;
                     break;
 
                 case 2:
@@ -6354,6 +6444,7 @@ namespace NSS.Blast.SSMD
                     pop_fx_into_ref<float2>(ref code_pointer, m12);
                     pop_fx_with_op_into_fx_ref<float2, float2>(ref code_pointer, m12, m12, blast_operation.multiply);
                     pop_fx_with_op_into_fx_ref<float2, float4>(ref code_pointer, m12, f4, blast_operation.add);
+                    code_pointer--;
                     break;
 
                 case 3:
@@ -6361,6 +6452,7 @@ namespace NSS.Blast.SSMD
                     pop_fx_into_ref<float3>(ref code_pointer, m13);
                     pop_fx_with_op_into_fx_ref<float3, float3>(ref code_pointer, m13, m13, blast_operation.multiply);
                     pop_fx_with_op_into_fx_ref<float3, float4>(ref code_pointer, m13, f4, blast_operation.add);
+                    code_pointer--;
                     break;
 
                 case 0:
@@ -6369,6 +6461,7 @@ namespace NSS.Blast.SSMD
                     pop_fx_into_ref<float4>(ref code_pointer, f4); // with f4 we can avoid reading/writing to the same buffer by alternating as long as we end at f4
                     pop_fx_with_op_into_fx_ref<float4, float4>(ref code_pointer, f4, m14, blast_operation.multiply);
                     pop_fx_with_op_into_fx_ref<float4, float4>(ref code_pointer, m14, f4, blast_operation.add);
+                    code_pointer--;
                     break;
             }
         }
@@ -6679,9 +6772,9 @@ namespace NSS.Blast.SSMD
                 case blast_operation.abs: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.abs, extended_blast_operation.nop); break; 
                 case blast_operation.trunc: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.trunc, extended_blast_operation.nop); break;
 
-                case blast_operation.maxa: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.maxa); break;
-                case blast_operation.mina: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.mina); break;
-                case blast_operation.csum: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.csum); break;
+                case blast_operation.maxa: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.maxa); break;
+                case blast_operation.mina: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.mina); break;
+                case blast_operation.csum: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.csum); break;
 
                 case blast_operation.max: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.max); break;
                 case blast_operation.min: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.min); break;
@@ -6836,7 +6929,7 @@ namespace NSS.Blast.SSMD
             if (package.StackSize > 0)
             {
                 Debug.Log($"\nSTACK Segment   ({(package.O4 - package.O3)} bytes)");
-                for (i = 0; i < (package.O4 - package.O3) >> 2;)
+                for (i = 0; i < (package.O4 - package.O3 - 1) >> 2;)
                 {
                     i = DebugDisplayVector(i, ssmdi, stack, metadata);
                 }
@@ -7301,6 +7394,12 @@ namespace NSS.Blast.SSMD
                             }
                             else
                             {
+#if DEVELOPMENT_BUILD || TRACE
+                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                                {
+                                    Debug.LogError($"blast.ssmd.getsequenceresult: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                }
+#endif
                                 // 16 bit encoding
                                 p[0] = 0;
                                 p[1] = 0;
@@ -7334,6 +7433,12 @@ namespace NSS.Blast.SSMD
                             }
                             else
                             {
+#if DEVELOPMENT_BUILD || TRACE
+                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                                {
+                                    Debug.LogError($"blast.ssmd.getsequenceresult: constant reference error, long constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                }
+#endif
                                 // 16 bit encoding
                                 p[0] = 0;
                                 p[1] = 0;
@@ -7521,9 +7626,19 @@ namespace NSS.Blast.SSMD
                                 minus = false;
                                 not = false;
                             }
+
+                            if(indexer >= 0)
+                            {
+                                vector_size = 1; 
+                            }
+                            else
+                            {
+                                if (vector_size == 1) indexer = 0; 
+                            }
+
                             switch ((BlastVectorSizes)vector_size)
                             {
-                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_value[i].x = constant; break;
+                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_value[i][indexer] = constant; break;
                                 case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_value[i].xy = constant; break;
                                 case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_value[i].xyz = constant; break;
                                 case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_value[i].xyzw = constant; break;
@@ -7533,6 +7648,8 @@ namespace NSS.Blast.SSMD
                                     return (int)BlastError.ssmd_error_unsupported_vector_size;
 #endif
                             }
+
+                            indexer = -1;
                         }
                         // if setting the first value, just start the loop again 
                         if (current_op == 0)
@@ -7554,6 +7671,13 @@ namespace NSS.Blast.SSMD
 
                                 // if no operation is active
                                 float4* f4_value = current_op == blast_operation.nop ? f4_result : f4;
+
+                                if(indexer >= 0)
+                                {
+                                    // offset id according to indexer and target vectorsize 1
+                                    this_vector_size = 1;
+                                    id = (byte)(id + indexer); 
+                                }
 
                                 // these should not possibly both be active 
                                 if (not || minus)
@@ -7828,9 +7952,13 @@ namespace NSS.Blast.SSMD
             }
             else
             {
-                // else push 1 float of data                
-                push_data_f1(code[code_pointer] - BlastInterpretor.opt_id);
-                code_pointer++;
+                // else directly push data
+                BlastVariableDataType dt;
+                byte size;
+
+                pop_op_meta_cp(code_pointer, out dt, out size);
+                size = (byte)math.select(size, 4, size == 0);
+                push_pop_f(temp, ref code_pointer, size); 
             }
 
             return BlastError.success;
@@ -7849,7 +7977,7 @@ namespace NSS.Blast.SSMD
                 switch (vector_size)
                 {
                     case 1:
-                        push_pop_f(ref code_pointer, vector_size);
+                        push_pop_f(temp, ref code_pointer, vector_size);
                         break;
 
                     default:
@@ -7873,16 +8001,16 @@ namespace NSS.Blast.SSMD
                 switch (vector_size)
                 {
                     case 1:
-                        push_pop_f(ref code_pointer, 1);
+                        push_pop_f(temp, ref code_pointer, 1);
                         break;
                     case 2:
-                        push_f2_pop_11(ref code_pointer);
+                        push_f2_pop_11(temp, ref code_pointer);
                         break;
                     case 3:
-                        push_f3_pop_111(ref code_pointer);
+                        push_f3_pop_111(temp, ref code_pointer);
                         break;
                     case 4:
-                        push_f4_pop_1111(ref code_pointer);
+                        push_f4_pop_1111(temp, ref code_pointer);
                         break;
                 }
             }
@@ -7966,7 +8094,7 @@ namespace NSS.Blast.SSMD
             is_indexed = assignee_op < BlastInterpretor.opt_id;
             indexer = (blast_operation)math.select(0, assignee_op, is_indexed);
             code_pointer = math.select(code_pointer, code_pointer + 1, is_indexed);
-            assignee_op = code[code_pointer];  // reading twice will probably be a lot faster then if() could test sometime.. todo
+            assignee_op = code[code_pointer]; 
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

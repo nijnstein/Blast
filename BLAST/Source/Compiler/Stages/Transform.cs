@@ -18,7 +18,9 @@ namespace NSS.Blast.Compiler.Stage
 {
     /// <summary>
     /// Transform higher level constructs into their simpler constituents,
-    /// [while, for, switch] into ifthen sequences 
+    /// - [while, for, switch] into ifthen sequences 
+    /// - vector expansions
+    /// - inline functions 
     /// </summary>
     public class BlastTransform : IBlastCompilerStage
     {

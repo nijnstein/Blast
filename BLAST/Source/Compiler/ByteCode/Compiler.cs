@@ -127,8 +127,10 @@ namespace NSS.Blast.Compiler.Stage
                         //
                         // constant references are different from jumplabels in that they can have multiple sources
                         // referencing the same target 
-                        //
-                        if (code.TryGetConstantReference(p_id, out IMJumpLabel label))
+                        // - often this function is called with only a code segment and the search for the label will then fail 
+                        // 
+                                                
+                        if (data.JumpLabels.TryGetValue(IMJumpLabel.ConstantName(p_id.Id.ToString()), out IMJumpLabel label)) // code.TryGetConstantReference(p_id, out IMJumpLabel label))
                         {
                             // reserve 2 bytes to reference the constant when resolving jumps 
                             code.Add((byte)blast_operation.constant_short_ref, IMJumpLabel.ReferenceToConstant(label));
@@ -157,12 +159,12 @@ namespace NSS.Blast.Compiler.Stage
                                                     if(p[0] == 0 && p[1] == 0)
                                                     {
                                                         // encode it in 2 bytes 
-                                                        code.Add((byte)blast_operation.constant_f1_h, IMJumpLabel.Constant(p_id.Id.ToString()));
+                                                        code.Add((byte)blast_operation.constant_f1_h, data.LinkJumpLabel(IMJumpLabel.Constant(p_id.Id.ToString())));
                                                     }
                                                     else
                                                     {
                                                         // encoding the float in 4 bytes 
-                                                        code.Add((byte)blast_operation.constant_f1, IMJumpLabel.Constant(p_id.Id.ToString()));
+                                                        code.Add((byte)blast_operation.constant_f1, data.LinkJumpLabel(IMJumpLabel.Constant(p_id.Id.ToString())));
                                                         code.Add(p[0]);
                                                         code.Add(p[1]);
                                                     }
@@ -864,6 +866,8 @@ namespace NSS.Blast.Compiler.Stage
                                     case ReservedBlastScriptFunctionIds.Pop:
                                     case ReservedBlastScriptFunctionIds.Seed:
                                     case ReservedBlastScriptFunctionIds.Debug:
+                                    case ReservedBlastScriptFunctionIds.DebugStack:
+                                    case ReservedBlastScriptFunctionIds.Validate:
                                         {
                                             if (!CompileFunction(data, ast_node, code))
                                             {
@@ -1419,11 +1423,18 @@ namespace NSS.Blast.Compiler.Stage
                     if (ast_node.IsInlinedFunction) continue; 
 
                     // parse the statement from the token array
-                    // CompileNode(result, ast_root, code);      // more efficient 
+                    //CompileNode(data, ast_node, code);      
+                    
+
+                    //
+                    // this exposes a bug with label indices, we need some central storage for them in the compilation 
+                    // - added a Dictionary<labelid, imjumplabel> to compilerdata
+                    // 
+
                     IMByteCodeList bcl = CompileNode(data, ast_node);
                     if (bcl != null)
                     {
-                        code.AddRange(bcl); //CompileNode(data, ast_node)); // easier debugging 
+                        code.AddRange(bcl); // easier debugging 
                     }
                     else
                     {

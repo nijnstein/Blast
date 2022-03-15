@@ -461,6 +461,7 @@ namespace NSS.Blast.Compiler
 
             // -- compiler 
             Jumps = new List<Tuple<int, int>>();
+            JumpLabels = new Dictionary<string, IMJumpLabel>(); 
 
             // enable experimental stuff 
             use_new_stuff = options.Experimental; 
@@ -889,7 +890,13 @@ namespace NSS.Blast.Compiler
         /// intermediate bytecode, only public for debugging view purposes, dont use, dont modify
         /// </summary>
         public IMByteCodeList code;
-                                                                   
+
+        /// <summary>
+        /// provides a storage for jumplabels generated while compiling segments of code 
+        /// </summary>
+        public Dictionary<string, IMJumpLabel> JumpLabels; 
+
+
         /// <summary>
         /// the rootnode of the abstract syntax tree
         /// </summary>
@@ -1226,6 +1233,16 @@ namespace NSS.Blast.Compiler
         }
 
 
+        /// <summary>
+        /// add a label to a reference store for this compilation
+        /// </summary>
+        /// <param name="label"></param>
+        /// <returns></returns>
+        public IMJumpLabel LinkJumpLabel(IMJumpLabel label)
+        {
+            JumpLabels.Add(label.id, label);
+            return label; 
+        }
 
 
         #region exposed via interface, non reference counting 

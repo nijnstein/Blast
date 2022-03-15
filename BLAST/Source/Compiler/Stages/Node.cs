@@ -1014,7 +1014,7 @@ namespace NSS.Blast.Compiler
 
 
 
-            return 64;
+            return 256;
         }
 
 
