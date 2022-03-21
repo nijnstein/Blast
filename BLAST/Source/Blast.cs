@@ -1436,6 +1436,50 @@ namespace NSS.Blast
             }
         }
 
+
+
+        /// <summary>
+        /// determine precedance of operations, if a must be executed before b then -1 is returned, if b must be executed first 1 is returned
+        /// on equal operation precedance 0 is returned 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static int OperationPrecedance(blast_operation a, blast_operation b)
+        {
+            switch(a)
+            {
+                case blast_operation.add:
+                case blast_operation.substract:
+                    switch (b)
+                    {
+                        case blast_operation.add:
+                        case blast_operation.substract: return 0;
+
+                        case blast_operation.multiply:
+                        case blast_operation.divide: return 1;
+                    }
+                    break;
+
+                case blast_operation.multiply:
+                case blast_operation.divide:
+
+                    switch(b)
+                    {
+                        case blast_operation.add:
+                        case blast_operation.substract: return -1;
+
+                        case blast_operation.multiply:
+                        case blast_operation.divide:   return 0; 
+                    }
+                    break; 
+
+            }
+
+            return 0;
+        }
+
+
 #endregion
 
 #region Functions 

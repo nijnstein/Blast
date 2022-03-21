@@ -24,7 +24,11 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
-
+  
+  <PropertyGroup>
+    <RestoreFallbackFolders>clear</RestoreFallbackFolders>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Reference Include="Unity.Mathematics">
       <HintPath>..\..\Unity.Mathematics\src\Unity.Mathematics\obj\Release\Unity.Mathematics.dll</HintPath>

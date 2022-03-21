@@ -90,6 +90,16 @@ namespace NSS.Blast.Compiler.Stage
             return -1;
         }
 
+        static int scan_until(string code, char until1, char until2, int start)
+        {
+            for (int i = start; i < code.Length; i++)
+            {
+                if (code[i] == until1 || code[i] == until2) return i;
+            }
+            return -1;
+        }
+
+
         static string scan_until_stripend(string comment, int start = 6)
         {
             int i_end = scan_until(comment, '#', start);
@@ -388,7 +398,7 @@ namespace NSS.Blast.Compiler.Stage
                         // Include the ; as allowed terminator. i forget it myself too often that i should not close defines
                         // 
 
-                        int i_end = math.min(scan_until(comment, '#', 1), scan_until(comment, ';', 1));
+                        int i_end = scan_until(comment, '#', ';', 1);
                         if (i_end >= 0)
                         {
                             // and remove that part, assume it to be a comment on the output def.                             
@@ -430,7 +440,7 @@ namespace NSS.Blast.Compiler.Stage
                         // Include the ; as allowed terminator. i forget it myself too often that i should not close defines
                         // 
 
-                        int i_end = math.min(scan_until(comment, '#', 1), scan_until(comment, ';', 1));
+                        int i_end = scan_until(comment, '#', ';', 1);
                         if (i_end >= 0)
                         {
                             // and remove that part, assume it to be a comment on the output def.                             

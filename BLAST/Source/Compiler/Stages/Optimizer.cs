@@ -192,6 +192,21 @@ namespace NSS.Blast.Compiler.Stage
             // - this runs after flatten and should also apply to inline vectors
             // - (should we check type or assume analyser did its job?)
             //                            
+
+            //
+            //      vector[1]assignment of a  
+            //              constant vector[1]parameter 1
+            //              vector[0]operation Substract
+            //              constant vector[1]parameter 2
+            //              vector[0]operation Add
+            //              constant vector[1]parameter 2
+            //              vector[0]operation Add
+            //   /
+
+            //
+            // 
+
+
             if (node.IsSingleOperationList(out op))
             {
                 if (Blast.HasSequenceOperation(op))
@@ -229,12 +244,32 @@ namespace NSS.Blast.Compiler.Stage
                 }
 
                 // replace the partial sequence 
-                res = ReplaceSequence(data.Blast, node, op, Blast.GetSequenceOperation(op), from, op_count);
-                if (res != BlastError.success) return BlastError.error_optimizer_failed_to_replace_sequence;
+                //
+                // watch out: operator precedence, on: 1 - 2 + 2 + 2  ==  1 - ADDA(2,2,2) WOULD BE FALSE 
+                //                              while: 1 - 2 * 2 * 2  ==  1 - MULA(2,2,2) would be true 
+                // 
+                // so only replace a sequence if the sequence to replace has higher operator precedance 
+                //
+                blast_operation pre_op =    from > 0 && node.children[from - 1].IsOperation 
+                                            ?
+                                            Blast.GetBlastOperationFromToken(node.children[from - 1].token) 
+                                            :
+                                            blast_operation.nop;
 
+                if (Blast.OperationPrecedance(pre_op, op) <= 0)
+                {
+                    // read past current token 
+                    from++; 
+                }
+                else
+                {
+                    // replace sequence 
+                    res = ReplaceSequence(data.Blast, node, op, Blast.GetSequenceOperation(op), from, op_count);
+                    if (res != BlastError.success) return BlastError.error_optimizer_failed_to_replace_sequence;
 
-                // expand from past inserted nodes
-                from = from + 2;
+                    // expand from past inserted nodes
+                    from = from + 2;
+                }
 
 
                 // if not possible stop trying 

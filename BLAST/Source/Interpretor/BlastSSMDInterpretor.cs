@@ -465,7 +465,7 @@ namespace NSS.Blast.SSMD
                             else
                             {
 #if DEVELOPMENT_BUILD || TRACE
-                                Debug.LogError($"pop_op_meta -> operation {operation} not supported at codepointer: {codepointer}");
+                                Debug.LogError($"pop_op_meta _cp-> operation {operation} not supported at codepointer: {codepointer}");
 #endif
                                 datatype = BlastVariableDataType.Numeric;
                                 vector_size = 1;
@@ -6411,6 +6411,127 @@ namespace NSS.Blast.SSMD
         }
 
 
+        /// <summary>
+        /// get result of operation with multiple parameters that is based on components of vectors: mina, maxa, csum
+        /// </summary>
+        void get_op_a_component_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]ref float4* f4, blast_operation operation)
+        {
+#if DEVELOPMENT_BUILD || TRACE
+            Assert.IsFalse(temp == null, $"blast.ssmd.interpretor.get_op_a_component_result: temp buffer NULL");
+            Assert.IsFalse(f4 == null, $"blast.ssmd.interpretor.get_op_a_component_result: output f4 NULL");
+
+            if (operation != blast_operation.maxa && operation != blast_operation.mina && operation != blast_operation.csum)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.get_op_a_component_result: op {operation} not supported, only component operations are allowed: maxa, mina, csum");
+                return;
+            }
+
+#endif
+
+            // decode parametercount and vectorsize from code in 62 format 
+            byte c = BlastInterpretor.decode62(code[code_pointer], ref vector_size);
+            code_pointer++;
+            BlastVariableDataType datatype;
+
+            // all parameters to the function have the same vectorsize, in future update compiler could support different vectorsizes
+            for (int j = 0; j < c; j++)
+            {
+                pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+
+                switch (vector_size)
+                {
+                    case 0:
+                    case 4:
+                        float4* t4 = (float4*)temp;
+                        pop_fx_into_ref<float4>(ref code_pointer, t4);
+                        switch (operation)
+                        {
+                            case blast_operation.maxa:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmax(t4[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.max(f4[i].x, math.cmax(t4[i]));
+                                break;
+                            case blast_operation.mina:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmin(t4[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.min(f4[i].x, math.cmin(t4[i]));
+                                break;
+                            case blast_operation.csum:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.csum(t4[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = f4[i].x + math.csum(t4[i]);
+                                break;
+                        }
+                        break;
+
+
+                    case 1: // wierd on v1 but ok..
+                        float* t1 = (float*)temp;
+                        pop_fx_into_ref<float>(ref code_pointer, t1);
+                        switch (operation)
+                        {
+                            case blast_operation.maxa:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = t1[i];
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.max(f4[i].x, t1[i]);
+                                break;
+                            case blast_operation.mina:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = t1[i];
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.min(f4[i].x, t1[i]);
+                                break;
+                            case blast_operation.csum:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = t1[i];
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x += t1[i];
+                                break;
+                        }
+                        break;
+
+                    case 2:
+                        float2* t2 = (float2*)temp;
+                        pop_fx_into_ref<float2>(ref code_pointer, t2);
+                        switch (operation)
+                        {
+                            case blast_operation.maxa:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmax(t2[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.max(f4[i].x, math.cmax(t2[i]));
+                                break;
+                            case blast_operation.mina:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmin(t2[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.min(f4[i].x, math.cmin(t2[i]));
+                                break;
+                            case blast_operation.csum:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.csum(t2[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = f4[i].x + math.csum(t2[i]);
+                                break;
+                        }
+                        break;
+
+                    case 3:
+                        float3* t3 = (float3*)temp;
+                        pop_fx_into_ref<float3>(ref code_pointer, t3);
+                        switch (operation)
+                        {
+                            case blast_operation.maxa:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmax(t3[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.max(f4[i].x, math.cmax(t3[i]));
+                                break;
+                            case blast_operation.mina:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmin(t3[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.min(f4[i].x, math.cmin(t3[i]));
+                                break;
+                            case blast_operation.csum:
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.csum(t3[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = f4[i].x + math.csum(t3[i]);
+                                break;
+                        }
+                        break;
+                }
+            }
+            // pop_fx_with_op_into_fx_ref puts code_pointer at next item but we want it to be left at last byte processed
+            code_pointer--;
+
+            // the output of component functions is always of size 1 
+            vector_size = 1;
+        }
+
+
+
         #endregion
 
         #region fused substract multiply actions
@@ -6482,9 +6603,9 @@ namespace NSS.Blast.SSMD
                 //+
                 //(code[code_pointer + 2] << 16)
                 //+
-                (code[code_pointer + 1] << 8)
+                (code[code_pointer + 0] << 8)
                 +
-                code[code_pointer + 2];
+                code[code_pointer + 1];
 
             // advance code pointer beyond the script id
             code_pointer += 2;//4;
@@ -6532,14 +6653,19 @@ namespace NSS.Blast.SSMD
                 vector_size = 1; 
 #endif
 
+                // 
                 // first gather up to MinParameterCount parameter components 
+                // - external functions have a fixed amount of parameters 
+                // - there is no vectorsize check on external functions, user should make sure call is correct or errors will result 
+                // 
+
                 int p_count = 0;
                 float* p_data = stackalloc float[p.MinParameterCount * ssmd_datacount];
 
                 while (p_count < p.MinParameterCount)
                 {
                     byte vsize;
-                    code_pointer++;
+                   // code_pointer++;
 
                     pop_op_meta_cp(code_pointer, out BlastVariableDataType dtype, out vsize);
 
@@ -6772,9 +6898,9 @@ namespace NSS.Blast.SSMD
                 case blast_operation.abs: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.abs, extended_blast_operation.nop); break; 
                 case blast_operation.trunc: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.trunc, extended_blast_operation.nop); break;
 
-                case blast_operation.maxa: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.maxa); break;
-                case blast_operation.mina: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.mina); break;
-                case blast_operation.csum: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.csum); break;
+                case blast_operation.maxa: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.maxa); break;
+                case blast_operation.mina: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.mina); break;
+                case blast_operation.csum: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.csum); break;
 
                 case blast_operation.max: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.max); break;
                 case blast_operation.min: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.min); break;
