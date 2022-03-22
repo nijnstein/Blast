@@ -5,9 +5,11 @@
 - re test all functions in ssmd especially constants
 - any function parameter can nest its indexer and minus sign inline, compiler can then output:
   ` function(  -idx_x(f4) ) ` instead of ` push sequence - idx_x(f4); function(pop) ` 
+
 - allow statements to omit ; when possible 
 
 - manual
+- stack estimator for ssmd packages
 
 - RELEASE V1
  
