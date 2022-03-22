@@ -150,7 +150,7 @@ namespace NSS.Blast.SSMD
         /// if true, the script is executed in validation mode:
         /// - external calls just return 0's
         /// </summary>
-        public bool ValidationMode;
+        public bool ValidateOnce;
 
 
         #endregion
@@ -161,7 +161,19 @@ namespace NSS.Blast.SSMD
         /// </summary>
         public BlastError SetPackage(in BlastPackageData pkg)
         {
-            if (pkg.PackageMode != BlastPackageMode.SSMD) return BlastError.ssmd_invalid_packagemode;
+            ValidateOnce = false;
+
+            if (pkg.PackageMode != BlastPackageMode.SSMD)
+            {
+                if (pkg.LanguageVersion == BlastLanguageVersion.BSSMD1 && pkg.PackageMode == BlastPackageMode.Compiler)
+                {
+                    ValidateOnce = true;
+                }
+                else
+                {
+                    return BlastError.ssmd_invalid_packagemode;
+                }
+            }
 
             package = pkg;
 
@@ -171,6 +183,32 @@ namespace NSS.Blast.SSMD
 
             return BlastError.success;
         }
+
+        public BlastError SetPackage(BlastPackageData pkg, byte* _code, byte* _metadata)
+        {
+            ValidateOnce = false;
+
+            if (pkg.PackageMode != BlastPackageMode.SSMD)
+            {
+                if (pkg.LanguageVersion == BlastLanguageVersion.BSSMD1 && pkg.PackageMode == BlastPackageMode.Compiler)
+                {
+                    ValidateOnce = true;
+                }
+                else
+                {
+                    return BlastError.ssmd_invalid_packagemode;
+                }
+            }
+
+            package = pkg;
+
+            code = _code;
+            data = null;
+            metadata = _metadata;
+
+            return BlastError.success;
+        }
+
 
         /// <summary>
         /// 
@@ -225,7 +263,7 @@ namespace NSS.Blast.SSMD
 #endif
                 return (int)BlastError.error_execute_package_not_correctly_set;
             }
-            if (IntPtr.Zero == package.CodeSegmentPtr)
+            if (package.PackageMode != BlastPackageMode.Compiler && IntPtr.Zero == package.CodeSegmentPtr)
             {
 #if DEVELOPMENT_BUILD || TRACE
                 Debug.LogError("blast.ssmd.interpretor: package not correctly set, codesegmentptr == null");
@@ -262,6 +300,11 @@ namespace NSS.Blast.SSMD
             }
             else
             {
+                if (ValidateOnce)
+                {
+                    return (int)BlastError.error_ssmd_validationmode_cannot_run_on_referenced_data;
+                }
+
                 return Execute(syncbuffer, (byte**)(void*)(ssmddata), ssmd_data_count, register); 
             }
 
@@ -5032,7 +5075,6 @@ namespace NSS.Blast.SSMD
          #endregion
         #endregion
 
-
         #region Dual input functions: math.pow fmod cross etc. 
 
 #if !STANDALONE_VSBUILD
@@ -6550,6 +6592,14 @@ namespace NSS.Blast.SSMD
 
         /// <summary>
         /// fused multiply add 
+        /// 
+        /// todo: convert this into a fused condition list, with n conditions and n+1 parameters ?:
+        ///
+        /// fused_op:
+        /// # 1 byte = encode62 = parametercount + vectorsize
+        /// # 1 byte * ceil(parametercount / 4) = conditions: +-/* encoded in 2 bits, 4 in byte 
+        /// # parameters 
+        /// 
         /// - always 3 params, input vector size == output vectorsize
         /// </summary>
         /// <returns></returns>
@@ -6600,7 +6650,6 @@ namespace NSS.Blast.SSMD
         }
 
         #endregion
-
  
         #region External Function Handler 
 
@@ -6631,7 +6680,7 @@ namespace NSS.Blast.SSMD
 
                 // get parameter count (expected from script excluding the 3 data pointers: engine, env, caller) 
                 // but dont call it in validation mode 
-                if (ValidationMode == true)
+                if (ValidateOnce == true)
                 {
                     // external functions (to blast) always have a fixed amount of parameters 
 #if DEVELOPMENT_BUILD || TRACE
@@ -6725,14 +6774,17 @@ namespace NSS.Blast.SSMD
                     iparam = 3;
                 }
 
-                for (int i = 0; i < ssmd_datacount; i++)
+                if (!ValidateOnce)
                 {
-                    for (int j = 0; j < p.MinParameterCount; j++)
+                    for (int i = 0; i < ssmd_datacount; i++)
                     {
-                        param[j + iparam] = p_data[j * ssmd_datacount + i];
-                    }
+                        for (int j = 0; j < p.MinParameterCount; j++)
+                        {
+                            param[j + iparam] = p_data[j * ssmd_datacount + i];
+                        }
 
-                    f4[i].x = (float)mi.Invoke(null, param);
+                        f4[i].x = (float)mi.Invoke(null, param);
+                    }
                 }
 
                 vector_size = 1;
@@ -6740,7 +6792,8 @@ namespace NSS.Blast.SSMD
 #else
                 // the native bursted version is a little more invloved ... 
 
-
+                if(!ValidateOnce)
+                {
                 if (p.IsShortDefinition)
                 {
 
@@ -6872,6 +6925,7 @@ namespace NSS.Blast.SSMD
                             break;
 #endif
                     }
+                }
                 }
 
 #endif
@@ -8712,6 +8766,30 @@ namespace NSS.Blast.SSMD
 
                 // offset as if the stack is located in the datasegment  
                 stack_offset = 0; //package.DataSegmentStackOffset >> 2;
+            }
+
+            // pre-fill stack with infs for validation/stack estimation
+            if (ValidateOnce)
+            {
+                if (!package.HasStackPackaged)
+                {
+                    // there is no way to check the result
+#if TRACE || DEVELOPMENT_BUILD
+                    Debug.LogWarning("BlastSSMDInterpretor: executing with validation enabled but not with a packaged stack, stacksize estimation wont be possible");
+#endif 
+                }
+                // done by caller in packaged stack
+                //else
+                //{
+                //    for (int i = 0; i < ssmd_data_count; i++)
+                //    {
+                //        // todo check if stacksize is correct on packaged stack with stackoffset != 0
+                //        for (int j = stack_offset; j < package.StackSize; j++)
+                //        {
+                //            ((float*)stack[i])[j] = math.INFINITY;
+                //        }
+                //    }
+                //}
             }
 
             // local temp buffer 

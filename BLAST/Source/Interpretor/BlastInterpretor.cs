@@ -165,6 +165,9 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         public void SetPackage(BlastPackageData pkg, bool on_reset_dont_update_pointers = false)
         {
+            // ensure it is turned of by default when reusing this structure 
+            ValidationMode = false;
+
             package = pkg;
 
             // the compiler supllies its own pointers to various segments 
@@ -209,7 +212,10 @@ namespace NSS.Blast.Interpretor
         /// <param name="initial_stack_offset"></param>
         public void SetPackage(BlastPackageData pkg, byte* _code, float* _data, byte* _metadata, int initial_stack_offset)
         {
+            ValidationMode = false; 
+
             package = pkg;
+
             code = _code;
             data = _data;
             stack = _data; 

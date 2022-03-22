@@ -665,7 +665,8 @@ namespace NSS.Blast.Compiler
         #region output validation 
 
         /// <summary>
-        /// Validate output using data set in script for NULL inputs 
+        /// - Validate output using data set in script for NULL inputs 
+        /// - Double as a method to estimate stack size 
         /// </summary>
         /// <param name="result">bytecode compiler data</param>
         /// <param name="blast">blast engine data</param>
@@ -696,22 +697,17 @@ namespace NSS.Blast.Compiler
             {
                 case BlastPackageMode.SSMD:
                     {
-                        // in ssmd only estimate stacksize if needed
-                        if(result.CompilerOptions.EstimateStackSize)
-                        {
-                            /// EstimateSSMDStackSize()
-                        }
+                        cdata.Executable.ValidateSSMD(blast);
                     }
-                    return result.IsOK;
+                    break;
                     
                 case BlastPackageMode.Normal:
                     {
-                        // run validations on normal package
                         cdata.Executable.Validate(blast);
                     }
                     break;
 
-                default:
+                default:                                      
                     result.LogError($"validate: packagemode {result.CompilerOptions.PackageMode} not supported");
                     return false;
             }
@@ -775,6 +771,30 @@ namespace NSS.Blast.Compiler
 
         #region code and data packaging 
 
+
+        /// <summary>
+        /// return stacksize in bytes as defined, or -1 if no define was found 
+        /// </summary>
+        static int GetDefinedStackSize(CompilationData result)
+        {
+            string s_defined_size;
+            if (result.Defines.TryGetValue("stack_size", out s_defined_size) || result.CompilerOptions.Defines.TryGetValue("stack_size", out s_defined_size))
+            {
+                int i_defined_size;
+                if (int.TryParse(s_defined_size, out i_defined_size))
+                {
+                    return i_defined_size; 
+                }
+                else
+                {
+                    result.LogError($"BlastCompiler.GetDefinedStackSize(result): failed to read defined value as a valid integer: {s_defined_size} ");
+                }
+            }
+
+            return -1; 
+        }
+
+
         /// <summary>
         /// estimate stack size by running script with a selection of parameters from
         /// input, output and validation settings 
@@ -784,94 +804,70 @@ namespace NSS.Blast.Compiler
         /// <returns>estimated stack size in bytes</returns>
         static unsafe public int EstimateStackSize(CompilationData result)
         {
-            int yield = 0; 
-            int max_size = 0;
-            bool is_defined = false; 
+            Assert.IsNotNull(result);
 
-            BlastIntermediate exe = result.Executable;
+            // ### Stacksize Determination
+            //            Blast determines the size of the stack to allocate as follows:
+            //
+            // -First; if **stack_size * * is defined as:  `#define stack_size 12` blast will fix the stacksize to 12 bytes, additional space will be added if yield is to be supported.
+            // -Second; if compileroptions specify** EstimateStack**then during compilation the package is executed once using default data and the stack size is determined from analysis of the stack. Note that this will force an extra compilation step if the packagemode is ssmd as currently stack estimation is only supported by the normal package mode which will always use more stack then the ssmd packager. (which should not matter too much if the no - stack option is used to use the threadlocal stack in the interpretor and not actually package the stack in the package memory) 
+            // -Third; if by now no stacksize is known, blast will count overlapping pairs of push - pop pairs and estimates stack from that.If no push command is used then the stacksize will be set to 0; If Yield is used in the package, 20 bytes are additionally allocated to support stacking internal state on yield.
+            // 
 
-            // should add 20 bytes / 5 floats if supporting yield 
-            if(result.CompilerOptions.SupportYield)
+            // get yield and default
+            int reserve_yield = 0;
+            if (result.CompilerOptions.SupportYield)
             {
+                // only reserve stack for yield if its actually used in the bytecode
                 if (result.root != null && result.root.CheckIfFunctionIsUsedInTree(blast_operation.yield))
                 {
-                    yield = 20;
-                    result.LogTrace("Package.EstimateStackSize: reserving 20 bytes of stack for supporting Yield.");
+                    reserve_yield = 20;
                 }
             }
 
-            if (result.CompilerOptions.EstimateStackSize)
+            // 1> defined stacksizes, script defines have precedence over compiler defines  
+            int idefined = GetDefinedStackSize(result);
+            if (idefined > 0)
             {
-                // stack size was estimated during validation or in a seperate run 
-                max_size = result.Executable.max_stack_size * 4;
-                result.LogTrace($"Package.EstimateStackSize: estimated {max_size} bytes of stack use from compiled output");
+                result.LogTrace($"BlastCompiler.EstimateStackSize: defined: {idefined} bytes, reserved for yield: {reserve_yield} bytes, total stacksize = {idefined + reserve_yield} bytes");
+                return idefined + reserve_yield;
             }
-            else
+            if (idefined == 0)
             {
-                if(result.CompilerOptions.DefaultStackSize > 0)
+                if (reserve_yield > 0)
                 {
-                    result.LogTrace($"Package.EstimateStackSize: compiler options dictate {max_size} bytes of stack use");
+                    result.LogWarning($"BlastCompiler.EstimateStackSize: defined: 0 bytes BUT reserved for yield: {reserve_yield} bytes, total stacksize = {idefined + reserve_yield} bytes");
                 }
-
-                max_size = math.max(result.Executable.max_stack_size * 4, result.CompilerOptions.DefaultStackSize);
-            }
-
-            // account for possible yield 
-            max_size += yield; 
-
-            // check defines 
-            string s_defined_size;
-            if (result.Defines.TryGetValue("stack_size", out s_defined_size))
-            {
-                int i_defined_size;
-                if (int.TryParse(s_defined_size, out i_defined_size))
+                else
                 {
-                    max_size = math.max(max_size, i_defined_size);
-                    is_defined = true; 
-
-                    if (result.CompilerOptions.DefaultStackSize > 0)
-                    {
-                        result.LogTrace($"Package.EstimateStackSize: script defines updated stack_size to {max_size}");
-                    }
-                 }
-            }
-            else
-            {
-                // if not defined in script only then use value from compiler defines 
-                if (result.CompilerOptions.Defines.TryGetValue("stack_size", out s_defined_size))
-                {
-                    int i_defined_size;
-                    if (int.TryParse(s_defined_size, out i_defined_size))
-                    {
-                        max_size = math.max(max_size, i_defined_size);
-                        is_defined = true; 
-
-                        if (result.CompilerOptions.DefaultStackSize > 0)
-                        {
-                            result.LogTrace($"Package.EstimateStackSize: compiler defines updated stack_size to {max_size}");
-                        }
-                    }
+                    result.LogTrace($"BlastCompiler.EstimateStackSize: defined: 0 bytes, reserved for yield: 0 bytes, total stacksize = 0 bytes");
                 }
+                return idefined + reserve_yield;
             }
 
-
-            // is size is not determined, and 0 is not defined then attempt to 
-            // estimate the needed stack size from the number of push-pop pairs that 
-            // overlap 
-            if((max_size - yield) <= 0 && !is_defined)
-            {                                             
-                max_size = result.root.EstimateStackUse(yield);
-
-                result.LogTrace($"Package.EstimateStackSize: compiler estimated stack size from push-pop pairs, this will most likely not be optimal, max stacksize determined = {max_size + yield} bytes " + (yield > 0 ? $"(yield uses 20 bytes of additional stack)" : ""));
-            }
-
-
-            if (result.CompilerOptions.DefaultStackSize > 0 && max_size > result.CompilerOptions.DefaultStackSize)
+            // 2> estimate (this is combined with validation) 
+            // during that step max_stack_size is determined if either validate or estimatestack is true
+            if(result.CompilerOptions.EstimateStackSize)
             {
-                result.LogWarning($"Package.EstimateStackSize: compiler options dictate {result.CompilerOptions.DefaultStackSize} bytes of stack use but the script uses at least {max_size} bytes, minimal stacksize as been increased to {max_size}");
+                int stack_size = result.Executable.max_stack_size * 4 + reserve_yield;
+                result.LogTrace($"BlastCompiler.EstimateStackSize: estimated a total stacksize of: {stack_size}");
+                return stack_size; 
             }
 
-            return max_size;
+            // 3> estimate from node structure and push-pop pairs
+            int estimated_size = result.root.EstimateStackUse(0);
+            int default_size = result.CompilerOptions.DefaultStackSize; // TODO this is not documented well 
+
+            if(default_size > 0 && estimated_size < default_size)
+            {
+#if TRACE || DEVELOPMENT_BUILD
+                result.LogWarning($"BlastCompiler.EstimateStackSize: estimated size {estimated_size} smaller then non zero defaultsize, setting estimate to default: {default_size}");
+#endif 
+                estimated_size = default_size;
+            }
+
+            result.LogTrace($"BlastCompiler.EstimateStackSize: estimated from push-pop: {estimated_size} bytes, reserved for yield: {reserve_yield} bytes, total stacksize = {estimated_size + reserve_yield} bytes");
+            return estimated_size + reserve_yield;
         }
 
 

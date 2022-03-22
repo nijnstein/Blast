@@ -269,7 +269,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-                        Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"BlastPackageData.MetaDataSize: packagemode {PackageMode} not supported");
                         return 0;
 
                     case BlastPackageMode.Normal:
@@ -297,7 +297,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-                        Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"BlastPackageData.DataSize: packagemode {PackageMode} not supported");
                         return 0;
 
                     case BlastPackageMode.Normal:
@@ -323,7 +323,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-                        Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"BlastPackageData.StackSize: packagemode {PackageMode} not supported");
                         return 0;
 
                     case BlastPackageMode.Normal:
@@ -349,10 +349,9 @@ namespace NSS.Blast
                 {
                     default:
 #if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"BlastPackageData.CodeSegmentSize: packagemode {PackageMode} not supported");
 #endif 
                         return 0;
-
                     case BlastPackageMode.Normal: return O4;
                     case BlastPackageMode.SSMD: return O2;
                     case BlastPackageMode.Entity: return O1;
@@ -371,10 +370,11 @@ namespace NSS.Blast
                 {
                     default:
 #if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"BlastPackageData.DataSegmentSize: packagemode {PackageMode} not supported");
 #endif 
                         return 0;
 
+                    case BlastPackageMode.Compiler:
                     case BlastPackageMode.Normal: return (ushort)(O4 - O1);
                     case BlastPackageMode.SSMD: return (ushort)math.select((int)O3, (int)O4, HasStackPackaged);
                     case BlastPackageMode.Entity: return O4;
@@ -398,7 +398,7 @@ namespace NSS.Blast
                 {
                     default:
 #if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"BlastPackageData.AllocatedDataSegmentSize: packagemode {PackageMode} not supported");
 #endif 
                         return 0;
 
@@ -461,7 +461,7 @@ namespace NSS.Blast
                 switch (PackageMode)
                 {
                     default:
-                        Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"BlastPackageData.MetadataPtr: packagemode {PackageMode} not supported");
                         return IntPtr.Zero;
 
                     case BlastPackageMode.Normal: return CodeSegmentPtr + O1;
@@ -484,7 +484,7 @@ namespace NSS.Blast
                 {
                     default:
 #if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"BlastPackageData.DataSegmentPtr: packagemode {PackageMode} not supported");
 #endif                        
                         return IntPtr.Zero;
 
@@ -506,7 +506,7 @@ namespace NSS.Blast
                 {
                     default:
 #if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"packagemode {PackageMode} not supported");
+                        Debug.LogError($"BlastPackageData.StackSegmentPtr: packagemode {PackageMode} not supported");
 #endif 
                         return IntPtr.Zero;
 
@@ -1308,7 +1308,7 @@ namespace NSS.Blast
         /// <param name="is_referenced">if true data contains references to the actual data</param>
         /// <param name="max_ssmd_count">max per single run</param>
         /// <returns></returns>
-        unsafe public BlastError Execute<T>(IntPtr blast, IntPtr environment, IntPtr caller, NativeSlice<T> data, bool is_referenced = false, int max_ssmd_count = 1024 * 2) where T: unmanaged
+        unsafe public BlastError Execute<T>(IntPtr blast, IntPtr environment, IntPtr caller, NativeSlice<T> data, bool is_referenced = false, int max_ssmd_count = 1024 * 2) where T : unmanaged
         {
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (!IsAllocated) return BlastError.error_package_not_allocated;
@@ -1319,40 +1319,50 @@ namespace NSS.Blast
                 case BlastPackageMode.Normal:
 #if !USE_BURST_JOBS
                     BlastError res = BlastError.success;
+                    Blast.ssmd_blaster.SetPackage(in Package);
 
                     // execute in SSMD if packaged as such
                     if (Package.PackageMode == BlastPackageMode.SSMD)
                     {
-                        if(is_referenced)
+                        if (is_referenced)
                         {
-                    todo in vs
+                            int i = 0;
+                            void** pdata = (void**)data.GetUnsafeReadOnlyPtr();
+                            while (i < data.Length && res == BlastError.success)
+                            {
+                                int j = math.min(data.Length, i + max_ssmd_count);
+                                if (j > 0)
+                                {
+                                    res = (BlastError)Blast.ssmd_blaster.Execute(in Package, blast, environment, (BlastSSMDDataStack*)&pdata[i], j - i, true);
+                                    i = j;
+                                }
+                            }
                         }
                         else
                         {
-                        byte** dataptrs = stackalloc byte*[max_ssmd_count];
-                        byte* p = (byte*)data.GetUnsafeReadOnlyPtr();
-                        int datasize = sizeof(T); 
+                            byte** dataptrs = stackalloc byte*[max_ssmd_count];
+                            byte* p = (byte*)data.GetUnsafeReadOnlyPtr();
+                            int datasize = sizeof(T);
 
-                        int i = 0; 
+                            int i = 0;
 
-                        while(i < data.Length && res == BlastError.success)
-                        {
-                            int j = 0;
-                            while (i < data.Length && j < max_ssmd_count)
+                            while (i < data.Length && res == BlastError.success)
                             {
-                                dataptrs[j] = (byte*)&p[i * datasize];
-                                i++; 
-                                j++; 
-                            }
-                            if(j > 0)
-                            {
-                                // execute portion 
-                                Blast.ssmd_blaster.SetPackage(in Package);
-                                res = (BlastError)Blast.ssmd_blaster.Execute(in Package, blast, environment, (BlastSSMDDataStack*)(void*)dataptrs, j);
+                                int j = 0;
+                                while (i < data.Length && j < max_ssmd_count)
+                                {
+                                    dataptrs[j] = (byte*)&p[i * datasize];
+                                    i++;
+                                    j++;
+                                }
+                                if (j > 0)
+                                {
+                                    // execute portion 
+                                    res = (BlastError)Blast.ssmd_blaster.Execute(in Package, blast, environment, (BlastSSMDDataStack*)(void*)dataptrs, j);
+                                }
                             }
                         }
-                        }
-                    }    
+                    }
                     else
                     {
                         // execute all data elements as datasegments 

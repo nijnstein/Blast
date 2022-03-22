@@ -562,23 +562,31 @@ namespace NSS.Blast.Compiler
         }
 
         /// <summary>
+        /// validate intermediate package -> ssmd packaging mode 
+        /// </summary>
+        public int ValidateSSMD(in IntPtr blast)
+        {
+            return Validate(blast, true); 
+        }
+
+        /// <summary>
         /// validate intermediate package -> normal packaging mode 
         /// </summary>
-        public int Validate(in IntPtr blast)
+        public int Validate(in IntPtr blast, bool is_ssmd_packaged = false)
         {
-            return Execute(in blast, true);
+            return Execute(in blast, true, is_ssmd_packaged);
         }
 
         /// <summary>
         /// execute the intermediate for validation and stack info 
         /// </summary>
-        public int Execute(in IntPtr blast, bool validation_run = false)
+        public int Execute(in IntPtr blast, bool validation_run = false, bool is_ssmd_packaged = false)
         {
             // setup a package to run 
             BlastPackageData package = default;
             
             package.PackageMode = BlastPackageMode.Compiler;
-            package.LanguageVersion = BlastLanguageVersion.BS1;
+            package.LanguageVersion = is_ssmd_packaged ? BlastLanguageVersion.BSSMD1 : BlastLanguageVersion.BS1;
             package.Flags = BlastPackageFlags.None;
             package.Allocator = (byte)Allocator.None; 
             
@@ -587,10 +595,7 @@ namespace NSS.Blast.Compiler
             package.O3 = (ushort)(data_count * 4);  // 4 bytes / dataelement 
             package.O4 = (ushort)(data_capacity * 4); // capacity is in byte count on intermediate 
 
-            int initial_stack_offset = package.DataSegmentStackOffset / 4; 
-
-            // run the interpretation 
-            BlastInterpretor blaster = new BlastInterpretor();
+            int initial_stack_offset = package.DataSegmentStackOffset / 4;
 
             fixed (byte* pcode = code)
             fixed (float* pdata = data)
@@ -604,13 +609,32 @@ namespace NSS.Blast.Compiler
                     stack[i] = math.INFINITY;
                 }
 
-                // set package 
-                blaster.SetPackage(package, pcode, pdata, pmetadata, initial_stack_offset);
-                blaster.ValidationMode = validation_run; 
+                if (!is_ssmd_packaged)
+                {
+                    // Normal Packaging mode: run the interpretation 
 
-                // run it 
-                int exitcode = blaster.Execute(blast);
-                if (exitcode != (int)BlastError.success) return exitcode;
+                    // set package 
+                    Blast.blaster.SetPackage(package, pcode, pdata, pmetadata, initial_stack_offset);
+                    Blast.blaster.ValidationMode = validation_run;
+
+                    // run it 
+                    int exitcode = Blast.blaster.Execute(blast);
+                    if (exitcode != (int)BlastError.success) return exitcode;
+                }
+                else
+                {
+                    // ssmd packaging mode, run ssmd interpretor on 1 record
+                    // - make sure stack is packaged, otherwise stack estimation cannot check stack use
+
+                    Blast.ssmd_blaster.SetPackage(package, pcode, pmetadata);
+                    Blast.ssmd_blaster.ValidateOnce = true; // it should be set by setting a compiler package but set anyway to make it clear to any reader
+
+                    BlastSSMDDataStack* p_ssmd_data = (BlastSSMDDataStack*)(void*)pdata;
+
+                    int exitcode = Blast.ssmd_blaster.Execute(blast, IntPtr.Zero, p_ssmd_data, 1, false);
+
+                    if (exitcode != (int)BlastError.success) return exitcode;
+                }
 
                 // determine used stack size from nr of stack slots not INF anymore 
                 max_stack_size = 0;
@@ -622,7 +646,6 @@ namespace NSS.Blast.Compiler
                     return (int)BlastError.validate_error_stack_too_small;
                 }
             }
-
             return (int)BlastError.success;
         }
 

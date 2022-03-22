@@ -1007,10 +1007,12 @@ namespace NSS.Blast.Compiler
         /// calculate number of bytes to reserve for stack from push pop pairs in the node
         /// - we need to get those overlapping and then the max sum of vector elements == stacksize 
         /// </summary>
-        /// <param name="yield">bytes to add for supporting yield (does not check if yield is used)</param>
+        /// <param name="yield">bytes to add for supporting yield (this routine does not check if yield is used)</param>
         /// <returns>max bytes of stack memory used at any moment in the scripts execution</returns>
         public int EstimateStackUse(int yield = 0)
         {
+
+
 
 
 

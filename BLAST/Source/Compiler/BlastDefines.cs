@@ -1409,6 +1409,10 @@ namespace NSS.Blast
         /// datatype is not supported as a constant that is to be inlined 
         /// </summary>
         error_compile_inlined_constant_datatype_not_supported = -75,
+        /// <summary>
+        /// interpretor validationmode cannot be used on referenced data 
+        /// </summary>
+        error_ssmd_validationmode_cannot_run_on_referenced_data = -76
     }
 
 }

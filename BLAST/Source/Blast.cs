@@ -9,8 +9,8 @@ using System.IO;
 using System.Text;
 
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone;
-    using UnityEngine.Assertions;
+using NSS.Blast.Standalone;
+using UnityEngine.Assertions;
 #else
     using UnityEngine;
     using UnityEngine.Assertions;
@@ -56,7 +56,7 @@ namespace NSS.Blast
         /// <summary>
         /// constant values linked to constants == UnityEngine.Time.deltaTime 
         /// </summary>
-        public float DeltaTime 
+        public float DeltaTime
             =>
 #if DEVELOPMENT_BUILD || TRACE
             constants == null ? -1f :
@@ -99,7 +99,7 @@ namespace NSS.Blast
         public float FrameCount
             =>
 #if DEVELOPMENT_BUILD || TRACE
-            constants == null ? -1f:
+            constants == null ? -1f :
 #endif 
             constants[(int)blast_operation.framecount - BlastInterpretor.opt_value];
 
@@ -111,7 +111,7 @@ namespace NSS.Blast
         /// <summary>
         /// function pointer data
         /// </summary>
-        public IntPtr* FunctionPointers; 
+        public IntPtr* FunctionPointers;
 
         /// <summary>
         /// number of function pointers in the fp array. function id's dont match indices.....  
@@ -142,11 +142,11 @@ namespace NSS.Blast
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BlastScriptFunction GetFunction(blast_operation op)
         {
-            for(int i = 0; i < FunctionCount; i++)
+            for (int i = 0; i < FunctionCount; i++)
             {
-                if(Functions[i].ScriptOp == op) return Functions[i];
+                if (Functions[i].ScriptOp == op) return Functions[i];
             }
-            return default; 
+            return default;
         }
 
         /// <summary>
@@ -160,14 +160,14 @@ namespace NSS.Blast
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name_match), "damn those feeding me empty strings");
 
-            name_match = name_match.ToLower().Trim(); 
+            name_match = name_match.ToLower().Trim();
             char first = name_match[0];
 
             for (int i = 1; i < FunctionCount; i++)
             {
-                if(Functions[i].Match[0] == first)
+                if (Functions[i].Match[0] == first)
                 {
-                    for(int j = 1; j < name_match.Length; j++)
+                    for (int j = 1; j < name_match.Length; j++)
                     {
                         if (Functions[i].Match[j] != name_match[j]) break;
                         if (j == name_match.Length - 1)
@@ -181,8 +181,8 @@ namespace NSS.Blast
                     }
                 }
             }
-            function = default; 
-            return false; 
+            function = default;
+            return false;
         }
 
         /// <summary>
@@ -243,8 +243,8 @@ namespace NSS.Blast
                 if (Functions[i].ScriptOp == op) return Functions[i].HasVariableParameterCount;
             }
 
-            return false; 
-        }   
+            return false;
+        }
     }
 
     /// <summary>
@@ -260,12 +260,12 @@ namespace NSS.Blast
         /// <summary>
         /// unsafe casted BlastEngineData pointer
         /// </summary>
-        unsafe public BlastEngineData* Data 
-        { 
+        unsafe public BlastEngineData* Data
+        {
             get
-            { 
-                return (BlastEngineData*) ptr.ToPointer(); 
-            } 
+            {
+                return (BlastEngineData*)ptr.ToPointer();
+            }
         }
 
         /// <summary>
@@ -295,7 +295,7 @@ namespace NSS.Blast
         /// <summary>
         /// the singleton instance if created 
         /// </summary>
-        static public Blast Instance { get; protected set; } 
+        static public Blast Instance { get; protected set; }
 
         /// <summary>
         /// returns TRUE if the static instance is initialized 
@@ -311,7 +311,7 @@ namespace NSS.Blast
         /// <summary>
         /// default compiler options for script packages 
         /// </summary>
-        static public BlastCompilerOptions CompilerOptions = BlastCompilerOptions.Default; 
+        static public BlastCompilerOptions CompilerOptions = BlastCompilerOptions.Default;
 
         /// <summary>
         /// ssmd interpretor
@@ -322,24 +322,24 @@ namespace NSS.Blast
         /// <summary>
         /// default options for compiler to use packaging ssmd scripts 
         /// </summary>
-        static public BlastCompilerOptions SSMDCompilerOptions = BlastCompilerOptions.SSMD; 
+        static public BlastCompilerOptions SSMDCompilerOptions = BlastCompilerOptions.SSMD;
 
         /// <summary>
         /// The API, initialize the instance before using static functions!
         /// </summary>
-        static public BlastScriptAPI ScriptAPI 
-        { 
-            get 
+        static public BlastScriptAPI ScriptAPI
+        {
+            get
             {
                 if (IsInstantiated) return Instance.API;
                 else
                 {
                     if (script_api == null) script_api = new CoreAPI(Allocator.Persistent);
                     return script_api;
-                }                                
+                }
             }
         }
-        static private BlastScriptAPI script_api = null; 
+        static private BlastScriptAPI script_api = null;
 
 
         /// <summary>
@@ -395,8 +395,7 @@ namespace NSS.Blast
 
 
 
-
-#region Create / Destroy
+        #region Create / Destroy
 
         /// <summary>
         /// create a static instance, this instance will be used if no blast reference is given to functions that need it:
@@ -424,10 +423,10 @@ namespace NSS.Blast
         {
             if (IsInstantiated)
             {
-                Instance.Destroy(); 
+                Instance.Destroy();
             }
 
-            Instance = Create(api == null ? script_api : api);            
+            Instance = Create(api == null ? script_api : api);
             return Instance;
         }
 
@@ -448,7 +447,7 @@ namespace NSS.Blast
         {
             CompilerOptions.Verbose();
             SSMDCompilerOptions.Verbose();
-            return Instance; 
+            return Instance;
         }
 
         /// <summary>
@@ -460,7 +459,7 @@ namespace NSS.Blast
         {
             Assert.IsTrue(IsInstantiated);
             this.data->random.InitState(seed);
-            return this; 
+            return this;
         }
 
         /// <summary>
@@ -470,7 +469,7 @@ namespace NSS.Blast
         {
             CompilerOptions.Trace();
             SSMDCompilerOptions.Trace();
-            return Instance; 
+            return Instance;
         }
 
         /// <summary>
@@ -531,7 +530,7 @@ namespace NSS.Blast
             }
             if (!api.IsInitialized)
             {
-                api.Initialize(); 
+                api.Initialize();
             }
             Assert.IsTrue(api.IsInitialized, "Blast: script api not initialized");
 
@@ -813,7 +812,7 @@ namespace NSS.Blast
             if (!blast.IsCreated) return BlastError.error_blast_not_initialized;
             if (!package.IsAllocated) return BlastError.error_package_not_allocated;
             if (ssmd_count == 0) return BlastError.error_nothing_to_execute;
-            
+
             unsafe
             {
                 ssmd_blaster.SetPackage(package);
@@ -822,9 +821,9 @@ namespace NSS.Blast
         }
 
 
-#endregion
+        #endregion
 
-#region Package
+        #region Package
 
         /// <summary>
         /// Complile the code and package into blastscriptpackage 
@@ -834,18 +833,18 @@ namespace NSS.Blast
         /// <returns>the blastscript package</returns>
         public BlastScriptPackage Package(string code, BlastCompilerOptions options = null)
         {
-            BlastScript script = BlastScript.FromText(code); 
+            BlastScript script = BlastScript.FromText(code);
 
             BlastError res = Package(script, options);
-            if (res == BlastError.success) 
+            if (res == BlastError.success)
             {
                 BlastScriptPackage package = script.Package;
-                script.Package = null; 
+                script.Package = null;
                 return package;
             }
             else
             {
-                return null; 
+                return null;
             }
         }
 
@@ -878,7 +877,7 @@ namespace NSS.Blast
             }
             else
             {
-                return null; 
+                return null;
             }
         }
 
@@ -907,9 +906,9 @@ namespace NSS.Blast
             return BlastCompiler.Compile(blast, script, options);
         }
 
-#endregion
+        #endregion
 
-#region Constants 
+        #region Constants 
 
         /// <summary>
         /// list all value operations, these operations directly encode constant values 
@@ -1107,9 +1106,9 @@ namespace NSS.Blast
 #endif
 #endif
                     return float.NaN;
-            }          
+            }
         }
- 
+
         /// <summary>
         /// get the script_op belonging to a constant value, eiter by name or value 
         /// </summary>
@@ -1164,9 +1163,9 @@ namespace NSS.Blast
                 case "flt_min": return blast_operation.min_value;
                 case "deltatime": return blast_operation.deltatime;
                 case "fixeddeltatime": return blast_operation.fixeddeltatime;
-                case "framecount": return blast_operation.framecount; 
-                case "time": return blast_operation.time; 
-                case "fixedtime": return blast_operation.fixedtime; 
+                case "framecount": return blast_operation.framecount;
+                case "time": return blast_operation.time;
+                case "fixedtime": return blast_operation.fixedtime;
                 default: return blast_operation.nop;
             }
         }
@@ -1200,7 +1199,7 @@ namespace NSS.Blast
         {
             identifier = identifier.ToLower().ToLower(); // TODO we do this WAY to often
             constant_op = IsNamedSystemConstant(identifier);
-            return constant_op != blast_operation.nop; 
+            return constant_op != blast_operation.nop;
         }
 
         /// <summary>
@@ -1221,7 +1220,7 @@ namespace NSS.Blast
 
         public static void SynchronizeConstants()
         {
-            if (IsInstantiated) Instance.Synchronize(true); 
+            if (IsInstantiated) Instance.Synchronize(true);
         }
 
         /// <summary>
@@ -1237,21 +1236,21 @@ namespace NSS.Blast
             {
                 Constant[(int)(op - blast_operation.pi)] = value;
             }
-            if(data != null)
+            if (data != null)
             {
-                data->constants[(int)op] = value;                      
+                data->constants[(int)op] = value;
             }
         }
 
 
-#endregion
+        #endregion
 
-#region Tokens 
+        #region Tokens 
 
         /// <summary>
         /// defines tokens that can be used in script, not all tokens are referenced here, only those not built on keywords (if then/ switch etc.)
         /// </summary>
-        static public BlastScriptTokenDefinition[] Tokens = new BlastScriptTokenDefinition[] 
+        static public BlastScriptTokenDefinition[] Tokens = new BlastScriptTokenDefinition[]
         {
             new BlastScriptTokenDefinition(BlastScriptToken.Add, '+', "adds 2 operands together, supports all datatypes"),
             new BlastScriptTokenDefinition(BlastScriptToken.Substract, '-', "substracts right operand from left, supports all datatypes"),
@@ -1435,7 +1434,7 @@ namespace NSS.Blast
         /// <returns></returns>
         public static int OperationPrecedance(blast_operation a, blast_operation b)
         {
-            switch(a)
+            switch (a)
             {
                 case blast_operation.add:
                 case blast_operation.substract:
@@ -1452,15 +1451,15 @@ namespace NSS.Blast
                 case blast_operation.multiply:
                 case blast_operation.divide:
 
-                    switch(b)
+                    switch (b)
                     {
                         case blast_operation.add:
                         case blast_operation.substract: return -1;
 
                         case blast_operation.multiply:
-                        case blast_operation.divide:   return 0; 
+                        case blast_operation.divide: return 0;
                     }
-                    break; 
+                    break;
 
             }
 
@@ -1468,11 +1467,11 @@ namespace NSS.Blast
         }
 
 
-#endregion
+        #endregion
 
-#region Functions 
+        #region Functions 
 
-     
+
         /// <summary>
         /// get the function for a sequence of op, add -> adda
         /// </summary>
@@ -1512,9 +1511,9 @@ namespace NSS.Blast
             return false;
         }
 
-#endregion
+        #endregion
 
-#region Blast Script API:   Compiletime Function Pointers 
+        #region Blast Script API:   Compiletime Function Pointers 
 
         /// <summary>
         /// the current set of script accessible functions, check OwnScriptAPIMemory to see if this instance of blast is the owner of the memory used in the API
@@ -1524,12 +1523,12 @@ namespace NSS.Blast
         /// <summary>
         /// true if memory is owned by this instance of blast and should be destroyed with it 
         /// </summary>
-        private bool OwnScriptAPIMemory; 
+        private bool OwnScriptAPIMemory;
 
 
-#endregion
+        #endregion
 
-#region Designtime CompileRegistry
+        #region Designtime CompileRegistry
 
         /// <summary>
         /// Enumerates all scripts known by blast 
@@ -1572,9 +1571,9 @@ namespace NSS.Blast
             }
         }
 #endif
-#endregion
+        #endregion
 
-#region Runtime compilation of configuration into compiletime script for use next compilation
+        #region Runtime compilation of configuration into compiletime script for use next compilation
 
         /// <summary>
         /// compile the script into the designtime registry 
@@ -1602,7 +1601,7 @@ namespace NSS.Blast
 #if !STANDALONE_VSBUILD
                 Debug.LogError("failed to compile script: " + script);
 #else
-                System.Diagnostics.Debug.WriteLine("ERROR: Failed to compile script: " + script); 
+                System.Diagnostics.Debug.WriteLine("ERROR: Failed to compile script: " + script);
 #endif
                 return false;
             }
@@ -1615,7 +1614,7 @@ namespace NSS.Blast
                     target,
                     HPCNamespace.CombineScriptsIntoNamespace(new string[] { data.HPCCode }));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 // 99% sure this is an IO error
 #if !STANDALONE_VSBUILD
@@ -1624,15 +1623,15 @@ namespace NSS.Blast
                 System.Diagnostics.Debug.WriteLine($"Blast.CompileIntoRegistry: Failed to write script '{script}' to target location at: {target}\n\nError: {ex.ToString()}\n");
 #endif
 
-                return false; 
+                return false;
             }
             return true;
         }
 
 
-#endregion
+        #endregion
 
-#region HPC Jobs 
+        #region HPC Jobs 
         static Dictionary<int, IBlastHPCScriptJob> _hpc_jobs = null;
         [BurstDiscard]
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'Blast.HPCJobs'
@@ -1674,9 +1673,9 @@ namespace NSS.Blast
             }
             return null;
         }
-#endregion
+        #endregion
 
-#region bytecode reading / tostring
+        #region bytecode reading / tostring
 
         /// <summary>
         /// get somewhat readable assembly from bytes
@@ -1690,17 +1689,17 @@ namespace NSS.Blast
             StringBuilder sb = new StringBuilder();
 
             int i = 0;
-            int asnumber = 0; 
+            int asnumber = 0;
 
             while (i < length)
             {
                 blast_operation op = (blast_operation)bytes[i];
-                if(asnumber > 0)
+                if (asnumber > 0)
                 {
                     asnumber--;
                     sb.Append($"#{((byte)op).ToString().PadLeft(3, '0')} ");
                     i++;
-                    continue; 
+                    continue;
                 }
                 switch (op)
                 {
@@ -1755,7 +1754,7 @@ namespace NSS.Blast
                         break;
                     case blast_operation.fmod: sb.Append("fmod "); break;
                     case blast_operation.csum: sb.Append("csum "); break;
-                    case blast_operation.trunc: sb.Append("trunc "); break; 
+                    case blast_operation.trunc: sb.Append("trunc "); break;
 
                     case blast_operation.adda:
                         break;
@@ -1828,7 +1827,7 @@ namespace NSS.Blast
                     case blast_operation.framecount: sb.Append("framecount "); break;
                     case blast_operation.fixedtime: sb.Append("fixedtime "); break;
                     case blast_operation.time: sb.Append("time "); break;
-                    
+
                     case blast_operation.constant_f1: sb.Append("cf1 "); asnumber = 4; break;
                     case blast_operation.constant_f1_h: sb.Append("cf1h "); asnumber = 2; break;
                     case blast_operation.constant_long_ref: sb.Append("clref "); asnumber = 2; break;
@@ -1851,14 +1850,14 @@ namespace NSS.Blast
                             case extended_blast_operation.sqrt:
                             case extended_blast_operation.rsqrt:
                             case extended_blast_operation.pow:
-                            case extended_blast_operation.sin: 
-                            case extended_blast_operation.cos: 
+                            case extended_blast_operation.sin:
+                            case extended_blast_operation.cos:
                             case extended_blast_operation.tan:
                             case extended_blast_operation.atan:
                             case extended_blast_operation.atan2:
-                            case extended_blast_operation.cosh: 
-                            case extended_blast_operation.sinh: 
-                            case extended_blast_operation.degrees: 
+                            case extended_blast_operation.cosh:
+                            case extended_blast_operation.sinh:
+                            case extended_blast_operation.degrees:
                             case extended_blast_operation.radians:
                             case extended_blast_operation.lerp:
                             case extended_blast_operation.slerp:
@@ -1872,7 +1871,7 @@ namespace NSS.Blast
                             case extended_blast_operation.unlerp:
                             case extended_blast_operation.ceillog2:
                             case extended_blast_operation.floorlog2:
-                            case extended_blast_operation.ceilpow2: 
+                            case extended_blast_operation.ceilpow2:
                                 sb.Append($"{ex} ");
                                 break;
 
@@ -1900,7 +1899,7 @@ namespace NSS.Blast
         /// <param name="res"></param>
         /// <returns></returns>
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]                                               
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static internal bool IsError(BlastError res)
         {
             return res != BlastError.success && res != BlastError.yield;
@@ -1974,9 +1973,9 @@ namespace NSS.Blast
             return false;
         }
 
-#endregion
+        #endregion
 
-#region Execute Scripts (UNITY)
+        #region Execute Scripts (UNITY)
 #if !STANDALONE_VSBUILD && FALSE
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
@@ -2063,7 +2062,7 @@ namespace NSS.Blast
             return 0;
         }
 #endif
-#endregion
+        #endregion
 
 
         /// <summary>
