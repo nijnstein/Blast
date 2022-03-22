@@ -83,9 +83,20 @@ namespace NSS.Blast
         public string Code { get; internal set; }
 
         /// <summary>
-        /// native package data, contains references to code and data segments 
+        /// compiled script package
         /// </summary>
         public BlastScriptPackage Package { get; internal set; }
+
+        /// <summary>
+        /// native package data, contains references to code and data segments 
+        /// </summary>
+        public BlastPackageData PackageData 
+        { 
+            get
+            {
+                return Package != null ? Package.Package : default; 
+            } 
+        }
 
         /// <summary>
         ///  true if the script has been packaged / prepared
@@ -126,7 +137,7 @@ namespace NSS.Blast
         public BlastError Prepare(bool prepare_variable_info = true, bool ssmd = false)
         {
             if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized;
-            return Prepare(Blast.Instance.Engine, prepare_variable_info);
+            return Prepare(Blast.Instance.Engine, prepare_variable_info, ssmd);
         }
 
 
@@ -141,10 +152,7 @@ namespace NSS.Blast
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (IsPackaged) return BlastError.error_already_packaged;
 
-            BlastCompilerOptions options = ssmd ?
-                Blast.SSMDCompilerOptions
-                :
-                Blast.CompilerOptions; 
+            BlastCompilerOptions options = ssmd ? Blast.SSMDCompilerOptions : Blast.CompilerOptions; 
 
             if (prepare_variable_info)
             {

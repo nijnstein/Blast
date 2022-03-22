@@ -131,8 +131,12 @@ namespace NSS.Blast.Compiler.Stage
                 // - IS single parameter 
 
                 // check if children of child form an operation list, if so push it as compound 
-                if (node.IsOperationList(child))
+                if (!child.IsCompound && node.IsOperationList(child))
                 {
+                    //
+                    // probably wont ever reach here anymore after !child.IsCompound is added to above condition
+                    //
+
                     List<node> flat_compound_nodes;
 
                     BlastError res = FlattenCompound(data, child, out flat_compound_nodes);

@@ -1245,6 +1245,7 @@ namespace NSS.Blast
             return BlastError.success;
         }
 
+
         /// <summary>
         /// execute the script using the data pointer as datasegment   
         /// </summary>
@@ -1290,22 +1291,31 @@ namespace NSS.Blast
             return BlastError.success;
         }
 
+        unsafe public BlastError Execute<T>(IntPtr blast, IntPtr environment, IntPtr caller, NativeArray<T> data, bool is_referenced = false, int max_ssmd_count = 1024 * 2) where T : unmanaged
+        {
+            return Execute(blast, environment, caller, data.Slice(0, data.Length), is_referenced, max_ssmd_count); 
+        }
+
+
         /// <summary>
-        /// execute for each element in the data array 
+        /// ssmd execution 
         /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <param name="blast"></param>
         /// <param name="environment"></param>
         /// <param name="caller"></param>
-        /// <param name="data"></param>
-        /// <param name="reset_defaults"></param>
+        /// <param name="data">data array</param>
+        /// <param name="is_referenced">if true data contains references to the actual data</param>
+        /// <param name="max_ssmd_count">max per single run</param>
         /// <returns></returns>
-        unsafe public BlastError Execute<T>(IntPtr blast, IntPtr environment, IntPtr caller, NativeArray<T> data, int max_ssmd_count = 1024 * 2) where T: unmanaged
+        unsafe public BlastError Execute<T>(IntPtr blast, IntPtr environment, IntPtr caller, NativeSlice<T> data, bool is_referenced = false, int max_ssmd_count = 1024 * 2) where T: unmanaged
         {
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (!IsAllocated) return BlastError.error_package_not_allocated;
 
             switch (Package.PackageMode)
             {
+                case BlastPackageMode.SSMD:
                 case BlastPackageMode.Normal:
 #if !USE_BURST_JOBS
                     BlastError res = BlastError.success;
@@ -1313,6 +1323,12 @@ namespace NSS.Blast
                     // execute in SSMD if packaged as such
                     if (Package.PackageMode == BlastPackageMode.SSMD)
                     {
+                        if(is_referenced)
+                        {
+                    todo in vs
+                        }
+                        else
+                        {
                         byte** dataptrs = stackalloc byte*[max_ssmd_count];
                         byte* p = (byte*)data.GetUnsafeReadOnlyPtr();
                         int datasize = sizeof(T); 
@@ -1334,7 +1350,8 @@ namespace NSS.Blast
                                 Blast.ssmd_blaster.SetPackage(in Package);
                                 res = (BlastError)Blast.ssmd_blaster.Execute(in Package, blast, environment, (BlastSSMDDataStack*)(void*)dataptrs, j);
                             }
-                        }     
+                        }
+                        }
                     }    
                     else
                     {
@@ -1358,6 +1375,7 @@ namespace NSS.Blast
                             data_count = data.Length,
                             data_buffer = new IntPtr(data.GetUnsafeReadOnlyPtr()),
                             data_size = sizeof(T),
+                            data_is_referenced = is_referenced, 
                             max_ssmd_count = 1024 
                         };
                         ssmd_job.Run();
@@ -1365,6 +1383,11 @@ namespace NSS.Blast
                     }
                     else
                     {
+                        if (is_referenced)
+                        {
+                            Debug.LogError("BlastScriptPackage.Execute: data_is_referenced is only allowed for ssmd packages");
+                        }
+
                         var job = new Jobs.blast_execute_package_with_multiple_data_burst_job()
                         {
                             engine = blast,
@@ -1382,7 +1405,6 @@ namespace NSS.Blast
 
                 case BlastPackageMode.Entity:
                 case BlastPackageMode.Compiler:
-                case BlastPackageMode.SSMD:
                     return BlastError.error_packagemode_not_supported_for_direct_execution;
             }
 

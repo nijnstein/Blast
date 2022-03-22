@@ -1889,6 +1889,7 @@ namespace NSS.Blast.Interpretor
         void Handle_DebugStack()
         {
 #if DEVELOPMENT_BUILD || TRACE
+#if STANDALONE_VSBUILD
             for (int i = 0; i < stack_offset; i++)
             {
                 if (i < package.DataSegmentStackOffset / 4)
@@ -1900,12 +1901,26 @@ namespace NSS.Blast.Interpretor
                     Debug.Log($"STACK {i} = {((float*)data)[i].ToString().PadRight(10)}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
                 }
             }
+#else 
+            // less string magic in burstable code => less readable 
+            for (int i = 0; i < stack_offset; i++)
+            {
+                if (i < package.DataSegmentStackOffset / 4)
+                {
+                    Debug.Log($"DATA  {i} = {((float*)data)[i]}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
+                }
+                else
+                {
+                    Debug.Log($"STACK {i} = {((float*)data)[i]}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
+                }
+            }
+#endif
 #endif
         }
 
-#endregion
+        #endregion
 
-#region External Functionpointer calls 
+        #region External Functionpointer calls 
         /// <summary>
         /// call an external function pointer, pointed to by an 8|16|32 bit identifier 
         ///</summary>

@@ -77,7 +77,12 @@ namespace NSS.Blast.Jobs
 
         public int data_count;
         public int data_size;
-        public int max_ssmd_count; 
+        public int max_ssmd_count;
+
+        /// <summary>
+        /// if true, array is interpreted as an array of pointers pointing to the data 
+        /// </summary>
+        public bool data_is_referenced; 
 
         [NoAlias]
         [NativeDisableUnsafePtrRestriction]
@@ -89,30 +94,47 @@ namespace NSS.Blast.Jobs
         {
             unsafe
             {
-                int max_count = math.min(max_ssmd_count, data_count); 
-                byte** dataptrs = stackalloc byte*[max_count];
-
-                byte* p = (byte*)data_buffer;
-
                 int i = 0;
                 exitcode = 0;
 
                 blaster.SetPackage(in package);
 
                 // divide load in slices of max_ssmd_count long 
-                while (i < data_count && exitcode == 0)
+                if (data_is_referenced)
                 {
-                    int j = 0;
-                    while (i < data_count && j < max_count)
+                    void** pp = (void**)data_buffer;
+
+                    while (i < data_count && exitcode == 0)
                     {
-                        dataptrs[j] = (byte*)&p[i * data_size];
-                        i++;
-                        j++;
+                        int j = math.min(data_count, i + max_ssmd_count);
+                        if (j > 0)
+                        {
+                            exitcode = blaster.Execute(in package, engine, environment, (BlastSSMDDataStack*)(void*)&pp[i], j - i, true);
+                            i = j;
+                        }
                     }
-                    if (j > 0)
+                }
+                else
+                {
+                    int max_count = math.min(max_ssmd_count, data_count);
+                    byte** dataptrs = stackalloc byte*[max_count];
+
+                    byte* p = (byte*)data_buffer;
+
+                    while (i < data_count && exitcode == 0)
                     {
-                        // execute slice
-                        exitcode = blaster.Execute(in package, engine, environment, (BlastSSMDDataStack*)(void*)dataptrs, j);
+                        int j = 0;
+                        while (i < data_count && j < max_count)
+                        {
+                            dataptrs[j] = (byte*)&p[i * data_size];
+                            i++;
+                            j++;
+                        }
+                        if (j > 0)
+                        {
+                            // execute slice
+                            exitcode = blaster.Execute(in package, engine, environment, (BlastSSMDDataStack*)(void*)dataptrs, j, true);
+                        }
                     }
                 }
             }

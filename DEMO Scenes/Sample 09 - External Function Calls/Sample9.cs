@@ -9,7 +9,7 @@ using Unity.Mathematics;
 using UnityEngine;
 
 [BurstCompile]
-public class Sample10 : MonoBehaviour
+public class Sample9 : MonoBehaviour
 {
 
     [BurstCompile]
@@ -95,7 +95,7 @@ public class Sample10 : MonoBehaviour
                 BlastError result = script.Execute(Blast.Instance.Engine, (IntPtr)penv, IntPtr.Zero);
                 if (result == BlastError.success)
                 {
-                    // and get updated positon 
+                    // and get updated data back 
                     a = (float)script["a"];
                 }
                 else

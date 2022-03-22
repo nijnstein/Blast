@@ -42,9 +42,7 @@ using System.Linq;
 namespace NSS.Blast
 {
     /// <summary>
-    /// BLAST execution data
-    /// - used during execution of scripts
-    /// - shared by all threads
+    /// BLAST execution data - used during execution of scripts
     /// </summary>
     [BurstCompile]
     unsafe public struct BlastEngineData
@@ -612,25 +610,19 @@ namespace NSS.Blast
             is_created = false;
         }
 
-#endregion
+        #endregion
 
-#region Execute 
-        //
-        // create jobs for use in unity with burst 
-        //
+        #region Execute 
 #if !STANDALONE_VSBUILD
 
-        [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public NSS.Blast.Jobs.blast_execute_package_burst_job CreateExecuteJob(BlastPackageData package)
+
+        public NSS.Blast.Jobs.blast_execute_package_burst_job CreateScriptJob(BlastPackageData package)
         {
-            return CreateExecuteJob(package, IntPtr.Zero, IntPtr.Zero); 
+            return CreateScriptJob(package, IntPtr.Zero, IntPtr.Zero); 
         }
 
 
-        [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public NSS.Blast.Jobs.blast_execute_package_burst_job CreateExecuteJob(BlastPackageData package, IntPtr environment, IntPtr caller)
+        public NSS.Blast.Jobs.blast_execute_package_burst_job CreateScriptJob(BlastPackageData package, IntPtr environment, IntPtr caller)
         {
             return new Jobs.blast_execute_package_burst_job()
             {
@@ -641,15 +633,11 @@ namespace NSS.Blast
             };
         }
 
-        [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public NSS.Blast.Jobs.blast_execute_package_ssmd_burst_job CreateSSMDJob(BlastPackageData package, IntPtr ssmd_data, int ssmd_count)
         {
             return CreateSSMDJob(package, IntPtr.Zero, ssmd_data, ssmd_count); 
         }
 
-        [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public NSS.Blast.Jobs.blast_execute_package_ssmd_burst_job CreateSSMDJob(BlastPackageData package, IntPtr environment, IntPtr ssmd_data, int ssmd_count)
         {
             return new Jobs.blast_execute_package_ssmd_burst_job()

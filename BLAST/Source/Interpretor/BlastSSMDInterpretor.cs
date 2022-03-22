@@ -181,12 +181,12 @@ namespace NSS.Blast.SSMD
         /// <param name="ssmddata"></param>
         /// <param name="ssmd_data_count"></param>
         /// <returns></returns>
-        public int Execute(in BlastPackageData packagedata, [NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]BlastSSMDDataStack* ssmddata, int ssmd_data_count)
+        public int Execute(in BlastPackageData packagedata, [NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]BlastSSMDDataStack* ssmddata, int ssmd_data_count, bool is_referenced = false)
         {
             BlastError res = SetPackage(packagedata);
             if (res != BlastError.success) return (int)res;
 
-            return Execute(blast, environment, ssmddata, ssmd_data_count);
+            return Execute(blast, environment, ssmddata, ssmd_data_count, is_referenced);
         }
 
         /// <summary>
@@ -200,7 +200,7 @@ namespace NSS.Blast.SSMD
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
 #endif
-        public int Execute([NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]BlastSSMDDataStack* ssmddata, int ssmd_data_count)
+        public int Execute([NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]BlastSSMDDataStack* ssmddata, int ssmd_data_count, bool is_referenced = false)
         {
             if (!blast.IsCreated) return (int)BlastError.error_blast_not_initialized;
 
@@ -237,26 +237,35 @@ namespace NSS.Blast.SSMD
             engine_ptr = blast.Data;
             environment_ptr = environment;
 
-            // a register for each of max vectorsize
-            float4* register = stackalloc float4[ssmd_data_count];
-
-            // generate a list of datasegment pointers on the stack:
-            byte** datastack = stackalloc byte*[ssmd_data_count];
-            int datastack_stride = package.SSMDDataSize;
-
-            // although we allocate everything in 1 block, we will index a pointer to every block,
-            // this will allow us to accept non-block aligned lists of memory pointers 
-            for (int i = 0; i < ssmd_data_count; i++)
-            {
-                datastack[i] = ((byte*)ssmddata) + (datastack_stride * i);
-            }
-
             // setup sync buffer 
             syncbuffer_level = 0;
             byte* syncbuffer = null; // stackalloc byte[ssmd_datacount];
 
-            // execute 
-            return Execute(syncbuffer, datastack, ssmd_data_count, register);
+            // a register for each of max vectorsize
+            float4* register = stackalloc float4[ssmd_data_count];
+
+            if (!is_referenced)
+            {
+                // generate a list of datasegment pointers on the stack:
+                byte** datastack = stackalloc byte*[ssmd_data_count];
+                int datastack_stride = package.SSMDDataSize;
+
+                // although we allocate everything in 1 block, we will index a pointer to every block,
+                // this will allow us to accept non-block aligned lists of memory pointers 
+                for (int i = 0; i < ssmd_data_count; i++)
+                {
+                    datastack[i] = ((byte*)ssmddata) + (datastack_stride * i);
+                }
+
+                // execute 
+                return Execute(syncbuffer, datastack, ssmd_data_count, register);
+            }
+            else
+            {
+                return Execute(syncbuffer, (byte**)(void*)(ssmddata), ssmd_data_count, register); 
+            }
+
+
         }
         #endregion
 
@@ -572,7 +581,7 @@ namespace NSS.Blast.SSMD
                             }
 #endif
                             // stack pop 
-                            stack_offset = stack_offset - size;   // element size of value is always 1 if expanding
+                            stack_offset = stack_offset - 1;   // element size of value is always 1 if expanding
 
                             // if indexed, the source data has a different cardinality
                             int offset = stack_offset + math.select(0, indexer, indexer >= 0);
@@ -2392,9 +2401,9 @@ namespace NSS.Blast.SSMD
 
 #if DEVELOPMENT_BUILD || TRACE
             BlastVariableDataType type;
-            int size;
 #endif
 
+            int size;
             float constant;
             byte* bf = stackalloc byte[4];
 
@@ -6413,6 +6422,9 @@ namespace NSS.Blast.SSMD
 
         /// <summary>
         /// get result of operation with multiple parameters that is based on components of vectors: mina, maxa, csum
+        /// 
+        /// - somewhere in this function BURST crashes on a type conversion of a single 
+        /// 
         /// </summary>
         void get_op_a_component_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]ref float4* f4, blast_operation operation)
         {
@@ -6447,16 +6459,16 @@ namespace NSS.Blast.SSMD
                         switch (operation)
                         {
                             case blast_operation.maxa:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmax(t4[i]);
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.max(f4[i].x, math.cmax(t4[i]));
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) { f4[i][0] = math.cmax(t4[i]); }
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.max(f4[i].x, math.cmax(t4[i]));
                                 break;
                             case blast_operation.mina:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmin(t4[i]);
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.min(f4[i].x, math.cmin(t4[i]));
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.cmin(t4[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.min(f4[i][0], math.cmin(t4[i]));
                                 break;
                             case blast_operation.csum:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.csum(t4[i]);
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = f4[i].x + math.csum(t4[i]);
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.csum(t4[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = f4[i][0] + math.csum(t4[i]);
                                 break;
                         }
                         break;
@@ -6468,16 +6480,16 @@ namespace NSS.Blast.SSMD
                         switch (operation)
                         {
                             case blast_operation.maxa:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = t1[i];
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.max(f4[i].x, t1[i]);
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = t1[i];
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.max(f4[i][0], t1[i]);
                                 break;
                             case blast_operation.mina:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = t1[i];
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.min(f4[i].x, t1[i]);
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = t1[i];
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.min(f4[i][0], t1[i]);
                                 break;
                             case blast_operation.csum:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = t1[i];
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x += t1[i];
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = t1[i];
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] += t1[i];
                                 break;
                         }
                         break;
@@ -6488,16 +6500,16 @@ namespace NSS.Blast.SSMD
                         switch (operation)
                         {
                             case blast_operation.maxa:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmax(t2[i]);
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.max(f4[i].x, math.cmax(t2[i]));
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.cmax(t2[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.max(f4[i][0], math.cmax(t2[i]));
                                 break;
                             case blast_operation.mina:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmin(t2[i]);
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.min(f4[i].x, math.cmin(t2[i]));
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.cmin(t2[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.min(f4[i][0], math.cmin(t2[i]));
                                 break;
                             case blast_operation.csum:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.csum(t2[i]);
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = f4[i].x + math.csum(t2[i]);
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.csum(t2[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = f4[i][0] + math.csum(t2[i]);
                                 break;
                         }
                         break;
@@ -6508,16 +6520,16 @@ namespace NSS.Blast.SSMD
                         switch (operation)
                         {
                             case blast_operation.maxa:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmax(t3[i]);
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.max(f4[i].x, math.cmax(t3[i]));
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.cmax(t3[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.max(f4[i][0], math.cmax(t3[i]));
                                 break;
                             case blast_operation.mina:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.cmin(t3[i]);
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.min(f4[i].x, math.cmin(t3[i]));
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.cmin(t3[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.min(f4[i][0], math.cmin(t3[i]));
                                 break;
                             case blast_operation.csum:
-                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.csum(t3[i]);
-                                else for (int i = 0; i < ssmd_datacount; i++) f4[i].x = f4[i].x + math.csum(t3[i]);
+                                if (j == 0) for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = math.csum(t3[i]);
+                                else for (int i = 0; i < ssmd_datacount; i++) f4[i][0] = f4[i][0] + math.csum(t3[i]);
                                 break;
                         }
                         break;
@@ -7199,8 +7211,9 @@ namespace NSS.Blast.SSMD
             {
                 BlastVariableDataType dt;
                 byte size;
-                BlastInterpretor.GetMetaData(metadata, (byte)offset, out size, out dt); 
- 
+                BlastInterpretor.GetMetaData(metadata, (byte)offset, out size, out dt);
+
+#if STANDALONE_VSBUILD
                 switch(size)
                 {
                     case 1:
@@ -7220,16 +7233,40 @@ namespace NSS.Blast.SSMD
                         Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")} {((float*)data[0])[offset + 2].ToString("0.000")} {((float*)data[0])[offset + 3].ToString("0.000")}, {dt}[{size}]");
                         break;
                 }
-
             }
+#else
+                // reduced string magic for burstable code path
+                switch (size)
+                {
+                    case 1:
+                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]}, {dt}[{size}]");
+                        break;
+
+                    case 2:
+                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]} {((float*)data[0])[offset + 1]}, {dt}[{size}]");
+                        break;
+
+                    case 3:
+                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]} {((float*)data[0])[offset + 1]} {((float*)data[0])[offset + 2]}, {dt}[{size}]");
+                        break;
+
+                    case 0:
+                    case 4:
+                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]} {((float*)data[0])[offset + 1]} {((float*)data[0])[offset + 2]} {((float*)data[0])[offset + 3]}, {dt}[{size}]");
+                        break;
+                }
+            }
+#endif
 #endif
         }
 
         static internal int DebugDisplayVector(int idata, int ssmdi, void** data, byte* metadata)
         {
+#if DEVELOPMENT_BUILD || TRACE
             BlastVariableDataType dt = BlastInterpretor.GetMetaDataType(metadata, (byte)idata);
             int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)idata);
 
+#if STANDALONE_VSBUILD
             switch(size)
             {
                 case 1:
@@ -7249,7 +7286,32 @@ namespace NSS.Blast.SSMD
                     Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata+1]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata+2]).ToString("0.0000").PadRight(20)} {dt}[{size}]");
                     return idata + 3;
             }
+#else
+            // less string magic for burstable code 
+            switch (size)
+            {
+                case 1:
+                    Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])} {dt}[{size}]");
+                    return idata + 1;
+
+                case 0:
+                case 4:
+                    Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])}{(((float*)data[ssmdi])[idata + 3])} {dt}[{size}]");
+                    return idata + 4;
+
+                case 2:
+                    Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])} {dt}[{size}]");
+                    return idata + 2;
+
+                case 3:
+                    Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])} {dt}[{size}]");
+                    return idata + 3;
+            }
+#endif 
+            return idata + 1;
+#else
             return idata + 1; 
+#endif
         }
 
         /// <summary>
@@ -8036,7 +8098,7 @@ namespace NSS.Blast.SSMD
 
 
 
-        #region Stack Operation Handlers 
+#region Stack Operation Handlers 
 
         BlastError push(ref int code_pointer, ref byte vector_size, [NoAlias]void* temp)
         {
@@ -8209,10 +8271,10 @@ namespace NSS.Blast.SSMD
             return BlastError.success;
         }
 
-        #endregion
+#endregion
 
 
-        #region Assign[s|f] operation handlers
+#region Assign[s|f] operation handlers
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void determine_assigned_indexer(ref int code_pointer, ref byte assignee_op, out bool is_indexed, out blast_operation indexer)
@@ -8577,7 +8639,7 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
 
 
         /// <summary>
@@ -8848,6 +8910,6 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
     }
 }

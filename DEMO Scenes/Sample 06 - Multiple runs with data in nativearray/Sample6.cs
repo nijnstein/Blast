@@ -43,6 +43,14 @@ public class Sample6 : MonoBehaviour
         Blast.Initialize();   
     }
 
+
+    /// <summary>
+    /// 
+    /// object to hold variables for one call
+    /// - as blast only supports floats we can directly map this into a float*
+    /// - structure layout must be sequential (padding on float size|32 bits)
+    ///
+    /// </summary>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
     public struct data
