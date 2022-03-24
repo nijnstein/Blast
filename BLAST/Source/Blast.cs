@@ -2072,8 +2072,6 @@ namespace NSS.Blast
         /// using(Blast blast = Blast.Create(Allocator.Persistant))
         /// {
         /// 
-        /// 
-        /// 
         /// }
         /// </remarks>
         public void Dispose()
@@ -2083,10 +2081,6 @@ namespace NSS.Blast
                 Destroy();
             }
         }
-
-
     }
-
-
 }
 

@@ -6991,6 +6991,11 @@ namespace NSS.Blast.SSMD
                 case blast_operation.expand_v3: expand_f1_into_fn(3, ref code_pointer, ref vector_size, f4_result); break;
                 case blast_operation.expand_v4: expand_f1_into_fn(4, ref code_pointer, ref vector_size, f4_result); break;
 
+                case blast_operation.get_bit: get_getbit_result(temp, ref code_pointer, ref vector_size, f4_result); break; 
+                case blast_operation.get_bits: get_getbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                case blast_operation.set_bit: get_setbit_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                case blast_operation.set_bits: get_setbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+
                 case blast_operation.ex_op:
                     {
                         extended_blast_operation exop = (extended_blast_operation)code[code_pointer];
@@ -7045,6 +7050,16 @@ namespace NSS.Blast.SSMD
                             //  -> build an indexer of ssmd_datacount wide with all dataroots so we can move that like a card over our data? so we dont need to copy 5!!! buffers ... 
                             // 
                             // case extended_blast_operation.remap: get_remap_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+
+                            // bitwise operations
+                            case extended_blast_operation.count_bits: get_countbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.reverse_bits: get_reversebits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.tzcnt: get_tzcnt_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.lzcnt: get_lzcnt_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.rol: get_rol_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.ror: get_ror_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.shr: get_shr_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.shl: get_shl_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
 
                             case extended_blast_operation.debugstack:
@@ -7753,6 +7768,10 @@ namespace NSS.Blast.SSMD
                     case blast_operation.expand_v2:
                     case blast_operation.expand_v3:
                     case blast_operation.expand_v4:
+                    case blast_operation.get_bit:
+                    case blast_operation.get_bits:
+                    case blast_operation.set_bit:
+                    case blast_operation.set_bits:
                     case blast_operation.ex_op:
 
                         // on no operation pending

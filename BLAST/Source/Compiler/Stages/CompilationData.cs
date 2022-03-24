@@ -698,6 +698,11 @@ namespace NSS.Blast.Compiler
                         case blast_operation.expand_v3: sb.Append("expand_v3 "); break;
                         case blast_operation.expand_v4: sb.Append("expand_v4 "); break;
 
+                        case blast_operation.set_bit: sb.Append("set_bit "); asnumber = 3; break;
+                        case blast_operation.set_bits: sb.Append("set_bits "); asnumber = 3; break;
+                        case blast_operation.get_bit: sb.Append("get_bit "); asnumber = 2; break;
+                        case blast_operation.get_bits: sb.Append("get_bits "); asnumber = 2; break;
+
                         case blast_operation.ex_op:
                             i++;
                             extended_blast_operation exop = (extended_blast_operation)code[i];
@@ -739,8 +744,18 @@ namespace NSS.Blast.Compiler
                                 case extended_blast_operation.unlerp: sb.Append("unlerp "); break; 
                                 case extended_blast_operation.ceillog2: sb.Append("ceillog2 "); break; 
                                 case extended_blast_operation.floorlog2: sb.Append("floorlog2 "); break; 
-                                case extended_blast_operation.ceilpow2: sb.Append("ceilpow2 "); break; 
+                                case extended_blast_operation.ceilpow2: sb.Append("ceilpow2 "); break;
 
+                                case extended_blast_operation.count_bits: sb.Append("count_bits "); break;
+                                case extended_blast_operation.reverse_bits: sb.Append("reverse_bits "); break;
+
+                                case extended_blast_operation.shl: sb.Append("shl "); break; 
+                                case extended_blast_operation.shr: sb.Append("shr "); break; 
+                                case extended_blast_operation.ror: sb.Append("ror "); break;
+                                case extended_blast_operation.rol: sb.Append("rol "); break;
+
+                                case extended_blast_operation.tzcnt: sb.Append("tzcnt "); break;
+                                case extended_blast_operation.lzcnt: sb.Append("lzcnt "); break; 
 
                                 case extended_blast_operation.call:
                                     sb.Append("call ");

@@ -495,17 +495,29 @@ namespace NSS.Blast
         /// </remarks>
         constant_long_ref,
 
-        reserved13,
-        reserved14,
-        reserved15,
-        reserved16,
-        reserved17,
-        reserved18,
-        reserved19,
-        reserved20,
-        reserved21,
-        reserved22,
 
+        /// todo soon
+
+
+        /// <summary>
+        /// set(variable, mask, value[0|1])
+        /// </summary>
+        set_bits,
+
+        /// <summary>
+        /// get(variable, mask) => [0|1]
+        /// </summary>
+        get_bits,
+
+        set_bit,
+        get_bit,
+        
+        reserved1,
+        reserved2,
+        reserved3,
+        reserved4,
+        reserved5,         
+        reserved6,
 
 
         //------------------------
@@ -760,6 +772,10 @@ namespace NSS.Blast
         ceilpow2,
 
 
+
+
+
+
         // <summary>
         // snap value to its closest interval
         // </summary>
@@ -776,6 +792,51 @@ namespace NSS.Blast
 
 
         // step, smoothstep? 
+
+
+
+        /// <summary>
+        /// bitwise shift left 
+        /// </summary>        
+        shl,
+
+        /// <summary>
+        /// bitwise shift right 
+        /// </summary>
+        shr,
+
+        /// <summary>
+        /// bitwise rol right
+        /// </summary>
+        ror,
+
+        /// <summary>
+        /// bitwise rol left 
+        /// </summary>
+        rol, 
+
+        /// <summary>
+        /// leading zero bit count
+        /// </summary>
+        lzcnt,
+        
+        /// <summary>
+        /// trailing zero bit count 
+        /// </summary>
+        tzcnt,
+
+        /// <summary>
+        /// count high bits 
+        /// </summary>
+        count_bits,
+
+        /// <summary>
+        /// reverse bits 
+        /// </summary>
+        reverse_bits,
+
+
+
 
 
         /// <summary>
