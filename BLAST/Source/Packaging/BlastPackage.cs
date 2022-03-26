@@ -488,6 +488,7 @@ namespace NSS.Blast
 #endif                        
                         return IntPtr.Zero;
 
+                    case BlastPackageMode.Compiler: 
                     case BlastPackageMode.Normal: return CodeSegmentPtr + O2;
                     case BlastPackageMode.Entity: return P2 + O2;
                     case BlastPackageMode.SSMD: return P2;

@@ -104,7 +104,12 @@ namespace NSS.Blast
         /// <summary>
         /// long datatype 
         /// </summary>
-        ID64 = 3
+        ID64 = 3,
+
+        /// <summary>
+        /// each data element is to be interpreted as 32 boolean flags 
+        /// </summary>
+        Bool32 = 4 
     }
 
     /// <summary>

@@ -74,7 +74,7 @@ namespace NSS.Blast.Compiler.Stage
         static int scan_to_comment_end(string code, int i)
         {
             // read past any eol characters
-            while (i < code.Length && code[i] != '\n' && code[i] != '\r')
+            while (i < code.Length && code[i] != '\n' && code[i] != '\r' && code[i] != ';')
             {
                 i++;
             };
@@ -206,7 +206,6 @@ namespace NSS.Blast.Compiler.Stage
                 return null; 
             }
 
-
             // defaults? 
             float4 variable_default = default; 
             if(a.Length > 3)
@@ -218,15 +217,43 @@ namespace NSS.Blast.Compiler.Stage
                     data.LogError($"tokenizer.read_input_output_mapping: failed to interpret default as valid data for type, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}", (int)BlastError.error_input_ouput_invalid_default);
                     return null;  
                 }
-                for(int i = 0; i < vector_size; i++)
+                switch(datatype)
                 {
-                    float f = CodeUtils.AsFloat(a[3 + i]);
-                    if(float.IsNaN(f))
-                    {
-                        data.LogError($"tokenizer.read_input_output_mapping: failed to parse default[{i}] as numeric, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}, data = {a[3 + i]}", (int)BlastError.error_input_ouput_invalid_default);
-                        return null;
-                    }
-                    variable_default[i] = f; 
+                    case BlastVariableDataType.Numeric:
+                        {
+                            for (int i = 0; i < vector_size; i++)
+                            {
+                                float f = CodeUtils.AsFloat(a[3 + i]);
+                                if (float.IsNaN(f))
+                                {
+                                    data.LogError($"tokenizer.read_input_output_mapping: failed to parse default[{i}] as numeric, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}, data = {a[3 + i]}", (int)BlastError.error_input_ouput_invalid_default);
+                                    return null;
+                                }
+                                variable_default[i] = f;
+                            }
+                        }
+                        break;
+
+                    case BlastVariableDataType.Bool32:
+                        {
+                            // vectorsize can only be 1
+                            float f = 0;
+                            unsafe
+                            {
+                                uint* b32 = (uint*)(void*)&f;
+                                if (CodeUtils.TryAsBool32(a[3 + 1], out uint ui32))
+                                {
+                                    b32[0] = ui32; 
+                                }
+                                else
+                                {
+                                    data.LogError($"tokenizer.read_input_output_mapping: failed to parse default as Bool32, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}, data = {a[3]}", (int)BlastError.error_input_ouput_invalid_default);
+                                    return null;
+                                }
+                            }
+                            variable_default[0] = f; 
+                        }
+                        break; 
                 }
             }
 
@@ -471,7 +498,7 @@ namespace NSS.Blast.Compiler.Stage
                         // data.LogTrace($"trace: {comment}");
                     }
 
-                    i1 = math.max(i1 + 1, i_comment_end);
+                    i1 = math.max(i1 + 1, i_comment_end + 1);
                     continue;
                 }
 

@@ -1199,7 +1199,7 @@ namespace NSS.Blast.Interpretor
         {
             byte b = metadata[offset];
             size = (byte)(b & 0b0000_1111);
-            type = (BlastVariableDataType)(b & 0b1111_0000);
+            type = (BlastVariableDataType)((b & 0b1111_0000) >> 4);
         }
 
 
@@ -1895,6 +1895,8 @@ namespace NSS.Blast.Interpretor
         void Handle_DebugStack()
         {
 #if DEVELOPMENT_BUILD || TRACE
+            if (ValidateOnce) return;
+
 #if STANDALONE_VSBUILD
             for (int i = 0; i < stack_offset; i++)
             {
@@ -5887,8 +5889,10 @@ namespace NSS.Blast.Interpretor
             uint mask = (uint)(1 << (byte)index);
 
             current = math.select((uint)(current | mask), (uint)(current & ~mask), value == 0);
-
             ((uint*)data)[dataindex] = current;
+
+            // only set_bit & setbits force datatype change
+            SetMetaData(metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex); 
 
             code_pointer += 3;
         }
@@ -5999,6 +6003,9 @@ namespace NSS.Blast.Interpretor
             uint current = ((uint*)data)[dataindex];
             current = math.select((uint)(current | mask), (uint)(current & ~mask), value == 0);
             ((uint*)data)[dataindex] = current;
+
+            // only set_bit & setbits force datatype change
+            SetMetaData(metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex);
 
             code_pointer += 3;
         }
@@ -8298,7 +8305,10 @@ namespace NSS.Blast.Interpretor
                                         void* pdata = pop_with_info(code_pointer, out datatype, out vector_size);
 
 #if DEVELOPMENT_BUILD || TRACE
-                                        Handle_DebugData(code_pointer, vector_size, op_id, datatype, pdata);
+                                        if (!ValidationMode)
+                                        {
+                                            Handle_DebugData(code_pointer, vector_size, op_id, datatype, pdata);
+                                        }
 #endif
                                         code_pointer++;
                                     }

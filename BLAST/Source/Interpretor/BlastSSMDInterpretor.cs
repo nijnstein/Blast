@@ -6650,7 +6650,143 @@ namespace NSS.Blast.SSMD
         }
 
         #endregion
- 
+
+        #region Bitwise operations
+
+        /// <summary>
+        /// Note: sets bit in place, first parameter must be a direct data index (compiler should force this)
+        /// </summary>
+        void get_setbit_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
+        {
+            float* fp_index = (float*)temp;
+            float* fp_value = &fp_index[ssmd_datacount];
+
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.set_bit: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+#else
+            // dont check anything in release and vectorsize must be 1 so
+            vector_size = 1;
+#endif
+
+            // get index
+#if DEVELOPMENT_BUILD || TRACE
+            BlastVariableDataType datatype;
+            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+            if (vector_size != 1)
+            {
+                Debug.LogError($"ssmd.set_bit: the index to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
+                return;
+            }
+#endif 
+
+            pop_fx_into_ref<float>(ref code_pointer, fp_index);
+
+            // get value
+#if DEVELOPMENT_BUILD || TRACE
+            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+            if (vector_size != 1)
+            {
+                Debug.LogError($"ssmd.set_bit: the value to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
+                return;
+            }
+#endif 
+
+            pop_fx_into_ref<float>(ref code_pointer, fp_value);
+
+            // setbit & setbits override the datatype of the target to bool32 
+            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex);
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint current = ((uint*)data[i])[dataindex];
+
+                uint mask = (uint)(1 << (byte)fp_index[i]);
+
+                current = math.select((uint)(current | mask), (uint)(current & ~mask), ((uint*)fp_value)[i] == 0);
+
+                ((uint*)data[i])[dataindex] = current;
+            }
+
+            code_pointer--;
+        }
+
+        void get_setbits_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
+        {
+            float* fp_mask = (float*)temp;
+            float* fp_value = &fp_mask[ssmd_datacount];
+
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.set_bits: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+#else
+            // dont check anything in release and vectorsize must be 1 so
+            vector_size = 1;
+#endif
+
+            // get index
+#if DEVELOPMENT_BUILD || TRACE
+            BlastVariableDataType datatype;
+            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+            if (vector_size != 1)
+            {
+                Debug.LogError($"ssmd.set_bits: the mask to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
+                return;
+            }
+#endif 
+
+            pop_fx_into_ref<float>(ref code_pointer, fp_mask);
+
+            // get value
+#if DEVELOPMENT_BUILD || TRACE
+            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+            if (vector_size != 1)
+            {
+                Debug.LogError($"ssmd.set_bits: the value to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
+                return;
+            }
+#endif 
+
+            pop_fx_into_ref<float>(ref code_pointer, fp_value);
+
+            // setbit & setbits override the datatype of the target to bool32 
+            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex);
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint current = ((uint*)data[i])[dataindex];
+
+                uint mask = ((uint*)fp_mask)[i];
+
+                current = math.select((uint)(current | mask), (uint)(current & ~mask), ((uint*)fp_value)[i] == 0);
+
+                ((uint*)data[i])[dataindex] = current;
+            }
+
+            code_pointer--;
+        }
+
+
+
+
+        #endregion
+
         #region External Function Handler 
 
 #if !STANDALONE_VSBUILD
@@ -6991,10 +7127,11 @@ namespace NSS.Blast.SSMD
                 case blast_operation.expand_v3: expand_f1_into_fn(3, ref code_pointer, ref vector_size, f4_result); break;
                 case blast_operation.expand_v4: expand_f1_into_fn(4, ref code_pointer, ref vector_size, f4_result); break;
 
-                case blast_operation.get_bit: get_getbit_result(temp, ref code_pointer, ref vector_size, f4_result); break; 
-                case blast_operation.get_bits: get_getbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                case blast_operation.set_bit: get_setbit_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                case blast_operation.set_bits: get_setbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+               // case blast_operation.get_bit: get_getbit_result(temp, ref code_pointer, ref vector_size, f4_result); break; 
+                //case blast_operation.get_bits: get_getbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+
+                case blast_operation.set_bit: get_setbit_result(temp, ref code_pointer, ref vector_size); break;
+                case blast_operation.set_bits: get_setbits_result(temp, ref code_pointer, ref vector_size); break;
 
                 case blast_operation.ex_op:
                     {
@@ -7052,14 +7189,14 @@ namespace NSS.Blast.SSMD
                             // case extended_blast_operation.remap: get_remap_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                             // bitwise operations
-                            case extended_blast_operation.count_bits: get_countbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+            /*                case extended_blast_operation.count_bits: get_countbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                             case extended_blast_operation.reverse_bits: get_reversebits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                             case extended_blast_operation.tzcnt: get_tzcnt_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                             case extended_blast_operation.lzcnt: get_lzcnt_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                             case extended_blast_operation.rol: get_rol_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                             case extended_blast_operation.ror: get_ror_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                             case extended_blast_operation.shr: get_shr_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.shl: get_shl_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.shl: get_shl_result(temp, ref code_pointer, ref vector_size, f4_result); break;*/
 
 
                             case extended_blast_operation.debugstack:
@@ -7122,6 +7259,8 @@ namespace NSS.Blast.SSMD
         void RunDebugStack()
         {
 #if DEVELOPMENT_BUILD || TRACE
+            if (ValidateOnce) return; 
+
             int i = 0, ssmdi = 0;
 
             if (package.O3 > 0)
@@ -7272,6 +7411,8 @@ namespace NSS.Blast.SSMD
         void RunDebug(int offset)
         {
 #if DEVELOPMENT_BUILD || TRACE
+            if (ValidateOnce) return;
+
             if(offset < 0 || offset > (package.O3 >> 2))
             {
                 Debug.LogError($"DATA_SEGMENT[{offset}] = offset out of range");
@@ -7282,25 +7423,37 @@ namespace NSS.Blast.SSMD
                 byte size;
                 BlastInterpretor.GetMetaData(metadata, (byte)offset, out size, out dt);
 
+
+
+
 #if STANDALONE_VSBUILD
-                switch(size)
+                switch (dt)
                 {
-                    case 1:
-                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")}, {dt}[{size}]");
+                    case BlastVariableDataType.Numeric:
+                        switch (size)
+                        {
+                            case 1:
+                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")}, {dt}[{size}]");
+                                break;
+
+                            case 2:
+                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")}, {dt}[{size}]");
+                                break;
+
+                            case 3:
+                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")} {((float*)data[0])[offset + 2].ToString("0.000")}, {dt}[{size}]");
+                                break;
+
+                            case 0:
+                            case 4:
+                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")} {((float*)data[0])[offset + 2].ToString("0.000")} {((float*)data[0])[offset + 3].ToString("0.000")}, {dt}[{size}]");
+                                break;
+                        }
                         break;
 
-                    case 2:
-                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")}, {dt}[{size}]");
-                        break;  
-
-                    case 3:
-                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")} {((float*)data[0])[offset + 2].ToString("0.000")}, {dt}[{size}]");
-                        break;
-
-                    case 0:
-                    case 4:
-                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")} {((float*)data[0])[offset + 2].ToString("0.000")} {((float*)data[0])[offset + 3].ToString("0.000")}, {dt}[{size}]");
-                        break;
+                    case BlastVariableDataType.Bool32:
+                        Debug.Log($"DATA_SEGMENT[{offset}] = {CodeUtils.FormatBool32(((uint*)data[0])[offset])}, BOOL32");
+                        break; 
                 }
             }
 #else
@@ -7332,29 +7485,34 @@ namespace NSS.Blast.SSMD
         static internal int DebugDisplayVector(int idata, int ssmdi, void** data, byte* metadata)
         {
 #if DEVELOPMENT_BUILD || TRACE
+
             BlastVariableDataType dt = BlastInterpretor.GetMetaDataType(metadata, (byte)idata);
             int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)idata);
 
-#if STANDALONE_VSBUILD
-            switch(size)
+            switch (dt)
             {
-                case 1:
-                    Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(40)} {dt}[{size}]");
-                    return idata + 1; 
+                case BlastVariableDataType.Numeric:
+                    {
+#if STANDALONE_VSBUILD
+                        switch (size)
+                        {
+                            case 1:
+                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(40)} {dt}[{size}]");
+                                return idata + 1;
 
-                case 0:
-                case 4:
-                    Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata+1]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata+2]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata+3]).ToString("0.0000").PadRight(10)} {dt}[{size}]");
-                    return idata + 4;
+                            case 0:
+                            case 4:
+                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 1]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 2]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 3]).ToString("0.0000").PadRight(10)} {dt}[{size}]");
+                                return idata + 4;
 
-                case 2:
-                    Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata+1]).ToString("0.0000").PadRight(30)} {dt}[{size}]");
-                    return idata + 2;
+                            case 2:
+                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 1]).ToString("0.0000").PadRight(30)} {dt}[{size}]");
+                                return idata + 2;
 
-                case 3:  
-                    Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata+1]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata+2]).ToString("0.0000").PadRight(20)} {dt}[{size}]");
-                    return idata + 3;
-            }
+                            case 3:
+                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 1]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 2]).ToString("0.0000").PadRight(20)} {dt}[{size}]");
+                                return idata + 3;
+                        }
 #else
             // less string magic for burstable code 
             switch (size)
@@ -7376,11 +7534,25 @@ namespace NSS.Blast.SSMD
                     Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])} {dt}[{size}]");
                     return idata + 3;
             }
-#endif 
-            return idata + 1;
-#else
-            return idata + 1; 
 #endif
+                    }
+                    break;
+
+
+                case BlastVariableDataType.Bool32:
+                    {
+                        // vectorsize must be 1 
+                        uint b32 = ((uint*)data[ssmdi])[idata];
+#if STANDALONE_VSBUILD
+                        Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {CodeUtils.FormatBool32(b32)} BOOL32[1]");
+#else 
+                        Debug.Log($"Element: {idata} = {b32} BOOL32[1]");
+#endif
+                    }
+                    break;
+            }
+#endif
+            return idata + 1;
         }
 
         /// <summary>

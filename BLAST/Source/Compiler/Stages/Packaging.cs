@@ -136,7 +136,7 @@ namespace NSS.Blast.Compiler.Stage
             for (int i = 0; i < code.Count; i++)
             {
                 // skip hardcoded values, after call and constant define/reference
-                if (i > 0)
+                if (i > 0 && next_is_hardcoded_value <= 0)
                 {
                     is_call =
                         i > 2
@@ -149,14 +149,6 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         next_is_hardcoded_value += 2;// 4;  Using only 2 bytes now... 
                     }
-
-                    // if inlined constantdata, skip data
-                    if (code[i - 1].op == blast_operation.constant_f1) next_is_hardcoded_value += 4;
-                    if (code[i - 1].op == blast_operation.constant_f1_h) next_is_hardcoded_value += 2;
-
-                    // if inlined constantref, skip reference 
-                    if (code[i - 1].op == blast_operation.constant_short_ref) next_is_hardcoded_value += 1;
-                    if (code[i - 1].op == blast_operation.constant_long_ref) next_is_hardcoded_value += 2;
                 }
 
                 if (next_is_hardcoded_value > 0)
@@ -181,14 +173,24 @@ namespace NSS.Blast.Compiler.Stage
                         // !! IMPORTANT !!
                         cdata.Blast.Data->IsVariableParamFunction(op))
                     {
-                        next_is_hardcoded_value += 1; 
+                        next_is_hardcoded_value += 1;
+                    }
+                    else
+                    {
+                        switch (op)
+                        {
+                            case blast_operation.constant_f1: next_is_hardcoded_value += 4; break;
+                            case blast_operation.constant_f1_h: next_is_hardcoded_value += 2; break;
+                            case blast_operation.constant_long_ref: next_is_hardcoded_value += 1; break;
+                            case blast_operation.constant_short_ref: next_is_hardcoded_value += 2; break;
+                        }
                     }
 
                     if (op != blast_operation.ex_op && (byte)op >= BlastCompiler.opt_ident)
                     {
                         // validate parameter offset & index 
                         // - get parameter index from offset location 
-                        byte id = (byte)(code[i].code - BlastCompiler.opt_ident); 
+                        byte id = (byte)(code[i].code - BlastCompiler.opt_ident);
 
                         // - its offset should be known 
                         byte offsetindex = (byte)cdata.Offsets.IndexOf(id);
@@ -199,8 +201,9 @@ namespace NSS.Blast.Compiler.Stage
                         }
                         else
                         {
-                            // it should equal the value in replace 
-                            if(id != replace[offsetindex])
+                            // it should equal the value in replace
+                            // - prevent an index out of range error on errors, we better log something related
+                            if ((offsetindex >= 0 && offsetindex <= replace.Length) && id != replace[offsetindex])
                             {
                                 cdata.LogError($"compiler.packaging: data segment error, failed to get variable index from offset {id} at codepointer {i} and match it to the calculated offset of {replace[offsetindex]}");
                                 return (int)BlastError.error_failed_to_translate_offset_into_index;

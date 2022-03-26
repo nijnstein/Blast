@@ -40,6 +40,51 @@ namespace NSS.Blast
             }
         }
 
+
+        /// <summary>
+        /// accept either an unsigned integer or a string of 32 0 and 1's
+        /// </summary>
+        public static bool TryAsBool32(this string s, out uint b32)
+        {
+            if (string.IsNullOrWhiteSpace(s)) {
+                b32 = 0; 
+                return false;
+            }
+
+            if(s.Length < 32)
+            {
+                // has to be an int 
+                if(uint.TryParse(s, out b32))
+                {
+                    return true; 
+                }
+                return false;
+            }
+
+            b32 = 0;
+            byte i = 0;
+            foreach (char ch in s)
+            {
+                if (ch == '1')
+                {
+                    b32 = (uint)(b32 | (1 << i));
+                    i++;
+                    continue; 
+                }
+                
+                if(ch == '0')
+                {
+                    i++;
+                    continue; 
+                }
+            }
+
+            return i == 32;
+        }
+
+
+
+
         /// <summary>
         /// return bytes formatted as 000| 000 000 000 000 000 000 000 000 
         /// </summary>
@@ -71,7 +116,7 @@ namespace NSS.Blast
         }
 
         [BurstDiscard]
-        internal static unsafe void FillCharArray(char* pch, string text, int n_max)
+        public static unsafe void FillCharArray(char* pch, string text, int n_max)
         {
             char[] ch = text.ToCharArray();
 
@@ -83,6 +128,27 @@ namespace NSS.Blast
             {
                 pch[i] = (char)0;
             }
+        }
+
+        [BurstDiscard]
+        public static string FormatBool32(uint b32)
+        {
+            // in vs give a nicer output in debug 
+            System.Text.StringBuilder sb = StringBuilderCache.Acquire();
+
+            int ii = 0;
+            for (int x = 0; x < 4; x++)
+            {
+                for (int y = 0; y < 8; y++)
+                {
+                    int mask = 1 << ii;
+                    sb.Append((b32 & mask) == mask ? "1" : "0");
+                    ii++;
+                }
+                if (x < 3) sb.Append("_");
+            }
+
+            return StringBuilderCache.GetStringAndRelease(ref sb); 
         }
     }
 

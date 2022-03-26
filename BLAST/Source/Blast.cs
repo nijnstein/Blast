@@ -1964,6 +1964,12 @@ namespace NSS.Blast
                         vector_size = 4;
                         byte_size = 16;
                         return true;
+
+                    case "bool32":
+                        datatype = BlastVariableDataType.Bool32;
+                        vector_size = 1;
+                        byte_size = 4;
+                        return true; 
                 }
             }
 
@@ -2083,4 +2089,5 @@ namespace NSS.Blast
         }
     }
 }
+
 
