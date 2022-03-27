@@ -256,7 +256,7 @@ namespace NSS.Blast.Compiler.Stage
                                             :
                                             blast_operation.nop;
 
-                if (Blast.OperationPrecedance(pre_op, op) <= 0)
+                if (pre_op != blast_operation.nop && Blast.OperationPrecedance(pre_op, op) <= 0)
                 {
                     // read past current token 
                     from++; 
