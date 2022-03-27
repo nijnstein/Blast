@@ -304,6 +304,16 @@ namespace NSS.Blast
         long_jump, 
 
         /// <summary>
+        /// long jump on zero
+        /// </summary>
+        jz_long,
+
+        /// <summary>
+        /// long jump on not zero
+        /// </summary>
+        jnz_long, 
+
+        /// <summary>
         /// push a value onto the stack
         /// </summary>
         push,
@@ -514,12 +524,21 @@ namespace NSS.Blast
         /// </summary>
         get_bits,
 
+        /// <summary>
+        /// set a bit: set_bit(variable, index, 0|1); 
+        /// </summary>
         set_bit,
+
+        /// <summary>
+        /// get(variable, index) => 0|1
+        /// </summary>
         get_bit,
         
-        reserved1,
-        reserved2,
-        reserved3,
+        /// <summary>
+        /// set data at index to zero 
+        /// </summary>
+        zero,        
+
         reserved4,
         reserved5,         
         reserved6,
@@ -841,7 +860,15 @@ namespace NSS.Blast
         reverse_bits,
 
 
+        /// <summary>
+        /// reinterpret data at index as a float, updates metadata only 
+        /// </summary>
+        reinterpret_float = 249,
 
+        /// <summary>
+        /// reinterpret data at index as a bool, updates metadata only 
+        /// </summary>
+        reinterpret_bool32 = 250,
 
 
         /// <summary>

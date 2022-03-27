@@ -135,7 +135,7 @@ namespace NSS.Blast.Compiler.Stage
                             // reserve 2 bytes to reference the constant when resolving jumps 
                             code.Add((byte)blast_operation.constant_short_ref, IMJumpLabel.ReferenceToConstant(label));
                             code.Add((byte)blast_operation.nop, IMJumpLabel.OffsetToConstant(label));
-                            //code.Add((byte)blast_operation.nop, IMJumpLabel.OffsetToConstant(label));
+                            code.Add((byte)blast_operation.nop); // reservation for easier jump resolving 
                         }
                         else
                         {
@@ -902,6 +902,7 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         code.Add(blast_operation.jump, IMJumpLabel.Jump(ast_node.identifier));
                         code.Add((byte)0, IMJumpLabel.Offset(ast_node.identifier));
+                        code.Add((byte)0);
                         break;
                     }
 
@@ -1150,6 +1151,7 @@ namespace NSS.Blast.Compiler.Stage
                         // start of while loop: jump over while compound when condition zero 
                         code.Add((byte)blast_operation.jz, IMJumpLabel.Jump(n_while_compound.identifier));
                         code.Add((byte)0, IMJumpLabel.Offset(n_while_compound.identifier));
+                        code.Add((byte)0);
 
                         // compile the condition 
                         if (CompileNode(data, n_while_condition, code) == null)
@@ -1168,6 +1170,7 @@ namespace NSS.Blast.Compiler.Stage
                         // jump back to condition and re evaluate
                         code.Add((byte)blast_operation.jump_back, IMJumpLabel.Jump(n_while_condition.identifier));
                         code.Add((byte)0, IMJumpLabel.Offset(n_while_condition.identifier));
+                        code.Add((byte)0); 
 
                         // provide a stub for the label to jump to when skipping the while 
                         code.Add((byte)0, IMJumpLabel.Label(n_while_compound.identifier));
@@ -1216,6 +1219,7 @@ namespace NSS.Blast.Compiler.Stage
                             // - eval statement, jump over then on JZ
                             code.Add(blast_operation.jz, IMJumpLabel.Jump(if_condition.identifier)); // jump on false to else
                             code.Add(blast_operation.nop, IMJumpLabel.Offset(if_condition.identifier));
+                            code.Add(blast_operation.nop);
 
                             CompileNode(data, if_condition, code);
                             CompileNode(data, if_then, code);
@@ -1223,6 +1227,7 @@ namespace NSS.Blast.Compiler.Stage
                             // insert an else and jump over it by default 
                             code.Add(blast_operation.jump, IMJumpLabel.Jump(if_else.identifier));
                             code.Add(blast_operation.nop, IMJumpLabel.Offset(if_else.identifier));
+                            code.Add(blast_operation.nop);
 
                             // provide a label to jump to on JZ
                             code.Add(blast_operation.nop, IMJumpLabel.Label(if_condition.identifier));
@@ -1238,6 +1243,7 @@ namespace NSS.Blast.Compiler.Stage
                             // only THEN 
                             code.Add(blast_operation.jz, IMJumpLabel.Jump(if_condition.identifier)); // jump on false over then
                             code.Add(blast_operation.nop, IMJumpLabel.Offset(if_condition.identifier));
+                            code.Add(blast_operation.nop);
                             CompileNode(data, if_condition, code);
                             CompileNode(data, if_then, code);
                             code.Add(blast_operation.nop, IMJumpLabel.Label(if_condition.identifier));
@@ -1247,6 +1253,7 @@ namespace NSS.Blast.Compiler.Stage
                             // only ELSE
                             code.Add(blast_operation.jnz, IMJumpLabel.Jump(if_condition.identifier)); // jump on true over else
                             code.Add(blast_operation.nop, IMJumpLabel.Offset(if_condition.identifier));
+                            code.Add(blast_operation.nop);
                             CompileNode(data, if_condition, code);
                             CompileNode(data, if_else, code);
                             code.Add(blast_operation.nop, IMJumpLabel.Label(if_condition.identifier));

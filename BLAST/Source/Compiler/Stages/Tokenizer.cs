@@ -241,7 +241,7 @@ namespace NSS.Blast.Compiler.Stage
                             unsafe
                             {
                                 uint* b32 = (uint*)(void*)&f;
-                                if (CodeUtils.TryAsBool32(a[3 + 1], out uint ui32))
+                                if (CodeUtils.TryAsBool32(a[3], out uint ui32))
                                 {
                                     b32[0] = ui32; 
                                 }
@@ -732,7 +732,15 @@ namespace NSS.Blast.Compiler.Stage
 
                                 case "function":
                                     tokens.Add(new Tuple<BlastScriptToken, string>(BlastScriptToken.Function, identifier));
+                                    break;
+
+                                case "true":
+                                    tokens.Add(new Tuple<BlastScriptToken, string>(BlastScriptToken.Identifier, "1"));
                                     break; 
+
+                                case "false":
+                                    tokens.Add(new Tuple<BlastScriptToken, string>(BlastScriptToken.Identifier, "0"));
+                                    break;
 
                                 default:
                                     {

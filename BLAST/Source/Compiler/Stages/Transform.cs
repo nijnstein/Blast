@@ -4,8 +4,8 @@
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone;
-    using UnityEngine.Assertions;
+using NSS.Blast.Standalone;
+using UnityEngine.Assertions;
 #else
     using UnityEngine;
     using UnityEngine.Assertions; 
@@ -34,7 +34,7 @@ namespace NSS.Blast.Compiler.Stage
         /// </summary>
         public BlastCompilerStageType StageType => BlastCompilerStageType.Transform;
 
-  
+
 
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace NSS.Blast.Compiler.Stage
         {
             if (n_switch.parent == null)
             {
-                data.LogError($"Transform.Switch: parent node null: <{n_switch}>"); 
+                data.LogError($"Transform.Switch: parent node null: <{n_switch}>");
                 return; // this should be impossible 
             }
             // get injection point 
@@ -99,7 +99,7 @@ namespace NSS.Blast.Compiler.Stage
                 return;
             }
 
-            string jump_label = node.GenerateUniqueId("label"); 
+            string jump_label = node.GenerateUniqueId("label");
 
             // transform each case into a if then, end with the default case
             for (int i = 0; i < cases.Count; i++)
@@ -173,13 +173,13 @@ namespace NSS.Blast.Compiler.Stage
             if (n_for.parent == null)
             {
                 data.LogError($"Transform.For: parent node null: <{n_for}>");
-                return; 
+                return;
             }
             // should have 4 child nodes, no more no less 
             if (n_for.children.Count != 4)
             {
                 data.LogError($"Transform.For: for node must have exactly 4 child nodes: initializer, condition, iteratorm, compound. Found {n_for.children.Count} instead in <{n_for}> ");
-                return;  
+                return;
             }
 
             // get injection point and remove the for from the tree
@@ -210,27 +210,27 @@ namespace NSS.Blast.Compiler.Stage
             n_while.SetChild(n_condition);
 
             n_condition.type = nodetype.condition;
-            n_compound.type = nodetype.whilecompound; 
+            n_compound.type = nodetype.whilecompound;
 
-            n_compound.SetChild(n_iterator); 
+            n_compound.SetChild(n_iterator);
             n_while.SetChild(n_compound);
         }
 
         node transform_merge_compound(IBlastCompilationData data, node n)
         {
-            Assert.IsTrue(data.IsOK); 
-            Assert.IsNotNull(n); 
+            Assert.IsTrue(data.IsOK);
+            Assert.IsNotNull(n);
             Assert.IsTrue(n.ChildCount == 1 && n.children[0].IsCompound);
 
             node new_node = n.children[0];
             new_node.parent = n.parent;
 
-            n.parent.children[new_node.parent.children.IndexOf(n)] = new_node; 
-            if(n.depends_on.Count > 0)
+            n.parent.children[new_node.parent.children.IndexOf(n)] = new_node;
+            if (n.depends_on.Count > 0)
             {
-                new_node.depends_on.InsertRange(0, n.depends_on); 
+                new_node.depends_on.InsertRange(0, n.depends_on);
             }
-            
+
             return new_node;
         }
 
@@ -379,7 +379,7 @@ namespace NSS.Blast.Compiler.Stage
                         remapnode.constant_op = vnode.constant_op;
                         remapnode.variable = vnode.variable;
                         remapnode.vector_size = vnode.vector_size;
-                        remapnode.is_vector = vnode.is_vector; 
+                        remapnode.is_vector = vnode.is_vector;
                     }
                     else
                     {
@@ -450,14 +450,14 @@ namespace NSS.Blast.Compiler.Stage
 
             if (!resolve_identifiers(t) || !resolve_identifiers(n.parent))
             {
-                return BlastError.error_inlinefunction_failed_to_remap_identifiers; 
+                return BlastError.error_inlinefunction_failed_to_remap_identifiers;
             }
 
             // finally, we need to run transform again, the function might encode a for loop or switch
             transform(data, t);
-            transform(data, n.parent);  
+            transform(data, n.parent);
 
-            return BlastError.success; 
+            return BlastError.success;
         }
 
 
@@ -474,10 +474,10 @@ namespace NSS.Blast.Compiler.Stage
         /// </remarks>
         static public bool ClassifyIndexer(node n, out blast_operation op, out byte spec)
         {
-            Assert.IsNotNull(n); 
+            Assert.IsNotNull(n);
 
-            if( n.indexers != null 
-                && 
+            if (n.indexers != null
+                &&
                 n.indexers.Count >= 2
                 &&
                 n.indexers[0].type == nodetype.index
@@ -494,17 +494,17 @@ namespace NSS.Blast.Compiler.Stage
                     switch (index)
                     {
                         case 'x':
-                        case 'r': op = blast_operation.index_x; spec = 0; return true; 
-                                       
+                        case 'r': op = blast_operation.index_x; spec = 0; return true;
+
                         case 'y':
-                        case 'g': op = blast_operation.index_y; spec = 0; return true; 
+                        case 'g': op = blast_operation.index_y; spec = 0; return true;
 
                         case 'z':
-                        case 'b': op = blast_operation.index_z; spec = 0; return true; 
+                        case 'b': op = blast_operation.index_z; spec = 0; return true;
 
                         case 'w':
-                        case 'a': op = blast_operation.index_w; spec = 0; return true; 
-                    }                     
+                        case 'a': op = blast_operation.index_w; spec = 0; return true;
+                    }
                 }
                 else
                 {
@@ -515,12 +515,12 @@ namespace NSS.Blast.Compiler.Stage
 
                     op = blast_operation.index_n;
                     spec = 0;
-                    return false; 
+                    return false;
                 }
             }
             op = blast_operation.nop;
             spec = 0;
-            return false; 
+            return false;
         }
 
 
@@ -538,14 +538,14 @@ namespace NSS.Blast.Compiler.Stage
         {
             Assert.IsNotNull(n);
             Assert.IsTrue(n.HasIndexers, "only call transform_indexer on nodes with indexers!");
-                        
-            if(ClassifyIndexer(n, out blast_operation op, out byte spec))
+
+            if (ClassifyIndexer(n, out blast_operation op, out byte spec))
             {
                 if (n.IsAssignment)
                 {
                     // setting a value, replace indexchain with a single node holding operation 
                     n.indexers.Clear();
-                    n.AppendIndexer(BlastScriptToken.Indexer, op).EnsureIdentifierIsUniquelySet(); 
+                    n.AppendIndexer(BlastScriptToken.Indexer, op).EnsureIdentifierIsUniquelySet();
                 }
                 else
                 {
@@ -584,7 +584,7 @@ namespace NSS.Blast.Compiler.Stage
                 return BlastError.error_indexer_transform;
             }
 
-            return BlastError.success; 
+            return BlastError.success;
         }
 
 
@@ -600,13 +600,13 @@ namespace NSS.Blast.Compiler.Stage
             Assert.IsNotNull(ast_root);
 
 
-            BlastError res = BlastError.success; 
-            List<node> work = NodeListCache.Acquire(); 
+            BlastError res = BlastError.success;
+            List<node> work = NodeListCache.Acquire();
 
             work.Push(ast_root);
             while (work.TryPop(out node current))
             {
-                if(current.HasIndexers)
+                if (current.HasIndexers)
                 {
                     bool allow_inline_indexer = data.CompilerOptions.InlineIndexers;
                     // if indexers are inlined, allow inline indexer definition on:
@@ -627,11 +627,11 @@ namespace NSS.Blast.Compiler.Stage
                     }
                 }
 
-                work.PushRange(current.children);            
+                work.PushRange(current.children);
             }
 
             NodeListCache.Release(work);
-            return res; 
+            return res;
         }
 
         /// <summary>
@@ -696,9 +696,9 @@ namespace NSS.Blast.Compiler.Stage
                 return false;
             }
 
-            
+
             int vector_size = n.ChildCount;
-            
+
             n.type = nodetype.function;
             n.identifier = "expand" + vector_size.ToString();
 
@@ -706,7 +706,7 @@ namespace NSS.Blast.Compiler.Stage
             n.variable = null;
             n.is_vector = true;
             n.vector_size = vector_size;
-            n.token = BlastScriptToken.Nop; 
+            n.token = BlastScriptToken.Nop;
 
             switch (vector_size)
             {
@@ -784,7 +784,7 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         is_constant = true;
                         id = node.AsFloat;
-                        return true; 
+                        return true;
                     }
                     if (node.IsScriptVariable)
                     {
@@ -829,16 +829,16 @@ namespace NSS.Blast.Compiler.Stage
             return res;
         }
 
-   
-            /// <summary>
-            /// run transform depending on nodetype 
-            /// - TODO -> would be nice if this all returned errors.. 
-            /// </summary>
-            /// <param name="data"></param>
-            /// <param name="n"></param>
-            BlastError transform(IBlastCompilationData data, node n)
+
+        /// <summary>
+        /// run transform depending on nodetype 
+        /// - TODO -> would be nice if this all returned errors.. 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="n"></param>
+        BlastError transform(IBlastCompilationData data, node n)
         {
-            BlastError res = BlastError.success; 
+            BlastError res = BlastError.success;
 
             switch (n.type)
             {
@@ -880,7 +880,7 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         // dont iterate through inline functions, only after they are inlined
                         return BlastError.success;
-                    }                               
+                    }
 
                 default:
                     {
@@ -922,14 +922,14 @@ namespace NSS.Blast.Compiler.Stage
             BlastError res = transform(data, data.AST);
             if (res != BlastError.success)
             {
-                return (int)res; 
+                return (int)res;
             }
 
             // after expanding everything, check the tree for indexers 
-            res = transform_indexers(data, data.AST); 
-            if(res != BlastError.success)
+            res = transform_indexers(data, data.AST);
+            if (res != BlastError.success)
             {
-                return (int)res; 
+                return (int)res;
             }
 
             // check for possible replacements of vector defines into expandn functions 

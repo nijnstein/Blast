@@ -220,7 +220,9 @@ namespace NSS.Blast.Compiler.Stage
             {
                 if (is_negated)
                 {
-                    if (data.TryGetDefine(identifier.Substring(1), out defined_value))
+                    identifier = identifier.Substring(1).Trim(); 
+
+                    if (data.TryGetDefine(identifier, out defined_value))
                     {
                         identifier = "-" + defined_value;
                         is_defined = true;

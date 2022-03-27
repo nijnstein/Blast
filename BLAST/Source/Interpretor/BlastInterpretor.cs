@@ -1881,6 +1881,18 @@ namespace NSS.Blast.Interpretor
                         }
                         break;
 
+                    case BlastVariableDataType.Bool32:
+
+                        // vectorsize must be 1 
+                        
+                        uint b32 = ((uint*)pdata)[0];
+#if STANDALONE_VSBUILD
+                        Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, BOOL32: {CodeUtils.FormatBool32(b32)}"); 
+#else
+                        Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, BOOL32: {b32}"); 
+#endif
+                        break; 
+
                     default:
                         Debug.LogError($"Blast.Debug(data) - Datatype '{datatype}' not supported in variable/operation with id {op_id} and vectorsize {vector_size}");
                         break;
@@ -1895,7 +1907,7 @@ namespace NSS.Blast.Interpretor
         void Handle_DebugStack()
         {
 #if DEVELOPMENT_BUILD || TRACE
-            if (ValidateOnce) return;
+            if (ValidationMode) return;
 
 #if STANDALONE_VSBUILD
             for (int i = 0; i < stack_offset; i++)
@@ -6216,7 +6228,6 @@ namespace NSS.Blast.Interpretor
                 Debug.LogError($"shr: first parameter must directly point to a dataindex but its '{dataindex + opt_id}' instead");
                 return;
             }
-
 #endif
 
             // the bit to set is either 1 or 0
@@ -6325,6 +6336,181 @@ namespace NSS.Blast.Interpretor
 #endif
             f4 = (float4)(int4)math.tzcnt(((uint*)data)[dataindex]); // not setting f.x because we would be forced to write f4 = nan first to get it compiled because of undefined output
             vector_size = 1;
+        }
+
+        void get_zero_result(ref int code_pointer, ref byte vector_size)
+        {
+            code_pointer++;
+            int dataindex = code[code_pointer] - opt_id;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + opt_id >= 255)
+            {
+                Debug.LogError($"get_zero: first parameter must directly point to a dataindex but its '{dataindex + opt_id}' instead");
+                return;
+            }
+
+#endif
+
+            switch(GetMetaDataSize(metadata, (byte)dataindex))
+            {
+                case 0:
+                case 4:
+                    ((uint*)data)[dataindex] = 0;
+                    ((uint*)data)[dataindex + 1] = 0;
+                    ((uint*)data)[dataindex + 2] = 0;
+                    ((uint*)data)[dataindex + 3] = 0;
+                    break;
+                case 3:
+                    ((uint*)data)[dataindex] = 0;
+                    ((uint*)data)[dataindex + 1] = 0;
+                    ((uint*)data)[dataindex + 2] = 0;
+                    break;
+                case 2:
+                    ((uint*)data)[dataindex] = 0;
+                    ((uint*)data)[dataindex + 1] = 0;
+                    break;
+                case 1:
+                    ((uint*)data)[dataindex] = 0;
+                    break;
+            }
+        }
+
+
+        #endregion
+
+        #region Reinterpret XXXX [DataIndex]
+
+        /// <summary>
+        /// reinterpret the value at index as a boolean value (set metadata type to bool32)
+        /// </summary> 
+        void reinterpret_bool32(ref int code_pointer, ref byte vector_size)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"reinterpret_bool32: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex);
+        }
+
+        /// <summary>
+        /// reinterpret the value at index as a float value (set metadata type to float[1])
+        /// </summary>
+        void reinterpret_float(ref int code_pointer, ref byte vector_size)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"reinterpret_float: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Numeric, 1, (byte)dataindex);
+        }
+
+        #endregion
+
+        #region validation fuction 
+
+        void RunValidate(ref int code_pointer)
+        {
+            // read the 2 parameters, we can use temp and register
+            BlastVariableDataType type1, type2;
+            byte size1, size2;
+
+            void* p1 = pop_with_info(code_pointer + 1, out type1, out size1);
+            void* p2 = pop_with_info(code_pointer + 2, out type2, out size2);
+
+#if DEVELOPMENT_BUILD || TRACE
+            if (type1 != type2 || size1 != size2)
+            {
+                Debug.LogError($"blast.ssmd.validate: datatype mismatch, type1 = {type1}, size1 = {size1}, type2 = {type2}, size2 = {size2}");
+            }
+            switch (type1)
+            {
+                case BlastVariableDataType.Bool32:
+
+                    uint b1 = ((uint*)p1)[0];
+                    uint b2 = ((uint*)p2)[0];
+                    if (b2 != b1)
+                    {
+                        Debug.LogError($"blast.validate: validation error at codepointer {code_pointer}: {b1} != {b2}");
+                    }
+                    break; 
+
+                case BlastVariableDataType.Numeric:
+                    switch (size1)
+                    {
+                        case 1:
+                            {
+                                float f1 = ((float*)p1)[0];
+                                float f2 = ((float*)p2)[0];
+                                if (f2 != f1)
+                                {
+                                    Debug.LogError($"blast.validate: validation error at codepointer {code_pointer}: {f1} != {f2}");
+                                }
+                            }
+                            break;
+                        case 2:
+                            {
+                                float2 f21 = ((float2*)p1)[0];
+                                float2 f22 = ((float2*)p2)[0];
+                                if (math.any(f22 != f21))
+                                {
+                                    Debug.LogError($"blast.validate: validation error at codepointer {code_pointer}: {f21} != {f22}");
+                                }
+                            }
+                            break;
+                        case 3:
+                            {
+                                float3 f31 = ((float3*)p1)[0];
+                                float3 f32 = ((float3*)p2)[0];
+                                if (math.any(f32 != f31))
+                                {
+                                    Debug.LogError($"blast.validate: validation error at codepointer {code_pointer}: {f31} != {f32}");
+                                }
+                            }
+                            break;
+                        case 4:
+                            {
+                                float4 f41 = ((float4*)p1)[0];
+                                float4 f42 = ((float4*)p2)[0];
+                                if (math.any(f42 != f41))
+                                {
+                                    Debug.LogError($"blast.validate: validation error at codepointer {code_pointer}: {f41} != {f42}");
+                                }
+                            }
+                            break;
+                    }
+                    break;
+
+                default:
+                    Debug.LogError($"blast.validate: datatype {type1} vectorsize {size1} not supported at codepointer {code_pointer}");
+                    break; 
+            }
+#endif
+
+            code_pointer += 2;
         }
 
         #endregion 
@@ -6642,6 +6828,8 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.get_bit: get_getbits_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.get_bits: get_getbits_result(ref code_pointer, ref vector_size, out f4_result); break;
 
+                case blast_operation.zero: get_zero_result(ref code_pointer, ref vector_size); f4_result = 0; break;
+
                 // extended function ops  
                 case blast_operation.ex_op:
 
@@ -6698,6 +6886,10 @@ namespace NSS.Blast.Interpretor
                             case extended_blast_operation.rol: get_rol_result(ref code_pointer, ref vector_size); f4_result = 0;break;
                             case extended_blast_operation.shl: get_shl_result(ref code_pointer, ref vector_size); f4_result = 0;break;
                             case extended_blast_operation.shr: get_shr_result(ref code_pointer, ref vector_size); f4_result = 0; break;
+
+                            case extended_blast_operation.reinterpret_bool32: reinterpret_bool32(ref code_pointer, ref vector_size); f4_result = 0; break;
+                            case extended_blast_operation.reinterpret_float: reinterpret_float(ref code_pointer, ref vector_size); f4_result = 0; break;
+
                             default:
 #if DEVELOPMENT_BUILD || TRACE
                                 Debug.LogError($"blast.interpretor: get_function_result: codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
@@ -6989,6 +7181,9 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.get_bit: get_getbits_result(ref code_pointer, ref vector_size, out f4); break;
                     case blast_operation.get_bits: get_getbits_result(ref code_pointer, ref vector_size, out f4); break;
 
+                    // zero data index / clear bits 
+                    case blast_operation.zero: get_zero_result(ref code_pointer, ref vector_size); break;
+
                     // extended operations 
                     case blast_operation.ex_op:
                         {
@@ -7046,6 +7241,10 @@ namespace NSS.Blast.Interpretor
                                     case extended_blast_operation.rol: get_rol_result(ref code_pointer, ref vector_size); break;
                                     case extended_blast_operation.shl: get_shl_result(ref code_pointer, ref vector_size); break;
                                     case extended_blast_operation.shr: get_shr_result(ref code_pointer, ref vector_size); break;
+
+                                    case extended_blast_operation.reinterpret_bool32: reinterpret_bool32(ref code_pointer, ref vector_size); break;
+                                    case extended_blast_operation.reinterpret_float: reinterpret_float(ref code_pointer, ref vector_size); break;
+
 
 #if DEVELOPMENT_BUILD || TRACE
                                     default:
@@ -7354,6 +7553,46 @@ namespace NSS.Blast.Interpretor
             }
 
             return;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void EvalPushedJumpCondition(ref int code_pointer, ref float4 f4_register, ref byte vector_size)
+        {
+            // eval all push commands before running the compound
+            bool is_push = true;
+            do
+            {
+                switch ((blast_operation)code[code_pointer])
+                {
+                    case blast_operation.pushc:
+                        code_pointer++;
+                        pushc(ref code_pointer, ref vector_size, ref f4_register);
+                        code_pointer++;
+                        break;
+                    case blast_operation.push:
+                        code_pointer++;
+                        push(ref code_pointer, ref vector_size, ref f4_register);
+                        code_pointer++;
+                        break;
+                    case blast_operation.pushf:
+                        code_pointer++;
+                        pushf(ref code_pointer, ref vector_size, ref f4_register);
+                        code_pointer++;
+                        break;
+                    case blast_operation.pushv:
+                        code_pointer++;
+                        pushv(ref code_pointer, ref vector_size, ref f4_register);
+                        code_pointer++;
+                        break;
+                    default:
+                        is_push = false;
+                        break;
+                }
+            }
+            while (is_push && code_pointer < package.CodeSize);
+
+            // get result from condition
+            get_sequence_result(ref code_pointer, ref vector_size, out f4_register);
         }
 
 
@@ -8137,11 +8376,28 @@ namespace NSS.Blast.Interpretor
                         break;
 
                     //
-                    // JZ: a condition may contain push commands that should run from the root
+                    // JZ Long: a condition may contain push commands that should run from the root
                     // 
+                    case blast_operation.jz_long:
+                        {
+                            // calc endlocation of 
+                            int offset = ((short)(code[code_pointer] << 8) + code[code_pointer + 1]);
+                            int jump_to = code_pointer + offset - 1; 
+
+                            // eval condition 
+                            code_pointer += math.select(2, 3, code[code_pointer + 2] == (byte)blast_operation.begin);
+
+                            EvalPushedJumpCondition(ref code_pointer, ref f4_register, ref vector_size);
+
+                            // jump if zero to else condition or after then when no else 
+                            code_pointer = math.select(code_pointer, jump_to, f4_register.x == 0);
+
+                        }
+                        break;
+
                     //
-
-
+                    // JZ Short: a condition may contain push commands that should run from the root
+                    // 
                     case blast_operation.jz:
                         {
                             // calc endlocation of 
@@ -8151,41 +8407,7 @@ namespace NSS.Blast.Interpretor
                             // eval condition 
                             code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
 
-                            // eval all push commands before running the compound
-                            bool is_push = true;
-                            do
-                            {
-                                switch ((blast_operation)code[code_pointer])
-                                {
-                                    case blast_operation.pushc:
-                                        code_pointer++;
-                                        pushc(ref code_pointer, ref vector_size, ref f4_register);
-                                        code_pointer++;
-                                        break;
-                                    case blast_operation.push:
-                                        code_pointer++;
-                                        push(ref code_pointer, ref vector_size, ref f4_register);
-                                        code_pointer++;
-                                        break;
-                                    case blast_operation.pushf:
-                                        code_pointer++;
-                                        pushf(ref code_pointer, ref vector_size, ref f4_register);
-                                        code_pointer++;
-                                        break;
-                                    case blast_operation.pushv:
-                                        code_pointer++;
-                                        pushv(ref code_pointer, ref vector_size, ref f4_register);
-                                        code_pointer++;
-                                        break;
-                                    default:
-                                        is_push = false;
-                                        break;
-                                }
-                            }
-                            while (is_push && code_pointer < package.CodeSize);
-
-                            // get result from condition
-                            get_sequence_result(ref code_pointer, ref vector_size, out f4_register);
+                            EvalPushedJumpCondition(ref code_pointer, ref f4_register, ref vector_size);
 
                             // jump if zero to else condition or after then when no else 
                             code_pointer = math.select(code_pointer, jump_to, f4_register.x == 0);
@@ -8201,41 +8423,23 @@ namespace NSS.Blast.Interpretor
                             // eval condition => TODO -> check if we still write the begin, if not we could skip this select
                             code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
 
-                            // eval all push commands before running the compound
-                            bool is_push = true;
-                            do
-                            {
-                                switch ((blast_operation)code[code_pointer])
-                                {
-                                    case blast_operation.pushc:
-                                        code_pointer++;
-                                        pushc(ref code_pointer, ref vector_size, ref f4_register);
-                                        code_pointer++;
-                                        break;
-                                    case blast_operation.push:
-                                        code_pointer++;
-                                        push(ref code_pointer, ref vector_size, ref f4_register);
-                                        code_pointer++;
-                                        break;
-                                    case blast_operation.pushf:
-                                        code_pointer++;
-                                        pushf(ref code_pointer, ref vector_size, ref f4_register);
-                                        code_pointer++;
-                                        break;
-                                    case blast_operation.pushv:
-                                        code_pointer++;
-                                        pushv(ref code_pointer, ref vector_size, ref f4_register);
-                                        code_pointer++;
-                                        break;
-                                    default:
-                                        is_push = false;
-                                        break;
-                                }
-                            }
-                            while (is_push && code_pointer < package.CodeSize);
+                            EvalPushedJumpCondition(ref code_pointer, ref f4_register, ref vector_size);
 
-                            // get result from condition 
-                            get_sequence_result(ref code_pointer, ref vector_size, out f4_register);
+                            // jump if NOT zero to else condition or after then when no else 
+                            code_pointer = math.select(code_pointer, jump_to, f4_register.x != 0);
+                        }
+                        break;
+
+                    case blast_operation.jnz_long:
+                        {
+                            // calc endlocation of 
+                            int offset = ((short)(code[code_pointer] << 8) + code[code_pointer + 1]);
+                            int jump_to = code_pointer + offset - 1;
+
+                            // eval condition => TODO -> check if we still write the begin, if not we could skip this select
+                            code_pointer += math.select(2, 3, code[code_pointer + 2] == (byte)blast_operation.begin);
+
+                            EvalPushedJumpCondition(ref code_pointer, ref f4_register, ref vector_size);
 
                             // jump if NOT zero to else condition or after then when no else 
                             code_pointer = math.select(code_pointer, jump_to, f4_register.x != 0);
@@ -8261,11 +8465,10 @@ namespace NSS.Blast.Interpretor
                     // long-jump, singed (forward && backward)
                     case blast_operation.long_jump:
                         {
-                            short offset = (short)(code[code_pointer] << 8 + code[code_pointer + 1]);
+                            short offset = (short)((code[code_pointer] << 8) + code[code_pointer + 1]);
                             code_pointer = code_pointer - offset;
                             break;
                         }
-
 
                     //
                     // Extended Op == 255 => next byte encodes an operation not used in switch above (more non standard ops)
@@ -8275,12 +8478,72 @@ namespace NSS.Blast.Interpretor
                             extended_blast_operation exop = (extended_blast_operation)code[code_pointer];
                             switch (exop)
                             {
+                                // 
+                                // directly call procedures encoded instead of using get_function_result 
+                                // - the compiler should not allow functions to be called without them returning their result into something 
+                                // 
+                                case extended_blast_operation.reverse_bits:
+                                    {
+                                        get_reversebits_result(ref code_pointer, ref vector_size);
+                                        code_pointer++;
+                                    }
+                                    break; 
+
+                                case extended_blast_operation.rol:
+                                    {
+                                        get_rol_result(ref code_pointer, ref vector_size);
+                                        code_pointer++;
+                                    }
+                                    break;
+
+                                case extended_blast_operation.ror:
+                                    {
+                                        get_ror_result(ref code_pointer, ref vector_size);
+                                        code_pointer++;
+                                    }
+                                    break;
+
+                                case extended_blast_operation.shl:
+                                    {
+                                        get_shl_result(ref code_pointer, ref vector_size);
+                                        code_pointer++;
+                                    }
+                                    break;
+
+                                case extended_blast_operation.shr:
+                                    {
+                                        get_shr_result(ref code_pointer, ref vector_size);
+                                        code_pointer++;
+                                    }
+                                    break;
+
+                                case extended_blast_operation.reinterpret_bool32:
+                                    {
+                                        reinterpret_bool32(ref code_pointer, ref vector_size);
+                                        code_pointer++; 
+                                    }
+                                    break;
+
+                                case extended_blast_operation.reinterpret_float:
+                                    {
+                                        reinterpret_float(ref code_pointer, ref vector_size);
+                                        code_pointer++; 
+                                    }
+                                    break;
+
                                 case extended_blast_operation.call:
                                     {
                                         CallExternalFunction(ref code_pointer, ref vector_size, out f4_register);
                                         code_pointer++;
                                     }
                                     break;
+
+                                case extended_blast_operation.validate:
+                                    {
+                                        RunValidate(ref code_pointer);
+                                        code_pointer++;
+                                    }
+                                    break; 
 
                                 case extended_blast_operation.debugstack:
                                     {
@@ -8324,19 +8587,41 @@ namespace NSS.Blast.Interpretor
                             }
                             break;
                         }
+                   
+                    
+                    case blast_operation.set_bit:
+                        code_pointer--; 
+                        get_setbit_result(ref code_pointer, ref vector_size);
+                        code_pointer++; 
+                        break;
+
+
+                    case blast_operation.set_bits:
+                        code_pointer--;
+                        get_setbits_result(ref code_pointer, ref vector_size);
+                        code_pointer++;
+                        break;
+
+                    case blast_operation.zero:
+                        code_pointer--;
+                        get_zero_result(ref code_pointer, ref vector_size);
+                        code_pointer++;
+                        break; 
 
                     default:
                         {
 #if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"blast: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
+                                Debug.LogError($"blast: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
 #endif
-                            return (int)BlastError.error_unsupported_operation_in_root;
+
                         }
+                        return (int)BlastError.error_unsupported_operation_in_root; 
                 }
             }
 
             return (int)BlastError.success;
         }
+
 
 
 

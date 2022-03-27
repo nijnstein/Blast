@@ -25,7 +25,9 @@ namespace NSS.Blast.Compiler
             Label,
             
             Constant, // = Label, 
-            ReferenceToConstant // = Jump
+            ReferenceToConstant, // = Jump
+
+            Skip // after resolving jump-offsets any nop labeled with skip should be removed 
         }
 
 
@@ -52,6 +54,12 @@ namespace NSS.Blast.Compiler
             {
                 return new IMJumpLabel(_id, JumpLabelType.Jump);
             }
+
+            static internal IMJumpLabel Skip()
+            {
+                return new IMJumpLabel(Guid.NewGuid().ToString(), JumpLabelType.Skip); 
+            }
+
             static internal IMJumpLabel Label(string _id)
             {
                 return new IMJumpLabel(_id, JumpLabelType.Label);
@@ -184,6 +192,9 @@ namespace NSS.Blast.Compiler
                 }
                 return labels.Any(x => x.type == labeltype);
             }
+
+            internal bool IsSkipped => labels != null && labels.Any(x => x.type == JumpLabelType.Skip);
+
             internal int LabelCount()
             {
                 if (labels == null)
@@ -361,7 +372,16 @@ namespace NSS.Blast.Compiler
                 label = null;
                 return false;                         
             }
-          
+
+            /// <summary>
+            /// remove code element at index
+            /// </summary>
+            /// <param name="i"></param>
+            internal void RemoveAt(int i)
+            {
+                this.list.RemoveAt(i);
+            }
+
             /// <summary>
             /// add all segments to this list clearing the segment list afterwards 
             /// </summary>

@@ -181,8 +181,8 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             case blast_operation.constant_f1: next_is_hardcoded_value += 4; break;
                             case blast_operation.constant_f1_h: next_is_hardcoded_value += 2; break;
-                            case blast_operation.constant_long_ref: next_is_hardcoded_value += 1; break;
-                            case blast_operation.constant_short_ref: next_is_hardcoded_value += 2; break;
+                            case blast_operation.constant_long_ref: next_is_hardcoded_value += 2; break;
+                            case blast_operation.constant_short_ref: next_is_hardcoded_value += 1; break;
                         }
                     }
 

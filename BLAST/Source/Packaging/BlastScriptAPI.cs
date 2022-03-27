@@ -1452,21 +1452,27 @@ namespace NSS.Blast
 
 
             /// todoo: implementation in compiler
-            RegisterFunction("set_bits", 3, 3, 0, 0, blast_operation.set_bits);
-            RegisterFunction("set_bit", 3, 3, 0, 0, blast_operation.set_bit);
-            RegisterFunction("get_bits", 2, 2, 1, 1, blast_operation.get_bits);
+            RegisterFunction("set_bits", 3, 3, 1, 0, blast_operation.set_bits);
+            RegisterFunction("set_bit", 3, 3, 1, 0, blast_operation.set_bit);
+            RegisterFunction("get_bits", 2, 2, 1, 1, blast_operation.get_bits); // returns only 1 if all bits in mask are 1 (all)
             RegisterFunction("get_bit", 2, 2, 1, 1, blast_operation.get_bit);
 
-            RegisterFunction("count_bits", 2, 3, 1, 1, extended_blast_operation.count_bits);
-            RegisterFunction("reverse_bits", 2, 3, 0, 0, extended_blast_operation.reverse_bits);
+            RegisterFunction("count_bits",   1, 1, 1, 1, extended_blast_operation.count_bits);
+            RegisterFunction("reverse_bits", 1, 1, 1, 0, extended_blast_operation.reverse_bits);
 
-            RegisterFunction("shl", 2, 2, 0, 0, extended_blast_operation.shl);
-            RegisterFunction("shr", 2, 2, 0, 0, extended_blast_operation.shr);
-            RegisterFunction("rol", 2, 2, 0, 0, extended_blast_operation.rol);
-            RegisterFunction("ror", 2, 2, 0, 0, extended_blast_operation.ror);
+            RegisterFunction("shl", 2, 2, 1, 0, extended_blast_operation.shl);
+            RegisterFunction("shr", 2, 2, 1, 0, extended_blast_operation.shr);
+            RegisterFunction("rol", 2, 2, 1, 0, extended_blast_operation.rol);
+            RegisterFunction("ror", 2, 2, 1, 0, extended_blast_operation.ror);
 
             RegisterFunction("lzcnt", 1, 1, 1, 1, extended_blast_operation.lzcnt);
             RegisterFunction("tzcnt", 1, 1, 1, 1, extended_blast_operation.tzcnt);
+
+            RegisterFunction("zero", 1, 1, 0, 0, blast_operation.zero);
+            RegisterFunction("clear_bits", 1, 1, 0, 0, blast_operation.zero);
+
+            RegisterFunction("reinterpret_bool32", 1, 1, 1, 0, extended_blast_operation.reinterpret_bool32);
+            RegisterFunction("reinterpret_float32", 1, 1, 1, 0, extended_blast_operation.reinterpret_float);
 
 
             return this;

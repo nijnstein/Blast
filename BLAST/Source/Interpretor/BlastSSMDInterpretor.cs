@@ -713,7 +713,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.constant_long_ref:
                         {
                             code_pointer += 1;
-                            int c_index = code_pointer - (code[code_pointer] << 8 + code[code_pointer + 1]);
+                            int c_index = code_pointer - ((code[code_pointer] << 8) + code[code_pointer + 1]) + 1;
                             code_pointer += 1;      // += 2; function ends on this and should leave pointer at last processed token
 
                             float constant = default;
@@ -1220,7 +1220,8 @@ namespace NSS.Blast.SSMD
 
                     case blast_operation.constant_long_ref:
                         {
-                            int c_index = code_pointer - (code[code_pointer + 1] << 8 + code[code_pointer + 2]);
+                            int offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
+                            int c_index = code_pointer - offset + 1;
                             code_pointer += 3;
 
                             if (code[c_index] == (byte)blast_operation.constant_f1)
@@ -2535,7 +2536,7 @@ namespace NSS.Blast.SSMD
 
                 case blast_operation.constant_long_ref:
                     {
-                        int c_index = code_pointer - (code[code_pointer] << 8 + code[code_pointer + 1]);
+                        int c_index = code_pointer - ((code[code_pointer]) << 8 + code[code_pointer + 1]) + 1;
                         code_pointer += 2;
 
                         if (code[c_index] == (byte)blast_operation.constant_f1)
@@ -4941,7 +4942,7 @@ namespace NSS.Blast.SSMD
 
                     case blast_operation.constant_long_ref:
                         {
-                            int c_index = code_pointer - (code[code_pointer] << 8 + code[code_pointer + 1]);
+                            int c_index = code_pointer - ((code[code_pointer] << 8) + code[code_pointer + 1]) + 1;
                             code_pointer += 2;
 
                             float constant = default;
@@ -6719,6 +6720,63 @@ namespace NSS.Blast.SSMD
             code_pointer--;
         }
 
+
+        /// <summary>
+        /// get bit and return result to f4 register.x
+        /// </summary>
+        void get_getbit_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* f4_result)
+        {
+            float* fp_index = (float*)temp;
+
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.get_bit: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex); 
+            if (datatype != BlastVariableDataType.Bool32)
+            {
+                Debug.LogError($"ssmd.get_bit: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+            // get index
+#if DEVELOPMENT_BUILD || TRACE
+            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+            if (vector_size != 1)
+            {
+                Debug.LogError($"ssmd.get_bit: the index to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
+                return;
+            }
+#else 
+            // in release we assume compiler did its job
+#endif
+
+            pop_fx_into_ref<float>(ref code_pointer, fp_index);
+
+            for(int i = 0; i < ssmd_datacount; i++)
+            {
+                uint current = ((uint*)data[i])[dataindex];
+                uint mask = (uint)(1 << (byte)fp_index[i]);
+
+                f4_result[i].x = math.select(0f, 1f, (mask & current) == mask);
+            }
+
+            code_pointer--;
+        }
+
+
+
+
+
         void get_setbits_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
         {
             float* fp_mask = (float*)temp;
@@ -6783,9 +6841,501 @@ namespace NSS.Blast.SSMD
         }
 
 
+        /// <summary>
+        /// get bit and return result to f4 register.x
+        /// </summary>
+        void get_getbits_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* f4_result)
+        {
+            float* fp_mask = (float*)temp;
+
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.get_bits: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
+            if (datatype != BlastVariableDataType.Bool32)
+            {
+                Debug.LogError($"ssmd.get_bits: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+            // get index
+#if DEVELOPMENT_BUILD || TRACE
+            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+            if (vector_size != 1)
+            {
+                Debug.LogError($"ssmd.get_bits: the mask to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
+                return;
+            }
+#else 
+            // in release we assume compiler did its job
+#endif
+
+            pop_fx_into_ref<float>(ref code_pointer, fp_mask);
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint current = ((uint*)data[i])[dataindex];
+                uint mask = ((uint*)fp_mask)[i];
+
+                f4_result[i].x = math.select(0f, 1f, (mask & current) == mask);
+            }
+
+            code_pointer--;
+        }
+
+        /// <summary>
+        /// count bits set and return result to f4 register.x
+        /// </summary>
+        void get_countbits_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* f4_result)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.get_countbits: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
+            if (datatype != BlastVariableDataType.Bool32)
+            {
+                Debug.LogError($"ssmd.get_countbits: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint current = ((uint*)data[i])[dataindex];
+
+                f4_result[i].x = math.countbits(current);
+            }
+
+            code_pointer--;
+        }
+
+        /// <summary>
+        /// count leading bits set to 0 and return result to f4 register.x
+        /// </summary>
+        void get_lzcnt_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* f4_result)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.get_lzcnt: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
+            if (datatype != BlastVariableDataType.Bool32)
+            {
+                Debug.LogError($"ssmd.get_lzcnt: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint current = ((uint*)data[i])[dataindex];
+                f4_result[i].x = math.lzcnt(current);
+            }
+
+            code_pointer--;
+        }
+
+        /// <summary>
+        /// count tailing bits set to 0 and return result to f4 register.x
+        /// </summary>
+        void get_tzcnt_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]float4* f4_result)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.get_tzcnt: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
+            if (datatype != BlastVariableDataType.Bool32)
+            {
+                Debug.LogWarning($"ssmd.get_tzcnt: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint current = ((uint*)data[i])[dataindex];
+                f4_result[i].x = math.tzcnt(current);
+            }
+
+            code_pointer--;
+        }
+
+        /// <summary>
+        /// reverse bits in place
+        /// </summary>
+        void get_reversebits_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.get_reversebits: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
+            if (datatype != BlastVariableDataType.Bool32)
+            {
+                Debug.LogError($"ssmd.get_reversebits: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint* p = &((uint*)data[i])[dataindex];
+                p[0] = math.reversebits(p[0]);
+            }
+
+            code_pointer--;
+        }
+
+
+        /// <summary>
+        /// rotate bits left in place 
+        /// </summary>
+        void get_rol_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.get_rol: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
+            if (datatype != BlastVariableDataType.Bool32)
+            {
+                Debug.LogError($"ssmd.get_rol: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            float* fp = (float*)temp;
+
+#if DEVELOPMENT_BUILD || TRACE
+            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+            if (vector_size != 1)
+            {
+                Debug.LogError($"ssmd.get_rol: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
+                return;
+            }
+#else 
+            // in release we assume compiler did its job
+#endif
+
+            pop_fx_into_ref<float>(ref code_pointer, fp);
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint* current = &((uint*)data[i])[dataindex];
+                current[0] = math.rol(current[0], (int)fp[i]);
+            }
+
+            code_pointer--;
+        }
+        /// <summary>
+        /// rotate bits right in place 
+        /// </summary>
+        void get_ror_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.get_ror: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
+            if (datatype != BlastVariableDataType.Bool32)
+            {
+                Debug.LogError($"ssmd.get_ror: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            float* fp = (float*)temp;
+
+#if DEVELOPMENT_BUILD || TRACE
+            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+            if (vector_size != 1)
+            {
+                Debug.LogError($"ssmd.get_ror: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
+                return;
+            }
+#else 
+            // in release we assume compiler did its job
+#endif
+
+            pop_fx_into_ref<float>(ref code_pointer, fp);
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint* current = &((uint*)data[i])[dataindex];
+                current[0] = math.ror(current[0], (int)fp[i]);
+            }
+
+            code_pointer--;
+        }
+        /// <summary>
+        /// shift bits left in place 
+        /// </summary>
+        void get_shl_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.get_shl: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
+            if (datatype != BlastVariableDataType.Bool32)
+            {
+                Debug.LogError($"ssmd.get_shl: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            float* fp = (float*)temp;
+
+#if DEVELOPMENT_BUILD || TRACE
+            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+            if (vector_size != 1)
+            {
+                Debug.LogError($"ssmd.get_shl: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
+                return;
+            }
+#else 
+            // in release we assume compiler did its job
+#endif
+
+            pop_fx_into_ref<float>(ref code_pointer, fp);
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint* current = &((uint*)data[i])[dataindex];
+                current[0] = current[0] << (int)fp[i];
+            }
+
+            code_pointer--;
+        }
+        /// <summary>
+        /// shift bits right in place 
+        /// </summary>
+        void get_shr_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.get_shr: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
+            if (datatype != BlastVariableDataType.Bool32)
+            {
+                Debug.LogError($"ssmd.get_shr: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            float* fp = (float*)temp;
+
+#if DEVELOPMENT_BUILD || TRACE
+            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
+            if (vector_size != 1)
+            {
+                Debug.LogError($"ssmd.get_shr: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
+                return;
+            }
+#else 
+            // in release we assume compiler did its job
+#endif
+
+            pop_fx_into_ref<float>(ref code_pointer, fp);
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                uint* current = &((uint*)data[i])[dataindex];
+                current[0] = current[0] >> (int)fp[i];
+            }
+
+            code_pointer--;
+        }
+
+        /// <summary>
+        /// set zero to given index
+        /// </summary>
+        void get_zero_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size)
+        {
+            // index would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.zero: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+#endif
+
+            switch (BlastInterpretor.GetMetaDataSize(in metadata, (byte)dataindex))
+            {
+                case 1: 
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        ((uint*)data[i])[dataindex] = 0;
+                    }
+                    break;
+                case 2:
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        ((uint*)data[i])[dataindex] = 0;
+                        ((uint*)data[i])[dataindex + 1] = 0;
+                    }
+                    break;
+                case 3:
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        ((uint*)data[i])[dataindex] = 0;
+                        ((uint*)data[i])[dataindex + 1] = 0;
+                        ((uint*)data[i])[dataindex + 2] = 0;
+                    }
+                    break;
+                case 4: 
+                case 0:
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        ((uint*)data[i])[dataindex] = 0;
+                        ((uint*)data[i])[dataindex + 1] = 0;
+                        ((uint*)data[i])[dataindex + 2] = 0;
+                        ((uint*)data[i])[dataindex + 3] = 0;
+                    }
+                    break; 
+            }
+        }
+
 
 
         #endregion
+
+        #region Reinterpret XXXX [DataIndex]
+
+        /// <summary>
+        /// reinterpret the value at index as a boolean value (set metadata type to bool32)
+        /// </summary>
+        void reinterpret_bool32(ref int code_pointer, ref byte vector_size)
+        {
+            // reinterpret operation would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.reinterpret_bool32: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex);
+        }
+
+        /// <summary>
+        /// reinterpret the value at index as a float value (set metadata type to float[1])
+        /// </summary>
+        void reinterpret_float(ref int code_pointer, ref byte vector_size)
+        {
+            // reinterpret operation would be the same for each ssmd record
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"ssmd.reinterpret_float: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Numeric, 1, (byte)dataindex);
+        }
+
+        #endregion 
 
         #region External Function Handler 
 
@@ -7127,11 +7677,13 @@ namespace NSS.Blast.SSMD
                 case blast_operation.expand_v3: expand_f1_into_fn(3, ref code_pointer, ref vector_size, f4_result); break;
                 case blast_operation.expand_v4: expand_f1_into_fn(4, ref code_pointer, ref vector_size, f4_result); break;
 
-               // case blast_operation.get_bit: get_getbit_result(temp, ref code_pointer, ref vector_size, f4_result); break; 
-                //case blast_operation.get_bits: get_getbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                case blast_operation.get_bit: get_getbit_result(temp, ref code_pointer, ref vector_size, f4_result); break; 
+                case blast_operation.get_bits: get_getbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                 case blast_operation.set_bit: get_setbit_result(temp, ref code_pointer, ref vector_size); break;
                 case blast_operation.set_bits: get_setbits_result(temp, ref code_pointer, ref vector_size); break;
+
+                case blast_operation.zero: get_zero_result(temp, ref code_pointer, ref vector_size); break; 
 
                 case blast_operation.ex_op:
                     {
@@ -7189,16 +7741,20 @@ namespace NSS.Blast.SSMD
                             // case extended_blast_operation.remap: get_remap_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                             // bitwise operations
-            /*                case extended_blast_operation.count_bits: get_countbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.reverse_bits: get_reversebits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.count_bits: get_countbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.reverse_bits: get_reversebits_result(temp, ref code_pointer, ref vector_size); break;
                             case extended_blast_operation.tzcnt: get_tzcnt_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                             case extended_blast_operation.lzcnt: get_lzcnt_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.rol: get_rol_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.ror: get_ror_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.shr: get_shr_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.shl: get_shl_result(temp, ref code_pointer, ref vector_size, f4_result); break;*/
+                            case extended_blast_operation.rol: get_rol_result(temp, ref code_pointer, ref vector_size); break;
+                            case extended_blast_operation.ror: get_ror_result(temp, ref code_pointer, ref vector_size); break;
+                            case extended_blast_operation.shr: get_shr_result(temp, ref code_pointer, ref vector_size); break;
+                            case extended_blast_operation.shl: get_shl_result(temp, ref code_pointer, ref vector_size); break;
 
+                            // datatype reinterpretations 
+                            case extended_blast_operation.reinterpret_bool32: reinterpret_bool32(ref code_pointer, ref vector_size); break;
+                            case extended_blast_operation.reinterpret_float: reinterpret_float(ref code_pointer, ref vector_size); break;
 
+                            // debugging
                             case extended_blast_operation.debugstack:
                                 {
                                     // write contents of stack to the debug stream as a detailed report; 
@@ -7847,7 +8403,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.constant_long_ref:
                         {
                             code_pointer += 1; 
-                            int c_index = code_pointer - (code[code_pointer] << 8 + code[code_pointer + 1]);
+                            int c_index = code_pointer - ((code[code_pointer] << 8) + code[code_pointer + 1]) + 1;
                             code_pointer += 2;
 
                             float constant = default;
@@ -9085,7 +9641,7 @@ namespace NSS.Blast.SSMD
 
                     // fixed long-jump, singed (forward && backward)
                     case blast_operation.long_jump:
-                        code_pointer = code_pointer - (short)(code[code_pointer] << 8 + code[code_pointer + 1]);
+                        code_pointer = code_pointer + ((short)((code[code_pointer] << 8) + code[code_pointer + 1])) - 1;
                         break;
 
                     //

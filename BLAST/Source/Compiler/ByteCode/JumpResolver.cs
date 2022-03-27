@@ -33,7 +33,9 @@ namespace NSS.Blast.Compiler.Stage
         /// <returns>true on success</returns>
         static bool ResolveJumps(CompilationData cdata, IMByteCodeList code)
         {
+            // - labeling cleanup 
             // move each jump label to the next non-nop operation and remove the nop anchor
+            // 
             int i = 0;
             while (i < code.Count)
             {
@@ -125,6 +127,14 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // foreach jump-offset find target label, calculate distance and update offset in codelist
+            // - offset.item2 == index of jumpsource in code
+
+
+            // jump_over table: <source_of_jump, jumpsize>
+            List<Tuple<short, short, string>> jump_over = new List<Tuple<short, short, string>>(); 
+
+            int additional_long_offset = 0;
+
             foreach (Tuple<string, int> offset in offset_idx)
             {
                 int idx;
@@ -135,16 +145,11 @@ namespace NSS.Blast.Compiler.Stage
                     return false;
                 }
 
-                // calculate and verify jump size 
-                int jump_size = idx - offset.Item2;
-                int abs_jump_size = Math.Abs(jump_size);
+                // calculate and verify jump size
+                short source_offset = (short)(offset.Item2 + additional_long_offset);
+                short jump_size = (short)(idx - source_offset);
+                short abs_jump_size = Math.Abs(jump_size);
 
-                if (abs_jump_size > 255)
-                {
-                    cdata.LogToDo($"Compiler Feature: jump repeater for long jumps, if jumpsize > 255 inject new jumps at 255 until lenght reached");
-                    cdata.LogError($"Compiler Failure: failed to resolve jumps, jump {offset.Item1} larger then max jump size of 255 bytes, size: {jump_size}");
-                    return false;
-                }
                 if (jump_size == 0 || abs_jump_size == 1)
                 {
                     // this can only be wrong
@@ -153,18 +158,60 @@ namespace NSS.Blast.Compiler.Stage
                 }
 
                 // get jump operation (should be before the offset)
-                blast_operation op = (blast_operation)code[(byte)(offset.Item2 - 1)].code;
+                blast_operation op = (blast_operation)code[source_offset - 1].code;
+                if (op == blast_operation.nop) continue; 
+
                 if (jump_size > 0)
                 {
                     // verify jump is a JZ, JNZ or JUMP 
+                    //
+                    // - forward jumps might mis-align when backward jump offsets increase in size 
+                    //
+                    // 
+
                     if (!(op == blast_operation.jump || op == blast_operation.jnz || op == blast_operation.jz))
                     {
                         cdata.LogError($"Compiler Failure: encountered invalid jumptype <{op}> for forward jump of size {jump_size}");
                         return false;
                     }
-                    
-                    // update jump offset
-                    code[offset.Item2].UpdateOpCode((byte)(jump_size));
+
+                    jump_over.Add(new Tuple<short, short, string>(source_offset, jump_size, offset.Item1));
+
+                    if (jump_size > 255)
+                    {
+                        // update to a long jump with positive jumpsize 
+                        switch (op)
+                        {
+                            case blast_operation.jz:
+                                op = blast_operation.jz_long;
+                                break;
+                            case blast_operation.jnz:
+                                op = blast_operation.jnz_long;
+                                break;
+                            case blast_operation.jump:
+                                op = blast_operation.long_jump;
+                                break;
+                            default:
+                                cdata.LogError($"Compiler Failure: failed to resolve jumps, jump {op} {offset.Item1} larger then max jump size of 255 bytes, size: {jump_size}");
+                                return false;
+                        }
+
+                        code[source_offset - 1].UpdateOpCode((byte)op);
+                        code[source_offset + 0].UpdateOpCode((byte)(jump_size >> 8));
+                        code[source_offset + 1].UpdateOpCode((byte)(jump_size & 0b11111111));
+
+                        // add offset index
+                        // - at this point we could jump over an enlarged long_jump going backware (jump_back or constant_long_ref) 
+
+                        // shift nxt offsets  
+                        additional_long_offset++;
+                    }
+                    else
+                    {
+                        // update jump offset
+                        code[source_offset].UpdateOpCode((byte)(jump_size));
+                        code[source_offset+1].AddLabel(IMJumpLabel.Skip()); 
+                    }
                 }
                 else
                 {
@@ -180,31 +227,224 @@ namespace NSS.Blast.Compiler.Stage
                         return false;
                     }
 
-
                     if (abs_jump_size > 255)
                     {
-                        cdata.LogError($"Compiler Failure: constant reference jumpsize to large {jump_size}  TODO long reference.. ");
-                        return false;
+                        if (op == blast_operation.jump_back)
+                        {
+                            // update to a long jump with negative jumpsize 
+                            code[source_offset - 1].UpdateOpCode((byte)blast_operation.long_jump);
+                            code[source_offset + 0].UpdateOpCode((byte)(jump_size >> 8));
+                            code[source_offset + 1].UpdateOpCode((byte)(jump_size & 0b11111111));
 
+                            // shift nxt offsets  
+                            additional_long_offset++;
+                        }
+                        else
+                        {
+                            // == long constant reference
+                            // encode long reference at code[offset.Item2] 
+                            code[source_offset - 1].UpdateOpCode((byte)blast_operation.constant_long_ref);
+                            code[source_offset + 0].UpdateOpCode((byte)(abs_jump_size >> 8));
+                            code[source_offset + 1].UpdateOpCode((byte)(abs_jump_size & 0b11111111));
+                        }
                     }
                     else
                     {
-
                         // update jump offset (negative!!!)
-                        code[offset.Item2].UpdateOpCode((byte)(abs_jump_size));
-
-                    }
-
-
-                    // if we updated the last item in the list to a jump offset
-                    if(offset.Item2 == code.Count - 1)
-                    {
-                        // list does not end with nop anymore
-                        // - optimizer removed the double nop neglecting labels?
+                        // - constant references ALWAYS jump back
+                        code[source_offset].UpdateOpCode((byte)(abs_jump_size));
+                        code[source_offset + 1].AddLabel(IMJumpLabel.Skip());
                     }
                 }
             }
 
+            // 
+            // remove reserved offsets and update any jump target locations accordingly 
+            // - note that jumps always get shorter in this operation voiding need to check for larger size
+            // 
+            i = 0;
+            bool skipped;
+
+            do
+            {
+                skipped = false; 
+
+                while (i < code.Count)
+                {
+                    if (code[i].IsSkipped)
+                    {
+                        skipped = true; 
+
+                        // any backward jump jumping over i after i shorten by 1
+                        for (int j = i + 1; j < code.Count; j++)
+                        {
+                            // skip over anything not jumping
+                            if (!(code[j].HasLabel(JumpLabelType.Jump) || code[j].HasLabel(JumpLabelType.ReferenceToConstant)))
+                            {
+                                continue;
+                            }
+
+                            blast_operation op = code[j].op;
+                            short jumpsize = 0;
+                            switch (op)
+                            {
+                                case blast_operation.constant_long_ref:
+                                    jumpsize = (short)((code[j + 1].code << 8) + code[j + 2].code);
+                                    if (j - jumpsize > i) continue;
+                                    jumpsize--;
+                                    code[j + 1].UpdateOpCode((byte)(jumpsize >> 8));
+                                    code[j + 2].UpdateOpCode((byte)(jumpsize & 0b11111111));
+                                    break;
+
+                                case blast_operation.long_jump:
+                                    jumpsize = (short)((code[j + 1].code << 8) + code[j + 2].code);
+                                    if (jumpsize < 0)
+                                    {
+                                        if (j + jumpsize > i) continue;
+
+                                        jumpsize++; // shorter negative jump is enlarged towards zero
+                                        code[j + 1].UpdateOpCode((byte)(jumpsize >> 8));
+                                        code[j + 2].UpdateOpCode((byte)(jumpsize & 0b11111111));
+                                    }
+                                    break;
+
+                                case blast_operation.constant_short_ref:
+                                case blast_operation.jump_back:
+                                    jumpsize = code[j + 1].code;
+                                    if (j - jumpsize > i) continue;
+                                    jumpsize--;
+                                    code[j + 1].UpdateOpCode((byte)jumpsize);
+                                    break;
+                            }
+                        }
+
+                        // any forward jump jumping over i before i shorten by 1 
+                        for (int j = 0; j < i; j++)
+                        {
+                            if (!(code[j].HasLabel(JumpLabelType.Jump) || code[j].HasLabel(JumpLabelType.ReferenceToConstant)))
+                            {
+                                continue;
+                            }
+
+                            blast_operation op = code[j].op;
+                            short jumpsize = 0;
+                            switch (op)
+                            {
+                                case blast_operation.jz:
+                                case blast_operation.jump:
+                                case blast_operation.jnz:
+                                    jumpsize = code[j + 1].code;
+                                    if (j + jumpsize >= i)
+                                    {
+                                        jumpsize--;
+                                        code[j + 1].UpdateOpCode((byte)jumpsize);
+                                    }
+                                    break;
+
+                                case blast_operation.jnz_long:
+                                case blast_operation.jz_long:
+                                case blast_operation.long_jump:
+                                    jumpsize = (short)((code[j + 1].code << 8) + code[j + 2].code);
+                                    if (jumpsize > 0)
+                                    {
+                                        if (j + jumpsize > i) continue;
+
+                                        jumpsize--;
+                                        code[j + 1].UpdateOpCode((byte)(jumpsize >> 8));
+                                        code[j + 2].UpdateOpCode((byte)(jumpsize & 0b11111111));
+                                    }
+                                    break;
+
+                            }
+                        }
+
+                        // remove the nop 
+                        code.RemoveAt(i);
+                        continue; // i++ would skip 1 opcode
+                    }
+
+                    i++;
+                }
+
+                // check for jumps that became smaller in the last step (longjump + 1) and changed jumptype
+                i = 0;
+                while (i < code.Count)
+                {
+                    // only jumps/offsets 
+                    if (! (code[i].HasLabel(JumpLabelType.Jump) || code[i].HasLabel(JumpLabelType.ReferenceToConstant)))
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    blast_operation op = code[i].op;
+                    switch(op)
+                    {
+                        case blast_operation.long_jump:
+                        case blast_operation.constant_long_ref:
+                        {
+                                int jumpsize = (short)((code[i + 1].code << 8) + code[i + 2].code);
+                                if (jumpsize > 0)
+                                {
+                                    if(jumpsize <= 255)
+                                    {
+                                        if (op == blast_operation.long_jump)
+                                        {
+                                            code[i + 1].UpdateOpCode((byte)blast_operation.jump);
+                                        }
+                                        else
+                                        {
+                                            code[i + 1].UpdateOpCode((byte)blast_operation.constant_short_ref);
+                                        }
+                                        code[i + 1].UpdateOpCode((byte)jumpsize);
+                                        code[i + 2].UpdateOpCode((byte)0);
+                                        code[i + 2].AddLabel(IMJumpLabel.Skip());
+                                        skipped = true; // only applicable if entering with wierd state 
+                                    }
+                                }
+                                else
+                                {
+                                    if (jumpsize < -255)
+                                    {
+                                        // backward jump
+                                        code[i + 1].UpdateOpCode((byte)blast_operation.jump_back);
+                                        code[i + 1].UpdateOpCode((byte)(-jumpsize));
+                                        code[i + 2].UpdateOpCode((byte)0);
+                                        code[i + 2].AddLabel(IMJumpLabel.Skip());
+                                        skipped = true; 
+                                    }
+                                }
+
+                            }
+                            break; 
+
+                        case blast_operation.jz_long:
+                        case blast_operation.jnz_long:
+                            {
+                                int jumpsize = (short)((code[i + 1].code << 8) + code[i + 2].code);
+                                if (jumpsize <= 255)
+                                {
+                                    switch (op)
+                                    {
+                                        case blast_operation.jz_long: code[i].UpdateOpCode((byte)blast_operation.jz); break;
+                                        case blast_operation.jnz_long: code[i].UpdateOpCode((byte)blast_operation.jnz); break;
+                                    }
+
+                                    code[i + 1].UpdateOpCode((byte)jumpsize);
+                                    code[i + 2].UpdateOpCode((byte)0);
+                                    code[i + 2].AddLabel(IMJumpLabel.Skip());
+                                    skipped = true;
+                                }
+                            }
+                            break; 
+                    }
+
+                    i++;
+                }
+            
+                // keep updateing jumps until nothing is skipped 
+            }
+            while (skipped == true);
             return true;
         }
 
