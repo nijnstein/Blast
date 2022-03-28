@@ -60,9 +60,19 @@ namespace NSS.Blast
 
     /// <summary>
     /// supported vectorsizes 
+    /// 
+    /// - encode vectorsize AND datatype in 1 nibble - 
+    /// 
+    /// - update to use encode44 everywhere 
+    /// 
     /// </summary>
     public enum BlastVectorSizes : byte
     {
+        /// <summary>
+        /// vectorsize|datatype NOT set 
+        /// </summary>
+        none = 0, 
+
         /// <summary>
         /// size 1: 4 bytes
         /// </summary>
@@ -78,7 +88,21 @@ namespace NSS.Blast
         /// <summary>
         /// size 4: 16 bytes
         /// </summary>
-        float4 = 4
+        float4 = 4,
+
+
+        bool32 = 5,
+        id1 = 6,
+        id2 = 7,
+        id3 = 8,
+        id4 = 9,
+        ptr = 10,
+        half1 = 11,
+        half2 = 12,
+        half3 = 13,
+        half4 = 14,
+        id64 = 15
+
     }
 
     /// <summary>
@@ -539,11 +563,21 @@ namespace NSS.Blast
         /// different instructions for the boolean operations 
         /// </summary>
         binary_and,
+
+        /// <summary>
+        /// binary or operation 
+        /// </summary>
         binary_or,
+
+        /// <summary>
+        /// binary exclusive or operation 
+        /// </summary>
         binary_xor,
+
+        /// <summary>
+        /// binary not operation 
+        /// </summary>
         binary_not,
-
-
 
         //------------------------
 

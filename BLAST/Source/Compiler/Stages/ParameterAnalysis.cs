@@ -450,10 +450,17 @@ namespace NSS.Blast.Compiler.Stage
         {
             Assert.IsNotNull(ast_node);
 
-            ///
+                  /*
+            
+            infer bool32 datatypes whereever possible then use that information to encode 
+            binary equivalents for operations on them 
+                
+            boolean ops are limited to:  & | ^ ~ 
 
+            ID ops are limited to: + - * / %     (yes modulus)
 
-
+            should use  BlastVectorSizes.bool32 
+                    */ 
 
             return true; 
         }
