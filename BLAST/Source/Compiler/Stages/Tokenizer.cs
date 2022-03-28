@@ -241,7 +241,7 @@ namespace NSS.Blast.Compiler.Stage
                             unsafe
                             {
                                 uint* b32 = (uint*)(void*)&f;
-                                if (CodeUtils.TryAsBool32(a[3], out uint ui32))
+                                if (CodeUtils.TryAsBool32(a[3], true, out uint ui32))
                                 {
                                     b32[0] = ui32; 
                                 }
@@ -634,6 +634,8 @@ namespace NSS.Blast.Compiler.Stage
                 int i2 = i1 + 1;
                 bool have_numeric = char.IsDigit(code[i1]);
                 bool numeric_has_dot = false;
+                bool can_be_binary = code[i1] == '0' || code[i1] == '1' || code[i1] == 'b' || code[i1] == 'B' || code[i1] == '_'; 
+
                 while (i2 < code.Length)
                 {
                     char ch = code[i2];
@@ -641,7 +643,10 @@ namespace NSS.Blast.Compiler.Stage
                     bool eof = i2 == code.Length;
                     bool istoken = is_token(ch);
 
-                    if ((have_numeric && ch == '.') || (!whitespace && !istoken && !eof))
+                    can_be_binary = can_be_binary && (code[i2] == '0' || code[i2] == '1' || code[i2] == 'b' || code[i2] == 'B' || code[i2] == '_');
+                    have_numeric = have_numeric && (code[i2] != '_');
+
+                    if ((have_numeric && ch == '.') || (!whitespace && !istoken && !eof) || can_be_binary)
                     {
                         if (have_numeric && ch == '.')
                         {
@@ -654,6 +659,11 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 numeric_has_dot = true;
                             }
+                        }
+
+                        if(can_be_binary && !have_numeric)
+                        {
+                            //                           
                         }
 
                         // read next part of identifier 

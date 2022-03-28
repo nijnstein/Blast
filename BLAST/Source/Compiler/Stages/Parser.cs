@@ -1107,6 +1107,7 @@ namespace NSS.Blast.Compiler.Stage
                                         is_constant = true,
                                         identifier = value,
                                         vector_size = 1, 
+                                        datatype = BlastVariableDataType.Numeric,
                                         type = nodetype.parameter
                                     };
                                 }
@@ -1124,7 +1125,8 @@ namespace NSS.Blast.Compiler.Stage
                                 {
                                     is_constant = true,
                                     identifier = value,
-                                    vector_size = vector_size, 
+                                    vector_size = vector_size,
+                                    datatype = BlastVariableDataType.Numeric,
                                     type = nodetype.parameter
                                 };
                             }
@@ -1149,6 +1151,7 @@ namespace NSS.Blast.Compiler.Stage
                                 is_constant = true,
                                 identifier = value,
                                 vector_size = vector_size,
+                                datatype = BlastVariableDataType.Numeric,
                                 type = nodetype.parameter
                             };
                         }
@@ -1177,6 +1180,7 @@ namespace NSS.Blast.Compiler.Stage
                     is_constant = true,
                     identifier = value,
                     vector_size = vector_size,
+                    datatype = BlastVariableDataType.Numeric,
                     type = nodetype.parameter
                 };
             }
@@ -1224,6 +1228,8 @@ namespace NSS.Blast.Compiler.Stage
                 // first char is digit 
                 (tokens[idx].Item2 != null && tokens[idx].Item2.Length > 0 && char.IsDigit(tokens[idx].Item2[0]));
 
+            is_number = is_number && (tokens[idx].Item2.Length < 14) && CodeUtils.OnlyNumericChars(tokens[idx].Item2); 
+
             if (is_number)
             {
                 // just return a numeric constant
@@ -1237,9 +1243,23 @@ namespace NSS.Blast.Compiler.Stage
                 return n_var_or_constant; 
             }
 
+            // binary?
+            if (CodeUtils.TryAsBool32(tokens[idx].Item2, true, out uint uintb32))
+            {
+                // read binary value from token 
+                node n_constant = new node(null);
+                n_constant.is_constant = true;
+                n_constant.constant_op = blast_operation.nop; 
+                n_constant.type = nodetype.parameter;
+                n_constant.datatype = BlastVariableDataType.Bool32;
+                n_constant.identifier = tokens[idx].Item2;
+                // increase token index reference 
+                idx += 1;
+                return n_constant; 
+            }
 
             // is is a named constant?
-            if(Blast.TryGetNamedConstant(tokens[minus ? idx + 1 : idx].Item2, out blast_operation constant_op))
+            if (Blast.TryGetNamedConstant(tokens[minus ? idx + 1 : idx].Item2, out blast_operation constant_op))
             {
                 node n_constant = new node(null);
 
@@ -1249,6 +1269,7 @@ namespace NSS.Blast.Compiler.Stage
                 n_constant.identifier = tokens[idx].Item2;
                 n_constant.vector_size = 1;
                 n_constant.type = nodetype.parameter;
+                n_constant.datatype = BlastVariableDataType.Numeric; // any defined constant is always of type NUMERIC 
                 n_constant.constant_op = constant_op;
 
                 idx++; 

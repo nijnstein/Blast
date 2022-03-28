@@ -96,19 +96,50 @@ namespace NSS.Blast.Compiler.Stage
                     replace[i] = offset;
                     cdata.Executable.SetMetaData(v.DataType, 1, offset);
 
-                    // float of size 1
                     if (v.IsConstant)
                     {
-                        float f;
-                        if (!float.IsNaN(f = v.Name.AsFloat()))
+                        switch (v.DataType)
                         {
-                            // constant numeric value
-                            cdata.Executable.data[offset++] = f;
-                        }
-                        else
-                        {
-                            cdata.LogError($"data segment error, not a float? >> {v.Name}");
-                            cdata.Executable.data[offset++] = 0;
+                            case BlastVariableDataType.Numeric:
+                                {
+                                    // float of size 1
+                                    float f;
+                                    if (!float.IsNaN(f = v.Name.AsFloat()))
+                                    {
+                                        // constant numeric value
+                                        cdata.Executable.data[offset++] = f;
+                                    }
+                                    else
+                                    {
+                                        cdata.LogError($"packaging: data segment error, failed to parse constant as float {v.Name}");
+                                        cdata.Executable.data[offset++] = 0;
+                                    }
+                                }
+                                break;
+
+                            case BlastVariableDataType.Bool32:
+                                {
+                                    uint b32;
+                                    if (CodeUtils.TryAsBool32(v.Name, true, out b32))
+                                    {
+                                        unsafe 
+                                        {
+                                            float* f32 = (float*)(void*)&b32;
+                                            cdata.Executable.data[offset++] = f32[0]; 
+                                        }
+                                    }
+                                    else
+                                    {
+                                        cdata.LogError($"packaging: data segment error, failed to parse constant as bool32: {v.Name}");
+                                        cdata.Executable.data[offset++] = 0;
+                                    }
+                                }
+                                break;
+
+                            default:
+                                cdata.LogError($"packaging: data segment error, variable {v.Name} datatype: {v.DataType} not supported");
+                                break;
+
                         }
                     }
                     else
@@ -117,6 +148,7 @@ namespace NSS.Blast.Compiler.Stage
                         cdata.Executable.data[offset++] = 0;
                     }
                 }
+
             }
             cdata.Executable.data_count = offset;
 
@@ -164,9 +196,6 @@ namespace NSS.Blast.Compiler.Stage
                     // skip next if extended op 
                     if (op == blast_operation.ex_op
                         ||
-                        // skip interpreting next value if it is hardcoded
-                        Blast.IsJumpOperation(op)
-                        ||
                         // or if its the sizor of a function call with variable parameters 
                         // !!!!!
                         // from this it is hardcoded that any extended op function may never have variable parameter length
@@ -177,12 +206,20 @@ namespace NSS.Blast.Compiler.Stage
                     }
                     else
                     {
+                        // hardcode jump offsets 
                         switch (op)
                         {
                             case blast_operation.constant_f1: next_is_hardcoded_value += 4; break;
                             case blast_operation.constant_f1_h: next_is_hardcoded_value += 2; break;
                             case blast_operation.constant_long_ref: next_is_hardcoded_value += 2; break;
                             case blast_operation.constant_short_ref: next_is_hardcoded_value += 1; break;
+                            case blast_operation.jnz: next_is_hardcoded_value += 1; break;
+                            case blast_operation.jnz_long: next_is_hardcoded_value += 2; break;
+                            case blast_operation.jump: next_is_hardcoded_value += 1; break;
+                            case blast_operation.jump_back: next_is_hardcoded_value += 1; break;
+                            case blast_operation.jz: next_is_hardcoded_value += 1; break;
+                            case blast_operation.jz_long: next_is_hardcoded_value += 2; break;
+                            case blast_operation.long_jump: next_is_hardcoded_value += 2; break;
                         }
                     }
 

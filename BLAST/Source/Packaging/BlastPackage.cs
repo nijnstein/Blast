@@ -867,10 +867,9 @@ namespace NSS.Blast
         public int ReferenceCount;
 
         /// <summary>
-        /// The datatype of the variable:
-        /// - V1: only numeric datatypes are supported
-        /// - V2: support for ID types 
-        /// - V3: ID64, NUMERIC64 
+        /// The datatype of the variable, all data is of type NUMERIC initially and may be reinterpretted as either
+        /// current support: BOOL32
+        /// future support:  ID, PTR or HALF 
         /// </summary>
         public BlastVariableDataType DataType = BlastVariableDataType.Numeric;
 

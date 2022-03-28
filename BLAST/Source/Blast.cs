@@ -1128,22 +1128,30 @@ namespace NSS.Blast
                 return constant_op;
             }
 
-            // it should be a float in system interpretation if it starts with a digit (dont call function otherwise)
-            float f;
-            if (float.IsNaN(f = value.AsFloat()))
+            // if bool32
+            if (CodeUtils.TryAsBool32(value, false, out uint b32))
             {
-                return blast_operation.nan;
+                if (b32 == 0) return blast_operation.value_0;
+                return blast_operation.nop; 
             }
-
-            foreach (blast_operation value_op in ValueOperations)
+            else
             {
-                float f2 = Blast.GetConstantValueDefault(value_op);
-                if (f2 > f - constant_epsilon && f2 < f + constant_epsilon)
+                // it should be a float in system interpretation if it starts with a digit (dont call function otherwise)
+                float f;
+                if (float.IsNaN(f = value.AsFloat()))
                 {
-                    return value_op;
+                    return blast_operation.nan;
+                }
+
+                foreach (blast_operation value_op in ValueOperations)
+                {
+                    float f2 = Blast.GetConstantValueDefault(value_op);
+                    if (f2 > f - constant_epsilon && f2 < f + constant_epsilon)
+                    {
+                        return value_op;
+                    }
                 }
             }
-
             return blast_operation.nop;
         }
 
@@ -1321,7 +1329,7 @@ namespace NSS.Blast
         [BurstCompile]
         public static bool IsJumpOperation(blast_operation op)
         {
-            return op == blast_operation.jump || op == blast_operation.jump_back || op == blast_operation.jz || op == blast_operation.jnz || op == blast_operation.long_jump;
+            return op == blast_operation.jump || op == blast_operation.jump_back || op == blast_operation.jz || op == blast_operation.jnz || op == blast_operation.long_jump || op == blast_operation.jz_long || op == blast_operation.jnz_long;
         }
 
         /// <summary>
@@ -1749,41 +1757,23 @@ namespace NSS.Blast
                     case blast_operation.peek: sb.Append("peek "); break;
                     case blast_operation.pushf: sb.Append("pushf "); break;
                     case blast_operation.pushc: sb.Append("pushc "); break;
-
-                    case blast_operation.fma:
-                        break;
-                    case blast_operation.fmod: sb.Append("fmod "); break;
-                    case blast_operation.csum: sb.Append("csum "); break;
+                    case blast_operation.fma: sb.Append("fma "); break; 
                     case blast_operation.trunc: sb.Append("trunc "); break;
-
-                    case blast_operation.adda:
-                        break;
-                    case blast_operation.mula:
-                        break;
-                    case blast_operation.diva:
-                        break;
-                    case blast_operation.suba:
-                        break;
-                    case blast_operation.all:
-                        break;
-                    case blast_operation.any:
-                        break;
-                    case blast_operation.abs:
-                        break;
-                    case blast_operation.select:
-                        break;
-                    case blast_operation.random:
-                        break;
-                    case blast_operation.seed:
-                        break;
-                    case blast_operation.max:
-                        break;
-                    case blast_operation.min:
-                        break;
-                    case blast_operation.maxa:
-                        break;
-                    case blast_operation.mina:
-                        break;
+                    case blast_operation.csum: sb.Append("csum "); break; 
+                    case blast_operation.adda: sb.Append("adda "); break; 
+                    case blast_operation.mula: sb.Append("mula "); break; 
+                    case blast_operation.diva: sb.Append("diva "); break; 
+                    case blast_operation.suba: sb.Append("suba "); break; 
+                    case blast_operation.all: sb.Append("all "); break; 
+                    case blast_operation.any: sb.Append("any "); break; 
+                    case blast_operation.abs: sb.Append("abs "); break; 
+                    case blast_operation.select: sb.Append("select "); break; 
+                    case blast_operation.random: sb.Append("random "); break;
+                    case blast_operation.seed: sb.Append("seed "); break;
+                    case blast_operation.max: sb.Append("max "); break;
+                    case blast_operation.min: sb.Append("min "); break; 
+                    case blast_operation.maxa: sb.Append("maxa "); break;
+                    case blast_operation.mina: sb.Append("mina "); break; 
                     case blast_operation.value_0: sb.Append("0 "); break;
                     case blast_operation.value_1: sb.Append("1 "); break;
                     case blast_operation.value_2: sb.Append("2 "); break;
@@ -1833,6 +1823,11 @@ namespace NSS.Blast
                     case blast_operation.constant_long_ref: sb.Append("clref "); asnumber = 2; break;
                     case blast_operation.constant_short_ref: sb.Append("csref "); asnumber = 1; break;
 
+                    case blast_operation.jz_long: sb.Append("jz_long "); asnumber = 2; break;
+                    case blast_operation.jnz_long: sb.Append("jnz_long "); asnumber = 2; break;
+
+                    case blast_operation.zero: sb.Append("zero "); asnumber = 0; break; 
+
                     case blast_operation.ex_op:
                         i++;
                         extended_blast_operation ex = (extended_blast_operation)bytes[i];
@@ -1872,6 +1867,17 @@ namespace NSS.Blast
                             case extended_blast_operation.ceillog2:
                             case extended_blast_operation.floorlog2:
                             case extended_blast_operation.ceilpow2:
+                            case extended_blast_operation.fmod: sb.Append("fmod "); break;
+                            case extended_blast_operation.reinterpret_float: 
+                            case extended_blast_operation.reinterpret_bool32:
+                            case extended_blast_operation.ror:
+                            case extended_blast_operation.rol:
+                            case extended_blast_operation.shl:
+                            case extended_blast_operation.shr:
+                            case extended_blast_operation.count_bits:
+                            case extended_blast_operation.reverse_bits:
+
+
                                 sb.Append($"{ex} ");
                                 break;
 

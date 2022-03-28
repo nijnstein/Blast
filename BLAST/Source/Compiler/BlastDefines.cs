@@ -419,12 +419,7 @@ namespace NSS.Blast
         mina,
 
         /// <summary>
-        /// floating point modulus operation 
-        /// </summary>
-        fmod,
-
-        /// <summary>
-        /// component sum of vector 
+        /// get component sum of a vector 
         /// </summary>
         csum,
 
@@ -537,11 +532,17 @@ namespace NSS.Blast
         /// <summary>
         /// set data at index to zero 
         /// </summary>
-        zero,        
+        zero,
 
-        reserved4,
-        reserved5,         
-        reserved6,
+        /// <summary>
+        /// binary and, instead of checking datatype on each sequencing step we use 
+        /// different instructions for the boolean operations 
+        /// </summary>
+        binary_and,
+        binary_or,
+        binary_xor,
+        binary_not,
+
 
 
         //------------------------
@@ -795,9 +796,10 @@ namespace NSS.Blast
         /// </summary>
         ceilpow2,
 
-
-
-
+        /// <summary>
+        /// floating point modulus operation 
+        /// </summary>
+        fmod,
 
 
         // <summary>
@@ -1505,7 +1507,11 @@ namespace NSS.Blast
         /// <summary>
         /// interpretor validationmode cannot be used on referenced data 
         /// </summary>
-        error_ssmd_validationmode_cannot_run_on_referenced_data = -76
+        error_ssmd_validationmode_cannot_run_on_referenced_data = -76,
+        /// <summary>
+        /// compiler failed to infer datatype from given nodes 
+        /// </summary>
+        error_analyzer_failed_to_infer_parameter_types = -77
     }
 
 }

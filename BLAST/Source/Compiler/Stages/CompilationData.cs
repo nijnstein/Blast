@@ -604,11 +604,8 @@ namespace NSS.Blast.Compiler
                         case blast_operation.equals: sb.Append("= "); break;
                         case blast_operation.not_equals: sb.Append("!= "); break;
                         case blast_operation.fma: sb.Append("fma "); break;
-                        case blast_operation.fmod: sb.Append("fmod "); break;
-
-                        case blast_operation.csum: sb.Append("csum "); break;
                         case blast_operation.trunc: sb.Append("trunc "); break;
-
+                        case blast_operation.csum: sb.Append("csum "); break;
                         case blast_operation.adda: sb.Append("adda "); break;
                         case blast_operation.mula: sb.Append("mula "); break;
                         case blast_operation.diva: sb.Append("diva "); break;
@@ -703,6 +700,8 @@ namespace NSS.Blast.Compiler
                         case blast_operation.get_bit: sb.Append("get_bit "); asnumber = 0; break;
                         case blast_operation.get_bits: sb.Append("get_bits "); asnumber = 0; break;
 
+                        case blast_operation.zero: sb.Append("zero "); asnumber = 0; break; 
+
                         case blast_operation.ex_op:
                             i++;
                             extended_blast_operation exop = (extended_blast_operation)code[i];
@@ -745,6 +744,7 @@ namespace NSS.Blast.Compiler
                                 case extended_blast_operation.ceillog2: sb.Append("ceillog2 "); break; 
                                 case extended_blast_operation.floorlog2: sb.Append("floorlog2 "); break; 
                                 case extended_blast_operation.ceilpow2: sb.Append("ceilpow2 "); break;
+                                case extended_blast_operation.fmod: sb.Append("fmod "); break;
 
                                 case extended_blast_operation.count_bits: sb.Append("count_bits "); break;
                                 case extended_blast_operation.reverse_bits: sb.Append("reverse_bits "); break;
@@ -755,7 +755,10 @@ namespace NSS.Blast.Compiler
                                 case extended_blast_operation.rol: sb.Append("rol "); break;
 
                                 case extended_blast_operation.tzcnt: sb.Append("tzcnt "); break;
-                                case extended_blast_operation.lzcnt: sb.Append("lzcnt "); break; 
+                                case extended_blast_operation.lzcnt: sb.Append("lzcnt "); break;
+
+                                case extended_blast_operation.reinterpret_bool32: sb.Append("reinterpret_bool32 "); break;
+                                case extended_blast_operation.reinterpret_float: sb.Append("reinterpret_float32 "); break;
 
                                 case extended_blast_operation.call:
                                     sb.Append("call ");
@@ -1001,6 +1004,13 @@ namespace NSS.Blast.Compiler
             return CreateVariable(name, BlastVariableDataType.Numeric, 1, is_input, is_output); 
         }
 
+        /// <summary>
+        /// create a variable with a given datatype 
+        /// </summary>
+        public BlastVariable CreateVariable(string name, BlastVariableDataType datatype)
+        {
+            return CreateVariable(name, datatype, 1, false, false); 
+        }
 
         /// <summary>
         /// create a holder for variable data collected during compilation 

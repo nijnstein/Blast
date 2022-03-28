@@ -1397,7 +1397,7 @@ namespace NSS.Blast
             RegisterFunction("diva", 2, 63, 0, 0, blast_operation.diva);
             RegisterFunction("mula", 2, 63, 0, 0, blast_operation.mula);
             RegisterFunction("fma", 3, 3, 0, 0, blast_operation.fma);
-            RegisterFunction("fmod", 2, 2, 0, 0, blast_operation.fmod);
+            RegisterFunction("fmod", 2, 2, 0, 0, extended_blast_operation.fmod);
             RegisterFunction("trunc", 1, 63, 0, 0, blast_operation.trunc);
             RegisterFunction("csum", 1, 63, 0, 0, blast_operation.csum);
 
@@ -1450,8 +1450,6 @@ namespace NSS.Blast
             RegisterFunction("floorlog2", 1, 1, 0, 0, extended_blast_operation.floorlog2);
             RegisterFunction("ceilpow2", 1, 1, 0, 0, extended_blast_operation.ceilpow2);
 
-
-            /// todoo: implementation in compiler
             RegisterFunction("set_bits", 3, 3, 1, 0, blast_operation.set_bits);
             RegisterFunction("set_bit", 3, 3, 1, 0, blast_operation.set_bit);
             RegisterFunction("get_bits", 2, 2, 1, 1, blast_operation.get_bits); // returns only 1 if all bits in mask are 1 (all)
@@ -1473,7 +1471,6 @@ namespace NSS.Blast
 
             RegisterFunction("reinterpret_bool32", 1, 1, 1, 0, extended_blast_operation.reinterpret_bool32);
             RegisterFunction("reinterpret_float32", 1, 1, 1, 0, extended_blast_operation.reinterpret_float);
-
 
             return this;
         }

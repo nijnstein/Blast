@@ -142,6 +142,38 @@ namespace NSS.Blast.Compiler.Stage
                             // encode instruction depending on datatype/vectorsize 
                             switch (p_id.DataType)
                             {
+                                default:
+                                    data.LogError($"CompileParameter: node: <{ast_param.parent}>.<{ast_param}>, inlining of constant '{ast_param.identifier}' not possible: datatype {p_id.DataType} with vectorsize {p_id.VectorSize} is not supported as a constant value", (int)BlastError.error_compile_inlined_constant_datatype_not_supported);
+                                    return false;
+
+                                case BlastVariableDataType.Bool32:
+                                    // vectorsize MUST be 1 
+                                    {
+                                        if(p_id.VectorSize != 1) {
+                                            data.LogError($"CompileParameter: node: <{ast_param.parent}>.<{ast_param}>, inlining of constant '{ast_param.identifier}' not possible: datatype {p_id.DataType} with vectorsize {p_id.VectorSize} is not supported as a constant value", (int)BlastError.error_compile_inlined_constant_datatype_not_supported);
+                                            return false; 
+                                        }
+
+                                        //  inline as constant reference to its int32 value backed with float memory
+                                        uint ui32;
+                                        if (CodeUtils.TryAsBool32(p_id.Name, true, out ui32))
+                                        {
+                                            unsafe
+                                            {
+                                                byte* p = (byte*)(void*)&ui32;
+                                                EncodeInlinedConstant(data, code, p_id, p);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            data.LogError($"CompileParameter: node: <{ast_param.parent}>.<{ast_param}>, failed to inline constant {ast_param.identifier} could not parse its value as a bool32");
+                                            return false;
+                                        }
+
+                                    }
+                                    break;
+
+
                                 case BlastVariableDataType.Numeric:
                                     switch (p_id.VectorSize)
                                     {
@@ -150,26 +182,9 @@ namespace NSS.Blast.Compiler.Stage
                                             float f = p_id.Name.AsFloat(); 
                                             unsafe
                                             {
-                                                byte* p = (byte*)(void*)&f; 
+                                                byte* p = (byte*)(void*)&f;
                                                 {
-                                                    //
-                                                    // whole small integers will have the first 2 bytes set to 0
-                                                    // - leverage the space advantage by encoding this in the instruction used to get the constant data value
-                                                    //
-                                                    if(p[0] == 0 && p[1] == 0)
-                                                    {
-                                                        // encode it in 2 bytes 
-                                                        code.Add((byte)blast_operation.constant_f1_h, data.LinkJumpLabel(IMJumpLabel.Constant(p_id.Id.ToString())));
-                                                    }
-                                                    else
-                                                    {
-                                                        // encoding the float in 4 bytes 
-                                                        code.Add((byte)blast_operation.constant_f1, data.LinkJumpLabel(IMJumpLabel.Constant(p_id.Id.ToString())));
-                                                        code.Add(p[0]);
-                                                        code.Add(p[1]);
-                                                    }
-                                                    code.Add(p[2]);
-                                                    code.Add(p[3]);
+                                                    EncodeInlinedConstant(data, code, p_id, p);
                                                 }
                                             }
                                             break;
@@ -202,6 +217,29 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             return true; 
+        }
+
+        private static unsafe void EncodeInlinedConstant(CompilationData data, IMByteCodeList code, BlastVariable p_id, byte* p)
+        {
+            //
+            // whole small integers will have the first 2 bytes set to 0 (for float|bool32|uint32)
+            // - leverage the space advantage by encoding this in the instruction used to get the constant data value
+            //
+
+            if (p[0] == 0 && p[1] == 0)
+            {
+                // encode it in 2 bytes 
+                code.Add((byte)blast_operation.constant_f1_h, data.LinkJumpLabel(IMJumpLabel.Constant(p_id.Id.ToString())));
+            }
+            else
+            {
+                // encoding in 4 bytes 
+                code.Add((byte)blast_operation.constant_f1, data.LinkJumpLabel(IMJumpLabel.Constant(p_id.Id.ToString())));
+                code.Add(p[0]);
+                code.Add(p[1]);
+            }
+            code.Add(p[2]);
+            code.Add(p[3]);
         }
 
         /// <summary>
@@ -930,6 +968,9 @@ namespace NSS.Blast.Compiler.Stage
                         break;
                     }
 
+                    // start out with assuming matching datatype
+                    BlastVariableDataType assigned_datatype = ast_node.variable.DataType; 
+
                     // if the assignment is indexed we have to add extra opcodes
                     bool is_indexed_assignment = ast_node.HasIndexers;
                     blast_operation op_indexer = blast_operation.nop;
@@ -953,7 +994,7 @@ namespace NSS.Blast.Compiler.Stage
                     // assigning a single value or pop?  
                     if (ast_node.ChildCount == 1 && node.IsSingleValueOrPop(ast_node.FirstChild))
                     {
-                        //
+                        // ASSIGNS | op.sets 
                         // encode assigns instead of assign, this saves a trip through get_compound and 1 byte closing that compound
                         //
                         code.Add(blast_operation.assigns);
@@ -966,6 +1007,10 @@ namespace NSS.Blast.Compiler.Stage
                             data.LogError($"CompileNode: assignment node: <{ast_node.parent}>.<{ast_node}>, failed to compile single parameter <{ast_node.FirstChild}> into assigns operation");
                             return null;
                         }
+
+                        // if its a Bool32 then the node has this information and as we compiled only a single 
+                        // node we can be sure we set this datatype 
+                        assigned_datatype = ast_node.FirstChild.datatype; 
                     }
                     else
                     // assigning a single function result | and not a stack pusp/pop
@@ -1067,6 +1112,45 @@ namespace NSS.Blast.Compiler.Stage
                         //   better always have a nop, makes the assembly easier to read from bytes
                         code.Add(blast_operation.nop);
                     }
+
+                    // detect datatype of assignemnt 
+
+                    // :assigns: 
+                    // the first node was succesfully compiled as a parameter, 
+                    // should the assigned value be interpreted as a boolean and is b.datatype different:
+                    // then inject a reinterpret_bool32( assignee ); 
+
+                    if(assigned_datatype != assignee.DataType)
+                    {
+                        switch (assigned_datatype)
+                        {
+                            case BlastVariableDataType.Bool32:
+                                {
+                                    // encode: reinterpret_bool32( assignee_var );
+                                    code.Add(blast_operation.ex_op);
+                                    code.Add((byte)extended_blast_operation.reinterpret_bool32);
+                                    code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
+                                }
+                                break;
+
+                            case BlastVariableDataType.Numeric:
+                                {
+                                    // encode: reinterpret_float( assignee_var );
+                                    code.Add(blast_operation.ex_op);
+                                    code.Add((byte)extended_blast_operation.reinterpret_float);
+                                    code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
+                                }
+                                break;
+
+                            default:
+                                {
+                                    data.LogError($"CompileNode: failed to compile assignment: <{ast_node}>. The assigned datatype: {assigned_datatype} mismatches the datatype of the assignee and this conversion is not supported"); 
+                                    return null;
+                                }
+                        }
+                    }
+
+
                     break;
 
                 // groups of statements, for compilation they are all the same  

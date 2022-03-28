@@ -145,7 +145,7 @@ namespace NSS.Blast.Compiler.Stage
                                 // - this is the only variable allowed in inlined functions - 
                                 // - its a constant and its vectorsize is always 1 ----------
                                 // non op encoded constant, create a variable for it 
-                                current.variable = ((CompilationData)data).CreateVariable(current.identifier);
+                                current.variable = ((CompilationData)data).CreateVariable(current.identifier, current.datatype);
                                 current.vector_size = 1;
                                 current.is_vector = false;
                             }
@@ -209,6 +209,7 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+        
         void IsConstantDefinedIdentifier(IBlastCompilationData data, ref string identifier, out bool is_constant, out bool is_defined, out bool is_negated)
         {
             is_negated = identifier[0] == '-';
@@ -308,7 +309,13 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         // reeval if define replaced identifier 
                         is_negated = ast_node.identifier[0] == '-';
-                        is_constant = is_negated || char.IsDigit(ast_node.identifier[0]);
+                        // constant if:
+                        // - negated value 
+                        // - starts with digit 
+                        // - is typed as bool32 and starts with 0 or 1 and is >= 32 digits 
+                        is_constant = is_negated 
+                            || char.IsDigit(ast_node.identifier[0])
+                            || (ast_node.datatype == BlastVariableDataType.Bool32 && (ast_node.identifier[0] == '0' || ast_node.identifier[0] == '1') && ast_node.identifier.Length >= 32);
                     }
 
                     // if not known or constant raise undefined error
@@ -319,9 +326,11 @@ namespace NSS.Blast.Compiler.Stage
                     }
 
                     // if we compile using system constant then use opcodes for known constants 
+                    // 
+                    // - if matching to a system constant when the value is a bool32.. 
+                    // 
                     if (data.CompilerOptions.CompileWithSystemConstants)
                     {
-
                         // its a constant, only lookup the positive part of values, if a match on negated we add back a minus op
                         string value = is_negated ? ast_node.identifier.Substring(1) : ast_node.identifier;
 
@@ -352,14 +361,14 @@ namespace NSS.Blast.Compiler.Stage
                         else
                         {
                             // non op encoded constant, create a variable for it 
-                            ast_node.variable = cdata.CreateVariable(ast_node.identifier);
+                            ast_node.variable = cdata.CreateVariable(ast_node.identifier, ast_node.datatype);
                         }
 
                     }
                     else
                     {
                         // not compiling with system constants, just add a variable 
-                        ast_node.variable = cdata.CreateVariable(ast_node.identifier);
+                        ast_node.variable = cdata.CreateVariable(ast_node.identifier, ast_node.datatype);
                     }
                 }
                 else

@@ -153,6 +153,11 @@ namespace NSS.Blast.Compiler
         public BlastVariable variable = null;
 
         /// <summary>
+        /// datatype is by default always a numeric unless set otherwise 
+        /// </summary>
+        public BlastVariableDataType datatype = BlastVariableDataType.Numeric; 
+
+        /// <summary>
         /// children of node 
         /// </summary>
         public List<node> children = new List<node>();

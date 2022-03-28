@@ -831,6 +831,47 @@ namespace NSS.Blast.Compiler.Stage
 
 
         /// <summary>
+        /// transform an assigment of zero into the function call: zero(id) 
+        /// - saves 1 byte of code but also some memory copies associated with moving registerdata around
+        /// </summary>
+        BlastError transform_zero_assignment(IBlastCompilationData data, node n)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(n);
+
+            BlastError res = BlastError.success;
+
+            if(n.HasOneChild && n.IsAssignment)
+            {
+                node child = n.FirstChild;
+                while (child != null && child.IsCompound && child.HasOneChild) child = child.FirstChild; 
+                if(!child.HasChildren && child.is_constant)
+                {
+                    if(child.constant_op == blast_operation.value_0)
+                    {
+                        // node n is an assignment of zero 
+                        n.children.Clear();
+                        n.type = nodetype.function;
+                        unsafe
+                        {
+                            n.function = data.Blast.Data->GetFunction("zero");
+                        }
+                        // create a child parameter from assignee
+                        node parameter = n.CreateChild(nodetype.parameter, BlastScriptToken.Nop, n.identifier);
+                        parameter.variable = n.variable;
+                        parameter.datatype = n.datatype;
+                        parameter.vector_size = n.vector_size; 
+                        n.variable = null; 
+                        n.identifier = "zero";
+                    }
+                }
+            }                 
+
+            return res; 
+        }
+
+
+        /// <summary>
         /// run transform depending on nodetype 
         /// - TODO -> would be nice if this all returned errors.. 
         /// </summary>
@@ -881,6 +922,13 @@ namespace NSS.Blast.Compiler.Stage
                         // dont iterate through inline functions, only after they are inlined
                         return BlastError.success;
                     }
+
+                case nodetype.assignment:
+                    {
+                        res = transform_zero_assignment(data, n);
+                        if (res != BlastError.success) return res; 
+                    }
+                    break; 
 
                 default:
                     {

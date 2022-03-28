@@ -105,8 +105,6 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     case blast_operation.ret: return "return";
                     case blast_operation.fma: return "blast.fma";
-                    case blast_operation.fmod: return "blast.fmod";
-                    case blast_operation.csum: return "blast.csum";
                     case blast_operation.trunc: return "blast.trunc";
                     case blast_operation.adda: return "blast.adda"; 
                     case blast_operation.mula: return "blast.mula"; 
@@ -122,8 +120,9 @@ namespace NSS.Blast.Compiler.Stage
                     case blast_operation.max: return "blast.max"; 
                     case blast_operation.min: return "blast.min"; 
                     case blast_operation.maxa: return "blast.maxa";
-                    case blast_operation.mina: return "blast.mina"; 
-                   
+                    case blast_operation.mina: return "blast.mina";
+                    case blast_operation.csum: return "math.csum";
+
                     case blast_operation.ex_op:
                         switch(function.ExtendedScriptOp)
                         {
@@ -144,6 +143,7 @@ namespace NSS.Blast.Compiler.Stage
                             case extended_blast_operation.atan2: return "math.atan2";
                             case extended_blast_operation.cosh: return "math.cosh";
                             case extended_blast_operation.sinh: return "math.sinh";
+                            case extended_blast_operation.fmod: return "math.fmod";
 
                             case extended_blast_operation.degrees: return "math.degrees";
                             case extended_blast_operation.radians: return "math.radians";

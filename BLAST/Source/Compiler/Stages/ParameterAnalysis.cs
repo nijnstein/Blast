@@ -5,6 +5,7 @@
 //##########################################################################################################
 using System.Collections.Generic;
 using Unity.Mathematics;
+using UnityEngine.Assertions;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -442,12 +443,27 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+        /// <summary>
+        /// infer datatypes from parameter usage
+        /// </summary>
+        bool InferDatatypes(IBlastCompilationData data, node ast_node)
+        {
+            Assert.IsNotNull(ast_node);
+
+            ///
+
+
+
+
+            return true; 
+        }
+
 
         /// <summary>
         /// the parameter analyzer only looks at the parameters and their usage 
         /// - !! it wont make any node changes !!
         /// - checks vectorsizes
-        /// - checks input/output settings 
+        /// - checks input/output defines 
         /// - 
         /// </summary>
         /// <param name="data">current compilationdata</param>
@@ -471,6 +487,13 @@ namespace NSS.Blast.Compiler.Stage
             {
                 return (int)BlastError.error;
             }
+
+            // infer datatypes other then numeric
+            if(!InferDatatypes(data, data.AST))
+            {
+                return (int)BlastError.error_analyzer_failed_to_infer_parameter_types;
+            }
+
 
             return (int)BlastError.success;
         }

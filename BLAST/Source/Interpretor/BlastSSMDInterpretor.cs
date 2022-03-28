@@ -4007,9 +4007,6 @@ namespace NSS.Blast.SSMD
                     vector_size = 1;
                     break;
 
-                case blast_operation.mina:
-                case blast_operation.maxa:
-                case blast_operation.csum: 
                 case blast_operation.nop: break;
                 case blast_operation.not: constant = math.select(0, 1, constant == 0); break; 
                 case blast_operation.abs: constant = math.abs(constant); break;
@@ -7306,6 +7303,15 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.reinterpret_bool32: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
                 return;
             }
+
+            // validate if within package bounds, catch packaging errors early on 
+            // datasize is in bytes 
+            if (dataindex >= package.DataSize >> 2)
+            {
+                Debug.LogError($"ssmd.reinterpret_bool32: compilation or packaging error, dataindex {dataindex} is out of bounds");
+                return;
+            }
+
 #else
             vector_size = 1;
 #endif
@@ -7326,6 +7332,14 @@ namespace NSS.Blast.SSMD
             if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
             {
                 Debug.LogError($"ssmd.reinterpret_float: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+
+            // validate if within package bounds, catch packaging errors early on 
+            // datasize is in bytes 
+            if (dataindex >= package.DataSize >> 2)
+            {
+                Debug.LogError($"ssmd.reinterpret_bool32: compilation or packaging error, dataindex {dataindex} is out of bounds");
                 return;
             }
 #else
@@ -7652,7 +7666,6 @@ namespace NSS.Blast.SSMD
 
                 case blast_operation.maxa: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.maxa); break;
                 case blast_operation.mina: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.mina); break;
-                case blast_operation.csum: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.csum); break;
 
                 case blast_operation.max: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.max); break;
                 case blast_operation.min: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.min); break;
@@ -7661,7 +7674,7 @@ namespace NSS.Blast.SSMD
 
                 case blast_operation.select: get_select_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                 case blast_operation.fma: get_fma_result(temp, ref code_pointer, ref vector_size, ref f4_result); break;
-                case blast_operation.fmod: get_fmod_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                case blast_operation.csum: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.csum); break;
 
                 case blast_operation.mula: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.multiply); break;
                 case blast_operation.adda: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.add); break;
@@ -7720,6 +7733,7 @@ namespace NSS.Blast.SSMD
                             case extended_blast_operation.ceillog2: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.ceillog2); break;
                             case extended_blast_operation.ceilpow2: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.ceilpow2); break;
                             case extended_blast_operation.floorlog2: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.floorlog2); break;
+                            case extended_blast_operation.fmod: get_fmod_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                             // dual inputs 
                             case extended_blast_operation.pow: get_pow_result(temp, ref code_pointer, ref vector_size, f4_result); break;
@@ -8479,8 +8493,6 @@ namespace NSS.Blast.SSMD
                     case blast_operation.min:
                     case blast_operation.select:
                     case blast_operation.fma:
-                    case blast_operation.fmod:
-                    case blast_operation.csum:
                     case blast_operation.trunc:
                     case blast_operation.mula:
                     case blast_operation.adda:

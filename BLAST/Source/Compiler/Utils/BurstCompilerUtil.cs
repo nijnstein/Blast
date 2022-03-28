@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 
 namespace NSS.Blast
 {
@@ -44,7 +45,7 @@ namespace NSS.Blast
         /// <summary>
         /// accept either an unsigned integer or a string of 32 0 and 1's
         /// </summary>
-        public static bool TryAsBool32(this string s, out uint b32)
+        public static bool TryAsBool32(this string s, bool allow_uint32, out uint b32)
         {
             if (string.IsNullOrWhiteSpace(s)) {
                 b32 = 0; 
@@ -54,10 +55,11 @@ namespace NSS.Blast
             if(s.Length < 32)
             {
                 // has to be an int 
-                if(uint.TryParse(s, out b32))
+                if(allow_uint32 && uint.TryParse(s, out b32))
                 {
                     return true; 
                 }
+                b32 = 0;
                 return false;
             }
 
@@ -78,6 +80,8 @@ namespace NSS.Blast
                     continue; 
                 }
             }
+
+           // b32 = math.reversebits(b32);
 
             return i == 32;
         }
@@ -131,8 +135,13 @@ namespace NSS.Blast
         }
 
         [BurstDiscard]
-        public static string FormatBool32(uint b32)
+        public static string FormatBool32(uint b32, bool reverse = false)
         {
+            if (reverse)
+            {
+                b32 = math.reversebits(b32);
+            }
+
             // in vs give a nicer output in debug 
             System.Text.StringBuilder sb = StringBuilderCache.Acquire();
 
@@ -149,6 +158,40 @@ namespace NSS.Blast
             }
 
             return StringBuilderCache.GetStringAndRelease(ref sb); 
+        }
+
+
+        /// <summary>
+        /// return true if item2 contains only: 
+        /// - digits 0-9
+        /// - . , -
+        /// </summary>
+        [BurstDiscard]
+        public static bool OnlyNumericChars(string item2)
+        {
+            if (string.IsNullOrWhiteSpace(item2)) return false; 
+            foreach(char ch in item2)
+            {
+                switch(ch)
+                {
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9':
+                    case '-':
+                    case '.':
+                    case ',': continue;
+
+                    default: return false; 
+                }
+            }
+            return true; 
         }
     }
 
