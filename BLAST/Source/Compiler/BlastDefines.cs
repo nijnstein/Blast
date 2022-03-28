@@ -96,13 +96,12 @@ namespace NSS.Blast
         id2 = 7,
         id3 = 8,
         id4 = 9,
-        ptr = 10,
+        id64 = 10,
         half1 = 11,
         half2 = 12,
         half3 = 13,
         half4 = 14,
-        id64 = 15
-
+        ptr = 15,
     }
 
     /// <summary>
@@ -578,6 +577,9 @@ namespace NSS.Blast
         /// binary not operation 
         /// </summary>
         binary_not,
+
+
+        ///make room for     get_any_bits get_bits(mask)       the any variant of get_bits(mask)   
 
         //------------------------
 
