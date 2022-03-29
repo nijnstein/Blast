@@ -1248,6 +1248,7 @@ namespace NSS.Blast.Compiler
 
             if (result.HasErrors || options.TraceLogging)
             {
+#if TRACE || STANDALONE_VSBUILD
                 Debug.Log(result.AST.ToNodeTreeString());
                 switch(result.CompilerOptions.Language)
                 {
@@ -1259,6 +1260,7 @@ namespace NSS.Blast.Compiler
                         Debug.Log(data.GetHumanReadableBytes() + "\n");
                         break; 
                 }
+#endif
             }
 
             if (result.IsOK)

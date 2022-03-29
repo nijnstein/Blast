@@ -311,7 +311,6 @@ GameObject:
   - component: {fileID: 2128983622}
   - component: {fileID: 2128983621}
   - component: {fileID: 2128983620}
-  - component: {fileID: 2128983619}
   - component: {fileID: 2128983624}
   m_Layer: 0
   m_Name: Cube
@@ -320,18 +319,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2128983619
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2128983618}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a15121104bdda454b9e61f3c6cf252a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!65 &2128983620
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -422,20 +409,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Script: '
 
-    
+
 
     #input position float3 0 0 0
 
-    
 
-    position = position
-    + random((-0.1, -0.1, -0.1), (0.1 0.1 0.1));
 
-    
+    position = position + random((-0.1,
+    -0.1, -0.1), (0.1 0.1 0.1));
 
-    position = min((20
-    20 20), max((-20, -20, -20), position));
 
-    
+
+    position = min((20 20 20), max((-20, -20,
+    -20), position));
+
+
 
 '

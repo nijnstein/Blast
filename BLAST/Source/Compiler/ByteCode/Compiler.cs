@@ -545,8 +545,8 @@ namespace NSS.Blast.Compiler.Stage
                                 {
                                     // pushing result of pop == same as doing nothing 
                                     // >> this should be considered a bug .. 
-#if DEVELOPMENT_BUILD || TRACE
-                                    data.LogWarning($"bug in compilation: <{ast_function}>.<{ast_function.FirstChild}>, tries to push a pop operation, somehow the pop was wrongfully flattened out. Its compilation is skipped");
+#if STANDALONE_VSBUILD
+                                 ///   data.LogWarning($"bug in compilation: <{ast_function}>.<{ast_function.FirstChild}>, tries to push a pop operation, somehow the pop was wrongfully flattened out. Its compilation is skipped");
 #endif
                                 }
                                 else

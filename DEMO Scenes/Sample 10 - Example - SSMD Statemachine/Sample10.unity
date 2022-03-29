@@ -308,7 +308,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 984832809}
-  - component: {fileID: 984832808}
   - component: {fileID: 984832810}
   m_Layer: 0
   m_Name: GameObject
@@ -317,18 +316,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &984832808
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 984832807}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 69faaa62ca690084db772a0f2ecdd095, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &984832809
 Transform:
   m_ObjectHideFlags: 0
@@ -355,7 +342,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b821e1c713592864fa0a898563438b17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ObjectCount: 1024
+  ObjectCount: 8096
   Prefab: {fileID: 576204711304380618, guid: 1033241512c145d479b859511b3ebee2, type: 3}
   State0: "#input state    float  0\r\n#input position float3 0 0 0\r\n\r\nposition.x
     = select(position.x + 0.1, position.x, position.x > 100); \r\nstate = select(0,

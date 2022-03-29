@@ -1393,7 +1393,6 @@ namespace NSS.Blast.SSMD
                         code_pointer++; 
                         return;
                 }
-                return; 
             }
         }
 

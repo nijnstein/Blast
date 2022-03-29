@@ -90,7 +90,7 @@ state = select(3, 0, position.y < 0);
 
         for (int i = 0; i < ObjectCount; i++)
         {
-            Vector3 pos = new Vector3(r.NextFloat(-100, 100), r.NextFloat(-100, 100), z + r.NextFloat(-100, 100));
+            Vector3 pos = new Vector3(r.NextFloat(-200, 200), r.NextFloat(-200, 200), z + r.NextFloat(-200, 200));
             prefabs.Add(GameObject.Instantiate(Prefab, pos, Quaternion.Euler(0, 0, 180)));
 
             // note we directly set the floats, we could use the structure but it amounts to the same result 

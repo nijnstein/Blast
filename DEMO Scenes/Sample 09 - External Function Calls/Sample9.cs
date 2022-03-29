@@ -62,17 +62,6 @@ public class Sample9 : MonoBehaviour
 
         // initialize the static blast instance 
         Blast.Initialize();
-
-        // prepare the script once from text input
-        // - this compiles the bytecode and makes any variables known so we can read/write (to) them 
-        script = BlastScript.FromText(Script);
-
-        BlastError result = script.Prepare();
-        if (result != BlastError.success)
-        {
-            Debug.LogError($"Error during script compilation: {result}");
-            script = null;
-        }
     }
 
     void Update()
@@ -81,7 +70,17 @@ public class Sample9 : MonoBehaviour
         if (!Blast.IsInstantiated) return;
         if (string.Compare(Script, last_script, true) == 0) return;
 
-        last_script = Script; 
+        // prepare the script once from text input
+        // - this compiles the bytecode and makes any variables known so we can read/write (to) them 
+        script = BlastScript.FromText(Script);
+        last_script = Script;
+
+        BlastError result = script.Prepare();
+        if (result != BlastError.success)
+        {
+            Debug.LogError($"Error during script compilation: {result}");
+            script = null;
+        }
 
         // set current position 
         script["a"] = a;
@@ -92,7 +91,7 @@ public class Sample9 : MonoBehaviour
         {
             fixed(environmental_data* penv = &environment)
             {
-                BlastError result = script.Execute(Blast.Instance.Engine, (IntPtr)penv, IntPtr.Zero);
+                result = script.Execute(Blast.Instance.Engine, (IntPtr)penv, IntPtr.Zero);
                 if (result == BlastError.success)
                 {
                     // and get updated data back 
