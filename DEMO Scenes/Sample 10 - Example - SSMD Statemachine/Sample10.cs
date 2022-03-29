@@ -7,6 +7,8 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
+using Unity.Burst;
+using Unity.Burst.CompilerServices;
 
 public class Sample10 : MonoBehaviour
 {
@@ -50,10 +52,9 @@ state = select(3, 0, position.y < 0);
     int StateCount = 4;
     string[] StateScripts = null; 
 
-          
 
 
-    [BurstCompatible]
+
     public struct state_data
     {
         public float  state;

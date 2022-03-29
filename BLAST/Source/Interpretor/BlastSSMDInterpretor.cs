@@ -1393,7 +1393,6 @@ namespace NSS.Blast.SSMD
                         code_pointer++; 
                         return;
                 }
-
                 return; 
             }
         }
@@ -4049,7 +4048,7 @@ namespace NSS.Blast.SSMD
                         case extended_blast_operation.ceil: constant = math.ceil(constant); break;
                         case extended_blast_operation.floor: constant = math.floor(constant); break;
                         case extended_blast_operation.frac: constant = math.frac(constant); break;
-                        case extended_blast_operation.normalize: constant = constant; break; // not defined on size 1
+                        case extended_blast_operation.normalize: break; // constant = constant; break; // not defined on size 1
                         case extended_blast_operation.saturate: constant = math.saturate(constant); break;
                         case extended_blast_operation.logn: constant = math.log(constant); break;
                         case extended_blast_operation.log10: constant = math.log10(constant); break;

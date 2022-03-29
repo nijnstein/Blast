@@ -216,6 +216,7 @@ GameObject:
   m_Component:
   - component: {fileID: 278707534}
   - component: {fileID: 278707533}
+  - component: {fileID: 278707535}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -260,6 +261,28 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &278707535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 278707532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d44d21d37866b8240b58632562ad925b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Script: '#input a float
+
+    #input b float
+
+    #input c float
+
+    a = b + c;'
+  Results: 
+  b: 1
+  c: 1
 --- !u!1 &1858212745
 GameObject:
   m_ObjectHideFlags: 0

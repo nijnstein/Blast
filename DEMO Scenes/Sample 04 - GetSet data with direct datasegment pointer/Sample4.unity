@@ -133,6 +133,7 @@ GameObject:
   m_Component:
   - component: {fileID: 687119307}
   - component: {fileID: 687119306}
+  - component: {fileID: 687119308}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -152,13 +153,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86f147103efef5943aa83de6f8d1ca22, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Script: '#input a float4 1 1 1 1
-
-    #input b float 2
-
-
-    a = a * b;'
-  DataView: 
 --- !u!4 &687119307
 Transform:
   m_ObjectHideFlags: 0
@@ -173,6 +167,25 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &687119308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687119305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c637dbf0da4d0f45bedb1cd36b729a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Script: '#input a float4 1 1 1 1
+
+    #input b float 2
+
+
+    a = a * b;'
+  DataView: 
 --- !u!1 &699106268
 GameObject:
   m_ObjectHideFlags: 0

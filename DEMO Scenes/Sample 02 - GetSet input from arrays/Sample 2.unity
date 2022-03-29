@@ -133,6 +133,7 @@ GameObject:
   m_Component:
   - component: {fileID: 75899245}
   - component: {fileID: 75899246}
+  - component: {fileID: 75899247}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -166,11 +167,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4defb9de1e09dad4c966efceb0299758, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Script: "#input a float\t     \n\n \na = a + 1;      "
+--- !u!114 &75899247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 75899244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c521628cd06a9444a534593d6f6aa01, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Script: '#input a float 1.88
+
+
+    a = a + 1;'
   Verbose: 0
   Values:
-  - 1.88
-  Results: '2,88
+  - 0
+  Results: '1
 
 '
 --- !u!1 &916034385

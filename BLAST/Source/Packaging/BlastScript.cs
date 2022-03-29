@@ -22,6 +22,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using Unity.Collections;
+using Unity.Burst;
+using Unity.Burst.CompilerServices;
 
 namespace NSS.Blast
 {
@@ -861,7 +863,6 @@ namespace NSS.Blast
         /// <param name="packages">the packages to get the data from</param>
         /// <param name="data">the output to write to</param>
         /// <returns>true if ok, false on errors</returns>
-        [BurstCompatible]
         static public bool GetData(in int variable_offset, in NativeArray<BlastPackageData> packages, ref NativeArray<float> data)
         {
             if (!packages.IsCreated || !data.IsCreated || packages.Length != data.Length || variable_offset < 0) return false;
@@ -889,7 +890,6 @@ namespace NSS.Blast
         /// <param name="data">the output to write to</param>
         /// <param name="offset">the offset into output from where to start writing output data</param>
         /// <returns>true if ok, false on errors</returns>
-        [BurstCompatible]
         static public bool GetData(in int variable_offset, in NativeArray<BlastPackageData> packages, ref NativeArray<float2> data, int offset = 0)
         {
             if (!packages.IsCreated || !data.IsCreated || packages.Length != data.Length || variable_offset < 0) return false;
@@ -917,7 +917,6 @@ namespace NSS.Blast
         /// <param name="data">the output to write to</param>
         /// <param name="offset">the offset into output from where to start writing output data</param>
         /// <returns>true if ok, false on errors</returns>
-        [BurstCompatible]
         static public bool GetData(in int variable_offset, in NativeArray<BlastPackageData> packages, ref NativeArray<float3> data, int offset = 0)
         {
             if (!packages.IsCreated || !data.IsCreated || packages.Length != data.Length || variable_offset < 0) return false;
@@ -956,7 +955,6 @@ namespace NSS.Blast
         /// <param name="data">the output to write to</param>
         /// <param name="offset">the offset into output from where to start writing output data</param>
         /// <returns>true if ok, false on errors</returns>
-        [BurstCompatible]
         static public bool GetData(in int variable_offset, in NativeArray<BlastPackageData> packages, ref NativeArray<float4> data, int offset = 0)
         {
             if (!packages.IsCreated || !data.IsCreated || packages.Length != data.Length || variable_offset < 0) return false;
@@ -985,7 +983,6 @@ namespace NSS.Blast
         /// <param name="data"></param>
         /// <param name="data_length"></param>
         /// <returns></returns>
-        [BurstCompatible]
         static unsafe public bool GetDataArray(in BlastPackageData package, out NativeArray<float> data)
         {
             if (package.IsAllocated)
@@ -1017,7 +1014,6 @@ namespace NSS.Blast
         /// <summary>
         /// get a direct pointer to the data in the package 
         /// </summary>
-        [BurstCompatible]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static unsafe public bool GetDataPointer(in BlastPackageData package, out float* data, out int data_length)
         {

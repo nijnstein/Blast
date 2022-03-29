@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using Unity.Burst.CompilerServices;
 
 public class Sample3 : MonoBehaviour
 {

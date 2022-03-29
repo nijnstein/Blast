@@ -69,7 +69,7 @@ namespace NSS.Blast
             {
                 if (ch == '1')
                 {
-                    b32 = (uint)(b32 | (1 << i));
+                    b32 = (uint)(b32 | (uint)(1 << i));
                     i++;
                     continue; 
                 }

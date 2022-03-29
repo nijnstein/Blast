@@ -202,7 +202,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1, z: -1}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -296,7 +295,6 @@ Transform:
   m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
@@ -314,6 +312,7 @@ GameObject:
   - component: {fileID: 2128983621}
   - component: {fileID: 2128983620}
   - component: {fileID: 2128983619}
+  - component: {fileID: 2128983624}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -333,25 +332,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a15121104bdda454b9e61f3c6cf252a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Script: '
-
-    
-
-    #input position float3 0 0 0
-
-    
-
-    position = position
-    + random((-0.1, -0.1, -0.1), (0.1 0.1 0.1));
-
-    
-
-    position = min((10
-    10 10), max((-10, -10, -10), position));
-
-    
-
-'
 --- !u!65 &2128983620
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -376,7 +356,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -425,8 +404,38 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 28.85}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2128983624
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2128983618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1115678a2bb8a84bb92d8037eda04ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Script: '
+
+    
+
+    #input position float3 0 0 0
+
+    
+
+    position = position
+    + random((-0.1, -0.1, -0.1), (0.1 0.1 0.1));
+
+    
+
+    position = min((20
+    20 20), max((-20, -20, -20), position));
+
+    
+
+'

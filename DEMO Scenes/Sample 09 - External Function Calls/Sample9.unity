@@ -133,6 +133,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1192512067}
   - component: {fileID: 1192512066}
+  - component: {fileID: 1192512068}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -152,10 +153,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16eef339ce642de4a8db92f08d1ae9c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  a: 2
-  b: 2
-  Script: "#input a float\n#input b float \na = test1(a, b) + test2(a, b) + test3(a,
-    b)"
 --- !u!4 &1192512067
 Transform:
   m_ObjectHideFlags: 0
@@ -170,6 +167,49 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1192512068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1192512065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0167dd3d25cefab409c66da8d6f40171, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  a: 2
+  b: 2
+  environment:
+    id: 2048
+    value:
+      c0:
+        x: 1
+        y: 1
+        z: 1
+        w: 1
+      c1:
+        x: 1
+        y: 1
+        z: 1
+        w: 1
+      c2:
+        x: 1
+        y: 1
+        z: 1
+        w: 1
+      c3:
+        x: 1
+        y: 1
+        z: 1
+        w: 1
+  Script: '#input a float
+
+    #input b float
+
+    a = test1(a, b) + test2(a, b)
+    + test3(a, b)'
 --- !u!1 &1699264852
 GameObject:
   m_ObjectHideFlags: 0

@@ -309,6 +309,7 @@ GameObject:
   m_Component:
   - component: {fileID: 984832809}
   - component: {fileID: 984832808}
+  - component: {fileID: 984832810}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -328,20 +329,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69faaa62ca690084db772a0f2ecdd095, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ObjectCount: 8096
-  Prefab: {fileID: 576204711304380618, guid: 458344e25ee541b4084d1299fa6ad3e0, type: 3}
-  State0: "#input state    float  0\r\n#input position float3 0 0 0\r\n\r\nposition.x
-    = select(position.x + 0.1, position.x, position.x > 100); \r\nstate = select(0,
-    1, position.x > 100); \r\n"
-  State1: "#input state    float  1\r\n#input position float3 100 0 0\r\n\r\nposition.y
-    = select(position.y + 0.1, position.y, position.y > 100); \r\nstate = select(1,
-    2, position.y > 100); \r\n"
-  State2: "#input state    float  2\r\n#input position float3 100 100 0\r\n\r\nposition.x
-    = select(position.x - 0.1, position.x, position.x < 0); \r\nstate = select(2,
-    3, position.x < 0); \r\n"
-  State3: "#input state    float  3\r\n#input position float3 0 100 0\r\n\r\nposition.y
-    = select(position.y - 0.1, position.y, position.y < 0); \r\nstate = select(3,
-    0, position.y < 0); \r\n"
 --- !u!4 &984832809
 Transform:
   m_ObjectHideFlags: 0
@@ -356,3 +343,29 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &984832810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 984832807}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b821e1c713592864fa0a898563438b17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObjectCount: 1024
+  Prefab: {fileID: 576204711304380618, guid: 1033241512c145d479b859511b3ebee2, type: 3}
+  State0: "#input state    float  0\r\n#input position float3 0 0 0\r\n\r\nposition.x
+    = select(position.x + 0.1, position.x, position.x > 100); \r\nstate = select(0,
+    1, position.x > 100); \r\n"
+  State1: "#input state    float  1\r\n#input position float3 100 0 0\r\n\r\nposition.y
+    = select(position.y + 0.1, position.y, position.y > 100); \r\nstate = select(1,
+    2, position.y > 100); \r\n"
+  State2: "#input state    float  2\r\n#input position float3 100 100 0\r\n\r\nposition.x
+    = select(position.x - 0.1, position.x, position.x < 0); \r\nstate = select(2,
+    3, position.x < 0); \r\n"
+  State3: "#input state    float  3\r\n#input position float3 0 100 0\r\n\r\nposition.y
+    = select(position.y - 0.1, position.y, position.y < 0); \r\nstate = select(3,
+    0, position.y < 0); \r\n"

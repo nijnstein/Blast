@@ -229,6 +229,7 @@ GameObject:
   - component: {fileID: 830709541}
   - component: {fileID: 830709540}
   - component: {fileID: 830709539}
+  - component: {fileID: 830709544}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -248,15 +249,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f32a1be292de0b14eb7aa1337bb189a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Script: '#input a float 0
-
-    #input b float 0
-
-
-    a = a * b;'
-  Data:
-    a: 0
-    b: 0
 --- !u!65 &830709540
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -333,6 +325,30 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &830709544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 830709538}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6c1a22a3475ddb4a95776ae790b6a04, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Script: '#input a float 0
+
+    #input b float 0
+
+
+    a = a * b;'
+  Input:
+    a: 1
+    b: 2
+  Output:
+    a: 0
+    b: 0
 --- !u!1 &2141974686
 GameObject:
   m_ObjectHideFlags: 0

@@ -134,7 +134,6 @@ namespace NSS.Blast
     /// <summary>
     /// burst compatible function description 
     /// </summary>
-    [BurstCompatible]
     public struct BlastScriptFunction
     {
         /// <summary>

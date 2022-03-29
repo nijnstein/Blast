@@ -615,8 +615,8 @@ namespace NSS.Blast.Interpretor
 
 
 #if DEVELOPMENT_BUILD || TRACE
-            BlastVariableDataType type;
-            int size;
+          //  BlastVariableDataType type;
+          //  int size;
 #endif 
 
             switch ((blast_operation)c)
