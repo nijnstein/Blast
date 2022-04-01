@@ -15,13 +15,14 @@ using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 
-namespace NSS.Blast.Jobs 
+namespace NSS.Blast.Jobs
 {
 
     public interface IBlastJob
     {
-        public int GetExitCode(); 
+        public int GetExitCode();
     }
 
 
@@ -57,8 +58,8 @@ namespace NSS.Blast.Jobs
 
         public int GetExitCode()
         {
-            return exitcode; 
-        } 
+            return exitcode;
+        }
     }
 
     [BurstCompile]
@@ -82,13 +83,36 @@ namespace NSS.Blast.Jobs
         /// <summary>
         /// if true, array is interpreted as an array of pointers pointing to the data 
         /// </summary>
-        public bool data_is_referenced; 
+        public bool data_is_referenced;
 
         [NoAlias]
         [NativeDisableUnsafePtrRestriction]
         public IntPtr environment;
 
-        public int exitcode;
+        /// <summary>
+        /// we should hold a pointer to exitstate because in jobs this wont persist as this is a structure copied by value
+        /// </summary>
+        unsafe int exitcode
+        {
+            get
+            {
+                return exitstate == IntPtr.Zero ? (int)BlastError.error_job_exitstate_not_set : ((int*)exitstate)[0];
+            }
+            set
+            {
+                if (exitstate != IntPtr.Zero)
+                {
+                    ((int*)exitstate)[0] = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// pointer to exitstate 
+        /// </summary>
+        [NativeDisableUnsafePtrRestriction]
+        public IntPtr exitstate;
+
 
         public void Execute()
         {
@@ -178,7 +202,7 @@ namespace NSS.Blast.Jobs
 
         public int GetExitCode()
         {
-            return exitcode; 
+            return exitcode;
         }
     }
 
@@ -195,7 +219,7 @@ namespace NSS.Blast.Jobs
         [NoAlias]
         [NativeDisableUnsafePtrRestriction]
         public IntPtr data;
-        
+
         /// <summary>
         /// number of datarecords 
         /// </summary>
@@ -203,7 +227,7 @@ namespace NSS.Blast.Jobs
         /// <summary>
         /// size in bytes of 1 data record 
         /// </summary>
-        public int data_size; 
+        public int data_size;
 
         [NoAlias]
         [NativeDisableUnsafePtrRestriction]
@@ -217,30 +241,104 @@ namespace NSS.Blast.Jobs
         [NativeDisableUnsafePtrRestriction]
         public IntPtr caller;
 
-        public int exitcode;
+
+        /// <summary>
+        /// we should hold a pointer to exitstate because in jobs this wont persist as this is a structure copied by value
+        /// </summary>
+        unsafe int exitcode
+        {
+            get
+            {
+                return exitstate == IntPtr.Zero ? (int)BlastError.error_job_exitstate_not_set : ((int*)exitstate)[0];
+            }
+            set
+            {
+                if (exitstate != IntPtr.Zero)
+                {
+                    ((int*)exitstate)[0] = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// pointer to exitstate 
+        /// </summary>
+        [NativeDisableUnsafePtrRestriction]
+        public IntPtr exitstate;
+
+
+        public static BlastError ValidateDataSize(BlastPackageData package, int datasize, int datacount)
+        {
+            if (datasize == 0 || datacount == 0)
+            {
+                return BlastError.error_execute_package_datasize_count_invalid;
+            }
+
+            if (package.DataSize != datasize)
+            {
+                // if alignment issue.. 
+#if TRACE || DEVELOPMENT_BUILD || STANDALONE_VSBUILD
+                Debug.LogError($"blast job validation error: specified datasize {datasize} mismatches package datasize {package.DataSize}");
+#endif
+
+                return BlastError.error_execute_package_datasize_mismatch;
+
+            }
+
+
+            return BlastError.success;
+        }
+
 
         [BurstCompile]
         unsafe public void Execute()
         {
-            if(data_count <= 0)
+            if (package.PackageMode != BlastPackageMode.Normal)
             {
-                return; 
+#if TRACE || DEVELOPMENT_BUILD || STANDALONE_VSBUILD
+                Debug.LogError($"blast job validation error: packagemode '{package.PackageMode}' invalid, should be NORMAL");
+#endif
+                exitcode = (int)BlastError.error_invalid_packagemode_should_be_normal;
+                return;
             }
-            else if(data_count == 1)
+
+
+#if TRACE || DEVELOPMENT_BUILD
+            exitcode = (int)ValidateDataSize(package, data_size, data_count);
+#else
+            exitcode = 0; 
+#endif
+            if (exitcode == 0)
             {
-                blaster.SetPackage(package, data.ToPointer());
-                exitcode = blaster.Execute(engine, environment, caller);
-            }
-            else
-            {
-                exitcode = 0;
-                for (int i = 0; i < data_count && exitcode == 0; i++)
+                if (data_count <= 0)
                 {
-                    void* p = &((byte*)data)[data_size * i];
-                    blaster.SetPackage(package, p);
+                    return;
+                }
+                else if (data_count == 1)
+                {
+                    blaster.SetPackage(package, data.ToPointer());
                     exitcode = blaster.Execute(engine, environment, caller);
                 }
+                else
+                {
+                    exitcode = 0;
+                    blaster.SetPackage(package);
+                    for (int i = 0; i < data_count && exitcode == 0; i++)
+                    {
+                        void* p = &((byte*)data)[data_size * i];
+                        blaster.ResetPackageData(p);
+                        exitcode = blaster.Execute(engine, environment, caller);
+                    }
+                }
             }
+
+#if TRACE || DEVELOPMENT_BUILD || STANDALONE_VSBUILD
+            if (exitcode != 0)
+            {
+                Debug.LogError("blast job execution failed, exitcode = {exitcode}");
+                return;
+            }
+#endif
         }
 
         public int GetExitCode()

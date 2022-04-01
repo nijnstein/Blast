@@ -3,6 +3,7 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
+using NSS.Blast.Interpretor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -695,22 +696,77 @@ namespace NSS.Blast.Compiler.Stage
                         // also do this for functions supporting vectorsizes > 1
                         if (has_variable_paramcount)
                         {
-                            if (ast_function.children.Count > 63)
-                            {
-                                data.LogError($"CompileFunction: too many parameters, only 63 are max supported but found {ast_function.children.Count}");
-                                return false;
-                            }
+                            // variable parameter functions should have all parameters of equal type 
+                            BlastVectorSizes parameter_datatype = VerifyFunctionParameterDataTypes(data, ast_function);
+                            if (data.HasErrors) return false;
 
-                            // encode vector size in count 
-                            // - count never higher then 63
-                            // - vectorsize max 15
-                            // if 255 then 2 bytes for supporting larger vectors and count?
-                            byte opcode = (byte)((ast_function.children.Count << 2) | (byte)ast_function.vector_size & 0b11);
+                            // encode parametercount and vectorsize|datatype in count 
+                            byte opcode;
+                            switch (ast_function.function.ParameterEncoding)
+                            {
+                                case BlastParameterEncoding.Encode44:
+                                    // encode 44
+                                    // 15 parameters, 15 datatypes 
+                                    if (ast_function.children.Count > 15)
+                                    {
+                                        data.LogError($"CompileFunction: too many parameters, only 15 are max supported but found {ast_function.children.Count} in function {ast_function.function.GetFunctionName()} with parameter encoding {ast_function.function.ParameterEncoding} ");
+                                        return false;
+                                    }
+                                    opcode = (byte)((ast_function.children.Count << 4) | (byte)parameter_datatype & 0b1111);
+                                    break;
+
+                                case BlastParameterEncoding.Encode62:
+                                    // encode 62
+                                    // 63 parameters, float1-4 where 0 == float4
+                                    if (ast_function.children.Count > 63)
+                                    {
+                                        data.LogError($"CompileFunction: too many parameters, only 63 are max supported but found {ast_function.children.Count} in function {ast_function.function.GetFunctionName()} with parameter encoding {ast_function.function.ParameterEncoding} ");
+                                        return false;
+                                    }
+                                    opcode = (byte)((ast_function.children.Count << 2) | (byte)ast_function.vector_size & 0b11);
+                                    break;
+
+                                default:
+                                    {
+                                        data.LogError($"CompileFunction: too many parameters in function {ast_function.function.GetFunctionName()}, parameter count {ast_function.children.Count}, invalid parameter encoding type: {ast_function.function.ParameterEncoding}");
+                                        return false;
+                                    }
+                            }       
                             code.Add(opcode);
                         }
                         else
                         {
-                            // functions like abs sqrt etc have 1 parameter and their outputvectorsize matches inputsize 
+                            // functions like abs sqrt etc have 1 parameter and their outputvectorsize matches inputsize, unless
+                            // does the function specify a fixed output type? 
+                            if (ast_function.function.FixedOutputType != BlastVectorSizes.none)
+                            {
+                                // if assigning then the assignee is checked elsewhere: todo 
+
+                                // if this is reinterpret then check and update datatype on given parameter
+                                // 
+                                // - during compilation the type of the variable changed.. 
+                                // 
+
+                                if (ast_function.function.ExtendedScriptOp == extended_blast_operation.reinterpret_bool32
+                                    ||
+                                    ast_function.function.ExtendedScriptOp == extended_blast_operation.reinterpret_float)
+                                {
+                                    // the child MUST be a variable 
+                                    if (!ast_function.FirstChild.IsScriptVariable)
+                                    {
+                                        data.LogError($"CompileFunction: reinterpret_xxxxx can only operate on script variables, node: {ast_function}");
+                                        return false;
+                                    }
+
+                                    // signal ast that after this the datatype is overriden 
+                                    ast_function.FirstChild.variable.DataTypeOverride = ast_function.function.FixedOutputType;
+                                    switch (ast_function.function.FixedOutputType)
+                                    {
+                                        case BlastVectorSizes.bool32: ast_function.datatype = BlastVariableDataType.Bool32; break;
+                                        default: ast_function.datatype = BlastVariableDataType.Numeric; break;
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -737,7 +793,88 @@ namespace NSS.Blast.Compiler.Stage
             return true;
         }
 
-  
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="ast_function"></param>
+        /// <returns></returns>
+        private static BlastVectorSizes VerifyFunctionParameterDataTypes(CompilationData data, node ast_function, bool verify_size = true, bool verify_type = true)
+        {
+            // when vectorsize == 0, there was no reason to touch it and the actual size is 1
+            int vector_size = math.select(ast_function.vector_size, 1, ast_function.vector_size == 0);
+            BlastVariableDataType datatype = ast_function.datatype;
+
+ 
+            for(int i = 0; i < ast_function.ChildCount; i++)
+            {
+                node child = ast_function.children[i]; 
+
+                int child_size = math.select(child.vector_size, 1, child.vector_size == 0);
+                if(verify_size && child_size != vector_size)
+                {
+                    data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: vectorsize mismatch, vectorsize should be equal for all parameters to function {ast_function.function.GetFunctionName()}"); 
+                    return BlastVectorSizes.none;                         
+                }
+
+                BlastVariableDataType type = child.datatype;
+
+                if (child.variable != null && child.variable.DataTypeOverride != BlastVectorSizes.none)
+                {
+                    switch (child.variable.DataTypeOverride)
+                    {
+                        case BlastVectorSizes.bool32: type = BlastVariableDataType.Bool32; break;
+                        default: type = BlastVariableDataType.Numeric; break; 
+                    }
+
+                    if(ast_function.function.ReturnsVectorSize == 0)
+                    {
+                        datatype = type; 
+                    }
+                }
+
+                if (verify_type && datatype != type)
+                {
+                    data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: datatype mismatch, datatype should be equal for all parameters to function {ast_function.function.GetFunctionName()}");
+                    return BlastVectorSizes.none;
+                }
+            }
+
+            switch(datatype)
+            {
+                case BlastVariableDataType.Numeric:
+                    {
+                        switch (vector_size)
+                        {
+                            case 1: return BlastVectorSizes.float1;
+                            case 2: return BlastVectorSizes.float2;
+                            case 3: return BlastVectorSizes.float3;
+                            case 4: return BlastVectorSizes.float4;
+                            default:
+                                data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: datatype {datatype} with size {vector_size} not supported in function {ast_function.function.GetFunctionName()}");
+                                return BlastVectorSizes.none;
+                        }
+                    }
+
+                case BlastVariableDataType.Bool32:
+                    {
+                        if (vector_size != 1) 
+                        {
+                            data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: datatype {datatype} with size {vector_size} not supported in function {ast_function.function.GetFunctionName()}");
+                            return BlastVectorSizes.none;
+                        }
+                        return BlastVectorSizes.bool32;
+                    }
+
+
+                default:
+                    data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: datatype {datatype} not supported in function {ast_function.function.GetFunctionName()}");
+                    return BlastVectorSizes.none;
+            }
+        }
+
+
         /// <summary>
         /// Compile a node into bytecode 
         /// </summary>
@@ -1549,6 +1686,13 @@ namespace NSS.Blast.Compiler.Stage
             {
                 return null; 
             }
+
+            // reset any datatype overrides before starting compilation 
+            foreach(BlastVariable v in data.Variables)
+            {
+                v.DataTypeOverride = BlastVectorSizes.none; 
+            }
+
             IMByteCodeList code = CompileNodes(data, data.AST);
             if(code != null)
             {
