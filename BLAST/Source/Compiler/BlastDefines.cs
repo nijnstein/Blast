@@ -4,7 +4,14 @@
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading;
+using Unity.Collections;
 using Unity.Mathematics;
+using UnityEngine.Assertions;
 
 namespace NSS.Blast
 {
@@ -161,6 +168,239 @@ namespace NSS.Blast
        float2x, float2y
     }
 
+
+    /// <summary>
+    /// Bool32 structure 
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 4)]
+    public struct Bool32 :
+        IStructuralComparable,
+        IStructuralEquatable,
+        IComparable,
+        IComparable<float>,
+        IComparable<int>,
+        IComparable<uint>,
+        IComparable<Bool32>,
+        IEquatable<float>,
+        IEquatable<uint>,
+        IEquatable<int>,
+        IEquatable<Bool32>
+    {
+        [FieldOffset(0)] public float Single;
+        [FieldOffset(0)] public int Signed;
+        [FieldOffset(0)] public uint Unsigned;
+
+        [FieldOffset(0)] public byte Byte1;
+        [FieldOffset(1)] public byte Byte2;
+        [FieldOffset(2)] public byte Byte3;
+        [FieldOffset(3)] public byte Byte4;
+
+        static public Bool32 From(int i32)
+        {
+            Bool32 b32 = default;
+            b32.Signed = i32;
+            return b32;
+        }
+
+        static public Bool32 From(uint ui32)
+        {
+            Bool32 b32 = default;
+            b32.Unsigned = ui32;
+            return b32;
+        }
+
+        static public Bool32 From(float f)
+        {
+            Bool32 b32 = default;
+            b32.Single = f;
+            return b32;
+        }
+
+        #region Get/Set Properties for Bool1 - 32 
+        public bool b1 { get { return (Byte1 & 0b0000_0001) == 0b0000_0001; } set { SetBit(0, true); } }
+        public bool b2 { get { return (Byte1 & 0b0000_0010) == 0b0000_0010; } set { SetBit(1, true); } }
+        public bool b3 { get { return (Byte1 & 0b0000_0100) == 0b0000_0100; } set { SetBit(2, true); } }
+        public bool b4 { get { return (Byte1 & 0b0000_1000) == 0b0000_1000; } set { SetBit(3, true); } }
+        public bool b5 { get { return (Byte1 & 0b0001_0000) == 0b0001_0000; } set { SetBit(4, true); } }
+        public bool b6 { get { return (Byte1 & 0b0010_0000) == 0b0010_0000; } set { SetBit(5, true); } }
+        public bool b7 { get { return (Byte1 & 0b0100_0000) == 0b0100_0000; } set { SetBit(6, true); } }
+        public bool b8 { get { return (Byte1 & 0b1000_0000) == 0b1000_0000; } set { SetBit(7, true); } }
+        public bool b9 { get { return (Byte2 & 0b0000_0001) == 0b0000_0001; } set { SetBit(8, true); } }
+        public bool b10 { get { return (Byte2 & 0b0000_0010) == 0b0000_0010; } set { SetBit(9, true); } }
+        public bool b11 { get { return (Byte2 & 0b0000_0100) == 0b0000_0100; } set { SetBit(10, true); } }
+        public bool b12 { get { return (Byte2 & 0b0000_1000) == 0b0000_1000; } set { SetBit(11, true); } }
+        public bool b13 { get { return (Byte2 & 0b0001_0000) == 0b0001_0000; } set { SetBit(12, true); } }
+        public bool b14 { get { return (Byte2 & 0b0010_0000) == 0b0010_0000; } set { SetBit(13, true); } }
+        public bool b15 { get { return (Byte2 & 0b0100_0000) == 0b0100_0000; } set { SetBit(14, true); } }
+        public bool b16 { get { return (Byte2 & 0b1000_0000) == 0b1000_0000; } set { SetBit(15, true); } }
+        public bool b17 { get { return (Byte3 & 0b0000_0001) == 0b0000_0001; } set { SetBit(16, true); } }
+        public bool b18 { get { return (Byte3 & 0b0000_0010) == 0b0000_0010; } set { SetBit(17, true); } }
+        public bool b19 { get { return (Byte3 & 0b0000_0100) == 0b0000_0100; } set { SetBit(18, true); } }
+        public bool b20 { get { return (Byte3 & 0b0000_1000) == 0b0000_1000; } set { SetBit(19, true); } }
+        public bool b21 { get { return (Byte3 & 0b0001_0000) == 0b0001_0000; } set { SetBit(20, true); } }
+        public bool b22 { get { return (Byte3 & 0b0010_0000) == 0b0010_0000; } set { SetBit(21, true); } }
+        public bool b23 { get { return (Byte3 & 0b0100_0000) == 0b0100_0000; } set { SetBit(22, true); } }
+        public bool b24 { get { return (Byte3 & 0b1000_0000) == 0b1000_0000; } set { SetBit(23, true); } }
+        public bool b25 { get { return (Byte4 & 0b0000_0001) == 0b0000_0001; } set { SetBit(24, true); } }
+        public bool b26 { get { return (Byte4 & 0b0000_0010) == 0b0000_0010; } set { SetBit(25, true); } }
+        public bool b27 { get { return (Byte4 & 0b0000_0100) == 0b0000_0100; } set { SetBit(26, true); } }
+        public bool b28 { get { return (Byte4 & 0b0000_1000) == 0b0000_1000; } set { SetBit(27, true); } }
+        public bool b29 { get { return (Byte4 & 0b0001_0000) == 0b0001_0000; } set { SetBit(28, true); } }
+        public bool b30 { get { return (Byte4 & 0b0010_0000) == 0b0010_0000; } set { SetBit(29, true); } }
+        public bool b31 { get { return (Byte4 & 0b0100_0000) == 0b0100_0000; } set { SetBit(30, true); } }
+        public bool b32 { get { return (Byte4 & 0b1000_0000) == 0b1000_0000; } set { SetBit(31, true); } }
+        #endregion 
+
+        /// <summary>
+        /// index bits
+        /// </summary>
+        /// <param name="index">0 based index of bit</param>
+        /// <returns>true if bit is set</returns>
+        public bool this[int index]
+        {
+            get
+            {
+                return GetBit(index);
+            }
+            set
+            {
+                SetBit(index, value);
+            }
+        }
+
+        #region Get/Set bit
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetBit(int index, bool value)
+        {
+            int mask = 1 << index;
+            Signed = value ? Signed | mask : Signed & ~mask;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool GetBit(int index)
+        {
+            int mask = 1 << index;
+            return (Signed & mask) == mask;
+        }
+
+        /// <summary>
+        /// multithread safe bit set through atomic cmpexch
+        /// </summary>
+        public void SetBitSafe(int index, bool value)
+        {
+            int bit = 1 << index;
+
+            int i = 0;
+
+            do
+            {
+                int current = Signed;
+
+                // check if set 
+                if ((current & bit) == bit) return;
+
+                // you cannot do this once as other bits might change
+                int next = value ? current | bit : current & ~bit;
+
+                // attempt to attomically change the value 
+                if (Interlocked.CompareExchange(ref Signed, next, current) == current)
+                {
+                    // value set, it didnt change meanwhile 
+                    return;
+                }
+
+                // value was changed while trying to set it, restart procedure 
+#if TRACE || DEVELOPMENT_BUILD
+                Assert.IsTrue(i++ < 100);
+#endif 
+            }
+#if TRACE || DEVELOPMENT_BUILD
+            while (true);
+#else
+            while (i++ < 100);
+#endif
+        }
+        #endregion
+
+        #region Compare | Equals interface implementations 
+
+        public int CompareTo(float other)
+        {
+            return Comparer<float>.Default.Compare(Single, other);
+        }
+        public int CompareTo(uint other)
+        {
+            return Comparer<uint>.Default.Compare(Unsigned, other);
+        }
+        public int CompareTo(int other)
+        {
+            return Comparer<int>.Default.Compare(Signed, other);
+        }
+        public int CompareTo(Bool32 other, IComparer comparer)
+        {
+            return Comparer<uint>.Default.Compare(Unsigned, other.Unsigned);
+        }
+
+        public bool Equals(object other, IEqualityComparer comparer)
+        {
+            if (other == null) return false;
+            if (!(other is Bool32)) return false;
+            return comparer.Equals(other); 
+
+        }
+
+        public int GetHashCode(IEqualityComparer comparer)
+        {
+            return Signed.GetHashCode(); 
+        }
+
+        public override string ToString()
+        {
+            return CodeUtils.FormatBool32(Unsigned); 
+        }
+
+        public int CompareTo(object other)
+        {
+            if (other == null) return 1;
+            Assert.IsTrue(!(other is Bool32));
+            return CompareTo(((Bool32)other).Unsigned);
+        }
+
+        int IStructuralComparable.CompareTo(object other, IComparer comparer)
+        {
+            if (other == null) return 1;
+            Assert.IsTrue(!(other is Bool32));
+            return CompareTo(((Bool32)other).Unsigned);
+        }
+
+        public int CompareTo(Bool32 other)
+        {
+            return Comparer<uint>.Default.Compare(Unsigned, other.Unsigned);
+        }
+
+        public bool Equals(float other)
+        {
+            return Single == other;
+        }
+
+        public bool Equals(uint other)
+        {
+            return Unsigned == other;
+        }
+
+        public bool Equals(int other)
+        {
+            return Signed == other;
+        }
+
+        public bool Equals(Bool32 other)
+        {
+            return Unsigned == other.Unsigned;
+        }
+
+        #endregion
+    }
 
 
     /// <summary>

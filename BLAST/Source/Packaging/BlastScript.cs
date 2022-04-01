@@ -17,8 +17,6 @@ using System.Linq;
     using UnityEngine;
     using UnityEngine.Assertions;
     using Unity.Collections.LowLevel.Unsafe;
-    using Unity.Burst;
-    using Unity.Burst.CompilerServices;
 #endif
 
 using System.Runtime.CompilerServices;
@@ -700,6 +698,7 @@ namespace NSS.Blast
                             case bool bool1: data[offset] = bool1 ? 1f : 0f; break;
                             case short i16: data[offset] = (float)i16; break;
                             case ushort i16: data[offset] = (float)i16; break;
+                            case Bool32 b32: data[offset] = b32.Single; break; 
                             default: data[offset] = (float)value; break;
                         }
                         break;
@@ -1604,7 +1603,7 @@ namespace NSS.Blast
         public object GetData(int index)
         {
             Assert.IsTrue(IsPrepared, $"BlastScript.GetData(index): script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
-            Assert.IsTrue(index >= 0, $"BlastScript.GetData(index): script {Id} {Name}, data index: {index} not valid");
+            Assert.IsTrue(index >= 0 && index < Package.Variables.Length, $"BlastScript.GetData(index): script {Id} {Name}, data index: {index} not valid");
             switch (Package.Variables[index].VectorSize)
 
             {
@@ -1617,6 +1616,29 @@ namespace NSS.Blast
             return null; 
         }
 
+        /// <summary>
+        /// get a bool32 variable by 0 based index
+        /// </summary>
+        public Bool32 GetBool32(int index)
+        {
+            Assert.IsTrue(IsPrepared, $"BlastScript.GetData(index): script {Id} {Name}, bytecode not packaged, run Prepare() first to compile its script package.");
+            Assert.IsTrue(index >= 0 && index < Package.Variables.Length, $"BlastScript.GetData(index): script {Id} {Name}, data index: {index} not valid");
+            Assert.IsTrue(Package.Variables[index].VectorSize == 1, $"BlastScript.GetBool32(index): script {Id} {Name}, only vectorsize 1 is supported for bool32");
+            Assert.IsTrue(Package.Variables[index].DataType == BlastVariableDataType.Bool32, $"BlastScript.GetBool32(index): script {Id} {Name}, variable at index {index} is not a bool32 but {Package.Variables[index].DataType}");
+
+            Bool32 b32 = default; 
+            b32.Single = GetFloat(index);
+
+            return b32;
+        }
+
+        /// <summary>
+        /// get a bool32 variable by name
+        /// </summary>
+        public Bool32 GetBool32(string name)
+        {
+            return GetBool32(GetVerifyDataIndex(name)); 
+        }
 
         /// <summary>
         /// get all data elements 
