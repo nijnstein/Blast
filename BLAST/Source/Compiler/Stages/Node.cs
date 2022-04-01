@@ -1177,7 +1177,11 @@ namespace NSS.Blast.Compiler
                 int count = 0;
                 foreach (node c in children)
                 {
-                    if (c.type != t) others[count] = c;
+                    if (c.type != t)
+                    {
+                        others[count] = c;
+                        count++; 
+                    }
                 }
             }
 

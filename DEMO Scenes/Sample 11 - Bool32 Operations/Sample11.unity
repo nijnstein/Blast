@@ -333,10 +333,11 @@ MonoBehaviour:
     (\r\n            if(get_bit(b32, b)) then \r\n            ( \r\n               
     set_bit(b32, b, 0);  # unset bit at index b\r\n                b = fmod(b + 1,
     32); # increase index and keep it from 0 through 31\r\n                set_bit(b32,
-    b, 1);  # set bit at index b\r\n            );\r\n        )\r\n       \r\n       
-    case 1:\r\n        (\r\n\tcounter = counter + 1;            \r\n        )\r\n   
-    );\r\n\r\n    counter = counter + 1; \r\n    if(counter > 1024) then \r\n   
-    (\r\n        state = fmod(state + 1, 2);\r\n        counter = 0;\r\n    );\r\n"
+    b, 1);  # set bit at index b\r\n            );\r\n            counter = counter
+    + 1; \r\n        )\r\n       \r\n        case 1:\r\n        (\r\n\tcounter =
+    counter + 1;            \r\n        )\r\n    );\r\n\r\n    if(counter > 1024)
+    then \r\n    (\r\n        state = fmod(state + 1, 2);\r\n        counter = 0;\r\n   
+    );\r\n"
   DataView: 
 --- !u!4 &2128983623
 Transform:
