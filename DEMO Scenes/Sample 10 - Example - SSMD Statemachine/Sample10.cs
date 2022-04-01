@@ -147,6 +147,7 @@ state = select(3, 0, position.y < 0);
         float* p = (float*)data.GetUnsafeReadOnlyPtr(); 
 
         // for each state, gather data for each object in that state
+        // - note that references to the data are copied and NOT the data itself
         for (float istate = 0; istate < StateCount; istate++)
         {
             int count = 0;
@@ -155,6 +156,7 @@ state = select(3, 0, position.y < 0);
                 if (data[i * 4] == istate)
                 {
                     // store a reference to the objects data at object index i
+                    // - as each data record holds 4 floats every record starts at the 4th index
                     ssmd_data[count] = new IntPtr(&p[i * 4]); 
                     count++; 
                 }

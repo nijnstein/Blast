@@ -17,13 +17,13 @@ using System.Linq;
     using UnityEngine;
     using UnityEngine.Assertions;
     using Unity.Collections.LowLevel.Unsafe;
+    using Unity.Burst;
+    using Unity.Burst.CompilerServices;
 #endif
 
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 using Unity.Collections;
-using Unity.Burst;
-using Unity.Burst.CompilerServices;
 
 namespace NSS.Blast
 {

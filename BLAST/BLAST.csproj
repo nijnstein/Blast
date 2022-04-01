@@ -28,21 +28,21 @@
   <PropertyGroup>
     <RestoreFallbackFolders>clear</RestoreFallbackFolders>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <Reference Include="Unity.Mathematics">
-      <HintPath>..\..\Unity.Mathematics\src\Unity.Mathematics\obj\Release\Unity.Mathematics.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>..\..\UnityCsReference\Projects\CSharp\obj\Debug\netstandard2.1\UnityEngine.dll</HintPath>
-    </Reference>
-  </ItemGroup>
 
   <ItemGroup>
     <None Include="Icons\blast icon.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>..\..\..\..\Unity.Mathematics\build\bin\Release\Unity.Mathematics.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\..\UnityCsReference\Projects\CSharp\bin\Debug\netstandard2.1\UnityEngine.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

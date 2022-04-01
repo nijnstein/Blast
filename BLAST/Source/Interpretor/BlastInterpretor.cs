@@ -615,8 +615,8 @@ namespace NSS.Blast.Interpretor
 
 
 #if DEVELOPMENT_BUILD || TRACE
-          //  BlastVariableDataType type;
-          //  int size;
+           BlastVariableDataType type;
+           int size;
 #endif 
 
             switch ((blast_operation)c)
@@ -5892,8 +5892,8 @@ namespace NSS.Blast.Interpretor
             }
 #else
             // dont check anything in release
-            index = (int)pop_or_value(code_pointer + 2)[0]; 
-            value = (int)pop_or_value(code_pointer + 3)[0]; 
+            index = (int)pop_or_value(code_pointer + 2); 
+            value = (uint)pop_or_value(code_pointer + 3); 
             vector_size = 1; 
 #endif
 
@@ -5948,7 +5948,7 @@ namespace NSS.Blast.Interpretor
 
 #else
             // dont check anything in release
-            index = (int)pop_or_value(code_pointer + 2)[0]; 
+            index = (int)pop_or_value(code_pointer + 2); 
             vector_size = 1; 
 #endif
 
@@ -6007,8 +6007,8 @@ namespace NSS.Blast.Interpretor
             }
 #else
             // dont check anything in release
-            index = (int)pop_or_value(code_pointer + 2)[0]; 
-            value = (int)pop_or_value(code_pointer + 3)[0]; 
+            mask = (uint)pop_or_value(code_pointer + 2); 
+            value = (uint)pop_or_value(code_pointer + 3); 
             vector_size = 1; 
 #endif
 
@@ -6061,7 +6061,7 @@ namespace NSS.Blast.Interpretor
 
 #else
             // dont check anything in release
-            index = (int)pop_or_value(code_pointer + 2)[0]; 
+            mask = (int)pop_or_value(code_pointer + 2); 
             vector_size = 1; 
 #endif
 
@@ -6108,7 +6108,7 @@ namespace NSS.Blast.Interpretor
 
 #else
             // dont check anything in release
-            amount = (int)pop_or_value(code_pointer + 2)[0]; 
+            amount = (int)pop_or_value(code_pointer + 2); 
             vector_size = 1; 
 #endif
 
@@ -6156,7 +6156,7 @@ namespace NSS.Blast.Interpretor
 
 #else
             // dont check anything in release
-            amount = (int)pop_or_value(code_pointer + 2)[0]; 
+            amount = (int)pop_or_value(code_pointer + 2); 
             vector_size = 1; 
 #endif
 
@@ -6204,7 +6204,7 @@ namespace NSS.Blast.Interpretor
 
 #else
             // dont check anything in release
-            amount = (int)pop_or_value(code_pointer + 2)[0]; 
+            amount = (int)pop_or_value(code_pointer + 2); 
             vector_size = 1; 
 #endif
 
@@ -6251,7 +6251,7 @@ namespace NSS.Blast.Interpretor
 
 #else
             // dont check anything in release
-            amount = (int)pop_or_value(code_pointer + 2)[0]; 
+            amount = (int)pop_or_value(code_pointer + 2); 
             vector_size = 1; 
 #endif
 
