@@ -329,15 +329,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Script: "#input b32 bool32; \r\n#input b float; \r\n#input counter float 0; \r\n#input
-    state float 0; \r\n\r\n    switch(state)\r\n    (\r\n        case 0:\r\n       
-    (\r\n            if(get_bit(b32, b)) then \r\n            ( \r\n               
-    set_bit(b32, b, 0);  # unset bit at index b\r\n                b = fmod(b + 1,
-    32); # increase index and keep it from 0 through 31\r\n                set_bit(b32,
-    b, 1);  # set bit at index b\r\n            );\r\n            counter = counter
-    + 1; \r\n        )\r\n       \r\n        case 1:\r\n        (\r\n\tcounter =
-    counter + 1;            \r\n        )\r\n    );\r\n\r\n    if(counter > 1024)
-    then \r\n    (\r\n        state = fmod(state + 1, 2);\r\n        counter = 0;\r\n   
-    );\r\n"
+    state float -1;\r\n#input temp float 0; \r\n\r\n    # on initial state, determine
+    start state with some random bit functions\r\n    if(state < 0) then\r\n    (\r\n       
+    # while in editor|trace we can output values to the log \r\n        if(b = 0)
+    then ( debug(state); )\r\n\r\n        # set the numeric temp to a value expressed
+    in binary\r\n        temp = 00000000_00000000_00000000_00000001; \r\n                                 
+    \r\n        # although a bitmask is assigned to temp, the compiler treats it
+    as a normal numeric\r\n        # reinterpret updates the metadata for temp to
+    set datatype (bool32 in this case)\r\n        # this is very different from a
+    cast in c# as we reinterpret the original data and dont return the casted variable
+    \r\n        reinterpret_bool32(temp);     \r\n        \r\n        # without the
+    bool cast, any nor all would accept 1 parameter and they would work asif they
+    were supplied numerics\r\n        if(any(temp)) then\r\n        (\r\n           
+    state = 2;     \r\n        )\r\n        \r\n        if(all(temp)) then\r\n       
+    (\r\n            state = 0; \r\n        )\r\n    )\r\n\r\n    switch(state)\r\n   
+    (\r\n        case 0:\r\n        (\r\n            if(get_bit(b32, b)) then \r\n           
+    ( \r\n                set_bit(b32, b, 0);  # unset bit at index b\r\n               
+    b = fmod(b + 1, 32); # increase index and keep it from 0 through 31\r\n               
+    set_bit(b32, b, 1);  # set bit at index b\r\n            );\r\n            counter
+    = counter + 0.33; \r\n        )\r\n       \r\n        case 1:\r\n        (\r\n           
+    counter = counter + 1; \r\n        )\r\n\r\n        case 2:\r\n        (   \r\n           
+    counter = counter + 1; \r\n        )\r\n    );\r\n                                                                                        
+    \r\n    if(counter > 555) then \r\n    (\r\n        state = select(state + 1,
+    0, state >= 2); \r\n        counter = 0;\r\n    );\r\n"
   DataView: 
 --- !u!4 &2128983623
 Transform:

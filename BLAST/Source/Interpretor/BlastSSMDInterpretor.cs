@@ -1529,909 +1529,1043 @@ namespace NSS.Blast.SSMD
 #endif                 
         }
 
-        void pop_fx_with_op_into_fx_constant_handler<Tin, Tout>([NoAlias]Tin* buffer, [NoAlias]Tout* output, blast_operation op, float constant)
-            where Tin : unmanaged
-            where Tout : unmanaged
-        {
-            int vin_size = sizeof(Tin) >> 2;
-            int vout_size = sizeof(Tout) >> 2; 
-
-            switch(vin_size)
-            {
-                case 1:
-                    float* f1_in = (float*)buffer; 
-                    switch(vout_size)
-                    {
-                        // pop f1 with op into f1
-                        case 1:
-                            {
-                                float* f1_out = (float*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] * constant;
-                                        return;
-
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] + constant;
-                                        return;
-
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] - constant;
-                                        return;
-
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] / constant;
-                                        return;
-
-                                    case blast_operation.and:
-                                        if (constant == 0)
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 0f;
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.select(0, 1f, f1_in[i] != 0);
-                                        }
-                                        return;
-
-                                    case blast_operation.or:
-                                        if (constant == 0)
-                                        {
-                                            // nothing changes if its the same buffer so skip doing stuff in that case
-                                            if (output != buffer)
-                                            {
-                                                // if not the same buffer then we still need to copy the data 
-                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i];
-                                            }
-                                        }
-                                        else
-                                        {
-                                            // just write true,  | true is always true 
-                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 1f;
-                                        }
-                                        return;
-
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.min(f1_in[i], constant);
-                                        return;
-
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.max(f1_in[i], constant);
-                                        return;
-
-                                    case blast_operation.mina:
-                                    case blast_operation.maxa:
-                                    case blast_operation.csum:
-                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] + constant;
-                                        return;
-                                }
-                            }
-                            break;
-
-                        // pop f1 with op into f4
-                        case 4:
-                            {
-                                float4* f4_out = (float4*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] * constant;
-                                        return;
-
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] + constant;
-                                        return;
-
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] - constant;
-                                        return;
-
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] / constant;
-                                        return;
-
-                                    case blast_operation.and:
-                                        if (constant == 0)
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 0f;
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.select(0, 1f, f1_in[i] != 0);
-                                        }
-                                        return;
-
-                                    case blast_operation.or:
-                                        if (constant == 0)
-                                        {
-                                            if (output != buffer)
-                                            {
-                                                // if not the same buffer then we still need to copy the data 
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
-                                            }
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 1f;
-                                        }
-                                        return;
-
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.min(f1_in[i], constant);
-                                        return;
-
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.max(f1_in[i], constant);
-                                        return;
-
-                                    case blast_operation.mina:
-                                    case blast_operation.maxa:
-                                    case blast_operation.csum:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = constant;
-                                        return;
-                                }
-                            }
-                            break; 
-                    }
-                    break; 
-
-
-                case 2:
-                    float2* f2_in = (float2*)buffer;
-                    switch (vout_size)
-                    {
-                        case 1:
-                            {
-                                float* f1_out = (float*)output;
-
-                                // only these operations will result in single sized outputs from size2 input
-                                switch (op)
-                                {
-                                    case blast_operation.mina:
-                                    case blast_operation.csum:
-                                    case blast_operation.maxa:
-                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
-                                        return;
-                                }
-                            }
-                            break; 
-
-
-                        // pop f2 with op into f2
-                        case 2:
-                            {
-                                float2* f2_out = (float2*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] * constant;
-                                        return;
-
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] + constant;
-                                        return;
-
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] - constant;
-                                        return;
-
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] / constant;
-                                        return;
-
-                                    case blast_operation.and:
-                                        if (constant == 0)
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = 0f;
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.select(0, 1f, f2_in[i] != 0);
-                                        }
-                                        return;
-
-                                    case blast_operation.or:
-                                        if (constant == 0)
-                                        {
-                                            if (output != buffer)
-                                            {
-                                                // if not the same buffer then we still need to copy the data 
-                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i];
-                                            }
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = 1f;
-                                        }
-                                        return;
-
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.min(f2_in[i], constant);
-                                        return;
-
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.max(f2_in[i], constant);
-                                        return;
-                                }
-                            }
-                            break;
-
-                        // pop f2 with op into f4
-                        case 4:
-                            {
-                                float4* f4_out = (float4*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] * constant;
-                                        return;
-
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] + constant;
-                                        return;
-
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] - constant;
-                                        return;
-
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] / constant;
-                                        return;
-
-                                    case blast_operation.and:
-                                        if (constant == 0)
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 0f;
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.select(0, 1f, f2_in[i] != 0);
-                                        }
-                                        return;
-
-                                    case blast_operation.or:
-                                        if (constant == 0)
-                                        {
-                                            if (output != buffer)
-                                            {
-                                                // if not the same buffer then we still need to copy the data 
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i];
-                                            }
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 1f;
-                                        }
-                                        return;
-
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.min(f2_in[i], constant);
-                                        return;
-
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.max(f2_in[i], constant);
-                                        return;
-                                }
-                            }
-                            break;
-                    }
-                    break;
-
-                case 3:
-                    float3* f3_in = (float3*)buffer;
-                    switch (vout_size)
-                    {
-                        case 1:
-                            {
-                                float* f1_out = (float*)output;
-                                // only these operations will result in single sized outputs from size3 input
-                                switch (op)
-                                {
-                                    case blast_operation.mina:
-                                    case blast_operation.csum:
-                                    case blast_operation.maxa:
-                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
-                                        return;
-                                }
-                            }
-                            break;
-
-                        // pop f3 with op into f3
-                        case 3:
-                            {
-                                float3* f3_out = (float3*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] * constant;
-                                        return;
-
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] + constant;
-                                        return;
-
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] - constant;
-                                        return;
-
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] / constant;
-                                        return;
-
-                                    case blast_operation.and:
-                                        if (constant == 0)
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = 0f;
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.select(0, 1f, f3_in[i] != 0);
-                                        }
-                                        return;
-
-                                    case blast_operation.or:
-                                        if (constant == 0)
-                                        {
-                                            // nothing changes if its the same buffer so skip doing stuff in that case
-                                            if (output != buffer)
-                                            {
-                                                // if not the same buffer then we still need to copy the data 
-                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i];
-                                            }
-                                        }
-                                        else
-                                        {
-                                            // just write true,  | true is always true 
-                                            for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = 1f;
-                                        }
-                                        return;
-
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.min(f3_in[i], constant);
-                                        return;
-
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.max(f3_in[i], constant);
-                                        return;
-                                }
-                            }
-                            break;
-
-                        // pop f3 with op into f4
-                        case 4:
-                            {
-                                float4* f4_out = (float4*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] * constant;
-                                        return;
-
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] + constant;
-                                        return;
-
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] - constant;
-                                        return;
-
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] / constant;
-                                        return;
-
-                                    case blast_operation.and:
-                                        if (constant == 0)
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = 0f;
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.select(0, 1f, f3_in[i] != 0);
-                                        }
-                                        return;
-
-                                    case blast_operation.or:
-                                        if (constant == 0)
-                                        {
-                                            if (output != buffer)
-                                            {
-                                                // if not the same buffer then we still need to copy the data 
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i];
-                                            }
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 1f;
-                                        }
-                                        return;
-
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.min(f3_in[i], constant);
-                                        return;
-
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.max(f3_in[i], constant);
-                                        return;
-                                }
-
-                            }
-                            break;
-                    }
-                    break;
-
-                case 4:
-                    float4* f4_in = (float4*)buffer;
-
-                    switch (vout_size)
-                    {
-                        case 1:
-                            {
-                                float* f1_out = (float*)output;
-                                // only these operations will result in single sized outputs from size3 input
-                                switch (op)
-                                {
-                                    case blast_operation.mina:
-                                    case blast_operation.csum:
-                                    case blast_operation.maxa:
-                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
-                                        return;
-                                }
-                            }
-                            break;
-
-                        case 4:
-                            {
-                                float4* f4_out = (float4*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] * constant;
-                                        return;
-
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] + constant;
-                                        return;
-
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] - constant;
-                                        return;
-
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] / constant;
-                                        return;
-
-                                    case blast_operation.and:
-                                        if (constant == 0)
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = 0f;
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.select(0, 1f, f4_in[i] != 0);
-                                        }
-                                        return;
-
-                                    case blast_operation.or:
-                                        if (constant == 0)
-                                        {
-                                            // nothing changes if its the same buffer so skip doing stuff in that case
-                                            if (output != buffer)
-                                            {
-                                                // if not the same buffer then we still need to copy the data 
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i];
-                                            }
-                                        }
-                                        else
-                                        {
-                                            // just write true,  | true is always true 
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = 1f;
-                                        }
-                                        return;
-
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.min(f4_in[i], constant);
-                                        return;
-
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.max(f4_in[i], constant);
-                                        return;
-                                }
-                            }
-                            break;
-                    }
-                    break;
-            }
-
-
-#if DEVELOPMENT_BUILD || TRACE
-                Debug.LogError($"blast.pop_fx_with_op_into_fx_constant_handler: -> codepointer {code_pointer} unsupported operation supplied: {op}, Vin: {vin_size}, Vout: {vout_size}");
-                return;
-#endif                 
-        }
-
-        void pop_fx_with_op_into_fx_data_handler<Tin, Tout, Tdata>([NoAlias]Tin* buffer, [NoAlias]Tout* output, blast_operation op, [NoAlias]void** data, int offset)
+        void pop_fx_with_op_into_fx_constant_handler<Tin, Tout>([NoAlias] Tin* buffer, [NoAlias] Tout* output, blast_operation op, float constant, BlastVariableDataType datatype)
             where Tin : unmanaged
             where Tout : unmanaged
         {
             int vin_size = sizeof(Tin) >> 2;
             int vout_size = sizeof(Tout) >> 2;
-            int vdata_size = vin_size; 
 
-            switch (vin_size)
+            // at some point datattyype and vectorsize merge and this dual switch becomes 1
+            switch (datatype)
             {
-                case 1:
-                    float* f1_in = (float*)(void*)buffer;
-                    float** f1_data = (float**)(void**)data;
-                    switch (vout_size)
+                case BlastVariableDataType.Numeric:
+                    switch (vin_size)
                     {
-                        // pop f1 with op into f1 => data == f1
                         case 1:
-                            float* f1_out = (float*)output;
-                            switch (op)
+                            float* f1_in = (float*)buffer;
+                            switch (vout_size)
                             {
-                                case blast_operation.multiply:
-                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] * f1_data[i][offset];
-                                    return;
+                                // pop f1 with op into f1
+                                case 1:
+                                    {
+                                        float* f1_out = (float*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] * constant;
+                                                return;
 
-                                case blast_operation.add:
-                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] + f1_data[i][offset];
-                                    return;
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] + constant;
+                                                return;
 
-                                case blast_operation.substract:
-                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] - f1_data[i][offset];
-                                    return;
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] - constant;
+                                                return;
 
-                                case blast_operation.divide:
-                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] / f1_data[i][offset];
-                                    return;
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] / constant;
+                                                return;
 
-                                case blast_operation.and:
-                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.select(0, 1f, f1_in[i] != f1_data[i][offset]);
-                                    return;
-                                                                                           
-                                case blast_operation.or:
-                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.select(0, 1f, f1_in[i] != 0f || f1_data[i][offset] != 0f);
-                                    return;
+                                            case blast_operation.and:
+                                                if (constant == 0)
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 0f;
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.select(0, 1f, f1_in[i] != 0);
+                                                }
+                                                return;
 
-                                case blast_operation.min:
-                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.min(f1_in[i], f1_data[i][offset]);
-                                    return;
+                                            case blast_operation.or:
+                                                if (constant == 0)
+                                                {
+                                                    // nothing changes if its the same buffer so skip doing stuff in that case
+                                                    if (output != buffer)
+                                                    {
+                                                        // if not the same buffer then we still need to copy the data 
+                                                        for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i];
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    // just write true,  | true is always true 
+                                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 1f;
+                                                }
+                                                return;
 
-                                case blast_operation.max:
-                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.max(f1_in[i], f1_data[i][offset]);
-                                    return;
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.min(f1_in[i], constant);
+                                                return;
 
-                                // csum mina and maxa will always result in a size1 vector, mina on size1 is the same as min  
-                                case blast_operation.csum:
-                                case blast_operation.mina:
-                                case blast_operation.maxa:
-                                    for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_data[i][offset];
-                                    return;
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.max(f1_in[i], constant);
+                                                return;
 
+                                            case blast_operation.mina:
+                                            case blast_operation.maxa:
+                                            case blast_operation.csum:
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] + constant;
+                                                return;
+                                        }
+                                    }
+                                    break;
+
+                                // pop f1 with op into f4
+                                case 4:
+                                    {
+                                        float4* f4_out = (float4*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] * constant;
+                                                return;
+
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] + constant;
+                                                return;
+
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] - constant;
+                                                return;
+
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] / constant;
+                                                return;
+
+                                            case blast_operation.and:
+                                                if (constant == 0)
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 0f;
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.select(0, 1f, f1_in[i] != 0);
+                                                }
+                                                return;
+
+                                            case blast_operation.or:
+                                                if (constant == 0)
+                                                {
+                                                    if (output != buffer)
+                                                    {
+                                                        // if not the same buffer then we still need to copy the data 
+                                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 1f;
+                                                }
+                                                return;
+
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.min(f1_in[i], constant);
+                                                return;
+
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.max(f1_in[i], constant);
+                                                return;
+
+                                            case blast_operation.mina:
+                                            case blast_operation.maxa:
+                                            case blast_operation.csum:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = constant;
+                                                return;
+                                        }
+                                    }
+                                    break;
                             }
                             break;
 
-                        // pop f1 with op into f4 => data == f1 
-                        case 4:
-                            float4* f4_out = (float4*)output;
-                            switch (op)
-                            {
-                                case blast_operation.multiply:
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] * f1_data[i][offset];
-                                    return;
 
-                                case blast_operation.add:
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] + f1_data[i][offset];
-                                    return;
-
-                                case blast_operation.substract:
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] - f1_data[i][offset];
-                                    return;
-
-                                case blast_operation.divide:
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] / f1_data[i][offset];
-                                    return;
-
-                                case blast_operation.and:
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.select(0, 1f, f1_in[i] != f1_data[i][offset]);
-                                    return;
-
-                                case blast_operation.or:
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.select(0, 1f, f1_in[i] != 0f || f1_data[i][offset] != 0f);
-                                    return;
-
-                                case blast_operation.min:
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.min(f1_in[i], f1_data[i][offset]);
-                                    return;
-
-                                case blast_operation.max:
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.max(f1_in[i], f1_data[i][offset]);
-                                    return;
-
-                                case blast_operation.mina:
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_data[i][offset];
-                                    return;
-
-                                case blast_operation.maxa:
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_data[i][offset];
-                                    return;
-
-                                case blast_operation.csum:
-                                    // csum is somewhat undefined on 1 param.. 
-                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] + f1_data[i][offset];
-                                    return; 
-                            }
-                            break;
-
-                    }
-                    break;
-
-
-                case 2:
-                    float2* f2_in = (float2*)(void*)buffer;
-
-                    switch (vout_size)
-                    {
-                        // pop f2 with op into f2 ==>  data == f2 or f1 but we fix it to inputsize (dont call this function otherwise)
                         case 2:
+                            float2* f2_in = (float2*)buffer;
+                            switch (vout_size)
                             {
-                                float2* f2_out = (float2*)(void*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++)
+                                case 1:
+                                    {
+                                        float* f1_out = (float*)output;
+
+                                        // only these operations will result in single sized outputs from size2 input
+                                        switch (op)
                                         {
-                                            //
-                                            // whats faster? casting like this or nicely as float with 2 muls
-                                            //
-                                            f2_out[i] = f2_in[i] * ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                            case blast_operation.mina:
+                                            case blast_operation.csum:
+                                            case blast_operation.maxa:
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
+                                                return;
                                         }
-                                        return;
+                                    }
+                                    break;
 
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] + ((float2*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
 
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] - ((float2*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
+                                // pop f2 with op into f2
+                                case 2:
+                                    {
+                                        float2* f2_out = (float2*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] * constant;
+                                                return;
 
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] / ((float2*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] + constant;
+                                                return;
 
-                                    case blast_operation.and:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.select(0, 1f, math.any(f2_in[i]) && math.any(((float2*)(void*)&((float*)data[i])[offset])[0]));
-                                        return;
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] - constant;
+                                                return;
 
-                                    case blast_operation.or:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.select(0, 1f, math.any(f2_in[i]) || math.any(((float2*)(void*)&((float*)data[i])[offset])[0]));
-                                        return;
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] / constant;
+                                                return;
 
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.min(f2_in[i], ((float2*)(void*)&((float*)data[i])[offset])[0]);
-                                        return;
+                                            case blast_operation.and:
+                                                if (constant == 0)
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = 0f;
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.select(0, 1f, f2_in[i] != 0);
+                                                }
+                                                return;
 
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.max(f2_in[i], ((float2*)(void*)&((float*)data[i])[offset])[0]);
-                                        return;
-                                }
+                                            case blast_operation.or:
+                                                if (constant == 0)
+                                                {
+                                                    if (output != buffer)
+                                                    {
+                                                        // if not the same buffer then we still need to copy the data 
+                                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i];
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = 1f;
+                                                }
+                                                return;
+
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.min(f2_in[i], constant);
+                                                return;
+
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.max(f2_in[i], constant);
+                                                return;
+                                        }
+                                    }
+                                    break;
+
+                                // pop f2 with op into f4
+                                case 4:
+                                    {
+                                        float4* f4_out = (float4*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] * constant;
+                                                return;
+
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] + constant;
+                                                return;
+
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] - constant;
+                                                return;
+
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] / constant;
+                                                return;
+
+                                            case blast_operation.and:
+                                                if (constant == 0)
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 0f;
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.select(0, 1f, f2_in[i] != 0);
+                                                }
+                                                return;
+
+                                            case blast_operation.or:
+                                                if (constant == 0)
+                                                {
+                                                    if (output != buffer)
+                                                    {
+                                                        // if not the same buffer then we still need to copy the data 
+                                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i];
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 1f;
+                                                }
+                                                return;
+
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.min(f2_in[i], constant);
+                                                return;
+
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.max(f2_in[i], constant);
+                                                return;
+                                        }
+                                    }
+                                    break;
                             }
                             break;
 
-                        // pop f2 with op into f4
-                        case 4:
-                            {
-                                float4* f4_out = (float4*)(void*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++)
-                                        {
-                                            //
-                                            // whats faster? casting like this or nicely as float with 2 muls
-                                            //
-                                            f4_out[i].xy = f2_in[i] * ((float2*)(void*)&((float*)data[i])[offset])[0];
-                                        }
-                                        return;
-
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] + ((float2*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
-
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] - ((float2*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
-
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] / ((float2*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
-
-                                    case blast_operation.and:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.select(0, 1f, math.any(f2_in[i]) && math.any(((float2*)(void*)&((float*)data[i])[offset])[0]));
-                                        return;
-
-                                    case blast_operation.or:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.select(0, 1f, math.any(f2_in[i]) || math.any(((float2*)(void*)&((float*)data[i])[offset])[0]));
-                                        return;
-
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.min(f2_in[i], ((float2*)(void*)&((float*)data[i])[offset])[0]);
-                                        return;
-
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.max(f2_in[i], ((float2*)(void*)&((float*)data[i])[offset])[0]);
-                                        return;
-                                }
-                            }
-                            break;
-                    }
-                    break;
-
-                case 3:
-                    float3* f3_in = (float3*)(void*)buffer;
-                    switch (vout_size)
-                    {
-                        // pop f3 with op into f3
                         case 3:
+                            float3* f3_in = (float3*)buffer;
+                            switch (vout_size)
                             {
-                                float3* f3_out = (float3*)(void*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++)
+                                case 1:
+                                    {
+                                        float* f1_out = (float*)output;
+                                        // only these operations will result in single sized outputs from size3 input
+                                        switch (op)
                                         {
-                                            //
-                                            // whats faster? casting like this or nicely as float with 2 muls
-                                            //
-                                            f3_out[i] = f3_in[i] * ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                            case blast_operation.mina:
+                                            case blast_operation.csum:
+                                            case blast_operation.maxa:
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
+                                                return;
                                         }
-                                        return;
+                                    }
+                                    break;
 
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] + ((float3*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
+                                // pop f3 with op into f3
+                                case 3:
+                                    {
+                                        float3* f3_out = (float3*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] * constant;
+                                                return;
 
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] - ((float3*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] + constant;
+                                                return;
 
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] / ((float3*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] - constant;
+                                                return;
 
-                                    case blast_operation.and:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.select(0, 1f, math.any(f3_in[i]) && math.any(((float3*)(void*)&((float*)data[i])[offset])[0]));
-                                        return;
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] / constant;
+                                                return;
 
-                                    case blast_operation.or:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.select(0, 1f, math.any(f3_in[i]) || math.any(((float3*)(void*)&((float*)data[i])[offset])[0]));
-                                        return;
+                                            case blast_operation.and:
+                                                if (constant == 0)
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = 0f;
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.select(0, 1f, f3_in[i] != 0);
+                                                }
+                                                return;
 
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.min(f3_in[i], ((float3*)(void*)&((float*)data[i])[offset])[0]);
-                                        return;
+                                            case blast_operation.or:
+                                                if (constant == 0)
+                                                {
+                                                    // nothing changes if its the same buffer so skip doing stuff in that case
+                                                    if (output != buffer)
+                                                    {
+                                                        // if not the same buffer then we still need to copy the data 
+                                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i];
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    // just write true,  | true is always true 
+                                                    for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = 1f;
+                                                }
+                                                return;
 
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.max(f3_in[i], ((float3*)(void*)&((float*)data[i])[offset])[0]);
-                                        return;
-                                }
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.min(f3_in[i], constant);
+                                                return;
+
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.max(f3_in[i], constant);
+                                                return;
+                                        }
+                                    }
+                                    break;
+
+                                // pop f3 with op into f4
+                                case 4:
+                                    {
+                                        float4* f4_out = (float4*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] * constant;
+                                                return;
+
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] + constant;
+                                                return;
+
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] - constant;
+                                                return;
+
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] / constant;
+                                                return;
+
+                                            case blast_operation.and:
+                                                if (constant == 0)
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = 0f;
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.select(0, 1f, f3_in[i] != 0);
+                                                }
+                                                return;
+
+                                            case blast_operation.or:
+                                                if (constant == 0)
+                                                {
+                                                    if (output != buffer)
+                                                    {
+                                                        // if not the same buffer then we still need to copy the data 
+                                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i];
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 1f;
+                                                }
+                                                return;
+
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.min(f3_in[i], constant);
+                                                return;
+
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.max(f3_in[i], constant);
+                                                return;
+                                        }
+
+                                    }
+                                    break;
                             }
                             break;
 
-                        // pop f3 with op into f4
                         case 4:
+                            float4* f4_in = (float4*)buffer;
+
+                            switch (vout_size)
                             {
-                                float4* f4_out = (float4*)(void*)output;
-                                switch (op)
-                                {
-                                    case blast_operation.multiply:
-                                        for (int i = 0; i < ssmd_datacount; i++)
+                                case 1:
+                                    {
+                                        float* f1_out = (float*)output;
+                                        // only these operations will result in single sized outputs from size3 input
+                                        switch (op)
                                         {
-                                            //
-                                            // whats faster? casting like this or nicely as float with 2 muls
-                                            //
-                                            f4_out[i].xyz = f3_in[i] * ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                            case blast_operation.mina:
+                                            case blast_operation.csum:
+                                            case blast_operation.maxa:
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
+                                                return;
                                         }
-                                        return;
+                                    }
+                                    break;
 
-                                    case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] + ((float3*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
+                                case 4:
+                                    {
+                                        float4* f4_out = (float4*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] * constant;
+                                                return;
 
-                                    case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] - ((float3*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] + constant;
+                                                return;
 
-                                    case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] / ((float3*)(void*)&((float*)data[i])[offset])[0];
-                                        return;
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] - constant;
+                                                return;
 
-                                    case blast_operation.and:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.select(0, 1f, math.any(f3_in[i]) && math.any(((float3*)(void*)&((float*)data[i])[offset])[0]));
-                                        return;
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] / constant;
+                                                return;
 
-                                    case blast_operation.or:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.select(0, 1f, math.any(f3_in[i]) || math.any(((float3*)(void*)&((float*)data[i])[offset])[0]));
-                                        return;
+                                            case blast_operation.and:
+                                                if (constant == 0)
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = 0f;
+                                                }
+                                                else
+                                                {
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.select(0, 1f, f4_in[i] != 0);
+                                                }
+                                                return;
 
-                                    case blast_operation.min:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.min(f3_in[i], ((float3*)(void*)&((float*)data[i])[offset])[0]);
-                                        return;
+                                            case blast_operation.or:
+                                                if (constant == 0)
+                                                {
+                                                    // nothing changes if its the same buffer so skip doing stuff in that case
+                                                    if (output != buffer)
+                                                    {
+                                                        // if not the same buffer then we still need to copy the data 
+                                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i];
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    // just write true,  | true is always true 
+                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = 1f;
+                                                }
+                                                return;
 
-                                    case blast_operation.max:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.max(f3_in[i], ((float3*)(void*)&((float*)data[i])[offset])[0]);
-                                        return;
-                                }
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.min(f4_in[i], constant);
+                                                return;
+
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.max(f4_in[i], constant);
+                                                return;
+                                        }
+                                    }
+                                    break;
                             }
                             break;
                     }
                     break;
 
-                case 4:
-                    // vout_size can only be 4   
+                case BlastVariableDataType.Bool32:
+                    if (vin_size == 1)
                     {
-                        float4* f4_in = (float4*)buffer;
-                        float4* f4_out = (float4*)output;
-                        switch (op)
+                        float* f1_in = (float*)buffer;
+
+                        switch (vout_size)
                         {
-                            case blast_operation.multiply:
-                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] * ((float4*)(void*)&((float*)data[i])[offset])[0];
-                                return;
+                            case 1:
+                                {
+                                    float* f1_out = (float*)output;
+                                    
+                                    switch (op)
+                                    {
+                                        case blast_operation.all:
+                                            bool ball = Bool32.From(constant).All;
+                                            if (ball)
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i];
+                                            else
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 0f;
+                                            return;
 
-                            case blast_operation.add:
-                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] + ((float4*)(void*)&((float*)data[i])[offset])[0];
-                                return;
+                                        case blast_operation.any:
+                                            bool bany = constant != 0;
+                                            if(bany)
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 1f;
+                                            else
+                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i];
+                                            return;
 
-                            case blast_operation.substract:
-                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] - ((float4*)(void*)&((float*)data[i])[offset])[0];
-                                return;
+                                    }
+                                }
+                                break;
 
-                            case blast_operation.divide:
-                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] / ((float4*)(void*)&((float*)data[i])[offset])[0];
-                                return;
+                            case 0:
+                            case 4:
+                                {
+                                    float4* f4_out = (float4*)output;
+                                    switch (op)
+                                    {
+                                        case blast_operation.all:
+                                            bool ball = Bool32.From(constant).All;
+                                            if (ball)
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
+                                            else
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 0f;
 
-                            case blast_operation.and:
-                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.select(0, 1f, f4_in[i] != ((float4*)(void*)&((float*)data[i])[offset])[0]);
-                                return;
+                                            return;
 
-                            case blast_operation.or:
-                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.select(0, 1f, math.any(f4_in[i]) || math.any(((float4*)(void*)&((float*)data[i])[offset])[0]));
-                                return;
+                                        case blast_operation.any:
+                                            bool bany = constant != 0;
+                                            if(bany)
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 1f;
+                                            else
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
+                                            return;
 
-                            case blast_operation.min:
-                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.min(f4_in[i], ((float4*)(void*)&((float*)data[i])[offset])[0]);
-                                return;
-
-                            case blast_operation.max:
-                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.max(f4_in[i], ((float4*)(void*)&((float*)data[i])[offset])[0]);
-                                return;
+                                    }
+                                }
+                                break;
                         }
-
                     }
-                    break;
+                    // other vectorsize then 1 should result in the error below
+                    break; 
+
             }
 
 
 #if DEVELOPMENT_BUILD || TRACE
-            Debug.LogError($"blast.pop_fx_with_op_into_fx_data_handler: -> codepointer {code_pointer} unsupported operation supplied: {op}, Vin: {vin_size}, Vout: {vout_size}");
+                Debug.LogError($"blast.pop_fx_with_op_into_fx_constant_handler: -> codepointer {code_pointer} unsupported operation supplied: {op}, datatype: {datatype}, Vin: {vin_size}, Vout: {vout_size}");
+                return;
+#endif                 
+        }
+
+        void pop_fx_with_op_into_fx_data_handler<Tin, Tout, Tdata>([NoAlias] Tin* buffer, [NoAlias] Tout* output, blast_operation op, [NoAlias] void** data, int offset, BlastVariableDataType datatype)
+            where Tin : unmanaged
+            where Tout : unmanaged
+        {
+            int vin_size = sizeof(Tin) >> 2;
+            int vout_size = sizeof(Tout) >> 2;
+            int vdata_size = vin_size;
+
+            switch (datatype)
+            {
+                case BlastVariableDataType.Numeric:
+                    switch (vin_size)
+                    {
+                        case 1:
+                            float* f1_in = (float*)(void*)buffer;
+                            float** f1_data = (float**)(void**)data;
+                            switch (vout_size)
+                            {
+                                // pop f1 with op into f1 => data == f1
+                                case 1:
+                                    float* f1_out = (float*)output;
+                                    switch (op)
+                                    {
+                                        case blast_operation.multiply:
+                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] * f1_data[i][offset];
+                                            return;
+
+                                        case blast_operation.add:
+                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] + f1_data[i][offset];
+                                            return;
+
+                                        case blast_operation.substract:
+                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] - f1_data[i][offset];
+                                            return;
+
+                                        case blast_operation.divide:
+                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] / f1_data[i][offset];
+                                            return;
+
+                                        case blast_operation.and:
+                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.select(0, 1f, f1_in[i] != f1_data[i][offset]);
+                                            return;
+
+                                        case blast_operation.or:
+                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.select(0, 1f, f1_in[i] != 0f || f1_data[i][offset] != 0f);
+                                            return;
+
+                                        case blast_operation.min:
+                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.min(f1_in[i], f1_data[i][offset]);
+                                            return;
+
+                                        case blast_operation.max:
+                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = math.max(f1_in[i], f1_data[i][offset]);
+                                            return;
+
+                                        // csum mina and maxa will always result in a size1 vector, mina on size1 is the same as min  
+                                        case blast_operation.csum:
+                                        case blast_operation.mina:
+                                        case blast_operation.maxa:
+                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_data[i][offset];
+                                            return;
+
+                                    }
+                                    break;
+
+                                // pop f1 with op into f4 => data == f1 
+                                case 4:
+                                    float4* f4_out = (float4*)output;
+                                    switch (op)
+                                    {
+                                        case blast_operation.multiply:
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] * f1_data[i][offset];
+                                            return;
+
+                                        case blast_operation.add:
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] + f1_data[i][offset];
+                                            return;
+
+                                        case blast_operation.substract:
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] - f1_data[i][offset];
+                                            return;
+
+                                        case blast_operation.divide:
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] / f1_data[i][offset];
+                                            return;
+
+                                        case blast_operation.and:
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.select(0, 1f, f1_in[i] != f1_data[i][offset]);
+                                            return;
+
+                                        case blast_operation.or:
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.select(0, 1f, f1_in[i] != 0f || f1_data[i][offset] != 0f);
+                                            return;
+
+                                        case blast_operation.min:
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.min(f1_in[i], f1_data[i][offset]);
+                                            return;
+
+                                        case blast_operation.max:
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = math.max(f1_in[i], f1_data[i][offset]);
+                                            return;
+
+                                        case blast_operation.mina:
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_data[i][offset];
+                                            return;
+
+                                        case blast_operation.maxa:
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_data[i][offset];
+                                            return;
+
+                                        case blast_operation.csum:
+                                            // csum is somewhat undefined on 1 param.. 
+                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] + f1_data[i][offset];
+                                            return;
+                                    }
+                                    break;
+
+                            }
+                            break;
+
+
+                        case 2:
+                            float2* f2_in = (float2*)(void*)buffer;
+
+                            switch (vout_size)
+                            {
+                                // pop f2 with op into f2 ==>  data == f2 or f1 but we fix it to inputsize (dont call this function otherwise)
+                                case 2:
+                                    {
+                                        float2* f2_out = (float2*)(void*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++)
+                                                {
+                                                    //
+                                                    // whats faster? casting like this or nicely as float with 2 muls
+                                                    //
+                                                    f2_out[i] = f2_in[i] * ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                }
+                                                return;
+
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] + ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] - ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] / ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.and:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.select(0, 1f, math.any(f2_in[i]) && math.any(((float2*)(void*)&((float*)data[i])[offset])[0]));
+                                                return;
+
+                                            case blast_operation.or:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.select(0, 1f, math.any(f2_in[i]) || math.any(((float2*)(void*)&((float*)data[i])[offset])[0]));
+                                                return;
+
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.min(f2_in[i], ((float2*)(void*)&((float*)data[i])[offset])[0]);
+                                                return;
+
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = math.max(f2_in[i], ((float2*)(void*)&((float*)data[i])[offset])[0]);
+                                                return;
+                                        }
+                                    }
+                                    break;
+
+                                // pop f2 with op into f4
+                                case 4:
+                                    {
+                                        float4* f4_out = (float4*)(void*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++)
+                                                {
+                                                    //
+                                                    // whats faster? casting like this or nicely as float with 2 muls
+                                                    //
+                                                    f4_out[i].xy = f2_in[i] * ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                }
+                                                return;
+
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] + ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] - ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] / ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.and:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.select(0, 1f, math.any(f2_in[i]) && math.any(((float2*)(void*)&((float*)data[i])[offset])[0]));
+                                                return;
+
+                                            case blast_operation.or:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.select(0, 1f, math.any(f2_in[i]) || math.any(((float2*)(void*)&((float*)data[i])[offset])[0]));
+                                                return;
+
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.min(f2_in[i], ((float2*)(void*)&((float*)data[i])[offset])[0]);
+                                                return;
+
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = math.max(f2_in[i], ((float2*)(void*)&((float*)data[i])[offset])[0]);
+                                                return;
+                                        }
+                                    }
+                                    break;
+                            }
+                            break;
+
+                        case 3:
+                            float3* f3_in = (float3*)(void*)buffer;
+                            switch (vout_size)
+                            {
+                                // pop f3 with op into f3
+                                case 3:
+                                    {
+                                        float3* f3_out = (float3*)(void*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++)
+                                                {
+                                                    //
+                                                    // whats faster? casting like this or nicely as float with 2 muls
+                                                    //
+                                                    f3_out[i] = f3_in[i] * ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                }
+                                                return;
+
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] + ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] - ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] / ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.and:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.select(0, 1f, math.any(f3_in[i]) && math.any(((float3*)(void*)&((float*)data[i])[offset])[0]));
+                                                return;
+
+                                            case blast_operation.or:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.select(0, 1f, math.any(f3_in[i]) || math.any(((float3*)(void*)&((float*)data[i])[offset])[0]));
+                                                return;
+
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.min(f3_in[i], ((float3*)(void*)&((float*)data[i])[offset])[0]);
+                                                return;
+
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.max(f3_in[i], ((float3*)(void*)&((float*)data[i])[offset])[0]);
+                                                return;
+                                        }
+                                    }
+                                    break;
+
+                                // pop f3 with op into f4
+                                case 4:
+                                    {
+                                        float4* f4_out = (float4*)(void*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.multiply:
+                                                for (int i = 0; i < ssmd_datacount; i++)
+                                                {
+                                                    //
+                                                    // whats faster? casting like this or nicely as float with 2 muls
+                                                    //
+                                                    f4_out[i].xyz = f3_in[i] * ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                }
+                                                return;
+
+                                            case blast_operation.add:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] + ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.substract:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] - ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.divide:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] / ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                return;
+
+                                            case blast_operation.and:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.select(0, 1f, math.any(f3_in[i]) && math.any(((float3*)(void*)&((float*)data[i])[offset])[0]));
+                                                return;
+
+                                            case blast_operation.or:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.select(0, 1f, math.any(f3_in[i]) || math.any(((float3*)(void*)&((float*)data[i])[offset])[0]));
+                                                return;
+
+                                            case blast_operation.min:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.min(f3_in[i], ((float3*)(void*)&((float*)data[i])[offset])[0]);
+                                                return;
+
+                                            case blast_operation.max:
+                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.max(f3_in[i], ((float3*)(void*)&((float*)data[i])[offset])[0]);
+                                                return;
+                                        }
+                                    }
+                                    break;
+                            }
+                            break;
+
+                        case 4:
+                            // vout_size can only be 4   
+                            {
+                                float4* f4_in = (float4*)buffer;
+                                float4* f4_out = (float4*)output;
+                                switch (op)
+                                {
+                                    case blast_operation.multiply:
+                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] * ((float4*)(void*)&((float*)data[i])[offset])[0];
+                                        return;
+
+                                    case blast_operation.add:
+                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] + ((float4*)(void*)&((float*)data[i])[offset])[0];
+                                        return;
+
+                                    case blast_operation.substract:
+                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] - ((float4*)(void*)&((float*)data[i])[offset])[0];
+                                        return;
+
+                                    case blast_operation.divide:
+                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] / ((float4*)(void*)&((float*)data[i])[offset])[0];
+                                        return;
+
+                                    case blast_operation.and:
+                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.select(0, 1f, f4_in[i] != ((float4*)(void*)&((float*)data[i])[offset])[0]);
+                                        return;
+
+                                    case blast_operation.or:
+                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.select(0, 1f, math.any(f4_in[i]) || math.any(((float4*)(void*)&((float*)data[i])[offset])[0]));
+                                        return;
+
+                                    case blast_operation.min:
+                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.min(f4_in[i], ((float4*)(void*)&((float*)data[i])[offset])[0]);
+                                        return;
+
+                                    case blast_operation.max:
+                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.max(f4_in[i], ((float4*)(void*)&((float*)data[i])[offset])[0]);
+                                        return;
+                                }
+
+                            }
+                            break;
+                    }
+                    break;
+
+
+
+                case BlastVariableDataType.Bool32:
+                    {
+                        switch (vin_size)
+                        {
+                            case 1:
+                                float* f1_in = (float*)(void*)buffer;
+                                float** f1_data = (float**)(void**)data;
+                                switch (vout_size)
+                                {
+                                    // pop f1 with op into f1 => data == f1
+                                    case 1:
+                                        float* f1_out = (float*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.all:
+                                                for (int i = 0; i < ssmd_datacount; i++)
+                                                {
+                                                    f1_out[i] = math.select(0f, 1f, f1_in[i] == 1f && ((Bool32*)(void*)&f1_data[i][offset])->All);
+                                                }
+                                                break; 
+
+                                            case blast_operation.any:
+                                                for (int i = 0; i < ssmd_datacount; i++)
+                                                {
+                                                    f1_out[i] = math.select(0f, 1f, f1_in[i] == 1f || f1_data[i][offset] != 0f);
+                                                }
+                                                break; 
+
+                                        }
+                                        break;
+
+                                    case 4:
+                                        float4* f4_out = (float4*)output;
+                                        switch (op)
+                                        {
+                                            case blast_operation.all:
+                                                for (int i = 0; i < ssmd_datacount; i++)
+                                                {
+                                                    f4_out[i].x = math.select(0f, 1f, f1_in[i] == 1f && ((Bool32*)(void*)&f1_data[i][offset])->All);
+                                                }
+                                                break;
+
+                                            case blast_operation.any:
+                                                for (int i = 0; i < ssmd_datacount; i++)
+                                                {
+                                                    f4_out[i].x = math.select(0f, 1f, f1_in[i] == 1f || f1_data[i][offset] != 0f);
+                                                }
+                                                break;
+                                        }
+                                        break; 
+                                }
+                                break;
+                        }
+                    }                                        
+                    break; 
+            }
+        
+
+#if DEVELOPMENT_BUILD || TRACE
+            Debug.LogError($"blast.pop_fx_with_op_into_fx_data_handler: -> codepointer {code_pointer} unsupported operation supplied: {op}, datatype: {datatype}, Vin: {vin_size}, Vout: {vout_size}");
             return;
 #endif
 
         }
 
-        void pop_fx_with_op_into_fx_ref<Tin, Tout>(ref int code_pointer, [NoAlias]Tin* buffer, [NoAlias]Tout* output, blast_operation op)
+        void pop_fx_with_op_into_fx_ref<Tin, Tout>(ref int code_pointer, [NoAlias]Tin* buffer, [NoAlias]Tout* output, blast_operation op, BlastVariableDataType datatype = BlastVariableDataType.Numeric)
             where Tin: unmanaged
             where Tout: unmanaged
         {
 #if DEVELOPMENT_BUILD || TRACE
-            Assert.IsFalse(buffer == null, $"blast.ssmd.interpretor.pop_f4_with_op_into_f4_ref: buffer NULL");
-            Assert.IsFalse(output == null, $"blast.ssmd.interpretor.pop_f4_with_op_into_f4_ref: output NULL");
+            Assert.IsFalse(buffer == null, $"blast.ssmd.interpretor.pop_fx_with_op_into_fx_ref: buffer NULL");
+            Assert.IsFalse(output == null, $"blast.ssmd.interpretor.pop_fx_with_op_into_fx_ref: output NULL");
 
             if (!Blast.IsOperationSSMDHandled(op))
             {
-                Debug.LogError($"blast.pop_f4_with_op_into_f4_ref: -> unsupported operation supplied: {op}, only + - * / are supported");
+                Debug.LogError($"blast.pop_fx_with_op_into_fx_ref: -> unsupported operation supplied: {op}, only + - * / are supported");
                 return;
             }
 #endif
@@ -2461,15 +2595,15 @@ namespace NSS.Blast.SSMD
                     size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
 #if DEVELOPMENT_BUILD || TRACE
                     type = BlastInterpretor.GetMetaDataType(metadata, (byte)(stack_offset - 1));
-                    if ((size != tin_size || (size == 0 && tin_size != 4)) || type != BlastVariableDataType.Numeric)
+                    if ((size != tin_size || (size == 0 && tin_size != 4)) || type != datatype)
                     {
-                        Debug.LogError($"blast.pop_fx_with_op_into_fx_ref: stackdata mismatch, expecting numeric of size {tin_size}, found {type} of size {size} at stack offset {stack_offset} with operation: {op}");
+                        Debug.LogError($"blast.pop_fx_with_op_into_fx_ref: stackdata mismatch, expecting {datatype} of size {tin_size}, found {type} of size {size} at stack offset {stack_offset} with operation: {op}");
                         return;
                     }
 #endif
                     // stack pop 
                     stack_offset = stack_offset - size; // size in nr of elements and stackoffset in elementcount 
-                    pop_fx_with_op_into_fx_data_handler<Tin, Tout, Tin>(buffer, output, op, stack, stack_offset); 
+                    pop_fx_with_op_into_fx_data_handler<Tin, Tout, Tin>(buffer, output, op, stack, stack_offset, datatype); 
                     break;
 
                 case blast_operation.constant_f1:
@@ -2482,7 +2616,7 @@ namespace NSS.Blast.SSMD
                         code_pointer += 4; 
 
                         constant = ((float*)(void*)bf)[0];
-                        pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant);
+                        pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant, datatype);
                     }
                     break;
 
@@ -2496,7 +2630,7 @@ namespace NSS.Blast.SSMD
                         code_pointer += 2;
 
                         constant = ((float*)(void*)bf)[0];
-                        pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant); 
+                        pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant, datatype); 
                     }
                     break;
 
@@ -2528,7 +2662,7 @@ namespace NSS.Blast.SSMD
                         }
 
                         constant = ((float*)(void*)bf)[0];
-                        pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant);
+                        pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant, datatype);
                     }
                     break;
 
@@ -2560,7 +2694,7 @@ namespace NSS.Blast.SSMD
                         }
 
                         constant = ((float*)(void*)bf)[0];
-                        pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant);
+                        pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant, datatype);
                     }
                     break;
 
@@ -2618,7 +2752,7 @@ namespace NSS.Blast.SSMD
                     //
                     // CONSTANT operation                         
                     //
-                    pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, engine_ptr->constants[c]);
+                    pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, engine_ptr->constants[c], datatype);
                     break;
 
 
@@ -2630,13 +2764,13 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
                     type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                     size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
-                    if ((size != tin_size || (size == 0 && tin_size != 4)) || type != BlastVariableDataType.Numeric)
+                    if ((size != tin_size || (size == 0 && tin_size != 4)) || type != datatype)
                     {
-                        Debug.LogError($"blast.pop_fx_with_op_into_fx_ref: data mismatch, expecting numeric of size 4, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id} with operation: {op}");
+                        Debug.LogError($"blast.pop_fx_with_op_into_fx_ref: data mismatch, expecting {datatype} of size {tin_size}, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id} with operation: {op}");
                         return;
                     }
 #endif
-                    pop_fx_with_op_into_fx_data_handler<Tin, Tout, Tin>(buffer, output, op, data, (byte)(c - BlastInterpretor.opt_id));
+                    pop_fx_with_op_into_fx_data_handler<Tin, Tout, Tin>(buffer, output, op, data, (byte)(c - BlastInterpretor.opt_id), datatype);
                     break;
             }          
         }
@@ -6388,7 +6522,7 @@ namespace NSS.Blast.SSMD
         /// <param name="vector_size">output vectorsize</param>
         /// <param name="f4">output data vector</param>
         /// <param name="operation">operation to take on the vectors</param>
-        void get_op_a_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]ref float4* f4, blast_operation operation)
+        void get_op_a_result([NoAlias]void* temp, ref int code_pointer, ref byte vector_size, [NoAlias]ref float4* f4, blast_operation operation, BlastParameterEncoding encoding = BlastParameterEncoding.Encode62)
         {
 #if DEVELOPMENT_BUILD || TRACE
             Assert.IsFalse(temp == null, $"blast.ssmd.interpretor.get_op_a_result: temp buffer NULL");
@@ -6396,7 +6530,25 @@ namespace NSS.Blast.SSMD
 #endif
 
             // decode parametercount and vectorsize from code in 62 format 
-            byte c = BlastInterpretor.decode62(code[code_pointer], ref vector_size);
+            byte c;
+            switch (encoding)
+            {
+                case BlastParameterEncoding.Encode62:
+                    c = BlastInterpretor.decode62(code[code_pointer], ref vector_size);
+                    break;
+
+                case BlastParameterEncoding.Encode44:
+                    c = BlastInterpretor.decode44(code[code_pointer], ref vector_size);
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.interpretor.get_op_a_result: encoding type not supported, op = {operation}, encoding = {encoding}");
+                    return;
+#else
+                default: c = 0; break; 
+#endif
+            }
             code_pointer++; 
 
             // all operations should be of equal vectorsize we dont need to check this
@@ -6405,6 +6557,29 @@ namespace NSS.Blast.SSMD
 
             switch (vector_size)
             {
+                case (byte)BlastVectorSizes.bool32:
+
+                    vector_size = 1; 
+
+                    // encode44, c will max be 15
+                    // if (c == 1)
+                    //{
+                        // we could handle 1 parameter more efficiently 
+                    //    pop_with_op_into_fx_ref
+                    //}
+                    //else
+                    {
+                        pop_fx_into_ref<float>(ref code_pointer, (float*)temp);
+
+                        for (int j = 1; j < c - 1; j++)
+                        {
+                            pop_fx_with_op_into_fx_ref<float, float>(ref code_pointer, (float*)temp, (float*)temp, operation, BlastVariableDataType.Bool32);
+                        }
+
+                        pop_fx_with_op_into_fx_ref<float, float4>(ref code_pointer, (float*)temp, f4, operation, BlastVariableDataType.Bool32);
+                    }
+                    break; 
+
                 case 0:
                 case 4:
                     vector_size = 4;
@@ -7667,6 +7842,7 @@ namespace NSS.Blast.SSMD
 
                 case blast_operation.max: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.max); break;
                 case blast_operation.min: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.min); break;
+
                 case blast_operation.all: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.and); break;
                 case blast_operation.any: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.or); break;
 

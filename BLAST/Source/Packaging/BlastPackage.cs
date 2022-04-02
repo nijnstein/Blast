@@ -874,6 +874,11 @@ namespace NSS.Blast
         public BlastVariableDataType DataType = BlastVariableDataType.Numeric;
 
         /// <summary>
+        /// used during compilation, compile can update type during compilation 
+        /// </summary>
+        public BlastVectorSizes DataTypeOverride = BlastVectorSizes.none; 
+
+        /// <summary>
         /// is this variable constant? 
         /// </summary>
         public bool IsConstant = false;
@@ -1205,6 +1210,11 @@ namespace NSS.Blast
         public bool HasInputs { get { return Inputs != null && Inputs.Length > 0; } }
 
 
+        /// <summary>
+        /// true if constant data is inlined into the code stream 
+        /// </summary>
+        public bool HasInlinedConstants { get { return PackageMode == BlastPackageMode.SSMD; } }
+
 
         /// <summary>
         /// execute the script in the given environment with the supplied data
@@ -1264,6 +1274,7 @@ namespace NSS.Blast
             {
                 case BlastPackageMode.Normal:
 #if USE_BURST_JOBS
+                    int* exitstate = stackalloc int[1];
                     var job = new Jobs.blast_execute_package_with_multiple_data_burst_job()
                     {
                         engine = blast,
@@ -1272,10 +1283,11 @@ namespace NSS.Blast
                         data_count = 1,
                         data_size = 0,
                         environment = environment,
-                        caller = caller
+                        caller = caller,
+                        exitstate = new IntPtr(exitstate)
                     };
                     job.Run();
-                    return (BlastError)job.exitcode;
+                    return (BlastError)job.GetExitCode();
 #else
                     Blast.blaster.SetPackage(Package, p_data_segment);
                     return (BlastError)Blast.blaster.Execute(blast, environment, caller);
@@ -1375,6 +1387,10 @@ namespace NSS.Blast
                     }
                     return res;
 #else
+                    // allocate an exitstate on the stack 
+                    int* exitstate = stackalloc int[1];
+                    exitstate[0] = 0; 
+
                     if (Package.PackageMode == BlastPackageMode.SSMD)
                     {
                         var ssmd_job = new Jobs.blast_execute_package_ssmd_array_burst_job()
@@ -1386,16 +1402,24 @@ namespace NSS.Blast
                             data_buffer = new IntPtr(data.GetUnsafeReadOnlyPtr()),
                             data_size = sizeof(T),
                             data_is_referenced = is_referenced, 
-                            max_ssmd_count = 1024 
+                            max_ssmd_count = 1024,
+                            exitstate = new IntPtr(exitstate)
                         };
                         ssmd_job.Run();
-                        return (BlastError)ssmd_job.exitcode;
+                        return (BlastError)exitstate[0];
                     }
                     else
                     {
                         if (is_referenced)
                         {
                             Debug.LogError("BlastScriptPackage.Execute: data_is_referenced is only allowed for ssmd packages");
+                            return BlastError.error_execute_referenced_datasegments_not_supported;
+                        }
+
+                        if(sizeof(T) != 4)
+                        {
+                            Debug.LogError("BlastScriptPackage.Execute: while executing multiple normal packages from data packed in blobs the backing type should be 4 bytes large (float, uint)");
+                            return BlastError.error_execute_invalid_backing_datasegment; 
                         }
 
                         var job = new Jobs.blast_execute_package_with_multiple_data_burst_job()
@@ -1403,13 +1427,15 @@ namespace NSS.Blast
                             engine = blast,
                             package = Package,
                             data = new IntPtr(data.GetUnsafeReadOnlyPtr()),
-                            data_count = data.Length,
-                            data_size = sizeof(T),
+                            data_count = (data.Length * 4) / Package.DataSize,
+                            data_size = Package.DataSize,
                             environment = environment,
-                            caller = caller
+                            caller = caller,
+                            exitstate = new IntPtr(exitstate)
+
                         };
                         job.Run();
-                        return (BlastError)job.exitcode;
+                        return (BlastError)job.GetExitCode();
                     }                                              
 #endif
 
@@ -1425,7 +1451,7 @@ namespace NSS.Blast
 #region Default Data  
 
         /// <summary>
-        /// set default data from input or output data 
+        /// set default data in external datasegments from input or output data found in script 
         /// </summary>
         unsafe static public void SetDefaultData(BlastVariableMapping[] inout, float* datasegment)
         {
@@ -1440,6 +1466,121 @@ namespace NSS.Blast
             }
         }
 
+        /// <summary>
+        /// set default data in external datasegments as set by input/output definitions, to be used to reset data in place  
+        /// - does not initialize constant data fields 
+        /// </summary>
+        /// <param name="datasegments">float array with enough room for all data</param>
+        /// <param name="data_segment_count">number of datasegments</param>
+        /// <param name="data_segment_stride">size of a single datasegment including any reserved space or alignment</param>
+        public void SetDefaultData(ref NativeArray<float> datasegments, int data_segment_count, int data_segment_stride = -1)
+        {
+            if (data_segment_stride <= 0)
+            {
+                // default to package datasize, both are specified in bytes 
+                data_segment_stride = Package.DataSize;
+            }
+
+            List<BlastVariableMapping> inout = new List<BlastVariableMapping>(
+                (HasInputs ? Inputs.Length : 0) + (HasOutputs ? Outputs.Length : 0)
+            );
+
+            if (HasInputs) inout.AddRange(Inputs);   // everything is an input currently but that will probably change
+            if (HasOutputs) inout.AddRange(Outputs);
+
+            int offset = 0;
+            for (int c = 0; c < data_segment_count; c++)
+            {
+                // run over inputs 
+                for (int i = 0; i < inout.Count; i++)
+                {
+                    BlastVariableMapping map = inout[i];
+                    for (int j = 0; j < map.Variable.VectorSize; j++)
+                    {
+                        datasegments[offset + (map.Offset >> 2) + j] = map.Default[j];
+                    }
+                }
+
+                offset += (data_segment_stride >> 2);
+            }
+        }
+
+        /// <summary>
+        /// initialize data in datasegments, sets up the first from variable and constant data then clones the data to all others
+        /// - in normal packagemode this also includes setting all constant data 
+        /// </summary>
+        /// <param name="datasegments"></param>
+        /// <param name="data_segment_count"></param>
+        /// <param name="data_segment_stride"></param>
+        public void InitializeDataSegments(ref NativeArray<float> datasegments, int data_segment_count, int data_segment_stride = -1)
+        {
+            unsafe
+            {
+                if (data_segment_stride <= 0)
+                {
+                    // default to package datasize, both are specified in bytes 
+                    data_segment_stride = Package.DataSize;
+                }
+
+                // fill first segment with constant data
+                if (!HasInlinedConstants)
+                {
+                    for (int i = 0; i < Variables.Length; i++)
+                    {
+                        if (Variables[i].IsConstant)
+                        {
+                            // constants always have size 1 
+                            int offset = VariableOffsets[i];
+
+                            //  this could be more direct without the parsing we could clone the datasegment but we have no guarantee its set 
+                            //
+                            //switch(Variables[i].DataType)
+                            //{
+                            //    case BlastVariableDataType.Bool32:
+                            //        datasegments[offset] = Bool32.From(Variables[i].Name).Single;
+                            //        break;
+                            //
+                            //    case BlastVariableDataType.Numeric:
+                            //        datasegments[offset] = Variables[i].Name.AsFloat();
+                            //        break; 
+                            //}
+
+                            datasegments[offset] = Package.Data[offset];
+                        }
+                    }
+                }
+
+                // set mapped fields on the first segment 
+                // - dont use data from package as source because it might have changed because of executions 
+                if (HasInputs)
+                {
+                    for (int i = 0; i < Inputs.Length; i++)
+                    {
+                        BlastVariableMapping map = Inputs[i];
+                        for (int j = 0; j < map.Variable.VectorSize; j++)
+                        {
+                            datasegments[(map.Offset >> 2) + j] = map.Default[j];
+                        }
+                    }
+                }
+                if (HasOutputs)
+                {
+                    for (int i = 0; i < Outputs.Length; i++)
+                    {
+                        BlastVariableMapping map = Outputs[i];
+                        for (int j = 0; j < map.Variable.VectorSize; j++)
+                        {
+                            datasegments[(map.Offset >> 2) + j] = map.Default[j];
+                        }
+                    }
+                }
+
+                // clone data for all other segments 
+                byte* p = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(datasegments);
+                
+                UnsafeUtility.MemCpyReplicate(&p[data_segment_stride], p, data_segment_stride, data_segment_count - 1);
+            }
+        }
 
         /// <summary>
         /// reset datasegment to default data set by input and output defines 

@@ -189,6 +189,16 @@ namespace NSS.Blast
         /// Built-in functions directly compile into a script operation
         /// </summary>
         public extended_blast_operation ExtendedScriptOp;
+       
+        /// <summary>
+        /// encoding scheme for function parameters
+        /// </summary>
+        public BlastParameterEncoding ParameterEncoding;
+
+        /// <summary>
+        /// fixed outputtype if other then none == 0
+        /// </summary>
+        public BlastVectorSizes FixedOutputType; 
 
 
         #region Deduced property getters
@@ -341,6 +351,8 @@ namespace NSS.Blast
                     ReturnsVectorSize = 0,
                     ScriptOp = blast_operation.nop,
                     ExtendedScriptOp = extended_blast_operation.nop,
+                    ParameterEncoding = BlastParameterEncoding.Encode62,
+                    FixedOutputType = BlastVectorSizes.none,
                     FunctionId = -1,
                     NativeFunctionPointer = IntPtr.Zero
                 };
@@ -612,8 +624,9 @@ namespace NSS.Blast
         /// <param name="accept_vector_size">accepted vector size, 0 for any</param>
         /// <param name="return_vector_size">returned verctor size, 0 for any</param>
         /// <param name="op">blast operation used to encode it</param>
+        /// <param name="encoding">parameter encoding type, this is hardcoded into the interpretors implementation but should be configured for the compiler, defaults to 62</param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        internal int RegisterFunction(ReservedBlastScriptFunctionIds id, string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, blast_operation op)
+        internal int RegisterFunction(ReservedBlastScriptFunctionIds id, string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, blast_operation op, BlastParameterEncoding encoding = BlastParameterEncoding.Encode62, BlastVectorSizes fixed_output_type = BlastVectorSizes.none)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
@@ -640,9 +653,13 @@ namespace NSS.Blast
             info.Function.AcceptsVectorSize = (byte)accept_vector_size;
             info.Function.ReturnsVectorSize = (byte)return_vector_size;
 
+            info.Function.ParameterEncoding = encoding;
+            info.Function.FixedOutputType = fixed_output_type; 
+
             info.Function.ScriptOp = op;
             info.Function.ExtendedScriptOp = extended_blast_operation.nop;
             info.Function.NativeFunctionPointer = IntPtr.Zero;
+
 
             return info.Function.FunctionId;
         }
@@ -657,8 +674,9 @@ namespace NSS.Blast
         /// <param name="accept_vector_size">minimal vector size, 0 for any</param>
         /// <param name="return_vector_size">max verctor size, 0 for any</param>
         /// <param name="op">extended blast operation used to encode it</param>
+        /// <param name="encoding">parameter encoding type, this is hardcoded into the interpretors implementation but should be configured for the compiler, defaults to 62</param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        internal int RegisterFunction(ReservedBlastScriptFunctionIds id, string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, extended_blast_operation op)
+        internal int RegisterFunction(ReservedBlastScriptFunctionIds id, string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, extended_blast_operation op, BlastParameterEncoding encoding = BlastParameterEncoding.Encode62, BlastVectorSizes fixed_output_type = BlastVectorSizes.none)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
@@ -684,6 +702,9 @@ namespace NSS.Blast
             info.Function.MaxParameterCount = (byte)max_param_count;
             info.Function.AcceptsVectorSize = (byte)accept_vector_size;
             info.Function.ReturnsVectorSize = (byte)return_vector_size;
+
+            info.Function.ParameterEncoding = encoding;
+            info.Function.FixedOutputType = fixed_output_type;
 
             info.Function.ScriptOp = blast_operation.ex_op;
             info.Function.ExtendedScriptOp = op;
@@ -701,8 +722,9 @@ namespace NSS.Blast
         /// <param name="accept_vector_size">minimal vector size, 0 for any</param>
         /// <param name="return_vector_size">max verctor size, 0 for any</param>
         /// <param name="short_definition">the function is defined without enviroment and engine pointers </param>
+        /// <param name="encoding">parameter encoding type, this is hardcoded into the interpretors implementation but should be configured for the compiler, defaults to 62</param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        internal int RegisterFunction(string name, IntPtr nativefunction, int parameter_count, int accept_vector_size, int return_vector_size, bool short_definition)
+        internal int RegisterFunction(string name, IntPtr nativefunction, int parameter_count, int accept_vector_size, int return_vector_size, bool short_definition, BlastParameterEncoding encoding = BlastParameterEncoding.Encode62, BlastVectorSizes fixed_output_type = BlastVectorSizes.none)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
@@ -723,6 +745,9 @@ namespace NSS.Blast
             info.Function.MaxParameterCount = (byte)parameter_count;
             info.Function.AcceptsVectorSize = (byte)accept_vector_size;
             info.Function.ReturnsVectorSize = (byte)return_vector_size;
+
+            info.Function.ParameterEncoding = encoding;
+            info.Function.FixedOutputType = fixed_output_type;
 
             info.Function.ScriptOp = blast_operation.ex_op;
             info.Function.ExtendedScriptOp = extended_blast_operation.call;
@@ -746,8 +771,9 @@ namespace NSS.Blast
         /// <param name="accept_vector_size">minimal vector size, 0 for any</param>
         /// <param name="return_vector_size">max verctor size, 0 for any</param>
         /// <param name="op">blast operation used to encode it</param>
+        /// <param name="encoding">parameter encoding type, this is hardcoded into the interpretors implementation but should be configured for the compiler, defaults to 62</param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        internal int RegisterFunction(string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, blast_operation op)
+        internal int RegisterFunction(string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, blast_operation op, BlastParameterEncoding encoding = BlastParameterEncoding.Encode62, BlastVectorSizes fixed_output_type = BlastVectorSizes.none)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
@@ -768,6 +794,9 @@ namespace NSS.Blast
             info.Function.MaxParameterCount = (byte)max_param_count;
             info.Function.AcceptsVectorSize = (byte)accept_vector_size;
             info.Function.ReturnsVectorSize = (byte)return_vector_size;
+
+            info.Function.ParameterEncoding = encoding;
+            info.Function.FixedOutputType = fixed_output_type;
 
             info.Function.ScriptOp = op;
             info.Function.ExtendedScriptOp = extended_blast_operation.nop;
@@ -785,8 +814,9 @@ namespace NSS.Blast
         /// <param name="accept_vector_size">minimal vector size, 0 for any</param>
         /// <param name="return_vector_size">max verctor size, 0 for any</param>
         /// <param name="op">blast operation used to encode it</param>
+        /// <param name="encoding">parameter encoding type, this is hardcoded into the interpretors implementation but should be configured for the compiler, defaults to 62</param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        internal int RegisterFunction(string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, extended_blast_operation op)
+        internal int RegisterFunction(string name, int min_param_count, int max_param_count, int accept_vector_size, int return_vector_size, extended_blast_operation op, BlastParameterEncoding encoding = BlastParameterEncoding.Encode62, BlastVectorSizes fixed_output_type = BlastVectorSizes.none)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
@@ -807,6 +837,9 @@ namespace NSS.Blast
             info.Function.MaxParameterCount = (byte)max_param_count;
             info.Function.AcceptsVectorSize = (byte)accept_vector_size;
             info.Function.ReturnsVectorSize = (byte)return_vector_size;
+
+            info.Function.ParameterEncoding = encoding;
+            info.Function.FixedOutputType = fixed_output_type;
 
             info.Function.ScriptOp = blast_operation.ex_op;
             info.Function.ExtendedScriptOp = op;
@@ -1389,15 +1422,17 @@ namespace NSS.Blast
             RegisterFunction("max", 2, 63, 0, 0, blast_operation.max);
             RegisterFunction("mina", 1, 63, 0, 1, blast_operation.mina);
             RegisterFunction("maxa", 1, 63, 0, 1, blast_operation.maxa);
-            RegisterFunction("any", 2, 63, 0, 0, blast_operation.any);
-            RegisterFunction("all", 2, 63, 0, 0, blast_operation.all);
+
+            RegisterFunction("any", 1, 15, 0, 0, blast_operation.any, BlastParameterEncoding.Encode44);
+            RegisterFunction("all", 1, 15, 0, 0, blast_operation.all, BlastParameterEncoding.Encode44);
+
             RegisterFunction("adda", 2, 63, 0, 0, blast_operation.adda);
             RegisterFunction("suba", 2, 63, 0, 0, blast_operation.suba);
             RegisterFunction("diva", 2, 63, 0, 0, blast_operation.diva);
             RegisterFunction("mula", 2, 63, 0, 0, blast_operation.mula);
             RegisterFunction("fma", 3, 3, 0, 0, blast_operation.fma);
             RegisterFunction("fmod", 2, 2, 0, 0, extended_blast_operation.fmod);
-            RegisterFunction("trunc", 1, 63, 0, 0, blast_operation.trunc);
+            RegisterFunction("trunc", 1, 1, 0, 0, blast_operation.trunc);
             RegisterFunction("csum", 1, 63, 0, 0, blast_operation.csum);
 
             RegisterFunction("select", 3, 3, 0, 0, blast_operation.select);
@@ -1468,8 +1503,8 @@ namespace NSS.Blast
             RegisterFunction("zero", 1, 1, 0, 0, blast_operation.zero);
             RegisterFunction("clear_bits", 1, 1, 0, 0, blast_operation.zero);
 
-            RegisterFunction("reinterpret_bool32", 1, 1, 1, 0, extended_blast_operation.reinterpret_bool32);
-            RegisterFunction("reinterpret_float32", 1, 1, 1, 0, extended_blast_operation.reinterpret_float);
+            RegisterFunction("reinterpret_bool32", 1, 1, 1, 0, extended_blast_operation.reinterpret_bool32, BlastParameterEncoding.Encode62, BlastVectorSizes.bool32);
+            RegisterFunction("reinterpret_float32", 1, 1, 1, 0, extended_blast_operation.reinterpret_float, BlastParameterEncoding.Encode62, BlastVectorSizes.float1);
 
             return this;
         }

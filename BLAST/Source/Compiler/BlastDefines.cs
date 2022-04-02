@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine.Assertions;
@@ -97,8 +98,11 @@ namespace NSS.Blast
         /// </summary>
         float4 = 4,
 
-
+        /// <summary>
+        /// bool32: 4 byte, 32bit bool value
+        /// </summary>
         bool32 = 5,
+
         id1 = 6,
         id2 = 7,
         id3 = 8,
@@ -109,6 +113,22 @@ namespace NSS.Blast
         half3 = 13,
         half4 = 14,
         ptr = 15,
+    }
+
+    /// <summary>
+    /// not all functions use the same parameter type encoding when the parameterlist has a veriable size 
+    /// </summary>
+    public enum BlastParameterEncoding : byte 
+    { 
+        /// <summary>
+        /// used for functions accepting only float1-4, supports 63 parameters 
+        /// </summary>
+        Encode62 = 0,  
+        
+        /// <summary>
+        /// used for functions supporting full datatypes, supports 15 parameters 
+        /// </summary>
+        Encode44 = 1
     }
 
     /// <summary>
@@ -195,6 +215,15 @@ namespace NSS.Blast
         [FieldOffset(2)] public byte Byte3;
         [FieldOffset(3)] public byte Byte4;
 
+        public const uint FailPatternConstant
+#if TRACE || DEVELOPMENT_BUILD            
+            = 0b00110011_00110011_00110011_00110011;
+#else
+            = 0b00000000_00000000_00000000_00000000;
+#endif
+
+        public static Bool32 FailPattern { get { return Bool32.From(FailPatternConstant); } }
+
         static public Bool32 From(int i32)
         {
             Bool32 b32 = default;
@@ -216,7 +245,24 @@ namespace NSS.Blast
             return b32;
         }
 
-        #region Get/Set Properties for Bool1 - 32 
+        /// <summary>
+        /// not burst compatible.. 
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        [BurstDiscard]
+        static public Bool32 From(string s)
+        {
+            uint b32; 
+            if(CodeUtils.TryAsBool32(s, true, out b32))
+            {
+                return Bool32.From(b32); 
+            }
+            return Bool32.FailPattern;
+        }
+
+
+#region Get/Set Properties for Bool1 - 32 
         public bool b1 { get { return (Byte1 & 0b0000_0001) == 0b0000_0001; } set { SetBit(0, true); } }
         public bool b2 { get { return (Byte1 & 0b0000_0010) == 0b0000_0010; } set { SetBit(1, true); } }
         public bool b3 { get { return (Byte1 & 0b0000_0100) == 0b0000_0100; } set { SetBit(2, true); } }
@@ -249,13 +295,24 @@ namespace NSS.Blast
         public bool b30 { get { return (Byte4 & 0b0010_0000) == 0b0010_0000; } set { SetBit(29, true); } }
         public bool b31 { get { return (Byte4 & 0b0100_0000) == 0b0100_0000; } set { SetBit(30, true); } }
         public bool b32 { get { return (Byte4 & 0b1000_0000) == 0b1000_0000; } set { SetBit(31, true); } }
-        #endregion 
 
         /// <summary>
-        /// index bits
+        /// returns true if any bit is true 
         /// </summary>
-        /// <param name="index">0 based index of bit</param>
-        /// <returns>true if bit is set</returns>
+        public bool Any { get { return Unsigned > 0; } }
+
+        /// <summary>
+        /// returns true if all bits are set 
+        /// </summary>
+        public bool All { get { return Unsigned == 0b11111111_11111111_11111111_11111111; } }
+
+        #endregion
+
+            /// <summary>
+            /// index bits
+            /// </summary>
+            /// <param name="index">0 based index of bit</param>
+            /// <returns>true if bit is set</returns>
         public bool this[int index]
         {
             get
@@ -268,7 +325,7 @@ namespace NSS.Blast
             }
         }
 
-        #region Get/Set bit
+#region Get/Set bit
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetBit(int index, bool value)
@@ -313,7 +370,7 @@ namespace NSS.Blast
                 // value was changed while trying to set it, restart procedure 
 #if TRACE || DEVELOPMENT_BUILD
                 Assert.IsTrue(i++ < 100);
-#endif 
+#endif
             }
 #if TRACE || DEVELOPMENT_BUILD
             while (true);
@@ -321,9 +378,9 @@ namespace NSS.Blast
             while (i++ < 100);
 #endif
         }
-        #endregion
+#endregion
 
-        #region Compare | Equals interface implementations 
+#region Compare | Equals interface implementations 
 
         public int CompareTo(float other)
         {
@@ -399,7 +456,7 @@ namespace NSS.Blast
             return Unsigned == other.Unsigned;
         }
 
-        #endregion
+#endregion
     }
 
 
@@ -1787,7 +1844,32 @@ namespace NSS.Blast
         /// <summary>
         /// compiler failed to infer datatype from given nodes 
         /// </summary>
-        error_analyzer_failed_to_infer_parameter_types = -77
+        error_analyzer_failed_to_infer_parameter_types = -77,
+        /// <summary>
+        /// job datasize or count does not match datasegment 
+        /// </summary>
+        error_execute_package_datasize_count_invalid = -78,
+        /// <summary>
+        /// a package with the wrong packagemode is sent for execution to an interpretor that only supports normal packages 
+        /// </summary>
+        error_invalid_packagemode_should_be_normal = -79,
+       
+        /// <summary>
+        /// a package is executed with a given datasize that is different from the datasize in the packaged datasegment (alignment errors? constants in datasegment not accounted for?)
+        /// </summary>
+        error_execute_package_datasize_mismatch = -80,                             
+        /// <summary>
+        /// there is no memory location set to store the exitstate of a job
+        /// </summary>
+        error_job_exitstate_not_set = -81,
+        /// <summary>
+        /// while executing packages in normal package modes with datasegments packed in nativearrays the backing type should be of 32 bits size dueue to offset calculations used
+        /// </summary>
+        error_execute_invalid_backing_datasegment = -82,
+        /// <summary>
+        /// referencing datasegments from a pointerlist is currently only supported in SSMD packagemodes
+        /// </summary>
+        error_execute_referenced_datasegments_not_supported = -83
     }
 
 }

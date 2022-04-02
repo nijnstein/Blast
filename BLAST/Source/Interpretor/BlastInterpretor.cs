@@ -201,6 +201,15 @@ namespace NSS.Blast.Interpretor
             data = datasegment;
         }
 
+        /// <summary>
+        /// update package datasegment and reset codepointer, assumes package is correctly set
+        /// </summary>
+        /// <param name="datasegment"></param>
+        public void ResetPackageData(void* datasegment)
+        {
+            data = datasegment;
+            code_pointer = 0; 
+        }
 
         /// <summary>
         /// set package data from package and seperate buffers 
@@ -537,6 +546,19 @@ namespace NSS.Blast.Interpretor
             return (byte)((c & 0b1111_0000) >> 4);
         }
 
+        /// <summary>
+        /// decode info byte of data, 44 uses 4 bytes for each, that is 16 differen vectorsizes and param types or counts 
+        /// </summary>
+        /// <param name="c">input byte</param>
+        /// <param name="vector_size"></param>
+        /// <returns>parameter count</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public byte decode44(in byte c, out BlastVectorSizes datatype)
+        {
+            datatype = (BlastVectorSizes)(c & 0b1111);
+            return (byte)((c & 0b1111_0000) >> 4);
+        }
+
 
         #region pop_or_value
 
@@ -552,7 +574,7 @@ namespace NSS.Blast.Interpretor
 
             if (c >= opt_id)
             {
-#if DEVELOPMENT_BUILD || TRACE && CHECK_STACK
+#if DEVELOPMENT_BUILD || TRACE 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -567,7 +589,7 @@ namespace NSS.Blast.Interpretor
             else
             if (c == (byte)blast_operation.pop)
             {
-#if DEVELOPMENT_BUILD || TRACE && CHECK_STACK
+#if DEVELOPMENT_BUILD || TRACE
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                 if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -596,6 +618,61 @@ namespace NSS.Blast.Interpretor
         }
 
         /// <summary>
+        /// pop float of vectorsize 1, forced float type, verify type on debug   (equals pop_or_value)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        Bool32 pop_b32(in int code_pointer)
+        {
+            // we get either a pop instruction or an instruction to get a value 
+            byte c = code[code_pointer];
+
+            if (c >= opt_id)
+            {
+#if DEVELOPMENT_BUILD || TRACE 
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
+                int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
+                if (size != 1 || type != BlastVariableDataType.Bool32)
+                {
+                    Debug.LogError($"blast.stack, pop_b32 -> data mismatch, expecting bool32 of size 1, found {type} of size {size} at data offset {c - opt_id}");
+                    return Bool32.FailPattern;
+                }
+#endif
+                // variable acccess
+                return ((Bool32*)data)[c - opt_id];
+            }
+            else
+            if (c == (byte)blast_operation.pop)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                BlastVariableDataType type = GetMetaDataType(metadata, (byte)(stack_offset - 1));
+                int size = GetMetaDataSize(metadata, (byte)(stack_offset - 1));
+                if (size != 1 || type != BlastVariableDataType.Bool32)
+                {
+                    Debug.LogError($"blast.stack, pop_b32 -> stackdata mismatch, expecting bool32 of size 1, found {type} of size {size} at stack offset {stack_offset}");
+                    return Bool32.FailPattern;
+                }
+#endif
+                // stack pop 
+                stack_offset = stack_offset - 1;
+                return ((Bool32*)data)[stack_offset];
+            }
+            else
+            if (c >= opt_value)
+            {
+                return Bool32.From(engine_ptr->constants[c]);
+            }
+            else
+            {
+                // error or.. constant by operation value.... 
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError("blast.stack, pop_b32 -> select op by constant value is not supported");
+#endif
+                return Bool32.FailPattern;
+            }
+        }
+
+
+        /// <summary>
         /// 
         /// 
         /// 
@@ -617,7 +694,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD || TRACE
            BlastVariableDataType type;
            int size;
-#endif 
+#endif
 
             switch ((blast_operation)c)
             {
@@ -625,7 +702,7 @@ namespace NSS.Blast.Interpretor
                 // stack pop 
                 // 
                 case blast_operation.pop:
-#if DEVELOPMENT_BUILD || TRACE && CHECK_STACK
+#if DEVELOPMENT_BUILD || TRACE 
                     type = GetMetaDataType(metadata, (byte)(stack_offset - 1));
                     size = GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                     if (size != 1 || type != BlastVariableDataType.Numeric)
@@ -922,7 +999,7 @@ namespace NSS.Blast.Interpretor
             return float.NaN;
         }
 
-        #endregion
+#endregion
 
 
         /// <summary>
@@ -1122,12 +1199,12 @@ namespace NSS.Blast.Interpretor
                 return float.NaN;
             }
         }
-        #endregion
+#endregion
 
 
-        #endregion
+#endregion
 
-        #region Metadata 
+#region Metadata 
 
         //
         // - the interpretor needs metadata for determining datatype and vector in some situations (example: pops to functions accepting multiple types and sizes..)
@@ -1203,9 +1280,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion
+#endregion
 
-        #region Yield
+#region Yield
 
         /// <summary>
         /// yield - stacks state
@@ -1230,9 +1307,9 @@ namespace NSS.Blast.Interpretor
                 push((float)b);
             }
         }
-        #endregion
+#endregion
 
-        #region Static Execution Helpers
+#region Static Execution Helpers
 
         /// <summary>
         /// return true if op is a value: 
@@ -1291,9 +1368,9 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #endregion
+#endregion
 
-        #region Operations Handlers 
+#region Operations Handlers 
 
 
         /// <summary>
@@ -1790,9 +1867,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
 
-        #region Debug Data
+#region Debug Data
         /// <summary>
         /// handle command to show the given field in debug 
         /// </summary>
@@ -1921,7 +1998,7 @@ namespace NSS.Blast.Interpretor
                     Debug.Log($"STACK {i} = {((float*)data)[i].ToString().PadRight(10)}   {GetMetaDataSize(metadata, (byte)i)}  {GetMetaDataType(metadata, (byte)i)}");
                 }
             }
-#else 
+#else
             // less string magic in burstable code => less readable 
             for (int i = 0; i < stack_offset; i++)
             {
@@ -1938,9 +2015,9 @@ namespace NSS.Blast.Interpretor
 #endif
         }
 
-        #endregion
+#endregion
 
-        #region External Functionpointer calls 
+#region External Functionpointer calls 
         /// <summary>
         /// call an external function pointer, pointed to by an 8|16|32 bit identifier 
         ///</summary>
@@ -2309,13 +2386,13 @@ namespace NSS.Blast.Interpretor
             f4 = float.NaN;
         }
 
-        #endregion
+#endregion
 
-        #region Function Handlers 
+#region Function Handlers 
 
-        #region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
+#region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
 
-        #region get_[min/max/mina/maxa]_result
+#region get_[min/max/mina/maxa]_result
         /// <summary>
         /// get the maximum value of all arguments of any vectorsize 
         /// </summary>
@@ -2720,9 +2797,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
 
-        #region single input same output math functions 
+#region single input same output math functions 
 
         /// <summary>
         /// get absolute value of input
@@ -3694,9 +3771,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
 
-        #region fixed input count math functions
+#region fixed input count math functions
 
         /// <summary>
         /// raise x to power of y 
@@ -3988,9 +4065,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion
+#endregion
 
-        #region fused substract multiply actions
+#region fused substract multiply actions
 
         /// <summary>
         /// fused multiply add 
@@ -4067,9 +4144,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion
+#endregion
 
-        #region math utility functions (select, lerp etc) 
+#region math utility functions (select, lerp etc) 
 
         /// <summary>
         /// 3 inputs, first 2 any type, 3rd type equal or scalar bool
@@ -4579,9 +4656,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
 
-        #region mula family 
+#region mula family 
 
 
         /// <summary>
@@ -5283,28 +5360,34 @@ namespace NSS.Blast.Interpretor
         /// <summary>
         /// a = any(a b c d), vectorsizes must all be equal, output vectorsize == input vectorsize
         /// </summary>
-        void get_any_result(ref int code_pointer, ref byte vector_size, out float4 f)
+        void get_any_result(ref int code_pointer, ref BlastVectorSizes vector_size, out float4 f)
         {
             code_pointer++;
-            byte c = code[code_pointer];
 
-            //  no way for bytecode optimizor to do this.. 
-#if DECODE_44
-            c = BlastInterpretor.decode44(in c, ref vector_size);
-#else
-            c = BlastInterpretor.decode62(in c, ref vector_size);
-#endif
+            byte c = BlastInterpretor.decode44(in code[code_pointer], out vector_size);
 
-            // this will compile into a jump table (CHECK THIS !!) todo
-            switch ((BlastVectorSizes)vector_size)
+            // this should compile into a jump table (CHECK THIS !!) todo
+            switch (vector_size)
             {
+                case BlastVectorSizes.bool32:
+                    {
+                        code_pointer++;
+                        f = math.select(0, 1, pop_b32(code_pointer).Any);
+                        for (int i = 1; i < c && f.x == 0; i++)
+                        {
+                            f.x = math.select(0f, 1f, pop_b32(code_pointer + i).Any);
+                        }
+                        code_pointer += c; 
+                        break; 
+                    }
+
                 case BlastVectorSizes.float1:
                     {
                         switch (c)
                         {
                             default:
 #if DEVELOPMENT_BUILD || TRACE
-                                Debug.LogError($"blast.interpretor.get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                                Debug.LogError($"blast.interpretor.get_any_result: parameter count '{c}' not supported for float datatypes -> parser/compiler/optimizer error");
 #endif
                                 f = float.NaN;
                                 break;
@@ -5353,7 +5436,7 @@ namespace NSS.Blast.Interpretor
                         {
                             default:
 #if DEVELOPMENT_BUILD || TRACE
-                                Debug.LogError($"blast.interpretor.get_any_result: parameter count '{c}' not supported -> parser/compiler/optimizer error");
+                                Debug.LogError($"blast.interpretor.get_any_result: parameter count '{c}' not supported for float datatypes -> parser/compiler/optimizer error");
 #endif
                                 f = float.NaN;
                                 break;
@@ -5492,7 +5575,7 @@ namespace NSS.Blast.Interpretor
                                 code_pointer += 8;
                                 break;
                         }
-                        vector_size = 4;
+                        vector_size = BlastVectorSizes.float4;
                         break;
                     }
 
@@ -5510,17 +5593,11 @@ namespace NSS.Blast.Interpretor
         /// <summary>
         /// check if all operands are true ==  != 0,  works vector component wise and thus returns the same vectorsize as input
         /// </summary>
-        void get_all_result(ref int code_pointer, ref byte vector_size, out float4 f)
+        void get_all_result(ref int code_pointer, ref BlastVectorSizes vector_size, out float4 f)
         {
-            f = 0f;
             code_pointer++;
-            byte c = code[code_pointer];
-
-#if DECODE_44
-            c = BlastInterpretor.decode44(in c, ref vector_size);
-#else
-            c = BlastInterpretor.decode62(in c, ref vector_size);
-#endif
+            byte c = BlastInterpretor.decode44(in code[code_pointer], out vector_size); 
+             
 
 #if DEVELOPMENT_BUILD || TRACE
             if (c < 1)
@@ -5542,9 +5619,20 @@ namespace NSS.Blast.Interpretor
                         break;
                     }
 
+                case BlastVectorSizes.bool32:
+                    {
+                        f = math.select(0f, 1f, pop_b32(code_pointer + 1).All); 
+                        for(int i = 2; i <= c; i++)
+                        {
+                            f.x = math.select(0f, 1f, pop_b32(code_pointer + i).All && f.x == 1);
+                        }
+                        break; 
+                    }
+
+
                 case BlastVectorSizes.float1:
                     {
-                        f.x = pop_f1(code_pointer + 1) == 0 ? 0f : 1f;
+                        f = pop_f1(code_pointer + 1) == 0 ? 0f : 1f;
                         //
                         //    CANNOT STOP EARLY DUE TO STACK OPERATIONS  
                         //    TODO   we could only process stack-offset changes in one is zero, doubt if there is much benefit
@@ -5567,8 +5655,10 @@ namespace NSS.Blast.Interpretor
                             b2.y = b2.y && b22.y;
                         }
 
-                        f.x = math.select(0f, 1f, b2.x);
-                        f.y = math.select(0f, 1f, b2.y);
+                        f = new float4(
+                         math.select(0f, 1f, b2.x),
+                         math.select(0f, 1f, b2.y), 
+                         0, 0);
                         break;
                     }
 
@@ -5587,6 +5677,7 @@ namespace NSS.Blast.Interpretor
                         f.x = math.select(0f, 1f, b3.x);
                         f.y = math.select(0f, 1f, b3.y);
                         f.z = math.select(0f, 1f, b3.z);
+                        f.w = 0; 
                         break;
                     }
 
@@ -5608,7 +5699,7 @@ namespace NSS.Blast.Interpretor
                         f.y = math.select(0f, 1f, b4.y);
                         f.z = math.select(0f, 1f, b4.z);
                         f.w = math.select(0f, 1f, b4.w);
-                        vector_size = 4;
+                        vector_size = (BlastVectorSizes)4;
                         break;
                     }
             }
@@ -5616,9 +5707,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion
+#endregion
 
-        #region random
+#region random
 
         /// <summary>
         /// 
@@ -5742,9 +5833,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion
+#endregion
 
-        #region indexers 
+#region indexers 
 
         void get_index_result(ref int code_pointer, ref byte vector_size, out float4 f4, in byte offset)
         {
@@ -5786,9 +5877,9 @@ namespace NSS.Blast.Interpretor
 
         }
 
-        #endregion
+#endregion
 
-        #region Expand Vector 
+#region Expand Vector 
 
 
         /// <summary>
@@ -5839,9 +5930,9 @@ namespace NSS.Blast.Interpretor
             code_pointer += 1;
         }
 
-        #endregion
+#endregion
 
-        #region Bitwise operations 
+#region Bitwise operations 
 
 
         /// <summary>
@@ -6378,9 +6469,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion
+#endregion
 
-        #region Reinterpret XXXX [DataIndex]
+#region Reinterpret XXXX [DataIndex]
 
         /// <summary>
         /// reinterpret the value at index as a boolean value (set metadata type to bool32)
@@ -6451,9 +6542,9 @@ namespace NSS.Blast.Interpretor
             BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Numeric, 1, (byte)dataindex);
         }
 
-        #endregion
+#endregion
 
-        #region validation fuction 
+#region validation fuction 
 
         void RunValidate(ref int code_pointer)
         {
@@ -6536,11 +6627,11 @@ namespace NSS.Blast.Interpretor
             code_pointer += 2;
         }
 
-        #endregion 
+#endregion
 
-        #endregion
+#endregion
 
-        #region Push[cfv]
+#region Push[cfv]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void pushc(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
         {
@@ -6710,9 +6801,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
 
-        #region AssignV Vector 
+#region AssignV Vector 
 
 
         /// <summary>
@@ -6782,11 +6873,11 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion
+#endregion
 
-        #endregion
+#endregion
 
-        #region ByteCode Execution
+#region ByteCode Execution
 
         /// <summary>
         /// get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
@@ -6831,8 +6922,22 @@ namespace NSS.Blast.Interpretor
                     break;
 
                 // and|all
-                case blast_operation.all: get_all_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.any: get_any_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.all:
+                    {
+                        // temporary until full datatype support 
+                        BlastVectorSizes bvs = (BlastVectorSizes)vector_size; 
+                        get_all_result(ref code_pointer, ref bvs, out f4_result);
+                        vector_size = (byte)math.select((int)bvs, 1, bvs == BlastVectorSizes.bool32);
+                        break;
+                    }
+                case blast_operation.any:
+                    {
+                        // temporary until full datatype support 
+                        BlastVectorSizes bvs = (BlastVectorSizes)vector_size;
+                        get_any_result(ref code_pointer, ref bvs, out f4_result);
+                        vector_size = (byte)math.select((int)bvs, 1, bvs == BlastVectorSizes.bool32);
+                        break;
+                    }
 
                 // indexing operations 
                 case blast_operation.index_x: get_index_result(ref code_pointer, ref vector_size, out f4_result, 0); break;
@@ -7181,8 +7286,22 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.csum: get_csum_result(ref code_pointer, ref vector_size, out f4); break;
 
                     // any all 
-                    case blast_operation.all: get_all_result(ref code_pointer, ref vector_size, out f4); break;
-                    case blast_operation.any: get_any_result(ref code_pointer, ref vector_size, out f4); break;
+                    case blast_operation.all:
+                        {
+                            // temporary until full datatype support 
+                            BlastVectorSizes bvs = (BlastVectorSizes)vector_size;
+                            get_all_result(ref code_pointer, ref bvs, out f4);
+                            vector_size = (byte)math.select((int)bvs, 1, bvs == BlastVectorSizes.bool32);
+                            break;
+                        }
+                    case blast_operation.any:
+                        {
+                            // temporary until full datatype support 
+                            BlastVectorSizes bvs = (BlastVectorSizes)vector_size;
+                            get_any_result(ref code_pointer, ref bvs, out f4);
+                            vector_size = (byte)math.select((int)bvs, 1, bvs == BlastVectorSizes.bool32);
+                            break;
+                        }
 
                     // random 
                     case blast_operation.random: get_random_result(ref code_pointer, ref vector_size, out f4); break;
@@ -8646,7 +8765,7 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #endregion
+#endregion
 
     };
 }
