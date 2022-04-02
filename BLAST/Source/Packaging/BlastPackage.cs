@@ -890,6 +890,11 @@ namespace NSS.Blast
         public bool IsVector = false;
 
         /// <summary>
+        /// true if a constant data array
+        /// </summary>
+        public bool IsCData => DataType == BlastVariableDataType.CData; 
+
+        /// <summary>
         /// vectorsize of the variable, default to size 1
         /// </summary>
         public int VectorSize = 1;
@@ -913,6 +918,14 @@ namespace NSS.Blast
         {
             return $"{(IsConstant ? "Constant: " : "Variable: ")} {Id}, '{Name}', ref {ReferenceCount}, size {VectorSize}, type {DataType} {(IsInput ? "[INPUT]" : "")} {(IsOutput ? "[OUTPUT]" : "")}";
         }
+
+        /// <summary>
+        /// if datatype == cdata this might hold constant data
+        /// 
+        /// if is_constant then this data should end up in de codesegment
+        /// otherwise in a variable on the datasegment 
+        /// </summary>
+        public byte[] ConstantData = null; 
 
         /// <summary>
         /// Add a reference to this variable 

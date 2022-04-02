@@ -1,3 +1,11 @@
+cdata inputs ->always in datasegment even if not used
+cdata defines -> only inlined in code if referneced (refcount > 0)
+-  packager should set vectorsize to the nr of 4bytes elements on cdata variables encoded in datasegment
+
+- new ops: size, cdata, cdataref, alert
+- new datatype: data arrays|blobs as variable input
+- new define: #cdata name data, defines constantdata  
+
 **V1.0.2** 2022-04-02
 
 - all & any support for bool32 

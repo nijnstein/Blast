@@ -114,7 +114,11 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// an inline function defined in script 
         /// </summary>
-        inline_function
+        inline_function,
+        /// <summary>
+        /// a constant cdata element to be inlined into the code segment 
+        /// </summary>
+        cdata
     }
 
     /// <summary>
@@ -228,6 +232,10 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public bool IsFunction => type == nodetype.function;
 
+        /// <summary>
+        /// true if this node represents constant cdata to be compiled into the code stream 
+        /// </summary>
+        public bool IsCData => type == nodetype.cdata; 
 
         /// <summary>
         /// true if the function maps to a stack operation: push, pop etc. 
@@ -1123,6 +1131,14 @@ namespace NSS.Blast.Compiler
         public node GetChild(nodetype t)
         {
             return children.FirstOrDefault(x => x.type == t);
+        }
+
+        /// <summary>
+        /// returns true if the node contains a child of the given type 
+        /// </summary>
+        public bool HasChild(nodetype t)
+        {
+            return children.Any(x => x.type == t); 
         }
 
         /// <summary>

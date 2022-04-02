@@ -207,12 +207,14 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // defaults? 
-            float4 variable_default = default; 
+            float4 variable_default = default;
+            byte[] constant_data = null; 
+
             if(a.Length > 3)
             {
                 // if there are defaults, then depending on datatype enforce vectorsize and type (only float now..)
                 int c = a.Length - 3; 
-                if(c != vector_size)
+                if(datatype != BlastVariableDataType.CData && c != vector_size)
                 {
                     data.LogError($"tokenizer.read_input_output_mapping: failed to interpret default as valid data for type, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}", (int)BlastError.error_input_ouput_invalid_default);
                     return null;  
@@ -253,11 +255,34 @@ namespace NSS.Blast.Compiler.Stage
                             }
                             variable_default[0] = f; 
                         }
+                        break;
+                    
+             
+                    case BlastVariableDataType.CData:
+                        {
+                            if(!is_input)
+                            {
+                                data.LogError($"Blast.Tokenizer.read_input_output_mapping: cdata is only allowed as input, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}, data = {a[3]}", (int)BlastError.error_input_ouput_invalid_default);
+                                return null;
+                            }
+
+                            // all data after a[2] is part of the datastream 
+                            constant_data = ReadCDATAFromMapping(data, comment, a);
+                            if(constant_data == null)
+                            {
+                                // it should already have logged why 
+                                return null;
+                            }
+
+                            vector_size = 0; //(int)math.ceil((float)constant_data.Length / 4);
+                            byte_size = constant_data.Length; 
+                        }
                         break; 
                 }
             }
 
 
+            // setup the new variable  
             BlastVariable v;
             CompilationData cdata = (CompilationData)data; 
 
@@ -301,16 +326,226 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
 
+
+            // if mapping to constantdata the data is stored in the variable 
+            if(datatype == BlastVariableDataType.CData)
+            {
+                v.ConstantData = constant_data;
+                v.VectorSize = 0;
+                v.IsConstant = false; // this is a constant data object added by input and thus resides in the datasegment
+            }
+
             // setup mapping, this links variables with the input|output
             BlastVariableMapping mapping = new BlastVariableMapping()
             {
                 Variable = v,
                 ByteSize = byte_size,
                 Offset = offset,
-                Default = variable_default 
-            };
+                Default = variable_default
+            };            
 
             return mapping;
+        }
+
+
+        /// <summary>
+        /// read cdata data from mapping
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="a"></param>
+        /// <returns></returns>
+        private static byte[] ReadCDATAFromMapping(IBlastCompilationData data, string comment, string[] a)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsTrue(a != null && a.Length > 3);
+
+            // text: '2342sdfggd35'
+            // float list: 235.4 234.3 2345.22 344.44 354234.23
+            // bool32 list: 1111.>32x.111111    filled with 0;s until nxt byte
+
+            // classify the first value, anything in a is at least 1 char long
+            char ch = a[3][0];
+
+
+            // string: starts with opener: ' or " 
+            // note: can span multiple elements if there is a space 
+            //       we could account for that while parsing out the comment
+            //       but this is cheaper to do considering its probably rare to be used 
+            if (ch == '\'' || ch == '"')
+            {
+                return ReadCDATAString(data, comment, a, 3); 
+            } 
+
+            // binary: allow only 1 single data element extra
+            // binary: single bitstream of 1;s and 0s >= 16 bits 
+            // binary: single bitstream starting with b
+            if(ch == 'b' || ((ch == '1' || ch == '0') && a[3].Length >= 16))
+            {
+                if (a.Length == 4 || a[4].StartsWith("#"))
+                {
+                    return ReadCDATABinary(data, comment, a[3]);
+                }
+                else
+                {
+                    data.LogError($"Blast.Tokenizer.ReadCDATAFromMapping: failed to read cdata mapping, binary streams other then bool32 arrays should be continueus in 1 element, define: {comment}");
+                    return null; 
+                }
+            }
+
+            // anything else is assumed to be a list of numerics || bool32
+            return ReadCDATAArray(data, comment, a, 3); 
+        }
+
+        /// <summary>
+        /// read a constant data value from a define, parse as constant variable
+        /// to be inlined as constant data 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="comment"></param>
+        /// <param name="a"></param>
+        /// <returns></returns>
+        static bool ReadCDATAFromDefine(IBlastCompilationData data, string comment, string[] a)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsTrue(a != null && a.Length > 2);
+
+            // classify the first value, anything in a is at least 1 char long
+            char ch = a[2][0];
+            byte[] constant_data = null;
+
+            // string: starts with opener: ' or " 
+            // note: can span multiple elements if there is a space 
+            //       we could account for that while parsing out the comment
+            //       but this is cheaper to do considering its probably rare to be used 
+            if (ch == '\'' || ch == '"')
+            {
+                constant_data = ReadCDATAString(data, comment, a, 2);
+                if (constant_data == null) return false; 
+            }
+            else
+
+            // binary: allow only 1 single data element extra
+            // binary: single bitstream of 1;s and 0s >= 16 bits 
+            // binary: single bitstream starting with b
+            if (ch == 'b' || ((ch == '1' || ch == '0') && a[2].Length >= 16))
+            {
+                if (a.Length == 3 || a[3].StartsWith("#"))
+                {
+                    constant_data = ReadCDATABinary(data, comment, a[2]);
+                }
+                else
+                {
+                    data.LogError($"Blast.Tokenizer.ReadCDATAFromDefine: failed to read cdata mapping, binary streams other then bool32 arrays should be continueus in 1 element, define: {comment}");
+                    return false;
+                }
+            }
+            else
+            {
+                // anything else is assumed to be a list of numerics || bool32
+                constant_data = ReadCDATAArray(data, comment, a, 2);
+                if (constant_data == null) return false;
+            }
+
+
+            // create a variable, the name MUST be unique at this point 
+            string name = a[1];
+
+            BlastVariable v = (data as CompilationData).CreateVariable(name, BlastVariableDataType.CData, 0, false, false);
+            if (v == null)
+            {
+                data.LogError($"Blast.Tokenizer.ReadCDATAFromDefine: failed to create input variable with name {name}, type: CData, vectorsize: 0, bytesize: {constant_data.Length}", (int)BlastError.error_input_failed_to_create);
+                return false;
+            }
+
+            // setup
+            v.DataType = BlastVariableDataType.CData; 
+            v.ConstantData = constant_data;
+            v.VectorSize = 0;
+            v.ReferenceCount = 0; // 0 references 
+            v.IsConstant = true;  // this is a constant data object added by input and thus resides in the datasegment
+
+            return true; 
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="comment"></param>
+        /// <param name="span"></param>
+        /// <returns></returns>
+        static byte[] ReadCDATAArray(IBlastCompilationData data, string comment, string[] a, int offset)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// read a binary stream into an array of bytes 
+        /// - can start with 'b', ignore it 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="comment"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        static byte[] ReadCDATABinary(IBlastCompilationData data, string comment, string value)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(value));
+
+            List<byte> bytes = new List<byte>();
+
+            int bi = 0;
+            byte b = 0; 
+
+            for(int i = 0; i < value.Length; i++)
+            {
+                // ignore any value thats not a 1 or 0
+                char ch = value[i]; 
+                switch(ch)
+                {
+                    case '1': b = (byte)((b << 1) | 1); bi++; break;
+                    case '0': b = (byte)(b << 1); bi++; break;
+
+                    case '_':
+                    case 'b': continue;
+                    
+                    // anything else is an error 
+                    default:
+                        data.LogError($"Blast.Tokenizer.ReadCDATABinary: encountered invalid token '{ch}' in cdata define: {comment}", (int)BlastError.error_tokenizer_invalid_binary_stream);
+                        return null;
+                }
+
+                // byte complete? 
+                if(bi == 8)
+                {
+                    bytes.Add(b);
+                    b = 0;
+                    bi = 0; 
+                }
+            }
+
+            // validate reading at least 1 bit 
+            if(bi == 0 && bytes.Count == 0)
+            {
+                data.LogError($"Blast.Tokenizer.ReadCDATABinary: failed to read any binary data in cdata binary define: {comment}", (int)BlastError.error_tokenizer_invalid_binary_stream);
+                return null;  
+            }
+
+            // append 0 to align data to full bytes 
+            if (bi < 8)
+            {
+                b = (byte)(b << (8 - bi)); 
+            }
+            bytes.Add(b); 
+
+            return bytes.ToArray(); 
+        }
+
+        static byte[] ReadCDATAString(IBlastCompilationData data, string comment, string[] a, int offset)
+        {
+            throw new NotImplementedException();
         }
 
         static int tokenize(IBlastCompilationData data, string code, bool replace_tabs_with_space = true)
@@ -485,6 +720,42 @@ namespace NSS.Blast.Compiler.Stage
                             else
                             {
                                 data.LogError($"tokenize: failed to read output define: {comment}\nExpecting format: '#output id offset bytesize'");
+                            }
+                        }
+                        else
+                        {
+                            data.LogError($"tokenize: encountered malformed output define: {comment}\nExpecting format: '#output id offset bytesize'");
+                        }
+                    }
+                    // UGLY AS .... but lets just keep this repetition
+                    // constant mapping 
+                    if (comment.StartsWith("#cdata ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // we could merge input and output parsing as code duplicates.. TODO 
+                        if (tokens.Count > 0)
+                        {
+                            // not allowed   must be first things 
+                            data.LogError("tokenize: #defines must be the first statements in a script");
+                            return (int)BlastError.error;
+                        }
+
+                        // 
+                        // Include the ; as allowed terminator. i forget it myself too often that i should not close defines
+                        // 
+
+                        int i_end = scan_until(comment, '#', ';', 1);
+                        if (i_end >= 0)
+                        {
+                            // and remove that part, assume it to be a comment on the output def.                             
+                            comment = comment.Substring(0, i_end);
+                        }
+
+                        string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (a.Length >= 2)
+                        {
+                            if(!ReadCDATAFromDefine(data, comment, a))
+                            {
+                                return (int)BlastError.error_failed_to_read_cdata_define;
                             }
                         }
                         else

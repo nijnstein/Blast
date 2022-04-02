@@ -1975,6 +1975,12 @@ namespace NSS.Blast
                         datatype = BlastVariableDataType.Bool32;
                         vector_size = 1;
                         byte_size = 4;
+                        return true;
+
+                    case "cdata":
+                        datatype = BlastVariableDataType.CData;
+                        vector_size = 0;
+                        byte_size = 0; 
                         return true; 
                 }
             }

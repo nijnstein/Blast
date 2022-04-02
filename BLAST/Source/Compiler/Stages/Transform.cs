@@ -833,6 +833,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <summary>
         /// transform an assigment of zero into the function call: zero(id) 
         /// - saves 1 byte of code but also some memory copies associated with moving registerdata around
+        /// - makes it easier for the interpretor to validate stuff while running 
         /// </summary>
         BlastError transform_zero_assignment(IBlastCompilationData data, node n)
         {
@@ -841,34 +842,129 @@ namespace NSS.Blast.Compiler.Stage
 
             BlastError res = BlastError.success;
 
-            if(n.HasOneChild && n.IsAssignment)
+            // assignment of something -> target for zero(id) replacement 
+            if (n.HasOneChild && n.IsAssignment)
             {
                 node child = n.FirstChild;
-                while (child != null && child.IsCompound && child.HasOneChild) child = child.FirstChild; 
-                if(!child.HasChildren && child.is_constant)
+
+                // iterate through the leaf of all single node compounds 
+                while (child != null && child.IsCompound && child.HasOneChild) child = child.FirstChild;
+
+                // if the single child is a constant zero then we can replace it with zero(id) 
+                if (!child.HasChildren && child.is_constant)
                 {
-                    if(child.constant_op == blast_operation.value_0)
+                    if (child.constant_op == blast_operation.value_0)
                     {
-                        // node n is an assignment of zero 
-                        n.children.Clear();
-                        n.type = nodetype.function;
-                        unsafe
-                        {
-                            n.function = data.Blast.Data->GetFunction("zero");
-                        }
-                        // create a child parameter from assignee
-                        node parameter = n.CreateChild(nodetype.parameter, BlastScriptToken.Nop, n.identifier);
-                        parameter.variable = n.variable;
-                        parameter.datatype = n.datatype;
-                        parameter.vector_size = n.vector_size; 
-                        n.variable = null; 
-                        n.identifier = "zero";
+                        // node n is an assignment of zero scalar 
+                        ReplaceAssignmentWithZero(data, n);
+
+                        n.vector_size = 1;
+                        n.FirstChild.vector_size = 1;
+                        n.FirstChild.variable.VectorSize = 1;
+                    }
+                }
+                else
+                if(child.ChildCount > 0)
+                {
+                    // we could have handled both cases in the same way but in this case i would like them seperate 
+
+                    // if all children are constant zero 
+                    bool zero = true; 
+
+                    for(int i = 0; i < child.ChildCount && zero; i++)
+                    {
+                        node gc = child.children[i];
+                        zero = gc.ChildCount == 0 && gc.is_constant && gc.constant_op == blast_operation.value_0;
+                    }
+
+                    int vector_size = child.ChildCount; 
+
+                    if(zero)
+                    {
+                        // node n is an assignment of a zero vector 
+                        ReplaceAssignmentWithZero(data, n);
+
+                        n.vector_size = vector_size;
+                        n.FirstChild.vector_size = vector_size; 
+                        n.FirstChild.variable.VectorSize = vector_size; 
                     }
                 }
             }                 
 
             return res; 
         }
+
+        /// <summary>
+        /// replace the assingment in node n with a call to the zero function saving some bytes in code
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="n"></param>
+        private static void ReplaceAssignmentWithZero(IBlastCompilationData data, node n)
+        {
+            Assert.IsNotNull(n); 
+
+            n.children.Clear();
+            n.type = nodetype.function;
+            unsafe
+            {
+                n.function = data.Blast.Data->GetFunction("zero");
+            }
+            // create a child parameter from assignee
+            node parameter = n.CreateChild(nodetype.parameter, BlastScriptToken.Nop, n.identifier);
+            parameter.variable = n.variable;
+            parameter.datatype = n.datatype;
+            parameter.vector_size = n.vector_size;
+            n.variable = null;
+            n.identifier = "zero";
+        }
+
+
+
+        /// <summary>
+        /// create nodes foreach constant cdata element 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        BlastError transform_constant_cdata(IBlastCompilationData data)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(data.AST);
+
+            if (data.VariableCount > 0)
+            {
+                int n_cdata = 0; 
+
+                foreach (BlastVariable v in data.Variables)
+                {
+                    if (v.IsConstant && v.IsCData)
+                    {
+                        if (v.ConstantData == null)
+                        {
+                            data.LogError($"Blast.Transform.transform_constant_cdata: constantdata null in variable: {v.Name}");
+                            return BlastError.error; 
+                        }
+
+                        // create a node to compile into  jump [jumpoffset] [lenght 16bits] [cdata bytes]
+                        node n = new node(null, null); 
+                        n.type = nodetype.cdata;
+                        n.variable = v;
+                        n.vector_size = v.VectorSize;
+                        n.is_constant = true;
+
+                        // insert the node into the front of the ast                         
+                        data.AST.children.Insert(n_cdata, n);
+                        n_cdata++; 
+
+                        // replace all references to the variable with constant cdata 
+                        // with a reference to this node in a later stage 
+                    }
+                }
+            }
+
+            return BlastError.success;
+        }
+
+
 
 
         /// <summary>
@@ -964,10 +1060,15 @@ namespace NSS.Blast.Compiler.Stage
         {
             if (!data.IsOK || data.AST == null) return (int)BlastError.error;
 
-            // transform node iterator 
+            // transform node iterator
+            BlastError res = transform_constant_cdata(data);
+            if (res != BlastError.success)
+            {
+                return (int)res;
+            }
 
             // recursively look for statements to transform
-            BlastError res = transform(data, data.AST);
+            res = transform(data, data.AST);
             if (res != BlastError.success)
             {
                 return (int)res;

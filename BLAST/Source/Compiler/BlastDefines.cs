@@ -159,7 +159,15 @@ namespace NSS.Blast
         /// <summary>
         /// each data element is to be interpreted as 32 boolean flags 
         /// </summary>
-        Bool32 = 4 
+        Bool32 = 4 ,
+
+        /// <summary>
+        /// constant data blob, unless typed on access it holds a blob or a float array 
+        /// - the blob can be used for text:    #input msg cdata 'abcd'; alert(msg); 
+        /// - or just float data:  #input msg cdata numeric 1 2 3 4 5 6 7; alert(msg); 
+        /// - or other data:  #input msg cdata Bool32 1111..0 111..11 11...11; alert(msg); 
+        /// </summary>
+        CData = 5
     }
 
     /// <summary>
@@ -854,31 +862,29 @@ namespace NSS.Blast
         /// </summary>
         zero,
 
-        /// <summary>
-        /// binary and, instead of checking datatype on each sequencing step we use 
-        /// different instructions for the boolean operations 
-        /// </summary>
-        binary_and,
+
+
 
         /// <summary>
-        /// binary or operation 
+        /// get element size of a given variable, for vectors returns vectorsize
         /// </summary>
-        binary_or,
+        size,  
 
         /// <summary>
-        /// binary exclusive or operation 
+        /// constant data declaration 
         /// </summary>
-        binary_xor,
+        cdata,
 
         /// <summary>
-        /// binary not operation 
+        /// constant data reference, use size to get its length
         /// </summary>
-        binary_not,
+        cdataref,
+        
 
 
-        ///make room for     get_any_bits get_bits(mask)       the any variant of get_bits(mask)   
+        reserved, 
 
-        //------------------------
+
 
         /// <summary>
         /// PI
@@ -1192,7 +1198,16 @@ namespace NSS.Blast
         /// <summary>
         /// reverse bits 
         /// </summary>
-        reverse_bits,
+        reverse_bits,     // == 42 
+
+
+
+
+        /// <summary>
+        /// alert a msg to the log
+        /// </summary>
+        alert,
+       
 
 
         /// <summary>
@@ -1869,7 +1884,30 @@ namespace NSS.Blast
         /// <summary>
         /// referencing datasegments from a pointerlist is currently only supported in SSMD packagemodes
         /// </summary>
-        error_execute_referenced_datasegments_not_supported = -83
+        error_execute_referenced_datasegments_not_supported = -83,
+        /// <summary>
+        /// tokenizer encountered an invalid binary stream
+        /// a binary stream may contain: 0 1 b _ in the from b00000000_000....
+        /// </summary>
+        error_tokenizer_invalid_binary_stream = -84,
+        /// <summary>
+        /// failed to read #cdata define 
+        /// </summary>
+        error_failed_to_read_cdata_define = -85,
+        /// <summary>
+        /// failed to package cdata element, its too large to fit as vector in the datasegment
+        /// - max size for variable cdata = 58 bytes (15*4-2)
+        /// - #cdata constants have no max size other then total codesize of 32kb
+        /// </summary>
+        error_package_cdata_variable_too_large = -86,
+        /// <summary>
+        /// there are too deeply nested statements or some pattern made the compiler fail to flatten out the ast 
+        /// </summary>
+        error_unresolved_nested_statements = -87,
+        /// <summary>
+        /// failed to compile constant cdata node into the codestream 
+        /// </summary>
+        error_failed_to_compile_cdata_node = -88
     }
 
 }

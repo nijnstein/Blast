@@ -7843,8 +7843,8 @@ namespace NSS.Blast.SSMD
                 case blast_operation.max: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.max); break;
                 case blast_operation.min: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.min); break;
 
-                case blast_operation.all: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.and); break;
-                case blast_operation.any: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.or); break;
+                case blast_operation.all: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.and, BlastParameterEncoding.Encode44); break;
+                case blast_operation.any: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.or, BlastParameterEncoding.Encode44); break;
 
                 case blast_operation.select: get_select_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                 case blast_operation.fma: get_fma_result(temp, ref code_pointer, ref vector_size, ref f4_result); break;

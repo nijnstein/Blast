@@ -4,6 +4,8 @@
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
 using System;
+using Unity.Mathematics;
+using UnityEngine.Assertions;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -64,11 +66,39 @@ namespace NSS.Blast.Compiler.Stage
                     return (int)BlastError.error;
                 }
 
+                if (v.IsCData) // were not precise here, CData might get tagged as vector somewhere we dont care 
+                {
+                    if(v.IsConstant)
+                    {
+                        cdata.LogError($"Blast.Packaging: constant CData in variable data, variable: {v.Name}");
+                        return (int)BlastError.error;
+                    }
+
+                    cdata.LogToDo("Blast.Packaging: CData packaging not fully implemented ");
+
+                    // determine datasize in segment 
+                    Assert.IsNotNull(v.ConstantData);
+
+                    // NOTE max constant data size = 15 * 4 = 60 bytes when in datasegment 
+                    // size = datalength + 2 aligned to 4
+                    v.VectorSize = (int)math.ceil((v.ConstantData.Length + 2) / 4f);
+
+                    if(v.VectorSize > 15)
+                    {
+                        cdata.LogError($"Blast.Packaging: CData element '{v.Name}' to large too package as variable, maximum size = 15*4-2 = 58 bytes, element = {v.ConstantData.Length} bytes large");
+                        return (int)BlastError.error_package_cdata_variable_too_large; 
+                    }
+
+                    cdata.Executable.SetMetaData(BlastVariableDataType.CData, (byte)v.VectorSize, offset);
+
+                    replace[i] = offset;
+                    cdata.Offsets.Add(offset);
+                    offset = (byte)(offset + v.VectorSize); 
+                }
+                else 
                 if (v.IsVector)
                 {
                     // variable sized float 
-                    cdata.LogToDo("compile: set constant float vector not implemented ");
-
                     switch (v.VectorSize)
                     {
                         case 2: // float2

@@ -1959,15 +1959,28 @@ namespace NSS.Blast.Interpretor
                         break;
 
                     case BlastVariableDataType.Bool32:
+                        {
+                            // vectorsize must be 1 
 
-                        // vectorsize must be 1 
-                        
-                        uint b32 = ((uint*)pdata)[0];
+                            uint b32 = ((uint*)pdata)[0];
 #if STANDALONE_VSBUILD
-                        Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, BOOL32: {CodeUtils.FormatBool32(b32)}"); 
+                            Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, BOOL32: {CodeUtils.FormatBool32(b32)}");
 #else
-                        Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, BOOL32: {b32}"); 
+                            Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, BOOL32: {b32}"); 
 #endif
+                        }
+                        break;
+
+
+                    case BlastVariableDataType.CData:
+                        {
+                            // This exclusively points to a dataarray in the datasegment 
+
+                            // debug/alert is the only function accepting CData for now
+                            // others should just fail completely with error in trace modes-> fix that
+
+                            Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, <CDATA>");
+                        }
                         break; 
 
                     default:
@@ -8691,7 +8704,10 @@ namespace NSS.Blast.Interpretor
                                         // write contents of a data element to the debug stream 
                                         code_pointer++;
 #if DEVELOPMENT_BUILD || TRACE
-                                        Handle_DebugStack();
+                                        if (!ValidationMode)
+                                        {
+                                            Handle_DebugStack();
+                                        }
 #endif
                                     }
                                     break;
@@ -8708,7 +8724,7 @@ namespace NSS.Blast.Interpretor
                                         void* pdata = pop_with_info(code_pointer, out datatype, out vector_size);
 
 #if DEVELOPMENT_BUILD || TRACE
-                                        // if (!ValidationMode)
+                                        if (!ValidationMode)
                                         {
                                             Handle_DebugData(code_pointer, vector_size, op_id, datatype, pdata);
                                         }

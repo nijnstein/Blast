@@ -116,6 +116,15 @@ namespace NSS.Blast.Compiler.Stage
 
                     int offset = data.Offsets[p_id.Id];
 
+                    // cdata references should point to the code holding the data 
+                    if (p_id.IsCData && p_id.IsConstant)
+                    {
+
+                        data.LogError("todo cdata constant ref "); 
+
+                    }
+                    else
+
                     // deterimine if the constantdata should be inlined, referenced or indexed 
                     if (p_id.IsConstant && data.CompilerOptions.InlineConstantData)
                     {
@@ -123,7 +132,6 @@ namespace NSS.Blast.Compiler.Stage
                         // - inline the constant data if this is its first occurance
                         // - reference constant data if this is a repeated occurance
                         // 
-
 
                         //
                         // constant references are different from jumplabels in that they can have multiple sources
@@ -201,7 +209,7 @@ namespace NSS.Blast.Compiler.Stage
                                     break;                            
                             }
                         }
-                    }
+                    }                      
                     else
                     {
                         // index the constant data in the datasegment 
@@ -795,27 +803,161 @@ namespace NSS.Blast.Compiler.Stage
 
 
         /// <summary>
+        /// compile constant cdata nodes into the code stream as:
+        /// jump [jump-over-offset] cdata length data |jumplabel|
+        /// </summary>
+        static BlastError CompileCDataNodes(CompilationData data, node ast_node, IMByteCodeList code)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(ast_node);
+            Assert.IsNotNull(code);
+            
+            if(code.Count != 0)
+            {
+                data.LogError($"CompileCDataNode: failed to compile cdata nodes, the first cdata node should be compiled into an empty code stream", (int)BlastError.error_failed_to_compile_cdata_node);
+                return BlastError.error_failed_to_compile_cdata_node;
+            }
+
+            if (ast_node.ChildCount > 0)
+            {
+                //
+                // transform will put cdata nodes on the start of the ast 
+                // - we want the first instruction to jump over all constant data
+                // 
+
+                int constant_cdata_count = 0; 
+                int total_cdata_size = 0;
+                foreach(BlastVariable v in data.Variables)
+                {
+                    if(v.IsCData && v.IsConstant)
+                    {
+                        constant_cdata_count++;
+                        total_cdata_size += v.ConstantData.Length;   // size of data in bytes 
+                        total_cdata_size += 3;                       // size of length 16bit == 2 bytes + cdata op
+                    }   
+                }
+
+                if(constant_cdata_count == 0)
+                {
+                    // there should be no cdata node in root 
+                    if(ast_node.HasChild(nodetype.cdata))
+                    {
+                        data.LogError($"CompileCDataNode: failed to compile cdata nodes, found cdata nodes without variables", (int)BlastError.error_failed_to_compile_cdata_node);
+                        return BlastError.error; 
+                    }
+                    else
+                    {
+                        return BlastError.success; 
+                    }
+                }
+
+                // inject the jump
+                if (constant_cdata_count > 255)
+                {
+                    // encode a long jump, we know whereto so set no label as to not trigger jumpresolving
+                    code.Add(blast_operation.long_jump);
+                    code.Add((byte)(constant_cdata_count >> 8));
+                    code.Add((byte)(constant_cdata_count & 0b111_11111));
+                }
+                else
+                {
+                    // short jump
+                    code.Add(blast_operation.jump);
+                    code.Add((byte)constant_cdata_count);
+                }
+
+                // encode the data 
+                foreach (node n in ast_node.children)
+                {
+                    if (n.IsCData)
+                    {
+                        Assert.IsTrue(n.variable != null && ast_node.variable.IsCData && n.variable.IsConstant && n.variable.ConstantData != null && n.variable.ConstantData.Length > 0);
+                        BlastVariable v = ast_node.variable;
+
+                        // link the cdata as any other constant 
+                        IMJumpLabel label = data.LinkJumpLabel(IMJumpLabel.Constant(v.Id.ToString()));
+
+                        // encode [cdata]  ||  strictly, this is not needed but at the cost of a byte we simplify parsing it
+                        // as we cant reliably indicate cdata while reading only forward in the interpretor without it
+                        code.Add(blast_operation.cdata, label); 
+
+                        // encode data size 
+                        code.Add((byte)(v.ConstantData.Length >> 8));
+                        code.Add((byte)(v.ConstantData.Length & 0b1111_1111));
+
+                        // encode the data 
+                        for(int i = 0; i < v.ConstantData.Length; i++)
+                        {
+                            code.Add(v.ConstantData[i]);
+                        }
+
+                        // skip the node in further steps 
+                        n.SkipCompilation(); 
+                    }
+                }            
+            }
+
+            return BlastError.success; 
+        }
+
+
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="data"></param>
         /// <param name="ast_function"></param>
+        /// <param name="verify_size"></param>
+        /// <param name="verify_type"></param>
         /// <returns></returns>
         private static BlastVectorSizes VerifyFunctionParameterDataTypes(CompilationData data, node ast_function, bool verify_size = true, bool verify_type = true)
         {
             // when vectorsize == 0, there was no reason to touch it and the actual size is 1
             int vector_size = math.select(ast_function.vector_size, 1, ast_function.vector_size == 0);
             BlastVariableDataType datatype = ast_function.datatype;
-
  
-            for(int i = 0; i < ast_function.ChildCount; i++)
+            if(ast_function.function.ReturnsVectorSize > 0)
             {
-                node child = ast_function.children[i]; 
+                // the function returns a fixed output regardless the input size
+                if(ast_function.function.ReturnsVectorSize != vector_size)
+                {
+                    // its a big fat error if the size doesnt match 
+                    data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: vectorsize error, function {ast_function.function.GetFunctionName()} has a fixed return vectorsize of {ast_function.function.ReturnsVectorSize} but the astnode specifies {vector_size}");
+                    return BlastVectorSizes.none;
+                }
+
+                // the parameter size is NOT related to the output vectorsize 
+                vector_size = -1; 
+            }
+
+            // a component instruction is an instruction that takes several vectors and returns a result based on operations on each component as a single item
+            // - examples are csum, maxa, mina
+            bool is_component_instruction = ast_function.function.ReturnsVectorSize == 1 && ast_function.function.AcceptsVectorSize == 0;
+
+            for (int i = 0; i < ast_function.ChildCount; i++)
+            {
+                node child = ast_function.children[i];
 
                 int child_size = math.select(child.vector_size, 1, child.vector_size == 0);
-                if(verify_size && child_size != vector_size)
+
+                if (is_component_instruction)
                 {
-                    data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: vectorsize mismatch, vectorsize should be equal for all parameters to function {ast_function.function.GetFunctionName()}"); 
-                    return BlastVectorSizes.none;                         
+                    // we only care about the max sized parameter if this is a component instruction 
+                    vector_size = math.max(vector_size, child_size); 
+                }
+                else
+                {
+                    // if the function has a fixed output size the variablesize is not related to it 
+                    // so we set from the first parameter
+                    if (vector_size == -1)
+                    {
+                        vector_size = child_size;
+                    }
+                    if (verify_size && child_size != vector_size)
+                    {
+                        data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: vectorsize mismatch, vectorsize should be equal for all parameters to function {ast_function.function.GetFunctionName()}");
+                        return BlastVectorSizes.none;
+                    }
                 }
 
                 BlastVariableDataType type = child.datatype;
@@ -825,12 +967,12 @@ namespace NSS.Blast.Compiler.Stage
                     switch (child.variable.DataTypeOverride)
                     {
                         case BlastVectorSizes.bool32: type = BlastVariableDataType.Bool32; break;
-                        default: type = BlastVariableDataType.Numeric; break; 
+                        default: type = BlastVariableDataType.Numeric; break;
                     }
 
-                    if(ast_function.function.ReturnsVectorSize == 0)
+                    if (ast_function.function.ReturnsVectorSize == 0)
                     {
-                        datatype = type; 
+                        datatype = type;
                     }
                 }
 
@@ -1625,12 +1767,17 @@ namespace NSS.Blast.Compiler.Stage
         {
             IMByteCodeList code = new IMByteCodeList();
 
+            // check for excessive nesting, just dont 
             if(AnalyzeCompoundNesting(data, ast_root) != 0)
             {
-                data.LogError("Failed to compile node list from <{ast_root}>, there are unresolved nested compounds");
+                data.LogError("Failed to compile node list from <{ast_root}>, there are unresolved nested compounds", (int)BlastError.error_unresolved_nested_statements);
                 return null; 
             }
 
+            // first compile all constant cdata nodes into the code stream 
+            CompileCDataNodes(data, ast_root, code); 
+
+            // then all other nodes 
             if (data.CompilerOptions.ParallelCompilation)
             {
                 IMByteCodeList[] code_for_node = new IMByteCodeList[ast_root.children.Count];
@@ -1652,11 +1799,10 @@ namespace NSS.Blast.Compiler.Stage
 
                     // parse the statement from the token array
                     //CompileNode(data, ast_node, code);      
-                    
-
+ 
                     //
-                    // this exposes a bug with label indices, we need some central storage for them in the compilation 
-                    // - added a Dictionary<labelid, imjumplabel> to compilerdata
+                    // this exposed a bug with label indices, we need some central storage for them in the compilation 
+                    // - added a Dictionary<labelid, imjumplabel> to compilerdata to resolve the issue
                     // 
 
                     IMByteCodeList bcl = CompileNode(data, ast_node);
@@ -1692,6 +1838,7 @@ namespace NSS.Blast.Compiler.Stage
             {
                 v.DataTypeOverride = BlastVectorSizes.none; 
             }
+
 
             IMByteCodeList code = CompileNodes(data, data.AST);
             if(code != null)
