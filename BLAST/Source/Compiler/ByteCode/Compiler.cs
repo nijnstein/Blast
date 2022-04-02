@@ -799,23 +799,57 @@ namespace NSS.Blast.Compiler.Stage
         /// </summary>
         /// <param name="data"></param>
         /// <param name="ast_function"></param>
+        /// <param name="verify_size"></param>
+        /// <param name="verify_type"></param>
         /// <returns></returns>
         private static BlastVectorSizes VerifyFunctionParameterDataTypes(CompilationData data, node ast_function, bool verify_size = true, bool verify_type = true)
         {
             // when vectorsize == 0, there was no reason to touch it and the actual size is 1
             int vector_size = math.select(ast_function.vector_size, 1, ast_function.vector_size == 0);
             BlastVariableDataType datatype = ast_function.datatype;
-
  
-            for(int i = 0; i < ast_function.ChildCount; i++)
+            if(ast_function.function.ReturnsVectorSize > 0)
             {
-                node child = ast_function.children[i]; 
+                // the function returns a fixed output regardless the input size
+                if(ast_function.function.ReturnsVectorSize != vector_size)
+                {
+                    // its a big fat error if the size doesnt match 
+                    data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: vectorsize error, function {ast_function.function.GetFunctionName()} has a fixed return vectorsize of {ast_function.function.ReturnsVectorSize} but the astnode specifies {vector_size}");
+                    return BlastVectorSizes.none;
+                }
+
+                // the parameter size is NOT related to the output vectorsize 
+                vector_size = -1; 
+            }
+
+            // a component instruction is an instruction that takes several vectors and returns a result based on operations on each component as a single item
+            // - examples are csum, maxa, mina
+            bool is_component_instruction = ast_function.function.ReturnsVectorSize == 1 && ast_function.function.AcceptsVectorSize == 0;
+
+            for (int i = 0; i < ast_function.ChildCount; i++)
+            {
+                node child = ast_function.children[i];
 
                 int child_size = math.select(child.vector_size, 1, child.vector_size == 0);
-                if(verify_size && child_size != vector_size)
+
+                if (is_component_instruction)
                 {
-                    data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: vectorsize mismatch, vectorsize should be equal for all parameters to function {ast_function.function.GetFunctionName()}"); 
-                    return BlastVectorSizes.none;                         
+                    // we only care about the max sized parameter if this is a component instruction 
+                    vector_size = math.max(vector_size, child_size); 
+                }
+                else
+                {
+                    // if the function has a fixed output size the variablesize is not related to it 
+                    // so we set from the first parameter
+                    if (vector_size == -1)
+                    {
+                        vector_size = child_size;
+                    }
+                    if (verify_size && child_size != vector_size)
+                    {
+                        data.LogError($"BlastCompiler.VerifyFunctionParameterDataTypes: vectorsize mismatch, vectorsize should be equal for all parameters to function {ast_function.function.GetFunctionName()}");
+                        return BlastVectorSizes.none;
+                    }
                 }
 
                 BlastVariableDataType type = child.datatype;
@@ -825,12 +859,12 @@ namespace NSS.Blast.Compiler.Stage
                     switch (child.variable.DataTypeOverride)
                     {
                         case BlastVectorSizes.bool32: type = BlastVariableDataType.Bool32; break;
-                        default: type = BlastVariableDataType.Numeric; break; 
+                        default: type = BlastVariableDataType.Numeric; break;
                     }
 
-                    if(ast_function.function.ReturnsVectorSize == 0)
+                    if (ast_function.function.ReturnsVectorSize == 0)
                     {
-                        datatype = type; 
+                        datatype = type;
                     }
                 }
 
