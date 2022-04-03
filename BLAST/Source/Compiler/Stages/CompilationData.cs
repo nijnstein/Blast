@@ -232,6 +232,11 @@ namespace NSS.Blast.Compiler
         /// </summary>
         int OffsetCount { get; }
 
+        /// <summary>
+        /// check compiler data to see if the script defines the switch SHARED_CDATA or has the compileroptionsd SharedCDATA enabled 
+        /// </summary>
+        bool DefinesOrConfiguresSharedCData { get; }
+
         bool TryGetInlinedFunction(string item2, out BlastScriptInlineFunction inlined_function);
     }
 
@@ -407,8 +412,19 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// true if the script compiled defines inlined function macros 
         /// </summary>
-        public bool HasInlinedFunctions => InlinedFunctions != null && InlinedFunctions.Count > 0; 
+        public bool HasInlinedFunctions => InlinedFunctions != null && InlinedFunctions.Count > 0;
 
+        /// <summary>
+        /// check compiler data to see if the script defines the switch SHARED_CDATA or has the compileroptionsd SharedCDATA enabled 
+        /// </summary>
+        public bool DefinesOrConfiguresSharedCData
+        {
+            get
+            {
+                return CompilerOptions.SharedCDATA || HasDefineEnabled("SHARED_CDATA");
+            }
+        }
+ 
         /// <summary>
         /// true if everything went ok 
         /// </summary>
@@ -531,12 +547,19 @@ namespace NSS.Blast.Compiler
 
         unsafe void WriteHumanReadableCode(StringBuilder sb, List<byte> code, int columns = 10, bool index = true)
         {
-            int i = 0, asnumber = 0;
+            int i = 0, asnumber = 0, skip = 0;
             blast_operation prev = blast_operation.nop;
 
             for (; i < code.Count; i++)
             {
                 byte op = code[i];
+
+                if(skip > 0)
+                {
+                    skip--;
+                    if (asnumber > 0) asnumber--;
+                    continue; 
+                }
 
                 if (index && i % columns == 0)
                 {
@@ -685,7 +708,7 @@ namespace NSS.Blast.Compiler
                         case blast_operation.constant_long_ref: sb.Append("clref "); asnumber = 2; break;
                         case blast_operation.constant_short_ref: sb.Append("csref "); asnumber = 1; break;
 
-                        case blast_operation.index_n: sb.Append("idx_N "); asnumber = 1; break;
+                        case blast_operation.index_n: sb.Append("idx_N "); asnumber = 2; break;
                         case blast_operation.index_x: sb.Append("idx_X "); break;
                         case blast_operation.index_y: sb.Append("idx_Y "); break;
                         case blast_operation.index_z: sb.Append("idx_Z "); break;
@@ -700,7 +723,20 @@ namespace NSS.Blast.Compiler
                         case blast_operation.get_bit: sb.Append("get_bit "); asnumber = 0; break;
                         case blast_operation.get_bits: sb.Append("get_bits "); asnumber = 0; break;
 
-                        case blast_operation.zero: sb.Append("zero "); asnumber = 0; break; 
+                        case blast_operation.zero: sb.Append("zero "); asnumber = 0; break;
+                        case blast_operation.send: sb.Append("send "); break;
+                        case blast_operation.size: sb.Append("size "); break;
+
+                        case blast_operation.cdata:
+                            {
+                                int cdata_size = (short)((code[i + 1] << 8) + code[i + 2]);
+                                sb.Append($"cdata[{cdata_size}] ");
+                                asnumber = 2 + cdata_size;
+                                skip = 2;
+                            }
+                            break;
+
+                        case blast_operation.cdataref: sb.Append("cdataref "); asnumber = 2; break;
 
                         case blast_operation.ex_op:
                             i++;
@@ -1326,6 +1362,41 @@ namespace NSS.Blast.Compiler
         public bool HasDefines => Defines != null && Defines.Count > 0;
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasDefines'
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasVariables'
+
+
+        /// <summary>
+        /// check if the key is defined
+        /// </summary>
+        /// <param name="key">key to check, not case sensitive</param>
+        private bool HasDefine(string key)
+        {                             
+            if (Defines != null)
+            {
+                foreach (var d in Defines)
+                    if (string.Compare(d.Key, key, true) == 0)
+                        return true; 
+            }
+            return false; 
+        }
+
+        /// <summary>
+        /// check if the key is defined and enabled (set to 1 or true) 
+        /// </summary>
+        /// <param name="key">key to check, not case sensitive</param>
+        private bool HasDefineEnabled(string key)
+        {
+            if (Defines != null)
+            {
+                foreach (var d in Defines)
+                    if (string.Compare(d.Key, key, true) == 0)
+                    {
+                        return d.Value == "1" || string.Compare(d.Value, "true", true) == 0; 
+                    }
+            }
+            return false;
+        }
+
+
         public bool HasVariables => Variables != null && Variables.Count > 0;
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasVariables'
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasOffsets'
@@ -1373,7 +1444,7 @@ namespace NSS.Blast.Compiler
         /// - this will add errors to the log if there is any constant CData present in the variables at this point 
         /// </summary>
         /// <returns></returns>
-        internal unsafe int CalculateVariableOffsets()
+        internal unsafe int CalculateVariableOffsets(bool allow_constant_cdata = false)
         {
             // clear out any existing offsets (might have ran multiple times..) 
             Offsets.Clear();
@@ -1387,8 +1458,11 @@ namespace NSS.Blast.Compiler
                     // no offset increase or even a valid offset for CDATA if its constant
                     if (v.IsConstant)
                     {
-                        LogError($"Blast.CompilationData: constant CDATA in variable data offsets, variable name: {v.Name}, index: {i}, offset: {offset}"); 
-                        Offsets.Add(255);
+                        if (!allow_constant_cdata)
+                        {
+                            LogError($"Blast.CompilationData: constant CDATA in variable data offsets, variable name: {v.Name}, index: {i}, offset: {offset}");
+                        }
+                        Offsets.Add(0);
                     }
                     else
                     {

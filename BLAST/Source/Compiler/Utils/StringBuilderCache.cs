@@ -15,7 +15,7 @@ namespace NSS.Blast
     /// copied with minor changes from ms cli reference source  
     /// https://referencesource.microsoft.com/#mscorlib/system/text/stringbuildercache.cs,40
     /// </summary>
-    static class StringBuilderCache
+    static public class StringBuilderCache
     {
         // The value 360 was chosen in discussion with performance experts as a compromise between using
         // as litle memory (per thread) as possible and still covering a large part of short-lived

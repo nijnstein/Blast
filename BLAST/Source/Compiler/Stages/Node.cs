@@ -314,9 +314,42 @@ namespace NSS.Blast.Compiler
         public bool HasIdentifier => !string.IsNullOrWhiteSpace(identifier);
 
         /// <summary>
-        /// get the total number of nodes in the tree as seen from current node
+        /// the variable set to the node 
         /// </summary>
-        public int CountNodes()
+        public bool HasVariable => variable != null; 
+
+
+        /// <summary>
+        /// attempt to interpret node as a float value, returns NaN on fail 
+        /// </summary>
+        public float AsFloat
+        {
+            get
+            {
+                if (HasVariable)
+                {
+                    switch (variable.DataTypeOverride)
+                    {
+                        case BlastVectorSizes.bool32:
+                        case BlastVectorSizes.float1: return CodeUtils.AsFloat(identifier);
+                    }
+
+                    switch (variable.DataType)
+                    {
+                        case BlastVariableDataType.Bool32:
+                        case BlastVariableDataType.Numeric: return CodeUtils.AsFloat(identifier);
+                    }
+                }
+
+                return float.NaN;
+            }
+        }
+
+
+            /// <summary>
+            /// get the total number of nodes in the tree as seen from current node
+            /// </summary>
+            public int CountNodes()
         {
             return CountChildNodes(this);
         }
@@ -678,19 +711,6 @@ namespace NSS.Blast.Compiler
 
 
         /// <summary>
-        /// interpret the node's attached identifier as a floating point value, returns Blast.InvalidNumeric if it could
-        /// not parse the identifier as a numeric
-        /// </summary>
-        public float AsFloat
-        {
-            get
-            {
-                return identifier == null ? Blast.InvalidNumeric : identifier.AsFloat();
-            }
-        }
-
-
-        /// <summary>
         /// general constructor
         /// </summary>
         /// <param name="_parent">parent node</param>
@@ -760,7 +780,11 @@ namespace NSS.Blast.Compiler
                 case nodetype.compound: return $"{sconstant}{svector}compound statement of {children.Count}";
                 case nodetype.function: return $"{sconstant}{svector}function {function.GetFunctionName()}";
                 case nodetype.operation: return $"{sconstant}{svector}operation {token}";
-                case nodetype.parameter: return $"{sconstant}{svector}parameter {identifier}";
+                case nodetype.parameter:
+                    if(variable != null && variable.IsCData)
+                        return $"{sconstant} CDATA {identifier}";
+                    else
+                        return $"{sconstant}{svector}parameter {identifier}";
                 case nodetype.none: return $"{sconstant}{svector}nop";
                 case nodetype.yield: return $"{sconstant}{svector}yield";
                 case nodetype.ifthenelse: return $"if";
@@ -777,6 +801,12 @@ namespace NSS.Blast.Compiler
                 case nodetype.forloop: return $"for ";
                 case nodetype.inline_function: return $"inlined-function {identifier}";
                 case nodetype.index: return $"indexer {identifier} {constant_op}";
+                case nodetype.cdata:
+                    if (variable != null)
+                        return $"constant cdata {variable.Name}[{variable.ConstantData.Length}]";
+                    else
+                        return "constat cdata";
+                    
                 default: return base.ToString();
             }
         }

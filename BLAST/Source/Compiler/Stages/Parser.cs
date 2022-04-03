@@ -1874,10 +1874,10 @@ namespace NSS.Blast.Compiler.Stage
                     case BlastScriptToken.IndexClose:
                         if (!has_open_indexer)
                         {
-                            data.LogError("parser.grow_index_chain: indexer mismatch");
+                            data.LogError("Blast.Parser.grow_index_chain: indexer mismatch, found closing index without opening [");
                             return null;
                         }
-                        n_id = n_id.AppendIndexer(BlastScriptToken.IndexClose, "]");
+                        n_id = n_id.parent.AppendIndexer(BlastScriptToken.IndexClose, "]");
                         has_open_indexer = false;
                         last_is_dot_indexer = false;
                         idx++;
@@ -1974,7 +1974,15 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         if (param.variable.IsConstant)
                         {
-                            data.LogError($"parser: the subject of an assignment cannot be constant.");
+                            // any cdata defined with data is assumed to be constant 
+                            // - it can be allowed to be overwritten with compiler options 
+                            //   or defines 
+                            if(param.variable.DataType != BlastVariableDataType.CData
+                               ||
+                               (param.variable.DataType != BlastVariableDataType.CData && !data.DefinesOrConfiguresSharedCData))
+                            {
+                                data.LogError($"Blast.parser: the subject '{param.variable}' of an assignment cannot be constant.");
+                            }
                         }
                     }
 

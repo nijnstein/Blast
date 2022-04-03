@@ -285,6 +285,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="p"></param>
         public static implicit operator BlastEngineDataPtr(IntPtr p) => new BlastEngineDataPtr() { ptr = p };
+
     }
 
     /// <summary>
@@ -1698,9 +1699,18 @@ namespace NSS.Blast
 
             int i = 0;
             int asnumber = 0;
+            int skip = 0; 
 
             while (i < length)
             {
+                if(skip > 0)
+                {
+                    skip--;
+                    if(asnumber > 0) asnumber--;
+                    i++;
+                    continue; 
+                }
+
                 blast_operation op = (blast_operation)bytes[i];
                 if (asnumber > 0)
                 {
@@ -1826,7 +1836,20 @@ namespace NSS.Blast
                     case blast_operation.jz_long: sb.Append("jz_long "); asnumber = 2; break;
                     case blast_operation.jnz_long: sb.Append("jnz_long "); asnumber = 2; break;
 
-                    case blast_operation.zero: sb.Append("zero "); asnumber = 0; break; 
+                    case blast_operation.zero: sb.Append("zero "); asnumber = 0; break;
+                    case blast_operation.send: sb.Append("send "); break;
+                    case blast_operation.size: sb.Append("size "); break;
+
+                    case blast_operation.cdata:
+                        {
+                            int cdata_size = (short)((bytes[i + 1] << 8) + bytes[i + 2]);
+                            sb.Append($"cdata[{cdata_size}] ");
+                            asnumber = 2 + cdata_size;
+                            skip = 2;
+                        }
+                        break;
+                        
+                    case blast_operation.cdataref: sb.Append("cdataref "); asnumber = 2; break;
 
                     case blast_operation.ex_op:
                         i++;

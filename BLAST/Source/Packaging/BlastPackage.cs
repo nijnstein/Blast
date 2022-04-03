@@ -934,6 +934,7 @@ namespace NSS.Blast
         {
             Interlocked.Increment(ref ReferenceCount);
         }
+  
     }
 
 
@@ -1427,12 +1428,6 @@ namespace NSS.Blast
                         {
                             Debug.LogError("BlastScriptPackage.Execute: data_is_referenced is only allowed for ssmd packages");
                             return BlastError.error_execute_referenced_datasegments_not_supported;
-                        }
-
-                        if(sizeof(T) != 4)
-                        {
-                            Debug.LogError("BlastScriptPackage.Execute: while executing multiple normal packages from data packed in blobs the backing type should be 4 bytes large (float, uint)");
-                            return BlastError.error_execute_invalid_backing_datasegment; 
                         }
 
                         var job = new Jobs.blast_execute_package_with_multiple_data_burst_job()

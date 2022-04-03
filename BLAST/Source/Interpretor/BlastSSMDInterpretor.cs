@@ -463,10 +463,6 @@ namespace NSS.Blast.SSMD
                 // 
                 switch (operation)
                 {
-                    case blast_operation.index_n:
-                        indexer = -1;
-                        goto case blast_operation.substract;
-
                     case blast_operation.index_w:
                         indexer = 3;
                         goto case blast_operation.substract;

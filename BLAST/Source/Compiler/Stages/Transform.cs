@@ -13,6 +13,7 @@ using UnityEngine.Assertions;
 
 using System;
 using System.Collections.Generic;
+using NSS.Blast.Interpretor;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -472,56 +473,155 @@ namespace NSS.Blast.Compiler.Stage
         /// .[r|g|b|a]
         /// 
         /// </remarks>
-        static public bool ClassifyIndexer(node n, out blast_operation op, out byte spec)
+        static public bool ClassifyIndexer(node n, out blast_operation op)
         {
             Assert.IsNotNull(n);
 
-            if (n.indexers != null
-                &&
-                n.indexers.Count >= 2
-                &&
-                n.indexers[0].type == nodetype.index
-                &&
-                !string.IsNullOrWhiteSpace(n.indexers[1].identifier))
+            if (n.indexers != null && n.indexers.Count > 0)
             {
-
-                // determine length of chain
-                if (n.indexers.Count == 2)
+                // . indexers 
+                if (n.indexers.Count == 2
+                    &&
+                    n.indexers[0].type == nodetype.index
+                    &&
+                    !string.IsNullOrWhiteSpace(n.indexers[1].identifier))
                 {
-
                     // 1 contains index var
                     char index = n.indexers[1].identifier.ToLower().Trim()[0];
                     switch (index)
                     {
                         case 'x':
-                        case 'r': op = blast_operation.index_x; spec = 0; return true;
+                        case 'r': op = blast_operation.index_x; return true;
 
                         case 'y':
-                        case 'g': op = blast_operation.index_y; spec = 0; return true;
+                        case 'g': op = blast_operation.index_y; return true;
 
                         case 'z':
-                        case 'b': op = blast_operation.index_z; spec = 0; return true;
+                        case 'b': op = blast_operation.index_z; return true;
 
                         case 'w':
-                        case 'a': op = blast_operation.index_w; spec = 0; return true;
+                        case 'a': op = blast_operation.index_w; return true;
                     }
                 }
                 else
+                // [ ] indexing 
+                if (n.indexers.Count == 3  // could someday contain a sequence then this needs to allow more
+                    &&
+                    n.indexers[0].token == BlastScriptToken.IndexOpen
+                    &&
+                    n.indexers[n.indexers.Count - 1].token == BlastScriptToken.IndexClose
+                    &&
+                    !string.IsNullOrWhiteSpace(n.indexers[1].identifier))
                 {
-                    //
-                    // supporting all variations of xyzw would require additional encoding on the opcode index_n
-                    // TODO 
-                    //
-
                     op = blast_operation.index_n;
-                    spec = 0;
-                    return false;
+                    return true;
+                }
+            }
+
+            op = blast_operation.nop;
+            return false;
+        }
+
+        bool IsConstantIndexedOp(string identifier, out blast_operation op)
+        {
+            if (identifier != null)
+            {
+                if (identifier.Length == 1 || (identifier.Length > 2 && identifier[1] == '.')) // allow to index with 1.1
+                {
+                    switch (identifier[0])
+                    {
+                        case '0': op = blast_operation.index_x; return true;
+                        case '1': op = blast_operation.index_y; return true;
+                        case '2': op = blast_operation.index_z; return true;
+                        case '3': op = blast_operation.index_w; return true;
+                    }
                 }
             }
             op = blast_operation.nop;
-            spec = 0;
-            return false;
+            return false; 
         }
+
+        BlastError TransformIndexedAssignment(IBlastCompilationData data, node n, blast_operation op)
+        {
+            Assert.IsNotNull(n);
+            Assert.IsTrue(n.HasIndexers, "only call on nodes with indexers!");
+
+            // n is assigned, it HAS to be a variable 
+            Assert.IsNotNull(n.variable);
+
+            if (op == blast_operation.index_n)
+            {
+                // get the identifier between [] (this is build earlier, no need to check it) 
+                node id = n.indexers[1];
+
+                // if we index with a constant 0 1 2 3 then replace op with the corresponding function 
+                if(IsConstantIndexedOp(id.identifier, out blast_operation indexer_op))
+                {
+                    // replace with this indexer 
+                    n.indexers.Clear();
+                    n.AppendIndexer(BlastScriptToken.Indexer, indexer_op).EnsureIdentifierIsUniquelySet();
+
+                    // recursively call this function -> results in exectuing the else
+                    return TransformIndexedAssignment(data, n, indexer_op); 
+                }
+
+                if (id.HasVariable)
+                {
+                    // if constant indexer, verify vectorsize   -> CANT: VECTORSIZE NOT KNOWN IN THIS STAGE
+                    //if (id.variable.IsConstant)
+                    //{
+                    //    int index = (int)id.AsFloat;
+                    //    int vectorsize = n.variable.VectorSize; 
+                    //
+                    //    // check the size of assignee / for now each type adheres to vector size (also cdata) 
+                    //    if (index < 0 || index >= n.variable.VectorSize)
+                    //    {
+                    //        data.LogError($"Blast.Transform.TransformIndexedAssignments: constant index {index} out of bounds of variable '{n.variable}' with vectorsize {n.variable.VectorSize}");
+                    //        return BlastError.error_indexer_out_of_bounds;
+                    //    }
+                    //}
+                }
+                //if(id.is_constant && id.constant_op != blast_operation.nop)
+                //{
+                //    // get value of op 
+                //    int index = (int)Blast.GetConstantValueDefault(id.constant_op); 
+                //
+                //    // check the size of assignee / for now each type adheres to vector size (also cdata) 
+                //    if (index < 0 || index >= n.variable.VectorSize)
+                //    {
+                //        data.LogError($"Blast.Transform.TransformIndexedAssignments: constant value index '{id.constant_op} == {index}' out of bounds of variable '{n.variable}' with vectorsize {n.variable.VectorSize}");
+                //        return BlastError.error_indexer_out_of_bounds;
+                //    }
+                //}
+
+                // reorder node
+                n.indexers.Clear();
+                n.AppendIndexer(BlastScriptToken.Indexer, op).EnsureIdentifierIsUniquelySet();
+
+                n.indexers[0].children.Add(id);            
+
+                return BlastError.success; 
+            }
+            else
+            {
+                // validate index is within bounds of assignee 
+                //int size = n.variable.VectorSize;
+                //int index = BlastInterpretor.GetIndexerOperationIndex(op);
+                //
+                //if(index < 0 || index >= size)
+                //{
+                //    data.LogError($"Blast.Transform.TransformIndexedAssignments: constant index {op} out of bounds of variable '{n.variable}' with vectorsize {size}");
+                //    return BlastError.error_indexer_out_of_bounds;
+                //}
+
+                // setting a value, replace indexchain with a single node holding operation 
+                n.indexers.Clear();
+                n.AppendIndexer(BlastScriptToken.Indexer, op).EnsureIdentifierIsUniquelySet();
+
+                return BlastError.success;
+            }
+        }
+
 
 
         /// <summary>
@@ -537,15 +637,13 @@ namespace NSS.Blast.Compiler.Stage
         BlastError transform_indexer(IBlastCompilationData data, node n)
         {
             Assert.IsNotNull(n);
-            Assert.IsTrue(n.HasIndexers, "only call transform_indexer on nodes with indexers!");
+            Assert.IsTrue(n.HasIndexers, "only call on nodes with indexers!");
 
-            if (ClassifyIndexer(n, out blast_operation op, out byte spec))
+            if (ClassifyIndexer(n, out blast_operation op))
             {
                 if (n.IsAssignment)
                 {
-                    // setting a value, replace indexchain with a single node holding operation 
-                    n.indexers.Clear();
-                    n.AppendIndexer(BlastScriptToken.Indexer, op).EnsureIdentifierIsUniquelySet();
+                    return TransformIndexedAssignment(data, n, op); 
                 }
                 else
                 {
@@ -565,17 +663,44 @@ namespace NSS.Blast.Compiler.Stage
                     f.parent.children.RemoveAt(idx);
                     f.parent.children.Insert(idx, f);
 
-                    // remove indexers
+                    // get index variable before removing indexers if index_n
+                    node id = null;
+                    if(op == blast_operation.index_n)
+                    {
+                        id = n.indexers[1];
+
+                        // if we index with a constant 0 1 2 3 then replace op with the corresponding function 
+                        if(IsConstantIndexedOp(id.identifier, out blast_operation indexer_op))
+                        {
+                            op = indexer_op;
+                            id = null; 
+                        }
+                    }
+
+                    // clear out all indexers, from now they are functions 
                     n.indexers.Clear();
                     unsafe
                     {
                         f.function = data.Blast.Data->GetFunction(op);
                     }
+                    
                     if (!f.function.IsValid)
                     {
                         data.LogError($"transform_indexer: failed to transform operation {op}, could not find corresponding function in api");
                         return BlastError.error_indexer_transform;
                     }
+
+                    if(id != null)
+                    {
+                        // set indexing parameter for index_n function
+                        f.children.Add(id);
+
+                        id.is_constant = false;
+                        id.is_vector = false;
+                        id.vector_size = 1; 
+                        id.type = nodetype.parameter; 
+                    }
+
                 }
             }
             else
@@ -662,14 +787,14 @@ namespace NSS.Blast.Compiler.Stage
             bool is_negation_compound;
             float id; // either from constant or variable 
 
-            if (!classify_constant_vector_component(n.FirstChild, out is_constant, out id, out is_negation_compound))
+            if (!classify_constant_vector_component(data, n.FirstChild, out is_constant, out id, out is_negation_compound))
             {
                 return false;
             }
 
             for (int i = 1; i < n.children.Count; i++)
             {
-                if (classify_constant_vector_component(n.children[i], out bool isc, out float id2, out bool isneg))
+                if (classify_constant_vector_component(data, n.children[i], out bool isc, out float id2, out bool isneg))
                 {
                     if (isc == is_constant && id2 == id && isneg == is_negation_compound)
                     {
@@ -747,7 +872,7 @@ namespace NSS.Blast.Compiler.Stage
         /// - offset 
         /// - or a negated compound of the above   
         /// </summary>
-        bool classify_constant_vector_component(in node node, out bool is_constant, out float id, out bool is_negation_compound)
+        bool classify_constant_vector_component(IBlastCompilationData data, in node node, out bool is_constant, out float id, out bool is_negation_compound)
         {
             id = 0;
             is_constant = false;
@@ -771,7 +896,7 @@ namespace NSS.Blast.Compiler.Stage
                     if (node.LastChild.is_constant)
                     {
                         is_constant = true;
-                        id = node.LastChild.AsFloat;
+                        id = Blast.GetConstantValueDefault(node.LastChild.constant_op);
                         return true;
                     }
                 }
@@ -783,7 +908,7 @@ namespace NSS.Blast.Compiler.Stage
                     if (node.is_constant)
                     {
                         is_constant = true;
-                        id = node.AsFloat;
+                        id = Blast.GetConstantValueDefault(node.constant_op);
                         return true;
                     }
                     if (node.IsScriptVariable)

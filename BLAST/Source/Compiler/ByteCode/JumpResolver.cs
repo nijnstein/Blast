@@ -221,13 +221,18 @@ namespace NSS.Blast.Compiler.Stage
                         op == blast_operation.constant_long_ref
                         ||
                         op == blast_operation.constant_short_ref
+                        ||
+                        op == blast_operation.cdataref
                         ))
                     {
                         cdata.LogError($"Compiler Failure: encountered invalid operation <{op}> for backward jump of size {jump_size}");
                         return false;
                     }
 
-                    if (abs_jump_size > 255)
+                    // if we have a small jump and jumpsize is larger then that 
+                    // - update to a long jump 
+                    // - cdata is always assumed to be a long jump 
+                    if (abs_jump_size > 255 || op == blast_operation.cdataref)
                     {
                         if (op == blast_operation.jump_back)
                         {
@@ -238,6 +243,12 @@ namespace NSS.Blast.Compiler.Stage
 
                             // shift nxt offsets  
                             additional_long_offset++;
+                        }
+                        if(op == blast_operation.cdataref)
+                        {
+                            // ok as is, dont need to update instruction 
+                            code[source_offset + 0].UpdateOpCode((byte)(abs_jump_size >> 8));
+                            code[source_offset + 1].UpdateOpCode((byte)(abs_jump_size & 0b11111111));
                         }
                         else
                         {
@@ -288,6 +299,7 @@ namespace NSS.Blast.Compiler.Stage
                             short jumpsize = 0;
                             switch (op)
                             {
+                                case blast_operation.cdataref:
                                 case blast_operation.constant_long_ref:
                                     jumpsize = (short)((code[j + 1].code << 8) + code[j + 2].code);
                                     if (j - jumpsize > i) continue;
@@ -380,6 +392,10 @@ namespace NSS.Blast.Compiler.Stage
                     blast_operation op = code[i].op;
                     switch(op)
                     {
+                        // skip cdata, there is no short jump for cdata
+                        case blast_operation.cdataref: 
+                            break; 
+
                         case blast_operation.long_jump:
                         case blast_operation.constant_long_ref:
                         {

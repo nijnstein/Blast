@@ -1,10 +1,19 @@
-cdata inputs ->always in datasegment even if not used
-cdata defines -> only inlined in code if referneced (refcount > 0)
--  packager should set vectorsize to the nr of 4bytes elements on cdata variables encoded in datasegment
+**V1.0.4** 2022-04-06
 
-- new ops: size, cdata, cdataref, alert
-- new datatype: data arrays|blobs as variable input
-- new define: #cdata name data, defines constantdata  
+- bugfix: fixed bug causing error in sample6 dueue to a wrong check in packaging
+- bugfix: fixed bug tracking vectorsizes during compilation
+- added: unity assembly definition file reducing editor re-build times
+
+NORMAL PACKAGEMODE
+- added: constant cdata sections providing fixed arrays
+- added: array [] indexers
+- optimized: reduced controlflow interpreting (indexed) assignments 
+
+
+
+**V1.0.3** 2022-04-03
+
+- bugfix: wrong vectorsize after zero transform
 
 **V1.0.2** 2022-04-02
 
