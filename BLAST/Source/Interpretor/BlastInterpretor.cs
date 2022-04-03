@@ -1968,6 +1968,18 @@ namespace NSS.Blast.Interpretor
 #else
                         Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, BOOL32: {b32}"); 
 #endif
+                        break;
+
+
+                    case BlastVariableDataType.CData:
+
+                        // This exclusively points to a dataarray in the datasegment 
+
+                        // debug/alert is the only function accepting CData for now
+                        // others should just fail completely with error in trace modes-> fix that
+
+                        Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, CDATA: "); 
+
                         break; 
 
                     default:
