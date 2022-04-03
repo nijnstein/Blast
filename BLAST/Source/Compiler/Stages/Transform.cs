@@ -855,12 +855,16 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     if (child.constant_op == blast_operation.value_0)
                     {
+                        // n being an assignment, it has a variable attached with vectorsize
+                        Assert.IsNotNull(n.variable); 
+                        int vector_size = n.variable.VectorSize;
+
                         // node n is an assignment of zero scalar 
                         ReplaceAssignmentWithZero(data, n);
 
-                        n.vector_size = 1;
-                        n.FirstChild.vector_size = 1;
-                        n.FirstChild.variable.VectorSize = 1;
+                        n.vector_size = vector_size; 
+                        n.FirstChild.vector_size = vector_size;
+                        n.FirstChild.variable.VectorSize = vector_size;
                     }
                 }
                 else
