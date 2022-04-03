@@ -1368,9 +1368,12 @@ namespace NSS.Blast.Compiler
             return false;
         }
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.CalculateVariableOffsets()'
+        /// <summary>
+        /// calculate variable offsets from variable data
+        /// - this will add errors to the log if there is any constant CData present in the variables at this point 
+        /// </summary>
+        /// <returns></returns>
         internal unsafe int CalculateVariableOffsets()
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.CalculateVariableOffsets()'
         {
             // clear out any existing offsets (might have ran multiple times..) 
             Offsets.Clear();
@@ -1379,7 +1382,22 @@ namespace NSS.Blast.Compiler
             for (int i = 0; i < Variables.Count; i++)
             {
                 BlastVariable v = Variables[i];
-                                  
+                if (v.IsCData)
+                {
+                    // no offset increase or even a valid offset for CDATA if its constant
+                    if (v.IsConstant)
+                    {
+                        LogError($"Blast.CompilationData: constant CDATA in variable data offsets, variable name: {v.Name}, index: {i}, offset: {offset}"); 
+                        Offsets.Add(255);
+                    }
+                    else
+                    {
+                        // increase by vectorsize, any cdata is aligned to 4 bytes with variable cdata being max 58bytes long 
+                        Offsets.Add(offset); 
+                        offset = (byte)(offset + v.VectorSize);
+                    }
+                }
+                else
                 if (v.IsVector)
                 {
                     // variable sized float 

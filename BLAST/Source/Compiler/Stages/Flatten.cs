@@ -861,6 +861,7 @@ namespace NSS.Blast.Compiler.Stage
 
                         case nodetype.jump_to:
                         case nodetype.label:
+                        case nodetype.cdata:
                             flat.Add(node);
                             break;
 

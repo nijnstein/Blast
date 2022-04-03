@@ -919,6 +919,54 @@ namespace NSS.Blast.Compiler.Stage
         }
 
 
+
+        /// <summary>
+        /// create nodes foreach constant cdata element 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        BlastError transform_constant_cdata(IBlastCompilationData data)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(data.AST);
+
+            if (data.VariableCount > 0)
+            {
+                int n_cdata = 0; 
+
+                foreach (BlastVariable v in data.Variables)
+                {
+                    if (v.IsConstant && v.IsCData)
+                    {
+                        if (v.ConstantData == null)
+                        {
+                            data.LogError($"Blast.Transform.transform_constant_cdata: constantdata null in variable: {v.Name}");
+                            return BlastError.error; 
+                        }
+
+                        // create a node to compile into  jump [jumpoffset] [lenght 16bits] [cdata bytes]
+                        node n = new node(null, null); 
+                        n.type = nodetype.cdata;
+                        n.variable = v;
+                        n.vector_size = v.VectorSize;
+                        n.is_constant = true;
+
+                        // insert the node into the front of the ast                         
+                        data.AST.children.Insert(n_cdata, n);
+                        n_cdata++; 
+
+                        // replace all references to the variable with constant cdata 
+                        // with a reference to this node in a later stage 
+                    }
+                }
+            }
+
+            return BlastError.success;
+        }
+
+
+
+
         /// <summary>
         /// run transform depending on nodetype 
         /// - TODO -> would be nice if this all returned errors.. 
@@ -1012,10 +1060,15 @@ namespace NSS.Blast.Compiler.Stage
         {
             if (!data.IsOK || data.AST == null) return (int)BlastError.error;
 
-            // transform node iterator 
+            // transform node iterator
+            BlastError res = transform_constant_cdata(data);
+            if (res != BlastError.success)
+            {
+                return (int)res;
+            }
 
             // recursively look for statements to transform
-            BlastError res = transform(data, data.AST);
+            res = transform(data, data.AST);
             if (res != BlastError.success)
             {
                 return (int)res;

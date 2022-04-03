@@ -68,6 +68,12 @@ namespace NSS.Blast.Compiler.Stage
 
                 if (v.IsCData) // were not precise here, CData might get tagged as vector somewhere we dont care 
                 {
+                    if(v.IsConstant)
+                    {
+                        cdata.LogError($"Blast.Packaging: constant CData in variable data, variable: {v.Name}");
+                        return (int)BlastError.error;
+                    }
+
                     cdata.LogToDo("Blast.Packaging: CData packaging not fully implemented ");
 
                     // determine datasize in segment 

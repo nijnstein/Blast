@@ -373,7 +373,7 @@ namespace NSS.Blast.Compiler.Stage
             //       but this is cheaper to do considering its probably rare to be used 
             if (ch == '\'' || ch == '"')
             {
-                return ReadCDATAString(data, comment, a.AsSpan(3)); 
+                return ReadCDATAString(data, comment, a, 3); 
             } 
 
             // binary: allow only 1 single data element extra
@@ -381,7 +381,7 @@ namespace NSS.Blast.Compiler.Stage
             // binary: single bitstream starting with b
             if(ch == 'b' || ((ch == '1' || ch == '0') && a[3].Length >= 16))
             {
-                if (a.Length == 4 || a[4].StartsWith('#'))
+                if (a.Length == 4 || a[4].StartsWith("#"))
                 {
                     return ReadCDATABinary(data, comment, a[3]);
                 }
@@ -393,7 +393,7 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // anything else is assumed to be a list of numerics || bool32
-            return ReadCDATAArray(data, comment, a.AsSpan(3)); 
+            return ReadCDATAArray(data, comment, a, 3); 
         }
 
         /// <summary>
@@ -419,7 +419,7 @@ namespace NSS.Blast.Compiler.Stage
             //       but this is cheaper to do considering its probably rare to be used 
             if (ch == '\'' || ch == '"')
             {
-                constant_data = ReadCDATAString(data, comment, a.AsSpan(2));
+                constant_data = ReadCDATAString(data, comment, a, 2);
                 if (constant_data == null) return false; 
             }
             else
@@ -429,7 +429,7 @@ namespace NSS.Blast.Compiler.Stage
             // binary: single bitstream starting with b
             if (ch == 'b' || ((ch == '1' || ch == '0') && a[2].Length >= 16))
             {
-                if (a.Length == 3 || a[3].StartsWith('#'))
+                if (a.Length == 3 || a[3].StartsWith("#"))
                 {
                     constant_data = ReadCDATABinary(data, comment, a[2]);
                 }
@@ -442,7 +442,7 @@ namespace NSS.Blast.Compiler.Stage
             else
             {
                 // anything else is assumed to be a list of numerics || bool32
-                constant_data = ReadCDATAArray(data, comment, a.AsSpan(2));
+                constant_data = ReadCDATAArray(data, comment, a, 2);
                 if (constant_data == null) return false;
             }
 
@@ -476,7 +476,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="comment"></param>
         /// <param name="span"></param>
         /// <returns></returns>
-        static byte[] ReadCDATAArray(IBlastCompilationData data, string comment, Span<string> span)
+        static byte[] ReadCDATAArray(IBlastCompilationData data, string comment, string[] a, int offset)
         {
             throw new NotImplementedException();
         }
@@ -543,7 +543,7 @@ namespace NSS.Blast.Compiler.Stage
             return bytes.ToArray(); 
         }
 
-        static byte[] ReadCDATAString(IBlastCompilationData data, string comment, Span<string> span)
+        static byte[] ReadCDATAString(IBlastCompilationData data, string comment, string[] a, int offset)
         {
             throw new NotImplementedException();
         }

@@ -1899,7 +1899,15 @@ namespace NSS.Blast
         /// - max size for variable cdata = 58 bytes (15*4-2)
         /// - #cdata constants have no max size other then total codesize of 32kb
         /// </summary>
-        error_package_cdata_variable_too_large = -86
+        error_package_cdata_variable_too_large = -86,
+        /// <summary>
+        /// there are too deeply nested statements or some pattern made the compiler fail to flatten out the ast 
+        /// </summary>
+        error_unresolved_nested_statements = -87,
+        /// <summary>
+        /// failed to compile constant cdata node into the codestream 
+        /// </summary>
+        error_failed_to_compile_cdata_node = -88
     }
 
 }
