@@ -54,6 +54,21 @@ namespace NSS.Blast.Compiler.Stage
             // -> CalculateVariableOffsets in Optimizer also touches this 
             cdata.Offsets.Clear();
 
+            // remove any constant cdata refs 
+            int iremove = 0;
+
+            while(iremove < cdata.Variables.Count)
+            {
+                if(cdata.Variables[iremove].IsCData && cdata.Variables[iremove].IsConstant)
+                {
+                    cdata.Variables.RemoveAt(iremove); 
+                }
+                else
+                {
+                    iremove++;  
+                }
+            }
+
             // setup data segment 
             byte offset = 0;
             byte[] replace = new byte[cdata.Variables.Count];
@@ -68,32 +83,34 @@ namespace NSS.Blast.Compiler.Stage
 
                 if (v.IsCData) // were not precise here, CData might get tagged as vector somewhere we dont care 
                 {
-                    if(v.IsConstant)
+                    if (v.IsConstant)
                     {
                         cdata.LogError($"Blast.Packaging: constant CData in variable data, variable: {v.Name}");
                         return (int)BlastError.error;
                     }
-
-                    cdata.LogToDo("Blast.Packaging: CData packaging not fully implemented ");
-
-                    // determine datasize in segment 
-                    Assert.IsNotNull(v.ConstantData);
-
-                    // NOTE max constant data size = 15 * 4 = 60 bytes when in datasegment 
-                    // size = datalength + 2 aligned to 4
-                    v.VectorSize = (int)math.ceil((v.ConstantData.Length + 2) / 4f);
-
-                    if(v.VectorSize > 15)
+                    else
                     {
-                        cdata.LogError($"Blast.Packaging: CData element '{v.Name}' to large too package as variable, maximum size = 15*4-2 = 58 bytes, element = {v.ConstantData.Length} bytes large");
-                        return (int)BlastError.error_package_cdata_variable_too_large; 
+                        cdata.LogToDo("Blast.Packaging: CData packaging not fully implemented ");
+
+                        // determine datasize in segment 
+                        Assert.IsNotNull(v.ConstantData);
+
+                        // NOTE max constant data size = 15 * 4 = 60 bytes when in datasegment 
+                        // size = datalength + 2 aligned to 4
+                        v.VectorSize = (int)math.ceil((v.ConstantData.Length + 2) / 4f);
+
+                        if (v.VectorSize > 15)
+                        {
+                            cdata.LogError($"Blast.Packaging: CData element '{v.Name}' to large too package as variable, maximum size = 15*4-2 = 58 bytes, element = {v.ConstantData.Length} bytes large");
+                            return (int)BlastError.error_package_cdata_variable_too_large;
+                        }
+
+                        cdata.Executable.SetMetaData(BlastVariableDataType.CData, (byte)v.VectorSize, offset);
+
+                        replace[i] = offset;
+                        cdata.Offsets.Add(offset);
+                        offset = (byte)(offset + v.VectorSize);
                     }
-
-                    cdata.Executable.SetMetaData(BlastVariableDataType.CData, (byte)v.VectorSize, offset);
-
-                    replace[i] = offset;
-                    cdata.Offsets.Add(offset);
-                    offset = (byte)(offset + v.VectorSize); 
                 }
                 else 
                 if (v.IsVector)
@@ -250,6 +267,23 @@ namespace NSS.Blast.Compiler.Stage
                             case blast_operation.jz: next_is_hardcoded_value += 1; break;
                             case blast_operation.jz_long: next_is_hardcoded_value += 2; break;
                             case blast_operation.long_jump: next_is_hardcoded_value += 2; break;
+                            case blast_operation.cdataref: next_is_hardcoded_value += 2; break;
+                            case blast_operation.cdata:
+                                {
+                                    if (i < code.Count - 3)
+                                    {
+                                        int length = (short)((code[i + 1].code << 8) + code[i + 2].code);
+                                        length += 2;
+                                        next_is_hardcoded_value += length;
+                                    }
+                                    else
+                                    {
+                                        // error 
+                                        cdata.LogError("Blast.Packaging: failed to determine cdata length at codepointer {i}");
+                                        return (int)BlastError.compile_packaging_error; 
+                                    }
+                                }
+                                break; 
                         }
                     }
 

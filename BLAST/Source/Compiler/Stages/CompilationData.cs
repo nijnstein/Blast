@@ -531,12 +531,19 @@ namespace NSS.Blast.Compiler
 
         unsafe void WriteHumanReadableCode(StringBuilder sb, List<byte> code, int columns = 10, bool index = true)
         {
-            int i = 0, asnumber = 0;
+            int i = 0, asnumber = 0, skip = 0;
             blast_operation prev = blast_operation.nop;
 
             for (; i < code.Count; i++)
             {
                 byte op = code[i];
+
+                if(skip > 0)
+                {
+                    skip--;
+                    if (asnumber > 0) asnumber--;
+                    continue; 
+                }
 
                 if (index && i % columns == 0)
                 {
@@ -700,7 +707,19 @@ namespace NSS.Blast.Compiler
                         case blast_operation.get_bit: sb.Append("get_bit "); asnumber = 0; break;
                         case blast_operation.get_bits: sb.Append("get_bits "); asnumber = 0; break;
 
-                        case blast_operation.zero: sb.Append("zero "); asnumber = 0; break; 
+                        case blast_operation.zero: sb.Append("zero "); asnumber = 0; break;
+                        case blast_operation.send: sb.Append("send "); break;
+
+                        case blast_operation.cdata:
+                            {
+                                int cdata_size = (short)((code[i + 1] << 8) + code[i + 2]);
+                                sb.Append($"cdata[{cdata_size}] ");
+                                asnumber = 2 + cdata_size;
+                                skip = 2;
+                            }
+                            break;
+
+                        case blast_operation.cdataref: sb.Append("cdataref "); asnumber = 2; break;
 
                         case blast_operation.ex_op:
                             i++;
@@ -1373,7 +1392,7 @@ namespace NSS.Blast.Compiler
         /// - this will add errors to the log if there is any constant CData present in the variables at this point 
         /// </summary>
         /// <returns></returns>
-        internal unsafe int CalculateVariableOffsets()
+        internal unsafe int CalculateVariableOffsets(bool allow_constant_cdata = false)
         {
             // clear out any existing offsets (might have ran multiple times..) 
             Offsets.Clear();
@@ -1387,8 +1406,11 @@ namespace NSS.Blast.Compiler
                     // no offset increase or even a valid offset for CDATA if its constant
                     if (v.IsConstant)
                     {
-                        LogError($"Blast.CompilationData: constant CDATA in variable data offsets, variable name: {v.Name}, index: {i}, offset: {offset}"); 
-                        Offsets.Add(255);
+                        if (!allow_constant_cdata)
+                        {
+                            LogError($"Blast.CompilationData: constant CDATA in variable data offsets, variable name: {v.Name}, index: {i}, offset: {offset}");
+                        }
+                        Offsets.Add(0);
                     }
                     else
                     {

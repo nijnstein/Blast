@@ -534,11 +534,14 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // append 0 to align data to full bytes 
-            if (bi < 8)
+            if (bi > 0)
             {
-                b = (byte)(b << (8 - bi)); 
+                if (bi < 8)
+                {
+                    b = (byte)(b << (8 - bi));
+                }
+                bytes.Add(b);
             }
-            bytes.Add(b); 
 
             return bytes.ToArray(); 
         }

@@ -6640,11 +6640,52 @@ namespace NSS.Blast.Interpretor
             code_pointer += 2;
         }
 
-#endregion
+        #endregion
 
-#endregion
+        #region Send Procedure
 
-#region Push[cfv]
+        void Handle_Send(ref int code_pointer)
+        {
+            BlastVectorSizes datatype;
+
+            // get some parameter information 
+            byte c = decode44(code[code_pointer], out datatype);
+
+            // check out, this might get called with cdataref  
+            code_pointer++;
+            blast_operation op = (blast_operation)code[code_pointer];
+            if (op == blast_operation.cdataref)
+            {
+
+                int jump_offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
+
+                int index = code_pointer - jump_offset + 1;
+                code_pointer += 2;
+
+                op = (blast_operation)code[index];
+
+                // should be cdata TODO validate in debug 
+
+                int length = (code[index + 1] << 8) + code[index + 2];
+                int data_start = index + 3;
+
+                // 'send' data - to be used as an event handler - now connected to log
+
+            }
+            else
+            {
+
+                // normal parameters 
+
+            }
+            return; 
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Push[cfv]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void pushc(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
         {
@@ -8624,6 +8665,13 @@ namespace NSS.Blast.Interpretor
                             code_pointer = code_pointer - offset;
                             break;
                         }
+
+                    case blast_operation.send:
+                        {
+                            Handle_Send(ref code_pointer); 
+                            break; 
+                        }
+
 
                     //
                     // Extended Op == 255 => next byte encodes an operation not used in switch above (more non standard ops)

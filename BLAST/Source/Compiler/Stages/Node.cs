@@ -777,6 +777,12 @@ namespace NSS.Blast.Compiler
                 case nodetype.forloop: return $"for ";
                 case nodetype.inline_function: return $"inlined-function {identifier}";
                 case nodetype.index: return $"indexer {identifier} {constant_op}";
+                case nodetype.cdata:
+                    if (variable != null)
+                        return $"constant cdata {variable.Name}[{variable.ConstantData.Length}]";
+                    else
+                        return "constat cdata";
+                    
                 default: return base.ToString();
             }
         }

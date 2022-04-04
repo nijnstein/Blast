@@ -1506,6 +1506,8 @@ namespace NSS.Blast
             RegisterFunction("reinterpret_bool32", 1, 1, 1, 0, extended_blast_operation.reinterpret_bool32, BlastParameterEncoding.Encode62, BlastVectorSizes.bool32);
             RegisterFunction("reinterpret_float32", 1, 1, 1, 0, extended_blast_operation.reinterpret_float, BlastParameterEncoding.Encode62, BlastVectorSizes.float1);
 
+            RegisterFunction("send", 1, 15, 1, 0, blast_operation.send, BlastParameterEncoding.Encode44, BlastVectorSizes.none); 
+
             return this;
         }
     }

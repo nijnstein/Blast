@@ -119,9 +119,22 @@ namespace NSS.Blast.Compiler.Stage
                     // cdata references should point to the code holding the data 
                     if (p_id.IsCData && p_id.IsConstant)
                     {
+                        //
+                        // encode a cdata reference 
+                        // - cdataref is assumed to be a long ref always 
+                        // 
 
-                        data.LogError("todo cdata constant ref "); 
-
+                        if (data.JumpLabels.TryGetValue(IMJumpLabel.ConstantName(p_id.Id.ToString()), out IMJumpLabel label))
+                        {
+                            code.Add(blast_operation.cdataref, IMJumpLabel.ReferenceToConstant(label));
+                            code.Add((byte)blast_operation.nop, IMJumpLabel.OffsetToConstant(label));
+                            code.Add((byte)blast_operation.nop); // reservation for easier jump resolving, easier to grow smaller then larger
+                        }
+                        else
+                        {
+                            data.LogError($"Blast.Compiler.CompilerParameter: failed to compile reference to CDATA section, the jumplabel could not be located for variable: {p_id.Name} in node: <{ast_param}>");
+                            return false; 
+                        }
                     }
                     else
 
@@ -827,13 +840,21 @@ namespace NSS.Blast.Compiler.Stage
 
                 int constant_cdata_count = 0; 
                 int total_cdata_size = 0;
+                int not_referenced = 0; 
                 foreach(BlastVariable v in data.Variables)
                 {
                     if(v.IsCData && v.IsConstant)
                     {
-                        constant_cdata_count++;
-                        total_cdata_size += v.ConstantData.Length;   // size of data in bytes 
-                        total_cdata_size += 3;                       // size of length 16bit == 2 bytes + cdata op
+                        if (v.ReferenceCount > 0)
+                        {
+                            constant_cdata_count++;
+                            total_cdata_size += v.ConstantData.Length;   // size of data in bytes 
+                            total_cdata_size += 3;                       // size of length 16bit == 2 bytes + cdata op
+                        }
+                        else
+                        {
+                            not_referenced++; 
+                        }
                     }   
                 }
 
@@ -842,8 +863,21 @@ namespace NSS.Blast.Compiler.Stage
                     // there should be no cdata node in root 
                     if(ast_node.HasChild(nodetype.cdata))
                     {
-                        data.LogError($"CompileCDataNode: failed to compile cdata nodes, found cdata nodes without variables", (int)BlastError.error_failed_to_compile_cdata_node);
-                        return BlastError.error; 
+                        // but only error if they werent dereferenced 
+                        if (not_referenced != ast_node.CountChildren(nodetype.cdata))
+                        {
+                            data.LogError($"CompileCDataNode: failed to compile cdata nodes, found cdata nodes without variables", (int)BlastError.error_failed_to_compile_cdata_node);
+                            return BlastError.error;
+                        }
+                        else
+                        {
+                            // the dereferenced nodes should be skipped
+                            foreach (node n in ast_node.GetChildren(nodetype.cdata))
+                            {
+                                n.SkipCompilation();
+                            }
+                            return BlastError.success; 
+                        }
                     }
                     else
                     {
@@ -852,43 +886,48 @@ namespace NSS.Blast.Compiler.Stage
                 }
 
                 // inject the jump
-                if (constant_cdata_count > 255)
+                int jump_size = total_cdata_size + 1; 
+                if (jump_size > 255)
                 {
                     // encode a long jump, we know whereto so set no label as to not trigger jumpresolving
                     code.Add(blast_operation.long_jump);
-                    code.Add((byte)(constant_cdata_count >> 8));
-                    code.Add((byte)(constant_cdata_count & 0b111_11111));
+                    code.Add((byte)(jump_size >> 8));
+                    code.Add((byte)(jump_size & 0b111_11111));
                 }
                 else
                 {
                     // short jump
                     code.Add(blast_operation.jump);
-                    code.Add((byte)constant_cdata_count);
+                    code.Add((byte)jump_size);
                 }
 
-                // encode the data 
+                // encode the data
                 foreach (node n in ast_node.children)
                 {
                     if (n.IsCData)
                     {
-                        Assert.IsTrue(n.variable != null && ast_node.variable.IsCData && n.variable.IsConstant && n.variable.ConstantData != null && n.variable.ConstantData.Length > 0);
-                        BlastVariable v = ast_node.variable;
-
-                        // link the cdata as any other constant 
-                        IMJumpLabel label = data.LinkJumpLabel(IMJumpLabel.Constant(v.Id.ToString()));
-
-                        // encode [cdata]  ||  strictly, this is not needed but at the cost of a byte we simplify parsing it
-                        // as we cant reliably indicate cdata while reading only forward in the interpretor without it
-                        code.Add(blast_operation.cdata, label); 
-
-                        // encode data size 
-                        code.Add((byte)(v.ConstantData.Length >> 8));
-                        code.Add((byte)(v.ConstantData.Length & 0b1111_1111));
-
-                        // encode the data 
-                        for(int i = 0; i < v.ConstantData.Length; i++)
+                        Assert.IsTrue(n.variable != null && n.variable.IsCData && n.variable.IsConstant && n.variable.ConstantData != null && n.variable.ConstantData.Length > 0);
+                        BlastVariable v = n.variable;
+                        
+                        // only inline the data if its referenced 
+                        if (v.ReferenceCount > 0)
                         {
-                            code.Add(v.ConstantData[i]);
+                            // link the cdata as any other constant 
+                            IMJumpLabel label = data.LinkJumpLabel(IMJumpLabel.Constant(v.Id.ToString()));
+
+                            // encode [cdata]  ||  strictly, this is not needed but at the cost of a byte we simplify parsing it
+                            // as we cant reliably indicate cdata while reading only forward in the interpretor without it
+                            code.Add(blast_operation.cdata, label);
+
+                            // encode data size 
+                            code.Add((byte)(v.ConstantData.Length >> 8));
+                            code.Add((byte)(v.ConstantData.Length & 0b1111_1111));
+
+                            // encode the data 
+                            for (int i = 0; i < v.ConstantData.Length; i++)
+                            {
+                                code.Add(v.ConstantData[i]);
+                            }
                         }
 
                         // skip the node in further steps 
@@ -1870,7 +1909,7 @@ namespace NSS.Blast.Compiler.Stage
 
             // make sure data offsets are calculated and set in im data. 
             // the packager creates this data but it might not have executed yet depending on configuration 
-            cdata.CalculateVariableOffsets();
+            cdata.CalculateVariableOffsets(true);
 
             // compile into bytecode 
             cdata.code = CompileAST(cdata);

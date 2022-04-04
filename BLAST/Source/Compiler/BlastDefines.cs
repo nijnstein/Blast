@@ -880,11 +880,11 @@ namespace NSS.Blast
         /// </summary>
         cdataref,
         
-
-
-        reserved, 
-
-
+           
+        /// <summary>
+        /// send data to some sink 
+        /// </summary>
+        send, 
 
         /// <summary>
         /// PI
@@ -1201,12 +1201,7 @@ namespace NSS.Blast
         reverse_bits,     // == 42 
 
 
-
-
-        /// <summary>
-        /// alert a msg to the log
-        /// </summary>
-        alert,
+      
        
 
 
