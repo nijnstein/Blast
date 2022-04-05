@@ -760,7 +760,11 @@ namespace NSS.Blast.Compiler
                 case nodetype.compound: return $"{sconstant}{svector}compound statement of {children.Count}";
                 case nodetype.function: return $"{sconstant}{svector}function {function.GetFunctionName()}";
                 case nodetype.operation: return $"{sconstant}{svector}operation {token}";
-                case nodetype.parameter: return $"{sconstant}{svector}parameter {identifier}";
+                case nodetype.parameter:
+                    if(variable != null && variable.IsCData)
+                        return $"{sconstant} CDATA {identifier}";
+                    else
+                        return $"{sconstant}{svector}parameter {identifier}";
                 case nodetype.none: return $"{sconstant}{svector}nop";
                 case nodetype.yield: return $"{sconstant}{svector}yield";
                 case nodetype.ifthenelse: return $"if";

@@ -72,7 +72,7 @@ namespace NSS.Blast.Compiler.Stage
 
             // determine if indexed 
             blast_operation indexer = blast_operation.nop; 
-            if(ast_param.HasIndexers && BlastTransform.ClassifyIndexer(ast_param, out indexer, out byte spec))
+            if(ast_param.HasIndexers && BlastTransform.ClassifyIndexer(ast_param, out indexer))
             {
                 // this is an indexed constant|variable|anything
                 if(!data.CompilerOptions.InlineIndexers || data.CompilerOptions.PackageMode != BlastPackageMode.SSMD)

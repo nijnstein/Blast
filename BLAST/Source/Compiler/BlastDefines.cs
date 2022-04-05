@@ -777,7 +777,8 @@ namespace NSS.Blast
         index_w,
 
         /// <summary>
-        /// index the vector of n size with an m size indexer: x, xy, zzz etc. 
+        /// index a vector at [i] with a 16 bit index
+        /// - also works on cdata, which it interprets as NUMERIC[], later versions will allow multiple datatypes 
         /// </summary>
         index_n,
 
@@ -866,12 +867,13 @@ namespace NSS.Blast
 
 
         /// <summary>
-        /// get element size of a given variable, for vectors returns vectorsize
+        /// get element size of a given variable, for vectors returns vectorsize, for cdata returns number of elements in interpreted datatype
         /// </summary>
         size,  
 
         /// <summary>
-        /// constant data declaration 
+        /// constant data declaration - untyped == array of float values unless otherwise interpreted
+        /// - future work might expand this into multiple ops or add a parameter
         /// </summary>
         cdata,
 
@@ -885,6 +887,8 @@ namespace NSS.Blast
         /// send data to some sink 
         /// </summary>
         send, 
+
+
 
         /// <summary>
         /// PI
@@ -1201,8 +1205,9 @@ namespace NSS.Blast
         reverse_bits,     // == 42 
 
 
-      
-       
+        // bool32 bit operations  -> these are explicetly in extended ops to force things to be more flexible in the interpretors        \
+        // when they accept this, ID and HALF should not be a big problem  
+        or32, and32, xor32, not32,
 
 
         /// <summary>
@@ -1902,7 +1907,11 @@ namespace NSS.Blast
         /// <summary>
         /// failed to compile constant cdata node into the codestream 
         /// </summary>
-        error_failed_to_compile_cdata_node = -88
+        error_failed_to_compile_cdata_node = -88,
+        /// <summary>
+        /// failed to read cdata defined as array of numerics
+        /// </summary>
+        error_tokenizer_invalid_cdata_array = -89
     }
 
 }

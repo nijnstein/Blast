@@ -635,7 +635,7 @@ namespace NSS.Blast.Compiler
 
                     // set package 
                     Blast.blaster.SetPackage(package, pcode, pdata, pmetadata, initial_stack_offset);
-                    Blast.blaster.ValidationMode = validation_run;
+                    Blast.blaster.SetValidationMode(validation_run);
 
                     // run it 
                     int exitcode = Blast.blaster.Execute(blast);
@@ -647,7 +647,7 @@ namespace NSS.Blast.Compiler
                     // - make sure stack is packaged, otherwise stack estimation cannot check stack use
 
                     Blast.ssmd_blaster.SetPackage(package, pcode, pmetadata);
-                    Blast.ssmd_blaster.ValidateOnce = true; // it should be set by setting a compiler package but set anyway to make it clear to any reader
+                    Blast.ssmd_blaster.ValidateOnce = validation_run; // it should be set by setting a compiler package but set anyway to make it clear to any reader
 
                     BlastSSMDDataStack* p_ssmd_data = (BlastSSMDDataStack*)(void*)pdata;
 

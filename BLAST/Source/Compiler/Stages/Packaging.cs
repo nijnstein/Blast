@@ -267,6 +267,7 @@ namespace NSS.Blast.Compiler.Stage
                             case blast_operation.jz: next_is_hardcoded_value += 1; break;
                             case blast_operation.jz_long: next_is_hardcoded_value += 2; break;
                             case blast_operation.long_jump: next_is_hardcoded_value += 2; break;
+                            case blast_operation.index_n: next_is_hardcoded_value += 2; break; 
                             case blast_operation.cdataref: next_is_hardcoded_value += 2; break;
                             case blast_operation.cdata:
                                 {

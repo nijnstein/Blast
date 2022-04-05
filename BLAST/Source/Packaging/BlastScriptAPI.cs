@@ -1442,6 +1442,7 @@ namespace NSS.Blast
             RegisterFunction("idy", 1, 1, 0, 1, blast_operation.index_y);
             RegisterFunction("idz", 1, 1, 0, 1, blast_operation.index_z);
             RegisterFunction("idw", 1, 1, 0, 1, blast_operation.index_w);
+            RegisterFunction("idxn", 2, 2, 0, 1, blast_operation.index_n);
 
             RegisterFunction("expand2", 1, 1, 1, 2, blast_operation.expand_v2);
             RegisterFunction("expand3", 1, 1, 1, 3, blast_operation.expand_v3);
@@ -1506,7 +1507,8 @@ namespace NSS.Blast
             RegisterFunction("reinterpret_bool32", 1, 1, 1, 0, extended_blast_operation.reinterpret_bool32, BlastParameterEncoding.Encode62, BlastVectorSizes.bool32);
             RegisterFunction("reinterpret_float32", 1, 1, 1, 0, extended_blast_operation.reinterpret_float, BlastParameterEncoding.Encode62, BlastVectorSizes.float1);
 
-            RegisterFunction("send", 1, 15, 1, 0, blast_operation.send, BlastParameterEncoding.Encode44, BlastVectorSizes.none); 
+            RegisterFunction("send", 1, 1, 1, 0, blast_operation.send, BlastParameterEncoding.Encode44, BlastVectorSizes.none);
+            RegisterFunction("size", 1, 1, 0, 1, blast_operation.size);
 
             return this;
         }

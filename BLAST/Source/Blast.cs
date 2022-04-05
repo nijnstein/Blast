@@ -1837,6 +1837,7 @@ namespace NSS.Blast
 
                     case blast_operation.zero: sb.Append("zero "); asnumber = 0; break;
                     case blast_operation.send: sb.Append("send "); break;
+                    case blast_operation.size: sb.Append("size "); break;
 
                     case blast_operation.cdata:
                         {

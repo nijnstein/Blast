@@ -19,7 +19,7 @@ using Unity.Mathematics;
 namespace NSS.Blast.Compiler.Stage
 {
 
-   
+
     /// <summary>
     /// The Tokenizer:
     /// 
@@ -33,7 +33,7 @@ namespace NSS.Blast.Compiler.Stage
         /// version
         /// </summary>
         public Version Version => new Version(0, 2, 1);
-        
+
         /// <summary>
         /// Tokenizer -> converts input text into array of tokens 
         /// </summary>
@@ -83,7 +83,7 @@ namespace NSS.Blast.Compiler.Stage
 
         static int scan_until(string code, char until, int start)
         {
-            for(int i = start; i < code.Length; i++)
+            for (int i = start; i < code.Length; i++)
             {
                 if (code[i] == until) return i;
             }
@@ -114,7 +114,7 @@ namespace NSS.Blast.Compiler.Stage
 
         static bool is_operation_that_allows_to_combine_minus(BlastScriptToken token)
         {
-            switch(token)
+            switch (token)
             {
                 // the obvious =-*/
                 case BlastScriptToken.Add:
@@ -134,7 +134,7 @@ namespace NSS.Blast.Compiler.Stage
                 case BlastScriptToken.Equals:
                 // as wel as opening a closure (
                 case BlastScriptToken.OpenParenthesis:
-                    return true; 
+                    return true;
             }
             return false;
         }
@@ -200,26 +200,26 @@ namespace NSS.Blast.Compiler.Stage
             BlastVariableDataType datatype = BlastVariableDataType.Numeric;
             int vector_size, byte_size;
 
-            if(!Blast.GetDataTypeInfo(a[2], out datatype, out vector_size, out byte_size))
+            if (!Blast.GetDataTypeInfo(a[2], out datatype, out vector_size, out byte_size))
             {
                 data.LogError($"tokenizer.read_input_output_mapping: failed to interpret input variable typename {a[1]} as a valid type", (int)BlastError.error_input_type_invalid);
-                return null; 
+                return null;
             }
 
             // defaults? 
             float4 variable_default = default;
-            byte[] constant_data = null; 
+            byte[] constant_data = null;
 
-            if(a.Length > 3)
+            if (a.Length > 3)
             {
                 // if there are defaults, then depending on datatype enforce vectorsize and type (only float now..)
-                int c = a.Length - 3; 
-                if(datatype != BlastVariableDataType.CData && c != vector_size)
+                int c = a.Length - 3;
+                if (datatype != BlastVariableDataType.CData && c != vector_size)
                 {
                     data.LogError($"tokenizer.read_input_output_mapping: failed to interpret default as valid data for type, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}", (int)BlastError.error_input_ouput_invalid_default);
-                    return null;  
+                    return null;
                 }
-                switch(datatype)
+                switch (datatype)
                 {
                     case BlastVariableDataType.Numeric:
                         {
@@ -245,7 +245,7 @@ namespace NSS.Blast.Compiler.Stage
                                 uint* b32 = (uint*)(void*)&f;
                                 if (CodeUtils.TryAsBool32(a[3], true, out uint ui32))
                                 {
-                                    b32[0] = ui32; 
+                                    b32[0] = ui32;
                                 }
                                 else
                                 {
@@ -253,14 +253,14 @@ namespace NSS.Blast.Compiler.Stage
                                     return null;
                                 }
                             }
-                            variable_default[0] = f; 
+                            variable_default[0] = f;
                         }
                         break;
-                    
-             
+
+
                     case BlastVariableDataType.CData:
                         {
-                            if(!is_input)
+                            if (!is_input)
                             {
                                 data.LogError($"Blast.Tokenizer.read_input_output_mapping: cdata is only allowed as input, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}, data = {a[3]}", (int)BlastError.error_input_ouput_invalid_default);
                                 return null;
@@ -268,23 +268,23 @@ namespace NSS.Blast.Compiler.Stage
 
                             // all data after a[2] is part of the datastream 
                             constant_data = ReadCDATAFromMapping(data, comment, a);
-                            if(constant_data == null)
+                            if (constant_data == null)
                             {
                                 // it should already have logged why 
                                 return null;
                             }
 
                             vector_size = 0; //(int)math.ceil((float)constant_data.Length / 4);
-                            byte_size = constant_data.Length; 
+                            byte_size = constant_data.Length;
                         }
-                        break; 
+                        break;
                 }
             }
 
 
             // setup the new variable  
             BlastVariable v;
-            CompilationData cdata = (CompilationData)data; 
+            CompilationData cdata = (CompilationData)data;
 
             if (is_input)
             {
@@ -328,7 +328,7 @@ namespace NSS.Blast.Compiler.Stage
 
 
             // if mapping to constantdata the data is stored in the variable 
-            if(datatype == BlastVariableDataType.CData)
+            if (datatype == BlastVariableDataType.CData)
             {
                 v.ConstantData = constant_data;
                 v.VectorSize = 0;
@@ -342,7 +342,7 @@ namespace NSS.Blast.Compiler.Stage
                 ByteSize = byte_size,
                 Offset = offset,
                 Default = variable_default
-            };            
+            };
 
             return mapping;
         }
@@ -351,9 +351,6 @@ namespace NSS.Blast.Compiler.Stage
         /// <summary>
         /// read cdata data from mapping
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="a"></param>
-        /// <returns></returns>
         private static byte[] ReadCDATAFromMapping(IBlastCompilationData data, string comment, string[] a)
         {
             Assert.IsNotNull(data);
@@ -373,13 +370,13 @@ namespace NSS.Blast.Compiler.Stage
             //       but this is cheaper to do considering its probably rare to be used 
             if (ch == '\'' || ch == '"')
             {
-                return ReadCDATAString(data, comment, a, 3); 
-            } 
+                return ReadCDATAString(data, comment, a, 3);
+            }
 
             // binary: allow only 1 single data element extra
             // binary: single bitstream of 1;s and 0s >= 16 bits 
             // binary: single bitstream starting with b
-            if(ch == 'b' || ((ch == '1' || ch == '0') && a[3].Length >= 16))
+            if (ch == 'b' || ((ch == '1' || ch == '0') && a[3].Length >= 16))
             {
                 if (a.Length == 4 || a[4].StartsWith("#"))
                 {
@@ -388,12 +385,12 @@ namespace NSS.Blast.Compiler.Stage
                 else
                 {
                     data.LogError($"Blast.Tokenizer.ReadCDATAFromMapping: failed to read cdata mapping, binary streams other then bool32 arrays should be continueus in 1 element, define: {comment}");
-                    return null; 
+                    return null;
                 }
             }
 
             // anything else is assumed to be a list of numerics || bool32
-            return ReadCDATAArray(data, comment, a, 3); 
+            return ReadCDATAArray(data, comment, a, 3);
         }
 
         /// <summary>
@@ -420,7 +417,7 @@ namespace NSS.Blast.Compiler.Stage
             if (ch == '\'' || ch == '"')
             {
                 constant_data = ReadCDATAString(data, comment, a, 2);
-                if (constant_data == null) return false; 
+                if (constant_data == null) return false;
             }
             else
 
@@ -458,27 +455,48 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // setup
-            v.DataType = BlastVariableDataType.CData; 
+            v.DataType = BlastVariableDataType.CData;
             v.ConstantData = constant_data;
             v.VectorSize = 0;
             v.ReferenceCount = 0; // 0 references 
             v.IsConstant = true;  // this is a constant data object added by input and thus resides in the datasegment
 
-            return true; 
+            return true;
         }
 
 
 
         /// <summary>
-        /// 
+        /// read an array of numerics, we have to assume we get numerics from input 
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="comment"></param>
-        /// <param name="span"></param>
-        /// <returns></returns>
         static byte[] ReadCDATAArray(IBlastCompilationData data, string comment, string[] a, int offset)
         {
-            throw new NotImplementedException();
+            Assert.IsNotNull(data);
+            Assert.IsTrue(a != null && a.Length >= offset);
+
+            byte[] bytes = new byte[(a.Length - offset) * 4];
+            int c = 0;
+
+            for (int i = offset; i < a.Length; i++)
+            {
+                float f = a[i].Trim().AsFloat();
+                if (math.isnan(f))
+                {
+                    data.LogError($"Blast.Tokenizer.ReadCDATAArray: encountered invalid numeric '{a[i]}' in cdata define: {comment}", (int)BlastError.error_tokenizer_invalid_cdata_array);
+                    return null;
+                }
+                unsafe
+                {
+                    byte* p = (byte*)(void*)&f;
+                    Assert.IsTrue(c <= (bytes.Length - 4));
+                    bytes[c++] = p[0];
+                    bytes[c++] = p[1];
+                    bytes[c++] = p[2];
+                    bytes[c++] = p[3];
+                }
+            }
+
+            return bytes;
         }
 
         /// <summary>
@@ -497,20 +515,20 @@ namespace NSS.Blast.Compiler.Stage
             List<byte> bytes = new List<byte>();
 
             int bi = 0;
-            byte b = 0; 
+            byte b = 0;
 
-            for(int i = 0; i < value.Length; i++)
+            for (int i = 0; i < value.Length; i++)
             {
                 // ignore any value thats not a 1 or 0
-                char ch = value[i]; 
-                switch(ch)
+                char ch = value[i];
+                switch (ch)
                 {
                     case '1': b = (byte)((b << 1) | 1); bi++; break;
                     case '0': b = (byte)(b << 1); bi++; break;
 
                     case '_':
                     case 'b': continue;
-                    
+
                     // anything else is an error 
                     default:
                         data.LogError($"Blast.Tokenizer.ReadCDATABinary: encountered invalid token '{ch}' in cdata define: {comment}", (int)BlastError.error_tokenizer_invalid_binary_stream);
@@ -518,19 +536,19 @@ namespace NSS.Blast.Compiler.Stage
                 }
 
                 // byte complete? 
-                if(bi == 8)
+                if (bi == 8)
                 {
                     bytes.Add(b);
                     b = 0;
-                    bi = 0; 
+                    bi = 0;
                 }
             }
 
             // validate reading at least 1 bit 
-            if(bi == 0 && bytes.Count == 0)
+            if (bi == 0 && bytes.Count == 0)
             {
                 data.LogError($"Blast.Tokenizer.ReadCDATABinary: failed to read any binary data in cdata binary define: {comment}", (int)BlastError.error_tokenizer_invalid_binary_stream);
-                return null;  
+                return null;
             }
 
             // append 0 to align data to full bytes 
@@ -543,13 +561,250 @@ namespace NSS.Blast.Compiler.Stage
                 bytes.Add(b);
             }
 
-            return bytes.ToArray(); 
+            return bytes.ToArray();
         }
 
+
+        /// <summary>
+        /// read string data from a cdata define, this isnt strict about '"
+        /// </summary>
         static byte[] ReadCDATAString(IBlastCompilationData data, string comment, string[] a, int offset)
         {
-            throw new NotImplementedException();
+            Assert.IsNotNull(data);
+            Assert.IsTrue(a != null && a.Length >= offset);
+
+            List<byte> bytes = new List<byte>();
+
+            for (int i = offset; i < a.Length; i++)
+            {
+                string s = a[i].Trim();
+                int start_offset = 0, end_offset = 0;
+
+                if (s[0] == '\'' || s[0] == '"' && bytes.Count == 0)
+                {
+                    // skip opening '
+                    start_offset = 1;
+                }
+                if (i == a.Length - 1)
+                {
+                    // could end with ' 
+                    if (s[s.Length - 1] == '\'' || s[s.Length - 1] == '"')
+                    {
+                        end_offset = 1;
+                    }
+                }
+                for (int j = start_offset; j < s.Length - end_offset; j++)
+                {
+                    bytes.Add((byte)s[j]);
+                }
+            }
+
+            return bytes.ToArray();
+
         }
+
+
+        static BlastError TokenizeMapping(IBlastCompilationData data, string comment, List<Tuple<BlastScriptToken, string>> tokens, bool is_input = true)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(comment));
+
+            if (tokens.Count > 0)
+            {
+                // not allowed   must be first things 
+                data.LogError("Blast.Tokenizer: #input and #output defines must be the first statements in a script");
+                return BlastError.error;
+            }
+
+            // 
+            // Include the ; as allowed terminator. i forget it myself too often that i should not close defines
+            // 
+
+            int i_end = scan_until(comment, '#', ';', 1);
+            if (i_end >= 0)
+            {
+                // and remove that part, assume it to be a comment on the output def.                             
+                comment = comment.Substring(0, i_end);
+            }
+
+            string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            if (a.Length >= 3)
+            {
+                BlastVariableMapping mapping = read_input_output_mapping(data, comment, a, is_input);
+                if (mapping != null)
+                {
+                    if (is_input)
+                    {
+                        data.Inputs.Add(mapping);
+                    }
+                    else
+                    {
+                        data.Outputs.Add(mapping);
+                    }
+                }
+                else
+                {
+                    data.LogError($"Blast.Tokenizer: failed to read {(is_input ? "input" : "output")} define: {comment}\nExpecting format: '#output id offset bytesize'");
+                    return BlastError.error;
+                }
+            }
+            else
+            {
+                data.LogError($"tokenize: encountered malformed output define: {comment}\nExpecting format: '#output id offset bytesize'");
+                return BlastError.error;
+            }
+
+            return BlastError.success;
+        }
+
+        static BlastError TokenizeCDataMapping(IBlastCompilationData data, string comment, List<Tuple<BlastScriptToken, string>> tokens)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(comment));
+
+            // we could merge input and output parsing as code duplicates.. TODO 
+            if (tokens.Count > 0)
+            {
+                // not allowed   must be first things 
+                data.LogError("Blast.Tokenizer: #defines must be the first statements in a script");
+                return BlastError.error;
+            }
+
+            // 
+            // Include the ; as allowed terminator. i forget it myself too often that i should not close defines
+            // 
+
+            int i_end = scan_until(comment, '#', ';', 1);
+            if (i_end >= 0)
+            {
+                // and remove that part, assume it to be a comment on the output def.                             
+                comment = comment.Substring(0, i_end);
+            }
+
+            string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            if (a.Length >= 2)
+            {
+                if (!ReadCDATAFromDefine(data, comment, a))
+                {
+                    return BlastError.error_failed_to_read_cdata_define;
+                }
+            }
+            else
+            {
+                data.LogError($"Blast.Tokenizer: encountered malformed output define: {comment}\nExpecting format: '#output id offset bytesize'");
+                return BlastError.error;
+            }
+
+            return BlastError.success;
+        }
+
+        static BlastError TokenizeDefine(IBlastCompilationData data, string comment, List<Tuple<BlastScriptToken, string>> tokens)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(comment));
+
+            // if defining stuff in scripts they must be the first statements 
+            if (comment.StartsWith("#define ", StringComparison.OrdinalIgnoreCase))
+            {
+                if (tokens.Count > 0)
+                {
+                    // not allowed   must be first things 
+                    data.LogError("tokenize: #defines must be the first statements in a script");
+                    return BlastError.error;
+                }
+
+                comment = scan_until_stripend(comment);
+
+                // get defined value seperated by spaces or tabs 
+                string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                if (a.Length == 3)
+                {
+                    string def_key = a[1].Trim().ToLowerInvariant();
+
+                    unsafe
+                    {
+                        // check it does not map to a function name
+                        if (data.Blast.Data->GetFunction(def_key).IsValid)
+                        {
+                            data.LogError($"tokenize: #define identifier name: <{def_key}> is already mapped to a function");
+                            return BlastError.error;
+                        }
+                        else
+                        {
+                            // it may also not be a constant name 
+                            if (Blast.IsNamedSystemConstant(def_key) != blast_operation.nop)
+                            {
+                                data.LogError($"tokenize: #define identifier name: <{def_key}> is already mapped to a system constant");
+                                return BlastError.error;
+                            }
+                            else
+                            {
+                                // it has to be unique
+                                if (!data.Defines.ContainsKey(def_key))
+                                {
+                                    data.Defines.Add(def_key, a[2].Trim());
+                                }
+                                else
+                                {
+                                    data.LogError($"tokenize: #define identifier name: <{def_key}> has already been defined with value: {data.Defines[def_key]}");
+                                    return BlastError.error;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    data.LogError($"tokenize: encountered malformed value define: {comment}\nExpecting a format like: #define NAME 3.3");
+                    return BlastError.error;
+                }
+            }
+            else
+            // store any validations for automatic testing
+            if (comment.StartsWith("#validate ", StringComparison.OrdinalIgnoreCase))
+            {
+                comment = scan_until_stripend(comment);
+
+                // get defined value seperated by spaces
+                string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                if (a.Length == 3)
+                {
+                    data.Validations.Add(a[1].Trim(), a[2].Trim());
+                }
+                else
+                {
+                    data.LogError($"tokenize: encountered malformed validation define: {comment}");
+                    return BlastError.error;
+                }
+            }
+            else
+            // input mapping 
+            if (comment.StartsWith("#input ", StringComparison.OrdinalIgnoreCase))
+            {
+                return TokenizeMapping(data, comment, tokens, true);
+            }
+            else
+            // output mapping 
+            if (comment.StartsWith("#output ", StringComparison.OrdinalIgnoreCase))
+            {
+                return TokenizeMapping(data, comment, tokens, false);
+            }
+            // constant mapping 
+            if (comment.StartsWith("#cdata ", StringComparison.OrdinalIgnoreCase))
+            {
+                return TokenizeCDataMapping(data, comment, tokens);
+            }
+            else
+            {
+                // it has to be a comment, log trace 
+                // data.LogTrace($"trace: {comment}");
+            }
+
+            return BlastError.success;
+        }
+
+
+
 
         static int tokenize(IBlastCompilationData data, string code, bool replace_tabs_with_space = true)
         {
@@ -576,201 +831,8 @@ namespace NSS.Blast.Compiler.Stage
                     int i_comment_end = scan_to_comment_end(code, i1 + 1);
                     string comment = code.Substring(i1, i_comment_end - i1);
 
-                    // if defining stuff in scripts they must be the first statements 
-                    if (comment.StartsWith("#define ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (tokens.Count > 0)
-                        {
-                            // not allowed   must be first things 
-                            data.LogError("tokenize: #defines must be the first statements in a script");
-                            return (int)BlastError.error;
-                        }
-
-                        comment = scan_until_stripend(comment);
-
-                        // get defined value seperated by spaces or tabs 
-                        string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (a.Length == 3)
-                        {
-                            string def_key = a[1].Trim().ToLowerInvariant();
-
-                            unsafe
-                            {
-                                // check it does not map to a function name
-                                if (data.Blast.Data->GetFunction(def_key).IsValid)
-                                {
-                                    data.LogError($"tokenize: #define identifier name: <{def_key}> is already mapped to a function");
-                                }
-                                else
-                                {
-                                    // it may also not be a constant name 
-                                    if (Blast.IsNamedSystemConstant(def_key) != blast_operation.nop)
-                                    {
-                                        data.LogError($"tokenize: #define identifier name: <{def_key}> is already mapped to a system constant");
-                                    }
-                                    else
-                                    {
-                                        // it has to be unique
-                                        if (!data.Defines.ContainsKey(def_key))
-                                        {
-                                            data.Defines.Add(def_key, a[2].Trim());
-                                        }
-                                        else
-                                        {
-                                            data.LogError($"tokenize: #define identifier name: <{def_key}> has already been defined with value: {data.Defines[def_key]}");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            data.LogError($"tokenize: encountered malformed value define: {comment}\nExpecting a format like: #define NAME 3.3");
-                        }
-                    }
-                    else
-                    // store any validations for automatic testing
-                    if (comment.StartsWith("#validate ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        comment = scan_until_stripend(comment);
-
-                        // get defined value seperated by spaces
-                        string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (a.Length == 3)
-                        {
-                            data.Validations.Add(a[1].Trim(), a[2].Trim());
-                        }
-                        else
-                        {
-                            data.LogError($"tokenize: encountered malformed validation define: {comment}");
-                        }
-                    }
-                    else
-                    // input mapping 
-                    if (comment.StartsWith("#input ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (tokens.Count > 0)
-                        {
-                            // not allowed   must be among the first things scanned 
-                            data.LogError("tokenize: #defines must be the first statements in a script");
-                            return (int)BlastError.error;
-                        }
-
-                        // scan for the next# in comment (if any)
-                        comment = scan_until_stripend(comment).Trim();
-
-                        // 
-                        // Include the ; as allowed terminator. i forget it myself too often that i should not close defines
-                        // 
-
-                        int i_end = scan_until(comment, '#', ';', 1);
-                        if (i_end >= 0)
-                        {
-                            // and remove that part, assume it to be a comment on the output def.                             
-                            comment = comment.Substring(0, i_end);
-                        }
-
-                        // split result into strings 
-                        string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (a.Length >= 3)
-                        {
-                            BlastVariableMapping mapping = read_input_output_mapping(data, comment, a, true);
-                            if (mapping != null)
-                            {
-                                data.Inputs.Add(mapping);
-                            }
-                            else
-                            {
-                                data.LogError($"tokenize: failed to read input define: {comment}\nExpecting format: '#input id offset bytesize'");
-                            }
-                        }
-                        else
-                        {
-                            data.LogError($"tokenize: encountered malformed input define: {comment}\nExpecting format: '#input id offset bytesize'");
-                        }
-                    }
-                    else
-                    // output mapping 
-                    if (comment.StartsWith("#output ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // we could merge input and output parsing as code duplicates.. TODO 
-                        if (tokens.Count > 0)
-                        {
-                            // not allowed   must be first things 
-                            data.LogError("tokenize: #defines must be the first statements in a script");
-                            return (int)BlastError.error;
-                        }
-
-                        // 
-                        // Include the ; as allowed terminator. i forget it myself too often that i should not close defines
-                        // 
-
-                        int i_end = scan_until(comment, '#', ';', 1);
-                        if (i_end >= 0)
-                        {
-                            // and remove that part, assume it to be a comment on the output def.                             
-                            comment = comment.Substring(0, i_end);
-                        }
-
-                        string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (a.Length >= 3)
-                        {
-                            BlastVariableMapping mapping = read_input_output_mapping(data, comment, a, false);
-                            if (mapping != null)
-                            {
-                                data.Outputs.Add(mapping);
-                            }
-                            else
-                            {
-                                data.LogError($"tokenize: failed to read output define: {comment}\nExpecting format: '#output id offset bytesize'");
-                            }
-                        }
-                        else
-                        {
-                            data.LogError($"tokenize: encountered malformed output define: {comment}\nExpecting format: '#output id offset bytesize'");
-                        }
-                    }
-                    // UGLY AS .... but lets just keep this repetition
-                    // constant mapping 
-                    if (comment.StartsWith("#cdata ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // we could merge input and output parsing as code duplicates.. TODO 
-                        if (tokens.Count > 0)
-                        {
-                            // not allowed   must be first things 
-                            data.LogError("tokenize: #defines must be the first statements in a script");
-                            return (int)BlastError.error;
-                        }
-
-                        // 
-                        // Include the ; as allowed terminator. i forget it myself too often that i should not close defines
-                        // 
-
-                        int i_end = scan_until(comment, '#', ';', 1);
-                        if (i_end >= 0)
-                        {
-                            // and remove that part, assume it to be a comment on the output def.                             
-                            comment = comment.Substring(0, i_end);
-                        }
-
-                        string[] a = comment.Trim().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (a.Length >= 2)
-                        {
-                            if(!ReadCDATAFromDefine(data, comment, a))
-                            {
-                                return (int)BlastError.error_failed_to_read_cdata_define;
-                            }
-                        }
-                        else
-                        {
-                            data.LogError($"tokenize: encountered malformed output define: {comment}\nExpecting format: '#output id offset bytesize'");
-                        }
-                    }
-                    else
-                    {
-                        // it has to be a comment, log trace 
-                        // data.LogTrace($"trace: {comment}");
-                    }
+                    BlastError res = TokenizeDefine(data, comment, tokens);
+                    if (res != BlastError.success) return (int)res;
 
                     i1 = math.max(i1 + 1, i_comment_end + 1);
                     continue;
@@ -908,7 +970,7 @@ namespace NSS.Blast.Compiler.Stage
                 int i2 = i1 + 1;
                 bool have_numeric = char.IsDigit(code[i1]);
                 bool numeric_has_dot = false;
-                bool can_be_binary = code[i1] == '0' || code[i1] == '1' || code[i1] == 'b' || code[i1] == 'B' || code[i1] == '_'; 
+                bool can_be_binary = code[i1] == '0' || code[i1] == '1' || code[i1] == 'b' || code[i1] == 'B' || code[i1] == '_';
 
                 while (i2 < code.Length)
                 {
@@ -920,13 +982,14 @@ namespace NSS.Blast.Compiler.Stage
                     can_be_binary = can_be_binary && (code[i2] == '0' || code[i2] == '1' || code[i2] == 'b' || code[i2] == 'B' || code[i2] == '_');
                     have_numeric = have_numeric && (code[i2] != '_');
 
+
                     if ((have_numeric && ch == '.') || (!whitespace && !istoken && !eof) || can_be_binary)
                     {
                         if (have_numeric && ch == '.')
                         {
                             if (numeric_has_dot)
                             {
-                                data.LogError("tokenizer: failed to read numeral identifier, encountered multiple .'s");
+                                data.LogError("Blast.Tokenizer: failed to read numeral identifier, encountered multiple .'s");
                                 return (int)BlastError.error;
                             }
                             else
@@ -1062,6 +1125,7 @@ namespace NSS.Blast.Compiler.Stage
 
             return (int)BlastError.success;
         }
+
 
         /// <summary>
         /// Execute the tokenizer stage

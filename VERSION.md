@@ -1,3 +1,7 @@
+
+- bugfix: fixed bug causing error in sample6 dueue to a wrong check in packaging
+- added: unity assembly definition file reducing editor re-build times
+
 **V1.0.3** 2022-04-03
 
 - bugfix: wrong vectorsize after zero transform

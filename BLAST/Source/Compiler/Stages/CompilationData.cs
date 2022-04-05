@@ -692,7 +692,7 @@ namespace NSS.Blast.Compiler
                         case blast_operation.constant_long_ref: sb.Append("clref "); asnumber = 2; break;
                         case blast_operation.constant_short_ref: sb.Append("csref "); asnumber = 1; break;
 
-                        case blast_operation.index_n: sb.Append("idx_N "); asnumber = 1; break;
+                        case blast_operation.index_n: sb.Append("idx_N "); asnumber = 2; break;
                         case blast_operation.index_x: sb.Append("idx_X "); break;
                         case blast_operation.index_y: sb.Append("idx_Y "); break;
                         case blast_operation.index_z: sb.Append("idx_Z "); break;
@@ -709,6 +709,7 @@ namespace NSS.Blast.Compiler
 
                         case blast_operation.zero: sb.Append("zero "); asnumber = 0; break;
                         case blast_operation.send: sb.Append("send "); break;
+                        case blast_operation.size: sb.Append("size "); break;
 
                         case blast_operation.cdata:
                             {

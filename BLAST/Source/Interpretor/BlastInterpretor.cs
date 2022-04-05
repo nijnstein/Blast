@@ -144,7 +144,14 @@ namespace NSS.Blast.Interpretor
         /// if true, the script is executed in validation mode:
         /// - external calls just return 0's
         /// </summary>
-        public bool ValidationMode;
+        public bool ValidationMode; 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        internal bool ValidateOnce;
+
+
 
         #region Reset & Set Package
 
@@ -221,7 +228,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="initial_stack_offset"></param>
         public void SetPackage(BlastPackageData pkg, byte* _code, float* _data, byte* _metadata, int initial_stack_offset)
         {
-            ValidationMode = false;
+            ValidateOnce = false;
 
             package = pkg;
 
@@ -232,6 +239,15 @@ namespace NSS.Blast.Interpretor
 
             code_pointer = 0;
             stack_offset = initial_stack_offset;
+        }
+
+        /// <summary>
+        /// enable/disable validation run mode
+        /// </summary>
+        /// <param name="validationmode"></param>
+        public void SetValidationMode(bool validationmode)
+        {
+            ValidationMode = validationmode; 
         }
 
         #endregion
@@ -270,6 +286,7 @@ namespace NSS.Blast.Interpretor
             }
             else
             {
+                ValidateOnce = ValidationMode;
                 Reset(blast, package);
             }
 
@@ -1015,7 +1032,7 @@ namespace NSS.Blast.Interpretor
             // we get either a pop instruction or an instruction to get a value 
             byte c = code[code_pointer];
 
-            if (c >= opt_id)
+            if(c >= opt_id)
             {
                 // variable 
                 type = GetMetaDataType(metadata, (byte)(c - opt_id));
@@ -1979,7 +1996,7 @@ namespace NSS.Blast.Interpretor
                             // debug/alert is the only function accepting CData for now
                             // others should just fail completely with error in trace modes-> fix that
 
-                            Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, <CDATA>");
+                            Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, <CDATA> in datasegment aligned to vectorsize {vector_size}");
                         }
                         break; 
 
@@ -1991,13 +2008,75 @@ namespace NSS.Blast.Interpretor
 #endif
         }
 
+
+        /// <summary>
+        /// handle debugdata given as constant cdata inline encoded 
+        /// </summary>
+        void Handle_DebugData_CData(int code_pointer)        
+        {
+            int jump_offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
+
+            // get data location 
+            int index = code_pointer - jump_offset + 1;
+            code_pointer += 2;
+
+#if TRACE || DEVELOPMENT_BUILD
+            if(blast_operation.cdata != (blast_operation)code[index])
+            {
+                Debug.LogError($"Blast.Interpretor.Handle_DebugData_CData: expected cdata op at {index} as jumped to from cdataref at {code_pointer}");
+                return; 
+            }
+#endif
+            // should be cdata TODO validate in debug 
+            int length = (code[index + 1] << 8) + code[index + 2];
+            int data_start = index + 3;
+
+
+            unsafe
+            {
+#if STANDALONE_VSBUILD
+                char* ch = stackalloc char[length + 1];
+                bool ascii = true;
+
+                for (int i = data_start; i < data_start + length; i++)
+                {
+
+                    // set from 8 bit...
+                    ch[i] = (char)code[i];
+                    ascii = ascii && (char.IsLetterOrDigit(ch[i]) || char.IsWhiteSpace(ch[i]));
+                }
+
+                if (ascii)
+                {
+                    // zero terminate and show as string 
+                    ch[length] = (char)0;
+                    Debug.Log(new string(ch));
+                }
+                else
+                {
+                    // show as bytes 
+                    System.Text.StringBuilder sb = StringBuilderCache.Acquire();
+                    for (int i = data_start; i < data_start + length; i++)
+                    {
+                        sb.Append(code[i].ToString().PadLeft(3, '0'));
+                        sb.Append(" ");
+                    }
+                    Debug.Log(StringBuilderCache.GetStringAndRelease(ref sb));
+#else
+                {
+                    Debug.Log($"Blast.Debug - codepointer: {code_pointer}  <CDATA>[{length}] at index {data_start}");
+#endif 
+                }
+            }
+        }
+
         /// <summary>
         /// printout an overview of the datasegment/stack (if shared)
         /// </summary>
         void Handle_DebugStack()
         {
 #if DEVELOPMENT_BUILD || TRACE
-            if (ValidationMode) return;
+            if (ValidateOnce) return;
 
 #if STANDALONE_VSBUILD
             for (int i = 0; i < stack_offset; i++)
@@ -2058,7 +2137,7 @@ namespace NSS.Blast.Interpretor
 
                 // get parameter count (expected from script excluding the 3 data pointers: engine, env, caller) 
                 // but dont call it in validation mode 
-                if (ValidationMode == true)
+                if (ValidateOnce == true)
                 {
                     // external functions (to blast) always have a fixed amount of parameters 
 #if DEVELOPMENT_BUILD || TRACE
@@ -5887,12 +5966,34 @@ namespace NSS.Blast.Interpretor
                     }
 #endif
             }
+        }
+        void get_index_n_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer += 1;
+            f4 = float.NaN;
+
+            byte size;  
+            BlastVariableDataType datatype;
+            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out size);
+
+            // if cdata -> get length and start of data 
+
+
+            BlastVariableDataType datatype2;
+            float* findex = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
+
+            // vectorsize should be 1
+
+
+
+
+
 
         }
 
-#endregion
+        #endregion
 
-#region Expand Vector 
+        #region Expand Vector 
 
 
         /// <summary>
@@ -5911,9 +6012,9 @@ namespace NSS.Blast.Interpretor
             float* d1 = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
 
 #if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric || vector_size != 1)
+            if ((datatype != BlastVariableDataType.Numeric && (datatype != BlastVariableDataType.Bool32))|| vector_size != 1)
             {
-                Debug.LogError($"expand: input parameter datatype|vector_size mismatch, must be numeric[1]. p1 = {datatype}.{vector_size}");
+                Debug.LogError($"expand: input parameter datatype|vector_size mismatch, must be Numeric or Bool32 but found: p1 = {datatype}.{vector_size}");
                 return;
             }
 #endif
@@ -6442,6 +6543,53 @@ namespace NSS.Blast.Interpretor
             vector_size = 1;
         }
 
+        void get_size_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        {
+            code_pointer++;
+            byte op = code[code_pointer]; 
+            
+            // either points to a variable or cdata 
+            if (op == (byte)blast_operation.cdataref)
+            {
+                // compiler could fill in a constant if that constant directly maps to an operand to save space as CData is of constant size 
+                int offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
+                int index = code_pointer - offset + 1;
+
+#if DEVELOPMENT_BUILD || TRACE                 
+                // should end up at cdata
+                if(code[index] != (byte)blast_operation.cdata)  // at some point we probably replace cdata with a datatype cdata_float etc.. 
+                {
+                    Debug.LogError($"Blast.Interpretor.size: error in cdata reference at {code_pointer}");
+                    f4 = float.NaN;
+                    vector_size = 0; 
+                    return; 
+                }
+#endif 
+                // TODO when supporting integers, this should return integer data 
+                f4 = (code[index + 1] << 8) + code[index + 2];
+                vector_size = 1; 
+                code_pointer = code_pointer + 2; 
+            }
+            else
+            {
+                int dataindex = op - opt_id;
+
+#if DEVELOPMENT_BUILD || TRACE
+                // dataindex must point to a valid id 
+                if (dataindex < 0 || dataindex + opt_id >= 255)
+                {
+                    Debug.LogError($"Blast.Interpretor.size: first parameter must directly point to a variable or cdata reference but its '{dataindex + opt_id}' instead");
+                    f4 = float.NaN;
+                    vector_size = 0;
+                    return;
+                }
+#endif
+                int length = GetMetaDataSize(metadata, (byte)dataindex);
+                f4 = math.select(length, 4, length == 0);
+                vector_size = 1;
+            }
+        }
+
         void get_zero_result(ref int code_pointer, ref byte vector_size)
         {
             code_pointer++;
@@ -6456,8 +6604,8 @@ namespace NSS.Blast.Interpretor
             }
 
 #endif
-
-            switch(GetMetaDataSize(metadata, (byte)dataindex))
+            vector_size = GetMetaDataSize(metadata, (byte)dataindex);
+            switch (vector_size)
             {
                 case 0:
                 case 4:
@@ -6478,6 +6626,12 @@ namespace NSS.Blast.Interpretor
                 case 1:
                     ((uint*)data)[dataindex] = 0;
                     break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"get_zero: unsupported vectorsize {vector_size} in '{dataindex + opt_id}'");
+                    break;
+#endif
             }
         }
 
@@ -6640,52 +6794,160 @@ namespace NSS.Blast.Interpretor
             code_pointer += 2;
         }
 
-        #endregion
+#endregion
 
-        #region Send Procedure
+#region Send Procedure
 
         void Handle_Send(ref int code_pointer)
         {
-            BlastVectorSizes datatype;
-
-            // get some parameter information 
-            byte c = decode44(code[code_pointer], out datatype);
-
             // check out, this might get called with cdataref  
-            code_pointer++;
             blast_operation op = (blast_operation)code[code_pointer];
             if (op == blast_operation.cdataref)
             {
+                if (!ValidateOnce)
+                {
+                    int jump_offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
 
-                int jump_offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
+                    int index = code_pointer - jump_offset + 1;
+                    code_pointer += 2;
 
-                int index = code_pointer - jump_offset + 1;
-                code_pointer += 2;
+                    op = (blast_operation)code[index];
 
-                op = (blast_operation)code[index];
+                    // should be cdata TODO validate in debug 
 
-                // should be cdata TODO validate in debug 
+                    int length = (code[index + 1] << 8) + code[index + 2];
+                    int data_start = index + 3;
 
-                int length = (code[index + 1] << 8) + code[index + 2];
-                int data_start = index + 3;
+                    // 'send' data - to be used as an event handler - now connected to log
+                    //
+                    // send data to some sink 
+                    // 
+                    // for now its just logged as if ascii 8bit
 
-                // 'send' data - to be used as an event handler - now connected to log
-
+                    // 16 bit chars.. 
+                    LogConstantCData(length, data_start);
+                }
+                else
+                {
+                    code_pointer += 2;
+                }
             }
             else
             {
+                if (!ValidateOnce)
+                {
+                    // normal parameters 
+                    byte vector_size;
+                    BlastVariableDataType type;
+                    void* pdata = pop_with_info(code_pointer, out type, out vector_size);
 
-                // normal parameters 
+                    switch (type)
+                    {
+                        // bool32 flags  
+                        case BlastVariableDataType.Bool32:
+                            {
+                                Bool32 b32 = ((Bool32*)pdata)[0];
+#if STANDALONE_VSBUILD
+                                Debug.Log(b32.ToString());
+#else
+                                // bursted string magic 
+                                // or very rude code.. 
+                                // Debug.Log($"{(b32.b1 ? 1 : 0)}{(b32.b2 ? 1 : 0)}{(b32.b3 ? 1 : 0)}{(b32.b4 ? 1 : 0)}"); 
+                                Debug.Log("BOOL32"); 
+#endif
+                            }
+                            break;
 
+                        // variable cdata segment 
+                        case BlastVariableDataType.CData:
+                            {
+                                // jump to it and outoput 
+                                Debug.Log("CDATA indatasegment ");
+
+                            }
+                            break;
+
+                        // numerics 
+                        case BlastVariableDataType.Numeric:
+                            {
+                                switch (vector_size)
+                                {
+                                    case 0:
+                                    case 4: Debug.Log($"{((float4*)pdata)[0]}"); break;
+                                    case 3: Debug.Log($"{((float3*)pdata)[0]}"); break;
+                                    case 2: Debug.Log($"{((float2*)pdata)[0]}"); break;
+                                    case 1: Debug.Log($"{((float*)pdata)[0]}"); break;
+#if TRACE || DEVELOPMENT_BUILD
+                                    default:
+                                        Debug.LogError($"Blast.Interpretor.Send: unsupported datatype: {type}, vectorsize: {vector_size} at codepointer: {code_pointer}");
+                                        break;
+#endif
+                                }
+                            }
+                            break;
+
+#if TRACE || DEVELOPMENT_BUILD
+                        default:
+                            Debug.LogError($"Blast.Interpretor.Send: unsupported datatype: {type} at codepointer: {code_pointer}");
+                            break;
+#endif
+
+                    }
+                }
             }
-            return; 
+            code_pointer++;
+            return;
         }
 
-        #endregion
+        /// <summary>
+        /// log constant cdata encoded in the code stream
+        /// </summary>
+        /// <param name="length">length of data stream in bytes</param>
+        /// <param name="data_start">start index of data in code segment</param>
+        private readonly void LogConstantCData(int length, int data_start)
+        {
+            unsafe
+            {
+                char* ch = stackalloc char[length + 1];
+                bool ascii = true;
 
-        #endregion
+                for (int i = data_start, c = 0; i < data_start + length; i++, c++)
+                {
+                    // set from 8 bit...
+                    ch[c] = (char)code[i];
+                    ascii = ascii && (code[i] >= 32 && code[i] < 127); // (char.IsLetterOrDigit(ch[i]) || char.IsWhiteSpace(ch[i]));
+                }
 
-        #region Push[cfv]
+#if STANDALONE_VSBUILD
+                if (ascii)
+                {
+                    // zero terminate and show as string 
+                    ch[length] = (char)0;
+                    Debug.Log(new string(ch));
+                }
+                else
+                {
+                    // show as bytes 
+                    System.Text.StringBuilder sb = StringBuilderCache.Acquire();
+                    for (int i = data_start; i < data_start + length; i++)
+                    {
+                        sb.Append(code[i].ToString().PadLeft(3, '0'));
+                        sb.Append(" ");
+                    }
+                    Debug.Log(StringBuilderCache.GetStringAndRelease(ref sb));
+                }
+#else
+                // burst compatible string magic to show it in debugger as burst does not support char 
+#endif
+
+            }
+        }
+
+#endregion
+
+#endregion
+
+#region Push[cfv]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void pushc(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
         {
@@ -6998,6 +7260,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.index_y: get_index_result(ref code_pointer, ref vector_size, out f4_result, 1); break;
                 case blast_operation.index_z: get_index_result(ref code_pointer, ref vector_size, out f4_result, 2); break;
                 case blast_operation.index_w: get_index_result(ref code_pointer, ref vector_size, out f4_result, 3); break;
+                case blast_operation.index_n: get_index_n_result(ref code_pointer, ref vector_size, out f4_result); break;
 
                 case blast_operation.expand_v2: get_expand_result(ref code_pointer, ref vector_size, 2, out f4_result); break;
                 case blast_operation.expand_v3: get_expand_result(ref code_pointer, ref vector_size, 3, out f4_result); break;
@@ -7009,7 +7272,11 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.get_bit: get_getbit_result(ref code_pointer, ref vector_size, out f4_result); break;
                 case blast_operation.get_bits: get_getbits_result(ref code_pointer, ref vector_size, out f4_result); break;
 
+                // zero a vector | cdata
                 case blast_operation.zero: get_zero_result(ref code_pointer, ref vector_size); f4_result = 0; break;
+
+                // get size of vector | cdata
+                case blast_operation.size: get_size_result(ref code_pointer, ref vector_size, out f4_result); break; 
 
                 // extended function ops  
                 case blast_operation.ex_op:
@@ -7365,6 +7632,7 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.index_y: get_index_result(ref code_pointer, ref vector_size, out f4, 1); break;
                     case blast_operation.index_z: get_index_result(ref code_pointer, ref vector_size, out f4, 2); break;
                     case blast_operation.index_w: get_index_result(ref code_pointer, ref vector_size, out f4, 3); break;
+                    case blast_operation.index_n: get_index_n_result(ref code_pointer, ref vector_size, out f4); break; 
 
                     case blast_operation.expand_v2: get_expand_result(ref code_pointer, ref vector_size, 2, out f4); break;
                     case blast_operation.expand_v3: get_expand_result(ref code_pointer, ref vector_size, 3, out f4); break;
@@ -7378,6 +7646,7 @@ namespace NSS.Blast.Interpretor
 
                     // zero data index / clear bits 
                     case blast_operation.zero: get_zero_result(ref code_pointer, ref vector_size); break;
+                    case blast_operation.size: get_size_result(ref code_pointer, ref current_vector_size, out f4); break; 
 
                     // extended operations 
                     case blast_operation.ex_op:
@@ -7847,7 +8116,10 @@ namespace NSS.Blast.Interpretor
 
                 switch (op)
                 {
-                    case blast_operation.ret: return (int)BlastError.success;
+                    case blast_operation.ret:
+                        ValidateOnce = false;
+                        return (int)BlastError.success;
+
                     case blast_operation.nop: break;
 
                     case blast_operation.push:
@@ -8672,7 +8944,6 @@ namespace NSS.Blast.Interpretor
                             break; 
                         }
 
-
                     //
                     // Extended Op == 255 => next byte encodes an operation not used in switch above (more non standard ops)
                     //
@@ -8752,7 +9023,7 @@ namespace NSS.Blast.Interpretor
                                         // write contents of a data element to the debug stream 
                                         code_pointer++;
 #if DEVELOPMENT_BUILD || TRACE
-                                        if (!ValidationMode)
+                                        if (!ValidateOnce)
                                         {
                                             Handle_DebugStack();
                                         }
@@ -8768,15 +9039,26 @@ namespace NSS.Blast.Interpretor
                                         int op_id = code[code_pointer];
                                         BlastVariableDataType datatype = default;
 
-                                        // even if not in debug, if the command is encoded any stack op needs to be popped 
-                                        void* pdata = pop_with_info(code_pointer, out datatype, out vector_size);
+                                        if ((blast_operation)op_id == blast_operation.cdataref)
+                                        {
+                                            if(!ValidateOnce)
+                                            {
+                                                Handle_DebugData_CData(code_pointer);
+                                            }
+                                            code_pointer += 2;
+                                        }
+                                        else
+                                        {
+                                            // even if not in debug, if the command is encoded any stack op needs to be popped 
+                                            void* pdata = pop_with_info(code_pointer, out datatype, out vector_size);
 
 #if DEVELOPMENT_BUILD || TRACE
-                                        if (!ValidationMode)
-                                        {
-                                            Handle_DebugData(code_pointer, vector_size, op_id, datatype, pdata);
-                                        }
+                                            if (!ValidateOnce)
+                                            {
+                                                Handle_DebugData(code_pointer, vector_size, op_id, datatype, pdata);
+                                            }
 #endif
+                                        }
                                         code_pointer++;
                                     }
                                     break;
@@ -8823,6 +9105,8 @@ namespace NSS.Blast.Interpretor
                 }
             }
 
+            ValidateOnce = false;
+
             return (int)BlastError.success;
         }
 
@@ -8831,7 +9115,7 @@ namespace NSS.Blast.Interpretor
 
 #endregion
 
-    };
+    }
 }
 
 
