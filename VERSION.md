@@ -1,9 +1,14 @@
+**V1.0.4** 2022-04-06
 
 - bugfix: fixed bug causing error in sample6 dueue to a wrong check in packaging
+- bugfix: fixed bug tracking vectorsizes during compilation
 - added: unity assembly definition file reducing editor re-build times
-- added: constant cdata sections
-- added: [] indexers
-- optimized: normal packagemode: reduced opcode sequence for indexed assignments, saves a load of branches foreach indexed assign
+
+NORMAL PACKAGEMODE
+- added: constant cdata sections providing fixed arrays
+- added: array [] indexers
+- optimized: reduced controlflow interpreting (indexed) assignments 
+
 
 
 **V1.0.3** 2022-04-03
