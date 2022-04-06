@@ -96,8 +96,10 @@ namespace NSS.Blast.Compiler.Stage
                         Assert.IsNotNull(v.ConstantData);
 
                         // NOTE max constant data size = 15 * 4 = 60 bytes when in datasegment 
-                        // size = datalength + 2 aligned to 4
-                        v.VectorSize = (int)math.ceil((v.ConstantData.Length + 2) / 4f);
+
+                        // align to 4 bytes of data use, interpretors can only index every 4th byte
+                        v.VectorSize = v.ConstantData.Length;
+                        while ((v.VectorSize & 0x00000011) != 0) v.VectorSize++; 
 
                         if (v.VectorSize > 15)
                         {

@@ -1974,7 +1974,15 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         if (param.variable.IsConstant)
                         {
-                            data.LogError($"parser: the subject of an assignment cannot be constant.");
+                            // any cdata defined with data is assumed to be constant 
+                            // - it can be allowed to be overwritten with compiler options 
+                            //   or defines 
+                            if(param.variable.DataType != BlastVariableDataType.CData
+                               ||
+                               (param.variable.DataType != BlastVariableDataType.CData && !data.DefinesOrConfiguresSharedCData))
+                            {
+                                data.LogError($"Blast.parser: the subject '{param.variable}' of an assignment cannot be constant.");
+                            }
                         }
                     }
 

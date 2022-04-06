@@ -285,6 +285,7 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="p"></param>
         public static implicit operator BlastEngineDataPtr(IntPtr p) => new BlastEngineDataPtr() { ptr = p };
+
     }
 
     /// <summary>

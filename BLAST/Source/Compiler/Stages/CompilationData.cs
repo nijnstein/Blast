@@ -232,6 +232,11 @@ namespace NSS.Blast.Compiler
         /// </summary>
         int OffsetCount { get; }
 
+        /// <summary>
+        /// check compiler data to see if the script defines the switch SHARED_CDATA or has the compileroptionsd SharedCDATA enabled 
+        /// </summary>
+        bool DefinesOrConfiguresSharedCData { get; }
+
         bool TryGetInlinedFunction(string item2, out BlastScriptInlineFunction inlined_function);
     }
 
@@ -407,8 +412,19 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// true if the script compiled defines inlined function macros 
         /// </summary>
-        public bool HasInlinedFunctions => InlinedFunctions != null && InlinedFunctions.Count > 0; 
+        public bool HasInlinedFunctions => InlinedFunctions != null && InlinedFunctions.Count > 0;
 
+        /// <summary>
+        /// check compiler data to see if the script defines the switch SHARED_CDATA or has the compileroptionsd SharedCDATA enabled 
+        /// </summary>
+        public bool DefinesOrConfiguresSharedCData
+        {
+            get
+            {
+                return CompilerOptions.SharedCDATA || HasDefineEnabled("SHARED_CDATA");
+            }
+        }
+ 
         /// <summary>
         /// true if everything went ok 
         /// </summary>
@@ -1346,6 +1362,41 @@ namespace NSS.Blast.Compiler
         public bool HasDefines => Defines != null && Defines.Count > 0;
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasDefines'
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasVariables'
+
+
+        /// <summary>
+        /// check if the key is defined
+        /// </summary>
+        /// <param name="key">key to check, not case sensitive</param>
+        private bool HasDefine(string key)
+        {                             
+            if (Defines != null)
+            {
+                foreach (var d in Defines)
+                    if (string.Compare(d.Key, key, true) == 0)
+                        return true; 
+            }
+            return false; 
+        }
+
+        /// <summary>
+        /// check if the key is defined and enabled (set to 1 or true) 
+        /// </summary>
+        /// <param name="key">key to check, not case sensitive</param>
+        private bool HasDefineEnabled(string key)
+        {
+            if (Defines != null)
+            {
+                foreach (var d in Defines)
+                    if (string.Compare(d.Key, key, true) == 0)
+                    {
+                        return d.Value == "1" || string.Compare(d.Value, "true", true) == 0; 
+                    }
+            }
+            return false;
+        }
+
+
         public bool HasVariables => Variables != null && Variables.Count > 0;
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasVariables'
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'CompilationData.HasOffsets'

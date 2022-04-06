@@ -1,6 +1,10 @@
 
 - bugfix: fixed bug causing error in sample6 dueue to a wrong check in packaging
 - added: unity assembly definition file reducing editor re-build times
+- added: constant cdata sections
+- added: [] indexers
+- optimized: normal packagemode: reduced opcode sequence for indexed assignments, saves a load of branches foreach indexed assign
+
 
 **V1.0.3** 2022-04-03
 

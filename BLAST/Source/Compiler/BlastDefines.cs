@@ -468,6 +468,17 @@ namespace NSS.Blast
     }
 
 
+    public enum blast_operation_jumptarget : byte
+    {
+        jump_assign_indexed = blast_operation.id,
+        jump_assign_result = blast_operation.id + 1,
+        jump_assigns = blast_operation.id + 2,
+        jump_assignf = blast_operation.id + 3,
+        jump_assignfn = blast_operation.id + 4,
+        jump_assignfe = blast_operation.id + 5,
+        jump_assignfen = blast_operation.id + 6,
+    }
+
     /// <summary>
     /// instruction set bs1
     /// </summary>
@@ -879,6 +890,8 @@ namespace NSS.Blast
 
         /// <summary>
         /// constant data reference, use size to get its length
+        /// - in normal packaging: compiler puts all cdata at start of code segment and references it there
+        /// - in ssmd packaging: compiler inlines cdata at first location of use and only after that references it 
         /// </summary>
         cdataref,
         
@@ -1911,7 +1924,11 @@ namespace NSS.Blast
         /// <summary>
         /// failed to read cdata defined as array of numerics
         /// </summary>
-        error_tokenizer_invalid_cdata_array = -89
+        error_tokenizer_invalid_cdata_array = -89,
+        /// <summary>
+        /// indexer is out of bounds or invalid (negative)
+        /// </summary>
+        error_indexer_out_of_bounds = -90
     }
 
 }

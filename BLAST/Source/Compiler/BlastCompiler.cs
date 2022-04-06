@@ -123,6 +123,12 @@ namespace NSS.Blast.Compiler
         public bool InlineConstantData = false;
 
         /// <summary>
+        /// allow to shared data in cdata segments declared through #cdata defines 
+        /// - this lifts the constant restriction and allows to write to it 
+        /// </summary>
+        public bool SharedCDATA = false;
+
+        /// <summary>
         /// [SSMD packaging mode] optionally inline index- and expanding operations 
         /// </summary>
         public bool InlineIndexers = false; 

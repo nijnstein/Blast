@@ -406,9 +406,26 @@ namespace NSS.Blast.Compiler.Stage
             Assert.IsNotNull(data);
             Assert.IsTrue(a != null && a.Length > 2);
 
+            // if first token is: float|numeric  bool32   
+            BlastVectorSizes datatype ;
+            string possible_datatype = a[2];
+            int offset_for_datatype = 0; 
+            switch(possible_datatype.ToLowerInvariant())
+            {
+                // default to numerics
+                default: datatype = BlastVectorSizes.float1; break; 
+                
+                case "float":
+                case "numeric": datatype = BlastVectorSizes.float1; offset_for_datatype = 1; break; 
+
+                case "bool32": datatype = BlastVectorSizes.bool32; offset_for_datatype = 1; break; 
+                case "string": datatype = BlastVectorSizes.none; offset_for_datatype = 1; break; 
+            }
+
             // classify the first value, anything in a is at least 1 char long
             char ch = a[2][0];
             byte[] constant_data = null;
+
 
             // string: starts with opener: ' or " 
             // note: can span multiple elements if there is a space 
@@ -416,7 +433,8 @@ namespace NSS.Blast.Compiler.Stage
             //       but this is cheaper to do considering its probably rare to be used 
             if (ch == '\'' || ch == '"')
             {
-                constant_data = ReadCDATAString(data, comment, a, 2);
+                datatype = BlastVectorSizes.none; 
+                constant_data = ReadCDATAString(data, comment, a, 2 + offset_for_datatype);
                 if (constant_data == null) return false;
             }
             else
@@ -428,7 +446,8 @@ namespace NSS.Blast.Compiler.Stage
             {
                 if (a.Length == 3 || a[3].StartsWith("#"))
                 {
-                    constant_data = ReadCDATABinary(data, comment, a[2]);
+                    constant_data = ReadCDATABinary(data, comment, a[2 + offset_for_datatype]);
+                    datatype = BlastVectorSizes.bool32;
                 }
                 else
                 {
@@ -439,7 +458,7 @@ namespace NSS.Blast.Compiler.Stage
             else
             {
                 // anything else is assumed to be a list of numerics || bool32
-                constant_data = ReadCDATAArray(data, comment, a, 2);
+                constant_data = ReadCDATAArray(data, comment, a, 2 + offset_for_datatype);
                 if (constant_data == null) return false;
             }
 
@@ -457,7 +476,7 @@ namespace NSS.Blast.Compiler.Stage
             // setup
             v.DataType = BlastVariableDataType.CData;
             v.ConstantData = constant_data;
-            v.VectorSize = 0;
+            v.VectorSize = constant_data == null ? 0 : constant_data.Length / 4;
             v.ReferenceCount = 0; // 0 references 
             v.IsConstant = true;  // this is a constant data object added by input and thus resides in the datasegment
 

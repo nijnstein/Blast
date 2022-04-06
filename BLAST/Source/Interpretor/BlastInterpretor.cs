@@ -144,7 +144,7 @@ namespace NSS.Blast.Interpretor
         /// if true, the script is executed in validation mode:
         /// - external calls just return 0's
         /// </summary>
-        public bool ValidationMode; 
+        public bool ValidationMode;
 
         /// <summary>
         /// 
@@ -160,7 +160,7 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         /// <param name="blast">pointer to blast engine data</param>
 #pragma warning disable CS1573 // Parameter 'pkg' has no matching param tag in the XML comment for 'BlastInterpretor.Reset(BlastEngineData*, BlastPackageData)' (but other parameters do)
-        public void Reset([NoAlias]BlastEngineData* blast, BlastPackageData pkg)
+        public void Reset([NoAlias] BlastEngineData* blast, BlastPackageData pkg)
 #pragma warning restore CS1573 // Parameter 'pkg' has no matching param tag in the XML comment for 'BlastInterpretor.Reset(BlastEngineData*, BlastPackageData)' (but other parameters do)
         {
             engine_ptr = blast;
@@ -215,7 +215,7 @@ namespace NSS.Blast.Interpretor
         public void ResetPackageData(void* datasegment)
         {
             data = datasegment;
-            code_pointer = 0; 
+            code_pointer = 0;
         }
 
         /// <summary>
@@ -247,7 +247,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="validationmode"></param>
         public void SetValidationMode(bool validationmode)
         {
-            ValidationMode = validationmode; 
+            ValidationMode = validationmode;
         }
 
         #endregion
@@ -261,7 +261,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="caller">pointer to caller data in native memory</param>
         /// <param name="resume_state">resume state from yield or reset state to initial</param>
         /// <returns>success</returns>
-        unsafe int execute([NoAlias]BlastEngineData* blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller, bool resume_state)
+        unsafe int execute([NoAlias] BlastEngineData* blast, [NoAlias] IntPtr environment, [NoAlias] IntPtr caller, bool resume_state)
         {
             float4 register = float4.zero;
 
@@ -304,7 +304,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="environment">pointer to environment data in native memory</param>
         /// <param name="caller">pointer to caller data in native memory</param>
         /// <returns>exit code</returns>
-        public int Execute([NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller)
+        public int Execute([NoAlias] BlastEngineDataPtr blast, [NoAlias] IntPtr environment, [NoAlias] IntPtr caller)
         {
             return execute(blast.Data, environment, caller, false);
         }
@@ -312,7 +312,7 @@ namespace NSS.Blast.Interpretor
         /// <summary>
         /// execute bytecode set to the interpretor 
         /// </summary>
-        public int Execute([NoAlias]BlastEngineDataPtr blast)
+        public int Execute([NoAlias] BlastEngineDataPtr blast)
         {
             return execute(blast.Data, IntPtr.Zero, IntPtr.Zero, false);
         }
@@ -324,7 +324,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="environment">pointer to environment data in native memory</param>
         /// <param name="caller">pointer to caller data in native memory</param>
         /// <returns>exit code</returns>
-        public int ResumeYield([NoAlias]BlastEngineDataPtr blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller)
+        public int ResumeYield([NoAlias] BlastEngineDataPtr blast, [NoAlias] IntPtr environment, [NoAlias] IntPtr caller)
         {
             return execute(blast.Data, environment, caller, true);
         }
@@ -332,7 +332,7 @@ namespace NSS.Blast.Interpretor
         /// <summary>
         /// resume executing bytecode after yielding
         /// </summary>
-        public int ResumeYield([NoAlias]BlastEngineDataPtr blast)
+        public int ResumeYield([NoAlias] BlastEngineDataPtr blast)
         {
             return execute(blast.Data, IntPtr.Zero, IntPtr.Zero, true);
         }
@@ -594,7 +594,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD || TRACE 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
-                if (size != 1 || type != BlastVariableDataType.Numeric)
+                if (size != 1 || (type != BlastVariableDataType.Numeric && type != BlastVariableDataType.Bool32))
                 {
                     Debug.LogError($"blast.stack, pop_or_value -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
@@ -609,7 +609,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD || TRACE
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(stack_offset - 1));
                 int size = GetMetaDataSize(metadata, (byte)(stack_offset - 1));
-                if (size != 1 || type != BlastVariableDataType.Numeric)
+                if (size != 1 || (type != BlastVariableDataType.Numeric && type != BlastVariableDataType.Bool32))
                 {
                     Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
                     return float.NaN;
@@ -709,8 +709,8 @@ namespace NSS.Blast.Interpretor
 
 
 #if DEVELOPMENT_BUILD || TRACE
-           BlastVariableDataType type;
-           int size;
+            BlastVariableDataType type;
+            int size;
 #endif
 
             switch ((blast_operation)c)
@@ -722,7 +722,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD || TRACE 
                     type = GetMetaDataType(metadata, (byte)(stack_offset - 1));
                     size = GetMetaDataSize(metadata, (byte)(stack_offset - 1));
-                    if (size != 1 || type != BlastVariableDataType.Numeric)
+                    if (size != 1 || (type != BlastVariableDataType.Numeric && type != BlastVariableDataType.Bool32))
                     {
                         Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
                         return float.NaN;
@@ -797,7 +797,7 @@ namespace NSS.Blast.Interpretor
 
                 default:
                 case blast_operation.id:
-#if DEVELOPMENT_BUILD || TRACE && CHECK_STACK
+#if DEVELOPMENT_BUILD || TRACE
 
                     if (c < opt_id)
                     {
@@ -808,7 +808,7 @@ namespace NSS.Blast.Interpretor
 
                     type = GetMetaDataType(metadata, (byte)(c - opt_id));
                     size = GetMetaDataSize(metadata, (byte)(c - opt_id));
-                    if (size != 1 || type != BlastVariableDataType.Numeric)
+                    if (size != 1 || (type != BlastVariableDataType.Numeric && type != BlastVariableDataType.Bool32))
                     {
                         Debug.LogError($"blast.stack, pop_or_value -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - opt_id}");
                         return float.NaN;
@@ -834,7 +834,7 @@ namespace NSS.Blast.Interpretor
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
-                if (size != 2 || type != BlastVariableDataType.Numeric)
+                if (size != 2 || (type != BlastVariableDataType.Numeric || type != BlastVariableDataType.Bool32))
                 {
                     Debug.LogError($"blast.stack, pop_f2 -> data mismatch, expecting numeric of size 2, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
@@ -853,7 +853,7 @@ namespace NSS.Blast.Interpretor
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)stack_offset);
                 int size = GetMetaDataSize(metadata, (byte)stack_offset);
-                if (size != 2 || type != BlastVariableDataType.Numeric)
+                if (size != 2 || (type != BlastVariableDataType.Numeric || type != BlastVariableDataType.Bool32))
                 {
                     Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 2, found {type} of size {size} at stack offset {stack_offset}");
                     return float.NaN;
@@ -886,7 +886,7 @@ namespace NSS.Blast.Interpretor
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
-                if (size != 3 || type != BlastVariableDataType.Numeric)
+                if (size != 3 || (type != BlastVariableDataType.Numeric && type != BlastVariableDataType.Bool32))
                 {
                     Debug.LogError($"blast.stack, pop_f3 -> data mismatch, expecting numeric of size 3, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
@@ -907,7 +907,7 @@ namespace NSS.Blast.Interpretor
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)stack_offset);
                 int size = GetMetaDataSize(metadata, (byte)stack_offset);
-                if (size != 3 || type != BlastVariableDataType.Numeric)
+                if (size != 3 || (type != BlastVariableDataType.Numeric && type != BlastVariableDataType.Bool32))
                 {
                     Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 3, found {type} of size {size} at stack offset {stack_offset}");
                     return float.NaN;
@@ -941,7 +941,7 @@ namespace NSS.Blast.Interpretor
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)(c - opt_id));
                 int size = GetMetaDataSize(metadata, (byte)(c - opt_id));
-                if (size != 4 || type != BlastVariableDataType.Numeric)
+                if (size != 4 || (type != BlastVariableDataType.Numeric && type != BlastVariableDataType.Bool32))
                 {
                     Debug.LogError($"blast.stack, pop_f4 -> data mismatch, expecting numeric of size 4, found {type} of size {size} at data offset {c - opt_id}");
                     return float.NaN;
@@ -964,7 +964,7 @@ namespace NSS.Blast.Interpretor
                 // verify type of data / eventhough it is not stack 
                 BlastVariableDataType type = GetMetaDataType(metadata, (byte)stack_offset);
                 int size = GetMetaDataSize(metadata, (byte)stack_offset);
-                if (size != 4 || type != BlastVariableDataType.Numeric)
+                if (size != 4 || (type != BlastVariableDataType.Numeric && type != BlastVariableDataType.Bool32))
                 {
                     Debug.LogError($"blast.stack, pop_or_value -> stackdata mismatch, expecting numeric of size 4, found {type} of size {size} at stack offset {stack_offset}");
                     return float.NaN;
@@ -1016,7 +1016,7 @@ namespace NSS.Blast.Interpretor
             return float.NaN;
         }
 
-#endregion
+        #endregion
 
 
         /// <summary>
@@ -1032,7 +1032,7 @@ namespace NSS.Blast.Interpretor
             // we get either a pop instruction or an instruction to get a value 
             byte c = code[code_pointer];
 
-            if(c >= opt_id)
+            if (c >= opt_id)
             {
                 // variable 
                 type = GetMetaDataType(metadata, (byte)(c - opt_id));
@@ -1070,6 +1070,82 @@ namespace NSS.Blast.Interpretor
                 return null;
             }
         }
+
+        internal void* pop_with_info_indexed(ref int code_pointer, out BlastVariableDataType type, out byte vector_size)
+        {
+            // we get either a pop instruction or an instruction to get a value 
+            int index = -1;
+
+        LABEL_POP_WITH_INFO_LOOP:
+            byte c = code[code_pointer];
+
+            switch ((blast_operation)c)
+            {
+                case blast_operation.pop:
+                    {
+                        // stacked 
+                        vector_size = GetMetaDataSize(metadata, (byte)(stack_offset - 1));
+                        type = GetMetaDataType(metadata, (byte)(stack_offset - 1));
+
+                        // need to advance past vectorsize instead of only 1 that we need to probe 
+
+                        vector_size = (byte)math.select(vector_size, 4, vector_size == 0);
+                        stack_offset -= vector_size;
+
+                        // if indexed then vectorsize == 1 
+                        vector_size = (byte)math.select(vector_size, 1, index >= 0);
+
+                        // add any index to stackoffset    
+                        stack_offset = math.select(stack_offset, stack_offset + index, index >= 0);
+
+                        return &((float*)stack)[stack_offset];
+                    };
+
+                case blast_operation.index_x: index = 0; code_pointer++; goto LABEL_POP_WITH_INFO_LOOP;
+                case blast_operation.index_y: index = 1; code_pointer++; goto LABEL_POP_WITH_INFO_LOOP;
+                case blast_operation.index_z: index = 2; code_pointer++; goto LABEL_POP_WITH_INFO_LOOP;
+                case blast_operation.index_w: index = 3; code_pointer++; goto LABEL_POP_WITH_INFO_LOOP;
+
+                default:
+                    {
+                        if (c >= opt_id)
+                        {
+                            int data_offset = c - opt_id;
+
+                            // variable 
+                            GetMetaData(metadata, (byte)data_offset, out vector_size, out type);
+
+                            // if indexed then vectorsize == 1 and increase dataoffset with index 
+                            vector_size = (byte)math.select(vector_size, 1, index >= 0);
+                            data_offset = math.select(data_offset, data_offset + index, index >= 0);
+
+                            return &((float*)data)[data_offset];
+                        }
+                        else
+                        //
+                        // TODO     include constant jumptable ditching this branch.. 
+                        // 
+                        if (c >= opt_value)
+                        {
+                            type = BlastVariableDataType.Numeric;
+                            vector_size = 1;
+                            return &engine_ptr->constants[c];
+                        }
+                        else
+                        {
+                            // error or.. constant by operation value....    (value < 77 not equal to pop)
+#if DEVELOPMENT_BUILD || TRACE
+                            Debug.LogError($"BlastInterpretor: pop_or_value -> select op by constant value is not supported, at codepointer: {code_pointer} => {code[code_pointer]}");
+#endif
+                            type = BlastVariableDataType.Numeric;
+                            vector_size = 1;
+                            return null;
+                        }
+
+                    }
+            }
+        }
+
 
         /// <summary>
         /// 
@@ -1216,12 +1292,12 @@ namespace NSS.Blast.Interpretor
                 return float.NaN;
             }
         }
-#endregion
+        #endregion
 
 
-#endregion
+        #endregion
 
-#region Metadata 
+        #region Metadata 
 
         //
         // - the interpretor needs metadata for determining datatype and vector in some situations (example: pops to functions accepting multiple types and sizes..)
@@ -1297,9 +1373,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#region Yield
+        #region Yield
 
         /// <summary>
         /// yield - stacks state
@@ -1324,9 +1400,9 @@ namespace NSS.Blast.Interpretor
                 push((float)b);
             }
         }
-#endregion
+        #endregion
 
-#region Static Execution Helpers
+        #region Static Execution Helpers
 
         /// <summary>
         /// return true if op is a value: 
@@ -1383,11 +1459,29 @@ namespace NSS.Blast.Interpretor
         }
 
 
+        /// <summary>
+        /// get the offset specified by an indexer: [xyzwrgba]
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetIndexerOperationIndex(blast_operation op)
+        {
+            switch (op)
+            {
+                case blast_operation.index_x: return 0;
+                case blast_operation.index_y: return 1;
+                case blast_operation.index_z: return 2;
+                case blast_operation.index_w: return 3;
+                case blast_operation.index_n:
+                default: return -1;
+            }
+        }
 
 
-#endregion
 
-#region Operations Handlers 
+
+        #endregion
+
+        #region Operations Handlers 
 
 
         /// <summary>
@@ -1884,9 +1978,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region Debug Data
+        #region Debug Data
         /// <summary>
         /// handle command to show the given field in debug 
         /// </summary>
@@ -1998,7 +2092,7 @@ namespace NSS.Blast.Interpretor
 
                             Debug.Log($"Blast.Debug - codepointer: {code_pointer}, id: {op_id}, <CDATA> in datasegment aligned to vectorsize {vector_size}");
                         }
-                        break; 
+                        break;
 
                     default:
                         Debug.LogError($"Blast.Debug(data) - Datatype '{datatype}' not supported in variable/operation with id {op_id} and vectorsize {vector_size}");
@@ -2012,7 +2106,7 @@ namespace NSS.Blast.Interpretor
         /// <summary>
         /// handle debugdata given as constant cdata inline encoded 
         /// </summary>
-        void Handle_DebugData_CData(int code_pointer)        
+        void Handle_DebugData_CData(int code_pointer)
         {
             int jump_offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
 
@@ -2021,10 +2115,10 @@ namespace NSS.Blast.Interpretor
             code_pointer += 2;
 
 #if TRACE || DEVELOPMENT_BUILD
-            if(blast_operation.cdata != (blast_operation)code[index])
+            if (blast_operation.cdata != (blast_operation)code[index])
             {
                 Debug.LogError($"Blast.Interpretor.Handle_DebugData_CData: expected cdata op at {index} as jumped to from cdataref at {code_pointer}");
-                return; 
+                return;
             }
 #endif
             // should be cdata TODO validate in debug 
@@ -2107,9 +2201,9 @@ namespace NSS.Blast.Interpretor
 #endif
         }
 
-#endregion
+        #endregion
 
-#region External Functionpointer calls 
+        #region External Functionpointer calls 
         /// <summary>
         /// call an external function pointer, pointed to by an 8|16|32 bit identifier 
         ///</summary>
@@ -2478,13 +2572,13 @@ namespace NSS.Blast.Interpretor
             f4 = float.NaN;
         }
 
-#endregion
+        #endregion
 
-#region Function Handlers 
+        #region Function Handlers 
 
-#region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
+        #region get_XXXX_result Operation Handlers (updated to used MetaDataSize) 
 
-#region get_[min/max/mina/maxa]_result
+        #region get_[min/max/mina/maxa]_result
         /// <summary>
         /// get the maximum value of all arguments of any vectorsize 
         /// </summary>
@@ -2629,7 +2723,7 @@ namespace NSS.Blast.Interpretor
                     case BlastVectorSizes.float2: f4.x += math.csum(((float2*)pdata)[0]); break;
                     case BlastVectorSizes.float3: f4.x += math.csum(((float3*)pdata)[0]); break;
                     case 0:
-                    case BlastVectorSizes.float4: f4.x += math.csum(((float4*)pdata)[0]); vector_size = 4; break;
+                    case BlastVectorSizes.float4: f4.x += math.csum(((float4*)pdata)[0]); break;
                     default:
                         {
 #if DEVELOPMENT_BUILD || TRACE
@@ -2889,9 +2983,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region single input same output math functions 
+        #region single input same output math functions 
 
         /// <summary>
         /// get absolute value of input
@@ -3863,9 +3957,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region fixed input count math functions
+        #region fixed input count math functions
 
         /// <summary>
         /// raise x to power of y 
@@ -4157,9 +4251,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#region fused substract multiply actions
+        #region fused substract multiply actions
 
         /// <summary>
         /// fused multiply add 
@@ -4236,9 +4330,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#region math utility functions (select, lerp etc) 
+        #region math utility functions (select, lerp etc) 
 
         /// <summary>
         /// 3 inputs, first 2 any type, 3rd type equal or scalar bool
@@ -4748,9 +4842,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region mula family 
+        #region mula family 
 
 
         /// <summary>
@@ -5469,8 +5563,8 @@ namespace NSS.Blast.Interpretor
                         {
                             f.x = math.select(0f, 1f, pop_b32(code_pointer + i).Any);
                         }
-                        code_pointer += c; 
-                        break; 
+                        code_pointer += c;
+                        break;
                     }
 
                 case BlastVectorSizes.float1:
@@ -5688,8 +5782,8 @@ namespace NSS.Blast.Interpretor
         void get_all_result(ref int code_pointer, ref BlastVectorSizes vector_size, out float4 f)
         {
             code_pointer++;
-            byte c = BlastInterpretor.decode44(in code[code_pointer], out vector_size); 
-             
+            byte c = BlastInterpretor.decode44(in code[code_pointer], out vector_size);
+
 
 #if DEVELOPMENT_BUILD || TRACE
             if (c < 1)
@@ -5713,12 +5807,12 @@ namespace NSS.Blast.Interpretor
 
                 case BlastVectorSizes.bool32:
                     {
-                        f = math.select(0f, 1f, pop_b32(code_pointer + 1).All); 
-                        for(int i = 2; i <= c; i++)
+                        f = math.select(0f, 1f, pop_b32(code_pointer + 1).All);
+                        for (int i = 2; i <= c; i++)
                         {
                             f.x = math.select(0f, 1f, pop_b32(code_pointer + i).All && f.x == 1);
                         }
-                        break; 
+                        break;
                     }
 
 
@@ -5749,7 +5843,7 @@ namespace NSS.Blast.Interpretor
 
                         f = new float4(
                          math.select(0f, 1f, b2.x),
-                         math.select(0f, 1f, b2.y), 
+                         math.select(0f, 1f, b2.y),
                          0, 0);
                         break;
                     }
@@ -5769,7 +5863,7 @@ namespace NSS.Blast.Interpretor
                         f.x = math.select(0f, 1f, b3.x);
                         f.y = math.select(0f, 1f, b3.y);
                         f.z = math.select(0f, 1f, b3.z);
-                        f.w = 0; 
+                        f.w = 0;
                         break;
                     }
 
@@ -5799,9 +5893,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#region random
+        #region random
 
         /// <summary>
         /// 
@@ -5925,70 +6019,240 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#region indexers 
+        #region indexers 
 
         void get_index_result(ref int code_pointer, ref byte vector_size, out float4 f4, in byte offset)
         {
             code_pointer += 1;
             f4 = float.NaN;
 
-            BlastVariableDataType datatype;
-            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+            if (code[code_pointer] == (byte)blast_operation.cdataref)
+            {
+                // this indexes a cdata in the code segment
+                int cdata_offset, length;
 
 #if DEVELOPMENT_BUILD || TRACE
-            if (datatype == BlastVariableDataType.ID)
-            {
-                Debug.LogError($"ID datatype in index[{offset}] not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                if (!follow_cdataref(code_pointer, out cdata_offset, out length))
+                {
+                    return;
+                }
+#else
+                follow_cdataref(code_pointer, out cdata_offset, out length);
+#endif
+                f4.x = index_cdata_f1(cdata_offset, offset, length);
+                code_pointer += 2;
                 return;
             }
-            if (math.select(vector_size, 4, vector_size == 0) < offset + 1)
+            else
             {
-                Debug.LogError($"index[{offset}] Invalid indexing component {offset} for vectorsize {vector_size}, codepointer: {code_pointer} = > {code[code_pointer]}");
-                return;
-            }
+                BlastVariableDataType datatype;
+                float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out vector_size);
+
+#if DEVELOPMENT_BUILD || TRACE
+                if (datatype == BlastVariableDataType.ID)
+                {
+                    Debug.LogError($"ID datatype in index[{offset}] not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                    return;
+                }
+                if (math.select(vector_size, 4, vector_size == 0) < offset + 1)
+                {
+                    Debug.LogError($"index[{offset}] Invalid indexing component {offset} for vectorsize {vector_size}, codepointer: {code_pointer} = > {code[code_pointer]}");
+                    return;
+                }
 #endif
 
-            switch ((BlastVectorSizes)vector_size)
-            {
-                // result is always the same regardless.. could raise errors on this condition as compiler could do better then waste precious bytes
-                case BlastVectorSizes.float1: f4.x = ((float*)fdata)[0]; vector_size = 1; break;
-                case BlastVectorSizes.float2: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
-                case BlastVectorSizes.float3: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
-                case 0:
-                case BlastVectorSizes.float4: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
+                switch ((BlastVectorSizes)vector_size)
+                {
+                    // result is always the same regardless.. could raise errors on this condition as compiler could do better then waste precious bytes
+                    case BlastVectorSizes.float1: f4.x = ((float*)fdata)[0]; vector_size = 1; break;
+                    case BlastVectorSizes.float2: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
+                    case BlastVectorSizes.float3: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
+                    case 0:
+                    case BlastVectorSizes.float4: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
 #if DEVELOPMENT_BUILD || TRACE
-                default:
-                    {
-                        Debug.LogError($"Index[{offset}]: NUMERIC({vector_size}) vectorsize '{vector_size}' not supported");
-                        break;
-                    }
+                    default:
+                        {
+                            Debug.LogError($"Index[{offset}]: NUMERIC({vector_size}) vectorsize '{vector_size}' not supported");
+                            break;
+                        }
 #endif
+                }
             }
         }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool follow_cdataref(int code_pointer, out int offset, out int length)
+        {
+            // validate codepointer is at cdataref 
+#if DEVELOPMENT_BUILD || TRACE
+            if (code[code_pointer] != (byte)blast_operation.cdataref)
+            {
+                // errror
+                Debug.LogError($"Blast.Interpretor.follow_cdataref: failed to follow cdataref to cdata record, codepointer not at cdataref, codepointer = {code_pointer}");
+                length = 0;
+                offset = 0;
+                return false;
+            }
+#endif 
+
+            // get offset
+            offset = code_pointer - ((code[code_pointer + 1] << 8) + code[code_pointer + 2]) + 1;
+
+#if DEVELOPMENT_BUILD || TRACE
+            if (offset < 0 || code[offset] != (byte)blast_operation.cdata)
+            {
+                // errror
+                Debug.LogError($"Blast.Interpretor.follow_cdataref: failed to follow cdataref to cdata record, cdataref codepointer = {code_pointer}, offset = {offset}");
+                length = 0;
+                return false;
+            }
+#endif 
+
+            length = (code[offset + 1] << 8) + code[offset + 2];
+            return true;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool follow_cdataref(int code_pointer, out int offset)
+        {
+            // validate codepointer is at cdataref 
+#if DEVELOPMENT_BUILD || TRACE
+            if (code[code_pointer] != (byte)blast_operation.cdataref)
+            {
+                // errror
+                Debug.LogError($"Blast.Interpretor.follow_cdataref: failed to follow cdataref to cdata record, codepointer not at cdataref, codepointer = {code_pointer}");
+                offset = 0;
+                return false;
+            }
+#endif 
+
+            // get offset
+            offset = code_pointer - ((code[code_pointer + 1] << 8) + code[code_pointer + 2]) + 1;
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float index_cdata_f1(in int offset, in int index, in int byte_length)
+        {
+            int i = offset + 3 + index * 4;
+
+#if DEVELOPMENT_BUILD || TRACE
+            int max_i = offset + 3 + byte_length;
+            if (i >= max_i - 3)
+            {
+                Debug.LogError($"Blast.Interpretor.index_cdata_f1: index [{index}] out of bounds for cdata at {offset} of bytesize: {byte_length} ");
+                return float.NaN;
+            }
+#endif 
+
+            return map_cdata_float(i);
+
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float index_cdata_f1(float* fdata, int index)
+        {
+            // this will change when handling multiple datatypes 
+            return fdata[index];
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float map_cdata_float(in int offset_into_codebuffer)
+        {
+            float f = default;
+            byte* p = (byte*)(void*)&f;
+
+            p[0] = code[offset_into_codebuffer + 0];
+            p[1] = code[offset_into_codebuffer + 1];
+            p[2] = code[offset_into_codebuffer + 2];
+            p[3] = code[offset_into_codebuffer + 3];
+
+            return f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void set_cdata_float(in int offset_into_codebuffer, int index, float f)
+        {
+            byte* p = (byte*)(void*)&f;
+
+            int offset = offset_into_codebuffer + (index * 4) + 3; // float == 4 bytes 
+
+            code[offset + 0] = p[0];
+            code[offset + 1] = p[1];
+            code[offset + 2] = p[2];
+            code[offset + 3] = p[3];
+        }
+
+
         void get_index_n_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             code_pointer += 1;
             f4 = float.NaN;
 
-            byte size;  
-            BlastVariableDataType datatype;
-            float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out size);
+            byte op = code[code_pointer];
 
-            // if cdata -> get length and start of data 
+            switch (op)
+            {
+                // data points to a constant cdata section 
+                case (byte)blast_operation.cdataref:
+                    {
+                        int offset, length;
+
+#if DEVELOPMENT_BUILD || TRACE
+                        if (!follow_cdataref(code_pointer, out offset, out length))
+                        {
+                            // error following reference ... 
+                            f4 = float.NaN;
+                            return;
+                        }
+#else
+                        // in release we assume all grass is green -> this is why stuff is validated during compilation 
+                        follow_cdataref(code_pointer, out offset, out length); 
+#endif
+                        // get indexer, must be a v[1] 
+                        code_pointer += 3;
+
+                        // in debug this logs errors
+                        float index = pop_f1_ref(ref code_pointer);
+                        code_pointer--;
+
+                        // index and return data
+                        f4.x = index_cdata_f1(offset, (int)index, length);
+                    }
+                    break;
 
 
-            BlastVariableDataType datatype2;
-            float* findex = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
-
-            // vectorsize should be 1
-
-
+                // default parameter handling, the first could be of any type 
+                default:
+                    {
+                        // for now, handle all cases normally 
 
 
+                        byte size;
+                        BlastVariableDataType datatype;
+                        float* fdata = (float*)pop_with_info(in code_pointer, out datatype, out size);
+
+                        // if cdata -> get length and start of data 
 
 
+                        BlastVariableDataType datatype2;
+                        float* findex = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
+
+                        // vectorsize should be 1
+                        f4.x = index_cdata_f1(fdata, (int)findex[0]);
+
+
+                        code_pointer += 1;
+                    }
+                    break;
+            }
         }
 
         #endregion
@@ -6012,7 +6276,7 @@ namespace NSS.Blast.Interpretor
             float* d1 = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
 
 #if DEVELOPMENT_BUILD || TRACE
-            if ((datatype != BlastVariableDataType.Numeric && (datatype != BlastVariableDataType.Bool32))|| vector_size != 1)
+            if ((datatype != BlastVariableDataType.Numeric && (datatype != BlastVariableDataType.Bool32)) || vector_size != 1)
             {
                 Debug.LogError($"expand: input parameter datatype|vector_size mismatch, must be Numeric or Bool32 but found: p1 = {datatype}.{vector_size}");
                 return;
@@ -6044,9 +6308,9 @@ namespace NSS.Blast.Interpretor
             code_pointer += 1;
         }
 
-#endregion
+        #endregion
 
-#region Bitwise operations 
+        #region Bitwise operations 
 
 
         /// <summary>
@@ -6109,7 +6373,7 @@ namespace NSS.Blast.Interpretor
             ((uint*)data)[dataindex] = current;
 
             // only set_bit & setbits force datatype change
-            SetMetaData(metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex); 
+            SetMetaData(metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex);
 
             code_pointer += 3;
         }
@@ -6159,7 +6423,7 @@ namespace NSS.Blast.Interpretor
 
             uint mask = (uint)(1 << (byte)index);
 
-            f4 = (((uint*)data)[dataindex] & mask) == mask ? 1 : 0; 
+            f4 = (((uint*)data)[dataindex] & mask) == mask ? 1 : 0;
             code_pointer += 2;
         }
 
@@ -6291,7 +6555,7 @@ namespace NSS.Blast.Interpretor
             }
 
 #endif
-            
+
             // the bit to set is either 1 or 0
             int amount;
 
@@ -6471,7 +6735,7 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         void get_reversebits_result(ref int code_pointer, ref byte vector_size)
         {
-            code_pointer++; 
+            code_pointer++;
             int dataindex = code[code_pointer] - opt_id;
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -6497,13 +6761,13 @@ namespace NSS.Blast.Interpretor
             if (dataindex < 0 || dataindex + opt_id >= 255)
             {
                 Debug.LogError($"count_bits: first parameter must directly point to a dataindex but its '{dataindex + opt_id}' instead");
-                f4 = float.NaN; 
+                f4 = float.NaN;
                 return;
             }
 
 #endif
             f4 = (float4)(int4)math.countbits(((uint*)data)[dataindex]); // not setting f.x because we would be forced to write f4 = nan first to get it compiled because of undefined output
-            vector_size = 1; 
+            vector_size = 1;
         }
 
         void get_lzcnt_result(ref int code_pointer, ref byte vector_size, out float4 f4)
@@ -6546,8 +6810,9 @@ namespace NSS.Blast.Interpretor
         void get_size_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
             code_pointer++;
-            byte op = code[code_pointer]; 
-            
+            byte op = code[code_pointer];
+            f4 = float.NaN;
+
             // either points to a variable or cdata 
             if (op == (byte)blast_operation.cdataref)
             {
@@ -6555,38 +6820,39 @@ namespace NSS.Blast.Interpretor
                 int offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
                 int index = code_pointer - offset + 1;
 
-#if DEVELOPMENT_BUILD || TRACE                 
+#if DEVELOPMENT_BUILD || TRACE
                 // should end up at cdata
-                if(code[index] != (byte)blast_operation.cdata)  // at some point we probably replace cdata with a datatype cdata_float etc.. 
+                if (code[index] != (byte)blast_operation.cdata)  // at some point we probably replace cdata with a datatype cdata_float etc.. 
                 {
                     Debug.LogError($"Blast.Interpretor.size: error in cdata reference at {code_pointer}");
-                    f4 = float.NaN;
-                    vector_size = 0; 
-                    return; 
-                }
-#endif 
-                // TODO when supporting integers, this should return integer data 
-                f4 = (code[index + 1] << 8) + code[index + 2];
-                vector_size = 1; 
-                code_pointer = code_pointer + 2; 
-            }
-            else
-            {
-                int dataindex = op - opt_id;
-
-#if DEVELOPMENT_BUILD || TRACE
-                // dataindex must point to a valid id 
-                if (dataindex < 0 || dataindex + opt_id >= 255)
-                {
-                    Debug.LogError($"Blast.Interpretor.size: first parameter must directly point to a variable or cdata reference but its '{dataindex + opt_id}' instead");
-                    f4 = float.NaN;
                     vector_size = 0;
                     return;
                 }
 #endif
-                int length = GetMetaDataSize(metadata, (byte)dataindex);
-                f4 = math.select(length, 4, length == 0);
+                // TODO when supporting integers, this should return integer data 
+                f4 = ((code[index + 1] << 8) + code[index + 2]) >> 2; // size is in bytes we want size in elements and 1 element = single = 32bit
                 vector_size = 1;
+                code_pointer = code_pointer + 2;
+            }
+            else
+            {
+                BlastVariableDataType type;
+
+                void* p = pop_with_info(code_pointer, out type, out vector_size);
+
+                switch (type)
+                {
+                    case BlastVariableDataType.Numeric:
+                    case BlastVariableDataType.Bool32:
+                        f4.x = vector_size;
+                        vector_size = 1;
+                        break;
+
+
+                    default:
+                        Debug.LogError($"Blast.Interpretor.size: datatype {type} not implemented at reference at {code_pointer}");
+                        return;
+                }
             }
         }
 
@@ -6636,9 +6902,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#region Reinterpret XXXX [DataIndex]
+        #region Reinterpret XXXX [DataIndex]
 
         /// <summary>
         /// reinterpret the value at index as a boolean value (set metadata type to bool32)
@@ -6665,7 +6931,7 @@ namespace NSS.Blast.Interpretor
 
             // validate if within package bounds, catch packaging errors early on 
             // datasize is in bytes 
-            if(dataindex >= package.DataSize >> 2)
+            if (dataindex >= package.DataSize >> 2)
             {
                 Debug.LogError($"reinterpret_bool32: compilation or packaging error, dataindex {dataindex} is out of bounds");
                 return;
@@ -6709,9 +6975,9 @@ namespace NSS.Blast.Interpretor
             BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Numeric, 1, (byte)dataindex);
         }
 
-#endregion
+        #endregion
 
-#region validation fuction 
+        #region validation fuction 
 
         void RunValidate(ref int code_pointer)
         {
@@ -6737,7 +7003,7 @@ namespace NSS.Blast.Interpretor
                     {
                         Debug.LogError($"blast.validate: validation error at codepointer {code_pointer}: {b1} != {b2}");
                     }
-                    break; 
+                    break;
 
                 case BlastVariableDataType.Numeric:
                     switch (size1)
@@ -6787,16 +7053,16 @@ namespace NSS.Blast.Interpretor
 
                 default:
                     Debug.LogError($"blast.validate: datatype {type1} vectorsize {size1} not supported at codepointer {code_pointer}");
-                    break; 
+                    break;
             }
 #endif
 
             code_pointer += 2;
         }
 
-#endregion
+        #endregion
 
-#region Send Procedure
+        #region Send Procedure
 
         void Handle_Send(ref int code_pointer)
         {
@@ -6943,11 +7209,11 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#endregion
+        #endregion
 
-#region Push[cfv]
+        #region Push[cfv]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void pushc(ref int code_pointer, ref byte vector_size, ref float4 f4_register)
         {
@@ -7117,9 +7383,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-#endregion
+        #endregion
 
-#region AssignV Vector 
+        #region AssignV Vector 
 
 
         /// <summary>
@@ -7150,7 +7416,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="vector_size"></param>
         /// <param name="assignee"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void assignv(ref int code_pointer, in byte vector_size, [NoAlias]in float* assignee)
+        void assignv(ref int code_pointer, in byte vector_size, [NoAlias] in float* assignee)
         {
             // param_count == vector_size and vector_size > 1, compiler enforces it so we should not check it in release 
             // this means that vector is build from multiple data points
@@ -7189,11 +7455,11 @@ namespace NSS.Blast.Interpretor
         }
 
 
-#endregion
+        #endregion
 
-#endregion
+        #endregion
 
-#region ByteCode Execution
+        #region ByteCode Execution
 
         /// <summary>
         /// get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
@@ -7241,7 +7507,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.all:
                     {
                         // temporary until full datatype support 
-                        BlastVectorSizes bvs = (BlastVectorSizes)vector_size; 
+                        BlastVectorSizes bvs = (BlastVectorSizes)vector_size;
                         get_all_result(ref code_pointer, ref bvs, out f4_result);
                         vector_size = (byte)math.select((int)bvs, 1, bvs == BlastVectorSizes.bool32);
                         break;
@@ -7276,7 +7542,7 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.zero: get_zero_result(ref code_pointer, ref vector_size); f4_result = 0; break;
 
                 // get size of vector | cdata
-                case blast_operation.size: get_size_result(ref code_pointer, ref vector_size, out f4_result); break; 
+                case blast_operation.size: get_size_result(ref code_pointer, ref vector_size, out f4_result); break;
 
                 // extended function ops  
                 case blast_operation.ex_op:
@@ -7330,9 +7596,9 @@ namespace NSS.Blast.Interpretor
                             case extended_blast_operation.reverse_bits: get_reversebits_result(ref code_pointer, ref vector_size); f4_result = 0; break;
                             case extended_blast_operation.lzcnt: get_lzcnt_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.tzcnt: get_tzcnt_result(ref code_pointer, ref vector_size, out f4_result); break;
-                            case extended_blast_operation.ror: get_ror_result(ref code_pointer, ref vector_size); f4_result = 0;break;
-                            case extended_blast_operation.rol: get_rol_result(ref code_pointer, ref vector_size); f4_result = 0;break;
-                            case extended_blast_operation.shl: get_shl_result(ref code_pointer, ref vector_size); f4_result = 0;break;
+                            case extended_blast_operation.ror: get_ror_result(ref code_pointer, ref vector_size); f4_result = 0; break;
+                            case extended_blast_operation.rol: get_rol_result(ref code_pointer, ref vector_size); f4_result = 0; break;
+                            case extended_blast_operation.shl: get_shl_result(ref code_pointer, ref vector_size); f4_result = 0; break;
                             case extended_blast_operation.shr: get_shr_result(ref code_pointer, ref vector_size); f4_result = 0; break;
                             case extended_blast_operation.fmod: get_fmod_result(ref code_pointer, ref vector_size, out f4_result); break;
 
@@ -7435,6 +7701,7 @@ namespace NSS.Blast.Interpretor
                             return;
                         }
 
+
                     case blast_operation.nop:
                         {
                             //
@@ -7442,8 +7709,10 @@ namespace NSS.Blast.Interpretor
                             // at this point vector_size is decisive for the returned value
                             //
                             code_pointer++;
+                            // this is normal when reading a zero terminated sequence 
                             return;
                         }
+
 
                     case blast_operation.ret:
                         // termination of interpretation
@@ -7556,6 +7825,33 @@ namespace NSS.Blast.Interpretor
                         Assert.IsTrue(false, "should not be nesting compounds... compiler did not do its job wel");
                         break;
 
+                    //
+                    //                    case blast_operation.assign:
+                    //                    case blast_operation.assigns:
+                    //                    case blast_operation.assignf:
+                    //                    case blast_operation.assignfe:
+                    //                    case blast_operation.push:
+                    //                    case blast_operation.pushf:
+                    //                    case blast_operation.pushc:
+                    //                    case blast_operation.pushv:
+                    //                    case blast_operation.send:
+                    //                    case blast_operation.jump:
+                    //                    case blast_operation.jump_back:
+                    //                    case blast_operation.jz:
+                    //                    case blast_operation.jnz:
+                    //                    case blast_operation.long_jump:
+                    //                    case blast_operation.jz_long:
+                    //                    case blast_operation.jnz_long:
+                    //                        //
+                    //                        //   TODO 
+                    //                        //
+                    //                        // - we could save a byte in the code, assign is not allowed in a 
+                    //                        //   sequence as wel as push
+                    //                        //   so any sequence terminator 0 can be omitted if the sequence is followed with an assign|push|jump|send 
+                    //                        //    
+                    //                        return; 
+                    //
+                    //
 #endif
 #if DEVELOPMENT_BUILD || TRACE
 #endif
@@ -7632,7 +7928,7 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.index_y: get_index_result(ref code_pointer, ref vector_size, out f4, 1); break;
                     case blast_operation.index_z: get_index_result(ref code_pointer, ref vector_size, out f4, 2); break;
                     case blast_operation.index_w: get_index_result(ref code_pointer, ref vector_size, out f4, 3); break;
-                    case blast_operation.index_n: get_index_n_result(ref code_pointer, ref vector_size, out f4); break; 
+                    case blast_operation.index_n: get_index_n_result(ref code_pointer, ref vector_size, out f4); break;
 
                     case blast_operation.expand_v2: get_expand_result(ref code_pointer, ref vector_size, 2, out f4); break;
                     case blast_operation.expand_v3: get_expand_result(ref code_pointer, ref vector_size, 3, out f4); break;
@@ -7646,7 +7942,7 @@ namespace NSS.Blast.Interpretor
 
                     // zero data index / clear bits 
                     case blast_operation.zero: get_zero_result(ref code_pointer, ref vector_size); break;
-                    case blast_operation.size: get_size_result(ref code_pointer, ref current_vector_size, out f4); break; 
+                    case blast_operation.size: get_size_result(ref code_pointer, ref current_vector_size, out f4); break;
 
                     // extended operations 
                     case blast_operation.ex_op:
@@ -8070,7 +8366,7 @@ namespace NSS.Blast.Interpretor
         /// <param name="environment"></param>
         /// <param name="caller"></param>
         /// <returns></returns>
-        unsafe int execute([NoAlias]BlastEngineData* blast, [NoAlias]IntPtr environment, [NoAlias]IntPtr caller)
+        unsafe int execute([NoAlias] BlastEngineData* blast, [NoAlias] IntPtr environment, [NoAlias] IntPtr caller)
         {
             int iterations = 0;
 
@@ -8084,8 +8380,22 @@ namespace NSS.Blast.Interpretor
                 random = Unity.Mathematics.Random.CreateFromIndex(blast->random.NextUInt());
             }
 
+            // pointer to datasegment and 1 register 
             float* fdata = (float*)data;
             float4 f4_register = 0;
+
+            // some variables to hold state 
+            int index = -1;
+            byte assignee = 0;
+            byte s_assignee = 1;
+            int cdata_offset = 0;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // it should not be used except in trace builds 
+            int cdata_length = 0;
+#endif 
+
+            BlastVariableDataType assignee_type = BlastVariableDataType.Numeric; 
 
             // main loop 
             while (code_pointer < package.CodeSize)
@@ -8095,6 +8405,7 @@ namespace NSS.Blast.Interpretor
 
                 byte vector_size = 1;
                 blast_operation op = (blast_operation)code[code_pointer];
+
                 code_pointer++;
 
                 // 
@@ -8120,7 +8431,16 @@ namespace NSS.Blast.Interpretor
                         ValidateOnce = false;
                         return (int)BlastError.success;
 
-                    case blast_operation.nop: break;
+                    case blast_operation.nop: 
+                    case blast_operation.end:
+                    case blast_operation.begin:
+                        break;
+
+                    case blast_operation.yield:
+                        yield(f4_register);
+                        return (int)BlastError.yield;
+
+                    #region Stack
 
                     case blast_operation.push:
                         push(ref code_pointer, ref vector_size, ref f4_register);
@@ -8147,58 +8467,167 @@ namespace NSS.Blast.Interpretor
                         pushc(ref code_pointer, ref vector_size, ref f4_register);
                         break;
 
-                    case blast_operation.yield:
-                        yield(f4_register);
-                        return (int)BlastError.yield;
+                    #endregion 
 
-                    case blast_operation.seed:
-                        f4_register.x = pop_or_value(++code_pointer);
-                        random = Unity.Mathematics.Random.CreateFromIndex((uint)f4_register.x);
-                        break;
+                    #region Index & Assingments 
 
-                    case blast_operation.begin:
+                    //
+                    // compiler should send indexed assignements here in normal packaging
+                    // - by first encoding the index we save a several branches performing indexed assignments 
+                    // - when an index is set >= 0 then we MUST NOT forget to reset it to -1 as nothing will do that 
+                    // 
+                    case blast_operation.index_x: index = 0; goto case (blast_operation)blast_operation_jumptarget.jump_assign_indexed;
+                    case blast_operation.index_y: index = 1; goto case (blast_operation)blast_operation_jumptarget.jump_assign_indexed;
+                    case blast_operation.index_z: index = 2; goto case (blast_operation)blast_operation_jumptarget.jump_assign_indexed;
+                    case blast_operation.index_w: index = 3; goto case (blast_operation)blast_operation_jumptarget.jump_assign_indexed;
+
+                    case blast_operation.cdataref:
+                        {
+                            // this is an assignment of a cdataref, possibly indexed 
+
 #if DEVELOPMENT_BUILD || TRACE
-                        // jumping in from somewhere
-                        //                          Debug.LogWarning($"burstscript.interpretor warning: scriptop.begin not expected in root at codepointer: {code_pointer}, f4: {f4_register}");
+                            follow_cdataref(code_pointer - 1, out cdata_offset, out cdata_length);
+#else
+                            // dont care for lengths 
+                            follow_cdataref(code_pointer - 1, out cdata_offset); 
 #endif
-                        break;
 
-                    case blast_operation.end: break;
+                            assignee_type = BlastVariableDataType.CData;
+                            code_pointer += 2;
 
+                        // on indexers: 
+                        LABEL_INDEX_CDATAREF:
+                            // switch to assign|indexer 
+                            switch ((blast_operation)code[code_pointer])
+                            {
+                                case blast_operation.index_x: code_pointer++; index = 0; goto LABEL_INDEX_CDATAREF;
+                                case blast_operation.index_y: code_pointer++; index = 1; goto LABEL_INDEX_CDATAREF;
+                                case blast_operation.index_z: code_pointer++; index = 2; goto LABEL_INDEX_CDATAREF;
+                                case blast_operation.index_w: code_pointer++; index = 3; goto LABEL_INDEX_CDATAREF;
+                                case blast_operation.index_n:
+                                    {
+                                        // read indexer, must be vector_size 1 cant be nested cdata for now
+                                        code_pointer++;
+                                        index = (int)pop_f1(code_pointer);
+                                        code_pointer++;
+                                    }
+                                    goto LABEL_INDEX_CDATAREF;
+
+                                case blast_operation.assigns: goto LABEL_JUMP_ASSIGNS;
+                                case blast_operation.assignf: goto LABEL_JUMP_ASSIGNF;
+                                case blast_operation.assignfe: goto LABEL_JUMP_ASSIGNFE;
+                                case blast_operation.assignfn: goto LABEL_JUMP_ASSIGNFN;
+                                case blast_operation.assignfen: goto LABEL_JUMP_ASSIGNFEN;
+                                case blast_operation.assign: goto LABEL_JUMP_ASSIGN;
+
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    {
+                                        Debug.LogError($"Blast.Interpretor: assign cdataref - invalid assign operation: {code[code_pointer]} at codepointer: {code_pointer}");
+                                    }
+                                    return (int)BlastError.error;
+#else
+                                default: return (int)BlastError.error; 
+#endif
+                            }
+                        }
+
+                    case blast_operation.index_n:
+                        {
+                            // get index 
+                            Debug.LogError("[] indexer");
+                        }
+                        goto case (blast_operation)blast_operation_jumptarget.jump_assign_indexed;
+
+                    // *****************************************************************************************
+                    // this opcode is NOT interpreted in the root and is used as jump target for other opcodes
+                    // *****************************************************************************************
+                    case (blast_operation)blast_operation_jumptarget.jump_assign_indexed:
+                        {
+                            // read data on assignee  (set s_assignee and assignee ) 
+                            byte assignee_op = code[code_pointer];
+                            code_pointer++;
+
+                            // get metadata on destination 
+                            assignee = (byte)(assignee_op - opt_id);
+                            BlastInterpretor.GetMetaData(in metadata, in assignee, out s_assignee, out assignee_type);
+
+                            // indexing a CDATAREF looks like this: idx_W cdataref #000 #029 sets 3.3
+                            // but should look like                 cdataref #000 #029  idx_w  sets 3.3
+                            // which saves us a branch at every assign operation 
+                            // - so on compiling an assignment to a CDATAREF we compile the ref first
+
+                            // next is the acual assignment operation 
+                            switch ((blast_operation)code[code_pointer])
+                            {
+                                case blast_operation.assigns: goto LABEL_JUMP_ASSIGNS;
+                                case blast_operation.assignf: goto LABEL_JUMP_ASSIGNF;
+                                case blast_operation.assignfe: goto LABEL_JUMP_ASSIGNFE;
+                                case blast_operation.assignfn: goto LABEL_JUMP_ASSIGNFN;
+                                case blast_operation.assignfen: goto LABEL_JUMP_ASSIGNFEN;
+                                case blast_operation.assign:  goto LABEL_JUMP_ASSIGN;
+
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    {
+                                        Debug.LogError($"Blast.Interpretor: jump_assign_indexed - invalid assign operation: {code[code_pointer]} at codepointer: {code_pointer}");
+                                    }
+                                    return (int)BlastError.error;
+#else
+                                default: return (int)BlastError.error; 
+#endif
+                            }
+                        }
 
                     //
                     // Assign single value/vector 
-                    // - assignS assigns 1 datapoint to a assignee, from stack or other data 
+                    // - assignS assigns 1 datapoint to a assignee, from stack or other data that is possibly indexed 
                     //
+
+                    // entry for non indexed assignee
                     case blast_operation.assigns:
                         {
-                            // assign 1 value
+                            // assign 1 value to destination: assignee 
                             byte assignee_op = code[code_pointer];
 
-                            // determine indexer 
-                            bool is_indexed = assignee_op < opt_id;
-                            blast_operation indexer = (blast_operation)math.select(0, assignee_op, is_indexed);
-                            code_pointer = math.select(code_pointer, code_pointer + 1, is_indexed);
-                            assignee_op = code[code_pointer];  // reading twice will probably be a lot faster then if() could test sometime.. todo
-
                             // get metadata on destination 
-                            byte assignee = (byte)(assignee_op - opt_id);
-                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                            assignee = (byte)(assignee_op - opt_id);
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                        }
+                        //
+                        // this is a short fixed non conditional jump and should be very fast without any stack operations 
+                        // todo: would be nice if burst just doesnt jump and rolls into jump_assigns below
+                        //
+                        goto case (blast_operation)blast_operation_jumptarget.jump_assigns;
 
-                            // and pop the source 
-                            BlastVariableDataType dt_pop;
-                            void* pdata = pop_with_info(code_pointer + 1, out dt_pop, out vector_size);
+                    // continue assignin a single vector 
+                    case (blast_operation)blast_operation_jumptarget.jump_assigns:
+                    LABEL_JUMP_ASSIGNS:
+                        {
+                            // and pop the source (which might be indexed) 
+                            BlastVariableDataType datatype_datasource;
+
+                            code_pointer++;
+                            f4_register = ((float*)pop_with_info_indexed(ref code_pointer, out datatype_datasource, out vector_size))[0];
 
 #if DEVELOPMENT_BUILD || TRACE
                             // the compiler should have cought this, if it didt wel that would be noticed before going in release
-                            if (vector_size != 1 && is_indexed)
+                            if (vector_size != 1 && index >= 0)
                             {
-                                Debug.LogError($"blast.assignsingle: cannot set component from vector at #{code_pointer}, component: {indexer}");
+                                Debug.LogError($"blast.assignsingle: cannot set component from vector at #{code_pointer}, component: {index}");
                                 return (int)BlastError.error_assign_component_from_vector;
                             }
 #endif
+                            goto case (blast_operation)blast_operation_jumptarget.jump_assign_result;
+                        }
 
-                            switch ((byte)vector_size)
+                    // 
+                    // set the result of an assign operation 
+                    //
+                    case (blast_operation)blast_operation_jumptarget.jump_assign_result:
+                        {
+                            // save on branches combining the datatype with vectorsize in switch 
+                            switch ((byte)math.select(vector_size, 255, assignee_type == BlastVariableDataType.CData))
                             {
                                 case (byte)BlastVectorSizes.float1:
 
@@ -8206,7 +8635,7 @@ namespace NSS.Blast.Interpretor
                                     if (s_assignee != 1 && !is_indexed)
                                     {
 #if DEVELOPMENT_BUILD || TRACE
-                                        Debug.LogError($"blast.assignsingle: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
+                                        Debug.LogError($"Blast.Interpretor.assign_result: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
@@ -8216,29 +8645,29 @@ namespace NSS.Blast.Interpretor
 
                                     // because assignee offsets into the datasegment we can just add the vector component index
                                     // to that offset 
-                                    fdata[offset] = ((float*)pdata)[0];
+                                    fdata[offset] = f4_register[0];
 #else
-                                    if (is_indexed)
+                                    if (index >= 0)
                                     {
                                         // if an indexer is set, then get offset (x = 0 , y = 1 etc) and add that to assignee
-                                        int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                        // because assignee offsets into the datasegment we can just add the vector component index
-                                        // to that offset 
-                                        fdata[offset] = ((float*)pdata)[0];
+                                        int offset = assignee + index;
+
+                                        // because assignee offsets into the datasegment we can just add the vector component index to that offset 
+                                        fdata[offset] = f4_register[0];
                                     }
                                     else
                                     {
-                                        float x = ((float*)pdata)[0];
+                                        float x = f4_register[0];
                                         switch (s_assignee)
                                         {
                                             case 1: fdata[assignee] = x; break;
                                             case 2: fdata[assignee] = x; fdata[assignee + 1] = x; break;
-                                            case 3: fdata[assignee] = x; fdata[assignee + 1] = x; break;
+                                            case 3: fdata[assignee] = x; fdata[assignee + 1] = x; fdata[assignee + 2] = x; break;
                                             case 0:
-                                            case 4: fdata[assignee] = x; fdata[assignee + 1] = x; break;
+                                            case 4: fdata[assignee] = x; fdata[assignee + 1] = x; fdata[assignee + 2] = x; fdata[assignee + 3] = x; break;
                                             default:
 #if DEVELOPMENT_BUILD || TRACE
-                                                Debug.LogError($"blast.assignsingle: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '{vector_size}', data id = {assignee}");
+                                                Debug.LogError($"Blast.Interpretor.assign_result: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '{vector_size}', data id = {assignee}");
 #endif
                                                 return (int)BlastError.error_assign_vector_size_mismatch;
                                         }
@@ -8251,443 +8680,178 @@ namespace NSS.Blast.Interpretor
                                     if (s_assignee != 2)
                                     {
 #if DEVELOPMENT_BUILD || TRACE
-                                        Debug.LogError($"blast.assignsingle: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
+                                        Debug.LogError($"Blast.Interpretor.assign_result: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
-                                    fdata[assignee] = ((float*)pdata)[0];
-                                    fdata[assignee + 1] = ((float*)pdata)[1];
+                                    fdata[assignee] = f4_register[0];
+                                    fdata[assignee + 1] = f4_register[1];
                                     break;
 
                                 case (byte)BlastVectorSizes.float3:
                                     if (s_assignee != 3)
                                     {
 #if DEVELOPMENT_BUILD || TRACE
-                                        Debug.LogError($"blast.assignsingle: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
+                                        Debug.LogError($"Blast.Interpretor.assign_result: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
-                                    fdata[assignee] = ((float*)pdata)[0];
-                                    fdata[assignee + 1] = ((float*)pdata)[1];
-                                    fdata[assignee + 2] = ((float*)pdata)[2];
+                                    fdata[assignee] = f4_register[0];
+                                    fdata[assignee + 1] = f4_register[1];
+                                    fdata[assignee + 2] = f4_register[2];
                                     break;
 
                                 case (byte)BlastVectorSizes.float4:
                                     if (s_assignee != 4 || s_assignee == 0)
                                     {
 #if DEVELOPMENT_BUILD || TRACE
-                                        Debug.LogError($"blast.assignsingle: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
+                                        Debug.LogError($"Blast.Interpretor.assign_result: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
 #endif
                                         return (int)BlastError.error_assign_vector_size_mismatch;
                                     }
-                                    fdata[assignee] = ((float*)pdata)[0];
-                                    fdata[assignee + 1] = ((float*)pdata)[1];
-                                    fdata[assignee + 2] = ((float*)pdata)[2];
-                                    fdata[assignee + 3] = ((float*)pdata)[3];
+                                    fdata[assignee] = f4_register[0];
+                                    fdata[assignee + 1] = f4_register[1];
+                                    fdata[assignee + 2] = f4_register[2];
+                                    fdata[assignee + 3] = f4_register[3];
                                     break;
+
+                                case 255:
+                                    {
+                                        // cdata assignment of something with vector_size 
+                                        // - all cdata assignments at this point should be indexed so vector_size SHOULD BE 1 
+#if DEVELOPMENT_BUILD || TRACE 
+                                        if( index > (cdata_length / 4))
+                                        {
+                                            Debug.LogError($"Blast.Interpretor.assign_result: assigned cdata index {index} is out of bounds for cdata at {cdata_offset} with byte length {cdata_length}");
+                                            return (int)BlastError.error_indexer_out_of_bounds;
+                                        }
+#endif                                  
+                                        set_cdata_float(cdata_offset, index, f4_register.x);
+                                    }
+                                    break; 
+
 
                                 default:
 #if DEVELOPMENT_BUILD || TRACE
-                                    Debug.LogError($"blast.assignsingle: vector size {vector_size} not allowed at codepointer {code_pointer}");
+                                    Debug.LogError($"Blast.Interpretor.assign_result: vector size {vector_size} not allowed at codepointer {code_pointer}");
 #endif
                                     return (int)BlastError.error_unsupported_operation_in_root;
                             }
 
-                            code_pointer += 2;
+                            // reset the assigned type and indexer after setting result 
+                            assignee_type = BlastVariableDataType.Numeric;
+                            index = -1;
+
+                            code_pointer++;
                         }
                         break;
 
                     //
                     // assign the result of a function directly to the assignee
                     //
-                    //
                     case blast_operation.assignf:
                         {
-                            // get assignee 
                             byte assignee_op = code[code_pointer];
+                            assignee = (byte)(assignee_op - opt_id);
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                        }
+                        goto case (blast_operation)blast_operation_jumptarget.jump_assignf;
 
-                            // get any index, branch free
-                            bool is_indexed = assignee_op < opt_id;
-                            blast_operation indexer = (blast_operation)math.select(0, assignee_op, is_indexed);
-                            code_pointer = math.select(code_pointer, code_pointer + 1, is_indexed);
-                            assignee_op = code[code_pointer];  // reading twice will probably be a lot faster then if() could test sometime.. todo
 
-                            byte assignee = (byte)(assignee_op - opt_id);
+                    case (blast_operation)blast_operation_jumptarget.jump_assignf:
+                    LABEL_JUMP_ASSIGNF:
+                        {
+                            // assignee known get result from function 
 
 #if DEVELOPMENT_BUILD || TRACE || AUTO_EXPAND
                             // check its size?? in debug only, functions return size in vector_size 
-                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
 
                             code_pointer++;
                             get_function_result(ref code_pointer, ref vector_size, out f4_register);
-                            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-#if !AUTO_EXPAND
-                            // 4 == 0 depending on decoding 
-                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
-                            if (!is_indexed && s_assignee != vector_size)
-                            {
-                                Debug.LogError($"blast: assignf function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
-                                return (int)BlastError.error_assign_vector_size_mismatch;
-                            }
-#endif
-                            // can only set vectorcomponents (.x) from float1
-                            if (vector_size != 1 && is_indexed)
-                            {
-                                Debug.LogError($"blast.assignf: cannot set component from vector at #{code_pointer}, component: {indexer}");
-                                return (int)BlastError.error_assign_component_from_vector;
-                            }
-#endif
-
-#if AUTO_EXPAND
-                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
-
-                            if (s_assignee == vector_size || (is_indexed && vector_size == 1))
-                            {
-                                // normal set to assignee
-                                switch (vector_size)
-                                {
-                                    case 1:
-                                        int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                        fdata[offset] = f4_register.x;
-                                        break;
-                                    case 2: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; break;
-                                    case 3: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; break;
-                                    case 4: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; fdata[assignee + 3] = f4_register.w; break;
-                                }
-                            }
-                            else
-                            {
-                                // expanding set to assignee
-                                switch (vector_size)
-                                {
-                                    case 1:
-                                        switch (s_assignee)
-                                        {
-                                            case 1: fdata[assignee] = f4_register.x; break;
-                                            case 2: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.x; break;
-                                            case 3: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.x; fdata[assignee + 2] = f4_register.x; break;
-                                            case 4: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.x; fdata[assignee + 2] = f4_register.x; fdata[assignee + 3] = f4_register.x; break;
-                                        }
-                                        break;
-
-                                    default:
-                                        Debug.LogError($"blast: assignf function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
-                                        return (int)BlastError.error_assign_vector_size_mismatch;
-                                }
-                                vector_size = s_assignee;
-                            }
-#else
-                            // set to assignee
-                            switch (vector_size)
-                            {
-                                case 1:
-                                    int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                    fdata[offset] = f4_register.x;
-                                    break;
-                                case 2: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; break;
-                                case 3: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; break;
-                                case 4: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; fdata[assignee + 3] = f4_register.w; break;
-                            }
-#endif
                         }
-                        break;
+                        goto case (blast_operation)blast_operation_jumptarget.jump_assign_result; 
+
 
                     //
                     // assign the negated result of a function directly to the assignee
                     //
-                    //
                     case blast_operation.assignfn:
                         {
-                            // get assignee 
                             byte assignee_op = code[code_pointer];
+                            assignee = (byte)(assignee_op - opt_id);
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                        }
+                        goto case (blast_operation)blast_operation_jumptarget.jump_assignfn;
 
-                            // get any index, branch free
-                            bool is_indexed = assignee_op < opt_id;
-                            blast_operation indexer = (blast_operation)math.select(0, assignee_op, is_indexed);
-                            code_pointer = math.select(code_pointer, code_pointer + 1, is_indexed);
-                            assignee_op = code[code_pointer];  // reading twice will probably be a lot faster then if() could test sometime.. todo
 
-                            byte assignee = (byte)(assignee_op - opt_id);
+                    case (blast_operation)blast_operation_jumptarget.jump_assignfn:
+                    LABEL_JUMP_ASSIGNFN:
+                        {
+                            // assignee known get result from function 
 
 #if DEVELOPMENT_BUILD || TRACE || AUTO_EXPAND
                             // check its size?? in debug only, functions return size in vector_size 
-                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
 
                             code_pointer++;
                             get_function_result(ref code_pointer, ref vector_size, out f4_register);
-                            code_pointer++;
-#if DEVELOPMENT_BUILD || TRACE
-#if !AUTO_EXPAND
-                            // 4 == 0 depending on decoding 
-                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
-                            if (!is_indexed && s_assignee != vector_size)
-                            {
-                                Debug.LogError($"blast: assignnf negated function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
-                                return (int)BlastError.error_assign_vector_size_mismatch;
-                            }
-#endif
-                            // can only set vectorcomponents (.x) from float1
-                            if (vector_size != 1 && is_indexed)
-                            {
-                                Debug.LogError($"blast.assignfn: cannot set component from vector at #{code_pointer}, component: {indexer}");
-                                return (int)BlastError.error_assign_component_from_vector;
-                            }
-#endif
-
-#if AUTO_EXPAND
-                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
-
-                            if (s_assignee == vector_size || (is_indexed && vector_size == 1))
-                            {
-                                // normal set to assignee
-                                switch (vector_size)
-                                {
-                                    case 1:
-                                        int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                        fdata[offset] = -f4_register.x;
-                                        break;
-                                    case 2: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; break;
-                                    case 3: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; break;
-                                    case 4: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; fdata[assignee + 3] = -f4_register.w; break;
-                                }
-                            }
-                            else
-                            {
-                                // expanding set to assignee
-                                float x = -f4_register.x;
-                                switch (vector_size)
-                                {
-                                    case 1:
-                                        switch (s_assignee)
-                                        {
-                                            case 1: fdata[assignee] = x; break;
-                                            case 2: fdata[assignee] = x; fdata[assignee + 1] = x; break;
-                                            case 3: fdata[assignee] = x; fdata[assignee + 1] = x; fdata[assignee + 2] = x; break;
-                                            case 4: fdata[assignee] = x; fdata[assignee + 1] = x; fdata[assignee + 2] = x; fdata[assignee + 3] = x; break;
-                                        }
-                                        break;
-
-                                    default:
-                                        Debug.LogError($"blast: assignfn function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
-                                        return (int)BlastError.error_assign_vector_size_mismatch;
-                                }
-                                vector_size = s_assignee;
-                            }
-
-#else
-                            // set to assignee
-                            switch (vector_size)
-                            {
-                                case 1:
-                                    int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                    fdata[offset] = -f4_register.x;
-                                    break;
-                                case 2: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; break;
-                                case 3: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; break;
-                                case 4: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; fdata[assignee + 3] = -f4_register.w; break;
-                            }
-#endif
+                            f4_register = -f4_register; 
                         }
-                        break;
+                        goto case (blast_operation)blast_operation_jumptarget.jump_assign_result;
 
-                    // 
+
+                    //
                     // assign the resultof a function directly to the assignee
-                    // 
+                    //
                     case blast_operation.assignfe:
                         {
-                            // get assignee 
                             byte assignee_op = code[code_pointer];
+                            assignee = (byte)(assignee_op - opt_id);
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                        }
+                        goto case (blast_operation)blast_operation_jumptarget.jump_assignfe;
 
-                            // get any index, branch free
-                            bool is_indexed = assignee_op < opt_id;
-                            blast_operation indexer = (blast_operation)math.select(0, assignee_op, is_indexed);
-                            code_pointer = math.select(code_pointer, code_pointer + 1, is_indexed);
-                            assignee_op = code[code_pointer];  // reading twice will probably be a lot faster then if() could test sometime.. todo
 
-                            byte assignee = (byte)(assignee_op - opt_id);
-
+                    case (blast_operation)blast_operation_jumptarget.jump_assignfe:
+                    LABEL_JUMP_ASSIGNFE:
+                        {
 #if DEVELOPMENT_BUILD || TRACE || AUTO_EXPAND
                             // check its size?? in debug only, functions return size in vector_size 
-                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
                             code_pointer++;
                             CallExternalFunction(ref code_pointer, ref vector_size, out f4_register);
-                            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-#if !AUTO_EXPAND
-                            // 4 == 0 depending on decoding 
-                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
-                            if (!is_indexed && s_assignee != vector_size)
-                            {
-                                Debug.LogError($"blast: assignfe external function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
-                                return (int)BlastError.error_assign_vector_size_mismatch;
-                            }
-#endif
-                            // can only set vectorcomponents (.x) from float1
-                            if (vector_size != 1 && is_indexed)
-                            {
-                                Debug.LogError($"blast.assignfe: cannot set component from vector at #{code_pointer}, component: {indexer}");
-                                return (int)BlastError.error_assign_component_from_vector;
-                            }
-#endif
-
-
-#if AUTO_EXPAND
-                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
-
-                            if (s_assignee == vector_size || (is_indexed && vector_size == 1))
-                            {
-                                // normal set to assignee
-                                switch (vector_size)
-                                {
-                                    case 1:
-                                        int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                        fdata[offset] = f4_register.x;
-                                        break;
-                                    case 2: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; break;
-                                    case 3: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; break;
-                                    case 4: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; fdata[assignee + 3] = f4_register.w; break;
-                                }
-                            }
-                            else
-                            {
-                                // expanding set to assignee
-                                switch (vector_size)
-                                {
-                                    case 1:
-                                        switch (s_assignee)
-                                        {
-                                            case 1: fdata[assignee] = f4_register.x; break;
-                                            case 2: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.x; break;
-                                            case 3: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.x; fdata[assignee + 2] = f4_register.x; break;
-                                            case 4: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.x; fdata[assignee + 2] = f4_register.x; fdata[assignee + 3] = f4_register.x; break;
-                                        }
-                                        break;
-
-                                    default:
-                                        Debug.LogError($"blast: assignfe function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
-                                        return (int)BlastError.error_assign_vector_size_mismatch;
-                                }
-                                vector_size = s_assignee;
-                            }
-#else
-                            // set to assignee
-                            switch (vector_size)
-                            {
-                                case 1:
-                                    int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                    fdata[offset] = f4_register.x;
-                                    break;
-                                case 2: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; break;
-                                case 3: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; break;
-                                case 4: fdata[assignee] = f4_register.x; fdata[assignee + 1] = f4_register.y; fdata[assignee + 2] = f4_register.z; fdata[assignee + 3] = f4_register.w; break;
-                            }
-#endif
                         }
-                        break;
+                        goto case (blast_operation)blast_operation_jumptarget.jump_assign_result;
 
-                    // 
-                    // assign the negated resultof a function directly to the assignee
-                    // 
+
+                    //
+                    // assign the resultof a function directly to the assignee
+                    //
                     case blast_operation.assignfen:
                         {
-                            // get assignee 
                             byte assignee_op = code[code_pointer];
+                            assignee = (byte)(assignee_op - opt_id);
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                        }
+                        goto case (blast_operation)blast_operation_jumptarget.jump_assignfen;
 
-                            // get any index, branch free
-                            bool is_indexed = assignee_op < opt_id;
-                            blast_operation indexer = (blast_operation)math.select(0, assignee_op, is_indexed);
-                            code_pointer = math.select(code_pointer, code_pointer + 1, is_indexed);
-                            assignee_op = code[code_pointer];  // reading twice will probably be a lot faster then if() could test sometime.. todo
 
-                            byte assignee = (byte)(assignee_op - opt_id);
-
+                    case (blast_operation)blast_operation_jumptarget.jump_assignfen:
+                    LABEL_JUMP_ASSIGNFEN:
+                        {
 #if DEVELOPMENT_BUILD || TRACE || AUTO_EXPAND
                             // check its size?? in debug only, functions return size in vector_size 
-                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
-
                             code_pointer++;
                             CallExternalFunction(ref code_pointer, ref vector_size, out f4_register);
-                            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-#if !AUTO_EXPAND
-                            // 4 == 0 depending on decoding 
-                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
-                            if (!is_indexed && s_assignee != vector_size)
-                            {
-                                Debug.LogError($"blast: assignfen, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
-                                return (int)BlastError.error_assign_vector_size_mismatch;
-                            }
-#endif
-                            // can only set vectorcomponents (.x) from float1
-                            if (vector_size != 1 && is_indexed)
-                            {
-                                Debug.LogError($"blast.assignfen: cannot set component from vector at #{code_pointer}, component: {indexer}");
-                                return (int)BlastError.error_assign_component_from_vector;
-                            }
-#endif
-#if AUTO_EXPAND
-                            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
-
-                            if (s_assignee == vector_size || (is_indexed && vector_size == 1))
-                            {
-                                // normal set to assignee
-                                switch (vector_size)
-                                {
-                                    case 1:
-                                        int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                        fdata[offset] = -f4_register.x;
-                                        break;
-                                    case 2: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; break;
-                                    case 3: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; break;
-                                    case 4: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; fdata[assignee + 3] = -f4_register.w; break;
-                                }
-                            }
-                            else
-                            {
-                                // expanding set to assignee
-                                float x = -f4_register.x;
-                                switch (vector_size)
-                                {
-                                    case 1:
-                                        switch (s_assignee)
-                                        {
-                                            case 1: fdata[assignee] = x; break;
-                                            case 2: fdata[assignee] = x; fdata[assignee + 1] = x; break;
-                                            case 3: fdata[assignee] = x; fdata[assignee + 1] = x; fdata[assignee + 2] = x; break;
-                                            case 4: fdata[assignee] = x; fdata[assignee + 1] = x; fdata[assignee + 2] = x; fdata[assignee + 3] = x; break;
-                                        }
-                                        break;
-
-                                    default:
-                                        Debug.LogError($"blast: assignfen function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
-                                        return (int)BlastError.error_assign_vector_size_mismatch;
-                                }
-                                vector_size = s_assignee;
-                            }
-
-#else
-                            // set to assignee
-                            switch (vector_size)
-                            {
-                                case 1:
-                                    int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                    fdata[offset] = -f4_register.x;
-                                    break;
-                                case 2: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; break;
-                                case 3: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; break;
-                                case 4: fdata[assignee] = -f4_register.x; fdata[assignee + 1] = -f4_register.y; fdata[assignee + 2] = -f4_register.z; fdata[assignee + 3] = -f4_register.w; break;
-                            }
-#endif
+                            f4_register = -f4_register; 
                         }
-                        break;
+                        goto case (blast_operation)blast_operation_jumptarget.jump_assign_result;
 
 
                     //
@@ -8695,24 +8859,24 @@ namespace NSS.Blast.Interpretor
                     // 
                     case blast_operation.assignv:
                         {
+                            // assignv cannot set a vector in an indexed thing and thus works like this
                             byte assignee_op = code[code_pointer];
 
                             bool is_indexed = assignee_op < opt_id;
                             if (is_indexed)
                             {
+                                //compile 
                                 Debug.LogError($"blast.assignv: cannot set component from vector at #{code_pointer}");
                                 return (int)BlastError.error_assign_component_from_vector;
                             }
 
-                            byte assignee = (byte)(assignee_op - opt_id);
-                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
+                            assignee = (byte)(assignee_op - opt_id);
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
                             code_pointer++;
                             assignv(ref code_pointer, in s_assignee, &fdata[assignee]);
                         }
                         break;
-
-
 
                     //
                     // The one, expensive operation we want to avoid: Assign result of compound
@@ -8729,119 +8893,28 @@ namespace NSS.Blast.Interpretor
                             code_pointer = math.select(code_pointer, code_pointer + 1, is_indexed);
 
                             assignee_op = code[code_pointer];
-                            byte assignee = (byte)(assignee_op - opt_id);
+                            assignee = (byte)(assignee_op - opt_id);
 
-                            // advance 2 if on begin 1 otherwise
-                            code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
-
-                            // get vectorsize of the assigned parameter 
-                            // vectorsize assigned MUST match 
-                            byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
-
-                            // correct vectorsize 4 => it is 0 after compressing into 2 bits
-
-                            // -> compounds
-                            //  s_assignee = (byte) math.select(4, s_assignee, s_assignee == 0); 
-
-
+                            goto LABEL_JUMP_ASSIGN;
+                        }
                             //
-                            // - a mixed sequence - no nested compound
-                            // - a compound -> vector definition? push? compiler flattens everything else
-                            // - a function call with sequence after... 
-                            //
-
-                            //
-                            // for some functions the return vector size depends on the input vectorsize 
-                            // in those cases the compiler should have correctly estimated the return vector size
-                            // if it did not it would overwrite other data when the compiler allocates to few bytes for the assignee
+                            // :0  this gives a fairly clean path nevertheless 
                             // 
-                            // !!- any function that is not correctly estimated will result in "BlastError.error_assign_vector_size_mismatch" !!
-                            //
+                        LABEL_JUMP_ASSIGN:
+                        { 
+                            s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
-
-
-                            ////   TODO : compiler should identify if assigning 1 simple value and use different instruction !!!!! 
-
-
-                            //                             f4_register = get_compound_result(ref code_pointer, ref vector_size, false);
-
+                            code_pointer++;
                             get_sequence_result(ref code_pointer, ref vector_size, out f4_register);
 
-#if DEVELOPMENT_BUILD || TRACE
-                            // the compiler should have cought this, if it didt wel that would be noticed before going in release
-                            // so we define this only for debug saving the if
-                            // cannot set a component from a vector (yet)
-                            if (vector_size != 1 && is_indexed)
-                            {
-                                Debug.LogError($"blast.assign: cannot set component from vector at #{code_pointer}, component: {indexer}");
-                                return (int)BlastError.error_assign_component_from_vector;
-                            }
-#endif
+                            code_pointer--;
 
-                            // set assigned data fields in stack 
-                            switch ((byte)vector_size)
-                            {
-                                case (byte)BlastVectorSizes.float1:
-                                    //if(Unity.Burst.CompilerServices.Hint.Unlikely(s_assignee != 1))
-                                    if (s_assignee != 1 && !is_indexed)
-                                    {
-#if DEVELOPMENT_BUILD || TRACE
-                                        Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
-#endif
-                                        return (int)BlastError.error_assign_vector_size_mismatch;
-                                    }
-                                    int offset = math.select(assignee, assignee + (int)(indexer - blast_operation.index_x), is_indexed);
-                                    fdata[offset] = f4_register.x;
-                                    break;
-
-                                case (byte)BlastVectorSizes.float2:
-                                    if (s_assignee != 2)
-                                    {
-#if DEVELOPMENT_BUILD || TRACE
-                                        Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
-#endif
-                                        return (int)BlastError.error_assign_vector_size_mismatch;
-                                    }
-                                    fdata[assignee] = f4_register.x;
-                                    fdata[assignee + 1] = f4_register.y;
-                                    break;
-
-                                case (byte)BlastVectorSizes.float3:
-                                    if (s_assignee != 3)
-                                    {
-#if DEVELOPMENT_BUILD || TRACE
-                                        Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
-#endif
-                                        return (int)BlastError.error_assign_vector_size_mismatch;
-                                    }
-                                    fdata[assignee] = f4_register.x;
-                                    fdata[assignee + 1] = f4_register.y;
-                                    fdata[assignee + 2] = f4_register.z;
-                                    break;
-
-                                case (byte)BlastVectorSizes.float4:
-                                    if (s_assignee != 4)
-                                    {
-#if DEVELOPMENT_BUILD || TRACE
-                                        Debug.LogError($"blast: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
-#endif
-                                        return (int)BlastError.error_assign_vector_size_mismatch;
-                                    }
-                                    fdata[assignee] = f4_register.x;
-                                    fdata[assignee + 1] = f4_register.y;
-                                    fdata[assignee + 2] = f4_register.z;
-                                    fdata[assignee + 3] = f4_register.w;
-                                    break;
-
-                                default:
-#if DEVELOPMENT_BUILD || TRACE
-                                    Debug.LogError($"blast.interpretor: vector size {vector_size} not allowed at codepointer {code_pointer}");
-#endif
-                                    return (int)BlastError.error_unsupported_operation_in_root;
-                            }
-
+                            goto case (blast_operation)blast_operation_jumptarget.jump_assign_result;
                         }
-                        break;
+
+                    #endregion 
+
+                    #region Jumps 
 
                     //
                     // JZ Long: a condition may contain push commands that should run from the root
@@ -8850,7 +8923,7 @@ namespace NSS.Blast.Interpretor
                         {
                             // calc endlocation of 
                             int offset = ((short)(code[code_pointer] << 8) + code[code_pointer + 1]);
-                            int jump_to = code_pointer + offset - 1; 
+                            int jump_to = code_pointer + offset - 1;
 
                             // eval condition 
                             code_pointer += math.select(2, 3, code[code_pointer + 2] == (byte)blast_operation.begin);
@@ -8938,11 +9011,45 @@ namespace NSS.Blast.Interpretor
                             break;
                         }
 
+                    #endregion
+
+                    #region Root Procedures
+ 
+                    //    
+                    // by executing these in the root we save a lot on function calls and stack operations
+                    // - should implement all procedures here 
+                    // 
                     case blast_operation.send:
                         {
-                            Handle_Send(ref code_pointer); 
-                            break; 
+                            Handle_Send(ref code_pointer);
+                            break;
                         }
+
+                    case blast_operation.seed:
+                        f4_register.x = pop_or_value(++code_pointer);
+                        random = Unity.Mathematics.Random.CreateFromIndex((uint)f4_register.x);
+                        break;
+
+
+                    case blast_operation.set_bit:
+                        code_pointer--;
+                        get_setbit_result(ref code_pointer, ref vector_size);
+                        code_pointer++;
+                        break;
+
+                    case blast_operation.set_bits:
+                        code_pointer--;
+                        get_setbits_result(ref code_pointer, ref vector_size);
+                        code_pointer++;
+                        break;
+
+                    case blast_operation.zero:
+                        code_pointer--;
+                        get_zero_result(ref code_pointer, ref vector_size);
+                        code_pointer++;
+                        break;
+                    #endregion 
+
 
                     //
                     // Extended Op == 255 => next byte encodes an operation not used in switch above (more non standard ops)
@@ -8961,7 +9068,7 @@ namespace NSS.Blast.Interpretor
                                         get_reversebits_result(ref code_pointer, ref vector_size);
                                         code_pointer++;
                                     }
-                                    break; 
+                                    break;
 
                                 case extended_blast_operation.rol:
                                     {
@@ -9015,7 +9122,7 @@ namespace NSS.Blast.Interpretor
                                         RunValidate(ref code_pointer);
                                         code_pointer++;
                                     }
-                                    break; 
+                                    break;
 
                                 case extended_blast_operation.debugstack:
                                     {
@@ -9041,7 +9148,7 @@ namespace NSS.Blast.Interpretor
 
                                         if ((blast_operation)op_id == blast_operation.cdataref)
                                         {
-                                            if(!ValidateOnce)
+                                            if (!ValidateOnce)
                                             {
                                                 Handle_DebugData_CData(code_pointer);
                                             }
@@ -9073,35 +9180,15 @@ namespace NSS.Blast.Interpretor
                             }
                             break;
                         }
-                   
-                    
-                    case blast_operation.set_bit:
-                        code_pointer--; 
-                        get_setbit_result(ref code_pointer, ref vector_size);
-                        code_pointer++; 
-                        break;
-
-
-                    case blast_operation.set_bits:
-                        code_pointer--;
-                        get_setbits_result(ref code_pointer, ref vector_size);
-                        code_pointer++;
-                        break;
-
-                    case blast_operation.zero:
-                        code_pointer--;
-                        get_zero_result(ref code_pointer, ref vector_size);
-                        code_pointer++;
-                        break; 
 
                     default:
                         {
 #if DEVELOPMENT_BUILD || TRACE
-                                Debug.LogError($"blast: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
+                            Debug.LogError($"blast: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
 #endif
 
                         }
-                        return (int)BlastError.error_unsupported_operation_in_root; 
+                        return (int)BlastError.error_unsupported_operation_in_root;
                 }
             }
 
@@ -9113,7 +9200,7 @@ namespace NSS.Blast.Interpretor
 
 
 
-#endregion
+        #endregion
 
     }
 }

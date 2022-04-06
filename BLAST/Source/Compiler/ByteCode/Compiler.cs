@@ -124,14 +124,8 @@ namespace NSS.Blast.Compiler.Stage
                         // - cdataref is assumed to be a long ref always 
                         // 
 
-                        if (data.JumpLabels.TryGetValue(IMJumpLabel.ConstantName(p_id.Id.ToString()), out IMJumpLabel label))
-                        {
-                            code.Add(blast_operation.cdataref, IMJumpLabel.ReferenceToConstant(label));
-                            code.Add((byte)blast_operation.nop, IMJumpLabel.OffsetToConstant(label));
-                            code.Add((byte)blast_operation.nop); // reservation for easier jump resolving, easier to grow smaller then larger
-                        }
-                        else
-                        {
+                        if(!CompileCDATAREF(data, code, p_id))
+                        { 
                             data.LogError($"Blast.Compiler.CompilerParameter: failed to compile reference to CDATA section, the jumplabel could not be located for variable: {p_id.Name} in node: <{ast_param}>");
                             return false; 
                         }
@@ -814,6 +808,25 @@ namespace NSS.Blast.Compiler.Stage
             return true;
         }
 
+        #region CDATA 
+
+        /// <summary>
+        /// compile a reference to a cdata section including jump labels 
+        /// </summary>
+        private static bool CompileCDATAREF(CompilationData data, IMByteCodeList code, BlastVariable variable)
+        {
+            if (data.JumpLabels.TryGetValue(IMJumpLabel.ConstantName(variable.Id.ToString()), out IMJumpLabel label))
+            {
+                code.Add(blast_operation.cdataref, IMJumpLabel.ReferenceToConstant(label));
+                code.Add((byte)blast_operation.nop, IMJumpLabel.OffsetToConstant(label));
+                code.Add((byte)blast_operation.nop); // reservation for easier jump resolving, easier to grow smaller then larger
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         /// <summary>
         /// compile constant cdata nodes into the code stream as:
@@ -939,6 +952,7 @@ namespace NSS.Blast.Compiler.Stage
             return BlastError.success; 
         }
 
+        #endregion 
 
 
         /// <summary>
@@ -1055,6 +1069,338 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+        #region Assignment Node 
+
+        private static IMByteCodeList CompileAssignmentNode(CompilationData data, node ast_node, IMByteCodeList code)
+        {
+            Assert.IsNotNull(ast_node);
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(code); 
+
+            BlastVariable assignee = ast_node.variable;
+            if (assignee == null)
+            {
+                data.LogError($"Blast.CompileAssignmentNode: node: <{ast_node}> could not get id for assignee identifier {ast_node.identifier}");
+                return null;
+            }
+            // numeric/id value, add its variableId to output code
+            // it should add p_id.Id as its offset into data 
+            if (assignee.Id < 0 || assignee.Id >= data.OffsetCount)
+            {
+                data.LogError($"Blast.CompileAssignmentNode: node: <{ast_node}>, assignment destination variable not correctly offset: '{assignee}'");
+                return null;
+            }
+
+            // start out with assuming matching datatype
+            BlastVariableDataType assigned_datatype = ast_node.variable.DataType;
+
+            // if the assignment is indexed we have to add extra opcodes
+            bool is_indexed_assignment = ast_node.HasIndexers;
+            blast_operation op_indexer = blast_operation.nop;
+
+            if (is_indexed_assignment)
+            {
+                // first node should contain the indexer operation
+                op_indexer = ast_node.indexers[0].constant_op;
+                if (op_indexer == blast_operation.nop)
+                {
+                    data.LogError($"Blast.CompileAssignmentNode: node: <{ast_node}>, assignment destination variable not correctly indexed: '{assignee}'");
+                    return null;
+                }
+            }
+
+            // constant cdata assignment 
+            bool is_constant_cdata_assignment = assignee.IsCData && assignee.IsConstant;
+
+            //
+            // in _all_ (other :_) cases the first byte after assignment is opt_ident or higher
+            // the index-x y z w n operations all have a lower byte value that the interpretor can check 
+            //
+
+            // assigning a single value or pop?  
+            if (ast_node.ChildCount == 1 && node.IsSingleValueOrPop(ast_node.FirstChild))
+            {
+                // ASSIGNS | op.sets 
+                // encode assigns instead of assign, this saves a trip through get_compound and 1 byte closing that compound
+
+                if(CompileIndexedAssignmentTarget(data, ast_node, assignee, code, blast_operation.assigns, is_indexed_assignment, op_indexer, is_constant_cdata_assignment) == null)
+                {
+                    return null; 
+                }
+                
+
+                // encode variable, constant value or pop instruction 
+                if (!CompileParameter(data, ast_node.FirstChild, code, true))
+                {
+                    data.LogError($"Blast.CompileAssignmentNode: node: <{ast_node.parent}>.<{ast_node}>, failed to compile single parameter <{ast_node.FirstChild}> into assigns operation");
+                    return null;
+                }
+
+                // if its a Bool32 then the node has this information and as we compiled only a single 
+                // node we can be sure we set this datatype 
+                assigned_datatype = ast_node.FirstChild.datatype;
+            }
+            else
+            // assigning a single function result | and not a stack pusp/pop
+            if (ast_node.ChildCount == 1 && ast_node.FirstChild.type == nodetype.function && !ast_node.IsStackFunction)
+            {
+                if (CompileIndexedAssignmentTarget(data, ast_node, assignee, code, ast_node.function.IsExternalCall ? blast_operation.assignfe : blast_operation.assignf, is_indexed_assignment, op_indexer, is_constant_cdata_assignment) == null)
+                {
+                    return null;
+                }
+
+                CompileNode(data, ast_node.FirstChild, code);
+                if (!data.IsOK)
+                {
+                    data.LogError($"Blast.CompileAssignmentNode: node: <{ast_node.parent}>.<{ast_node}>, failed to compile assignment of function <{ast_node.FirstChild}> into assignf operation");
+                    return null;
+                }
+            }
+            else
+            // assigning a negated function result 
+            if (ast_node.ChildCount == 2
+                &&
+                (ast_node.FirstChild.type == nodetype.operation && (ast_node.FirstChild.token == BlastScriptToken.Substract))
+                &&
+                !ast_node.IsStackFunction
+                &&
+                ast_node.LastChild.type == nodetype.function)
+            {
+                if (CompileIndexedAssignmentTarget(data, ast_node, assignee, code, ast_node.function.IsExternalCall ? blast_operation.assignfen : blast_operation.assignfn, is_indexed_assignment, op_indexer, is_constant_cdata_assignment) == null)
+                {
+                    return null;
+                }
+
+                CompileNode(data, ast_node.FirstChild, code);
+                {
+                    data.LogError($"Blast.CompileAssignmentNode: node: <{ast_node.parent}>.<{ast_node}>, failed to compile negated assignment of function <{ast_node.FirstChild}> into assignf[e]n operation");
+                    return null;
+                }
+            }
+            else
+            //
+            // assigning a simple vector built from components 
+            // - flatten will have removed all nesting at this point, still check it though
+            //
+            if (ast_node.is_vector && ast_node.IsSimplexVectorDefinition())
+            {
+                // this should never be indexed 
+                if(is_indexed_assignment)
+                {
+                    data.LogError($"Blast.CompileAssignmentNode: error compiling node <{ast_node.parent}>.<{ast_node}>, cannot set a component index with a vector", (int)BlastError.error_assign_component_from_vector);
+                    return null;
+                }
+
+                if (CompileIndexedAssignmentTarget(data, ast_node, assignee, code, blast_operation.assignv, is_indexed_assignment, op_indexer, is_constant_cdata_assignment) == null)
+                {
+                    return null;
+                }
+
+                // assingv deduces vectorsize and parametercount at interpretation and assumes compiler has generated correct code 
+                // code.Add((byte)node.encode44(ast_node, (byte)ast_node.ChildCount));
+
+                if (!CompileSimplexFunctionParameterList(data, ast_node, ast_node.children, code))
+                {
+                    data.LogError($"Blast.CompileAssignmentNode: error compiling {ast_node.function.ScriptOp} parameters for node <{ast_node.parent}>.<{ast_node}>");
+                    return null;
+                }
+
+                // 
+                // assignV allows the minus symbol directly in the vector definition..... 
+                // because we flattened that away it cant easily use that feature here 
+                // 
+                // TODO: update flattener, allow it to leave the minus in this case 
+                //       IsSimplexVectorDefinition should then also allow the -compounds 
+                //       CompileSimplexfunctionParameterList must then also write these in only this situatiion 
+                //
+                // 
+
+
+            }
+            // default compound assignment 
+            else
+            {
+                // encode first part of assignment 
+                // [op:assign][var:id+128]
+                if (CompileIndexedAssignmentTarget(data, ast_node, assignee, code, blast_operation.assign, is_indexed_assignment, op_indexer, is_constant_cdata_assignment) == null)
+                {
+                    return null;
+                }
+
+                // compile child nodes 
+                foreach (node ast_child in ast_node.children)
+                {
+                    // make sure only valid node types are supplied 
+                    if (ast_child.ValidateType(data, new nodetype[] {
+                                nodetype.parameter,
+                                nodetype.operation,
+                                nodetype.compound,
+                                nodetype.function
+                            }))
+                    {
+                        CompileNode(data, ast_child, code);
+                        if (!data.IsOK)
+                        {
+                            data.LogError($"Blast.CompileAssignmentNode: failed to compile part of assignment: <{ast_node}>");
+                            return null;
+                        }
+                    }
+                }
+                // end with a nop operation
+                // - signal interpretor that this statement is complete.
+                // - variable length vectors really need either this or a counter... 
+                //   better always have a nop, makes the assembly easier to read from bytes
+                code.Add(blast_operation.nop);
+
+                // todo this nop may be skipped in certain situation we need a way to code like we do jumps
+            }
+
+            // detect datatype of assignemnt 
+
+            // :assigns: 
+            // the first node was succesfully compiled as a parameter, 
+            // should the assigned value be interpreted as a boolean and is b.datatype different:
+            // then inject a reinterpret_bool32( assignee ); 
+
+            if (assigned_datatype != assignee.DataType)
+            {
+                switch (assigned_datatype)
+                {
+                    case BlastVariableDataType.Bool32:
+                        {
+                            // encode: reinterpret_bool32( assignee_var );
+                            code.Add(blast_operation.ex_op);
+                            code.Add((byte)extended_blast_operation.reinterpret_bool32);
+                            code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
+                        }
+                        break;
+
+                    case BlastVariableDataType.Numeric:
+                        {
+                            // encode: reinterpret_float( assignee_var );
+                            code.Add(blast_operation.ex_op);
+                            code.Add((byte)extended_blast_operation.reinterpret_float);
+                            code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
+                        }
+                        break;
+
+                    default:
+                        {
+                            data.LogError($"Blast.CompileAssignmentNode: failed to compile assignment: <{ast_node}>. The assigned datatype: {assigned_datatype} mismatches the datatype of the assignee and this conversion is not supported");
+                            return null;
+                        }
+                }
+            }
+
+
+            return code;
+        }
+
+        private static IMByteCodeList CompileIndexedAssignmentTarget(CompilationData data, node ast_node, BlastVariable assignee, IMByteCodeList code, blast_operation assignment_op, bool is_indexed_assignment, blast_operation op_indexer, bool is_constant_cdata_assignment)
+        {
+            bool inject = CompileAssignmentOpCode(data, code, assignment_op, is_indexed_assignment, is_constant_cdata_assignment);
+            if (!CompileAssignee(data, ast_node, code, assignee, is_indexed_assignment, op_indexer, is_constant_cdata_assignment))
+            {
+                // an error is logged in compileassignee
+                return null;
+            }
+            if (inject)
+            {
+                // add assignment type after any index index 
+                code.Add(assignment_op);
+            }
+
+            return code; 
+        }
+
+
+        /// <summary>
+        /// compile assignment opcode
+        /// - the opcode is NOT compiled if the assignment is indexed and packagemode == normal, in that case the index opcode should be first and interpretor picks up from there 
+        /// - the opcode is also not compiled if this is a cdata assignment
+        /// 
+        /// returns true if indexer is injected instead of assing op
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="code"></param>
+        /// <param name="assign_operation"></param>
+        private static bool CompileAssignmentOpCode(CompilationData data, IMByteCodeList code, blast_operation assign_operation, bool is_indexed_assignment, bool is_constant_cdata_assignment)
+        {
+            if(is_constant_cdata_assignment || is_indexed_assignment)
+            {
+                switch(data.CompilerOptions.PackageMode)
+                {
+                    case BlastPackageMode.Normal:
+                    case BlastPackageMode.Compiler: return true; // in all other cases add the assignment operation 
+                }
+            }
+            code.Add(assign_operation);
+            return false; 
+        }
+
+
+        /// <summary>
+        /// compile indexer and assignee opcodes depending on current context 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="ast_node"></param>
+        /// <param name="code"></param>
+        /// <param name="assignee"></param>
+        /// <param name="is_indexed_assignment"></param>
+        /// <param name="op_indexer"></param>
+        /// <param name="is_constant_cdata_assignment"></param>
+        /// <param name="indexer"></param>
+        /// <returns></returns>
+        private static bool CompileAssignee(CompilationData data, node ast_node, IMByteCodeList code, BlastVariable assignee, bool is_indexed_assignment, blast_operation op_indexer, bool is_constant_cdata_assignment, node indexer = null)
+        {
+            if (is_constant_cdata_assignment)
+            {
+                if (!CompileCDATAREF(data, code, assignee))
+                {
+                    data.LogError($"Blast.Compiler.CompilerAssignment: failed to compile reference to assigned CDATA section, the jumplabel could not be located for variable: {assignee.Name} in node: <{ast_node}>");
+                    return false;
+                }
+            }
+
+            if (is_indexed_assignment) code.Add(op_indexer);
+
+            if (op_indexer == blast_operation.index_n)
+            {
+                // insert indexer, first validate it has one 
+                if (indexer == null && ast_node != null && ast_node.HasIndexers && ast_node.indexers.Count == 1)
+                {
+                    indexer = ast_node.indexers[0];
+                    while (indexer.HasChildren) indexer = indexer.FirstChild; 
+                }
+                if(indexer == null)
+                {
+                    data.LogError($"Blast.Compiler.CompilerAssignment: failed to compile assignment, indexer node invalid: {assignee.Name} in node: <{ast_node}>");
+                    return false;
+                }
+                if (indexer.vector_size > 1) // explicetly dont check 0
+                {
+                    data.LogError($"Blast.Compiler.CompilerAssignment: failed to compile assignment, indexer node <{indexer}> invalid, assignee: {assignee.Name} in node: <{ast_node}>, indexer variable vectorsize should be 1 but it is {indexer.vector_size} instead");
+                    return false;
+                }
+                if (!CompileParameter(data, indexer, code, true))
+                {
+                    data.LogError($"Blast.Compiler.CompilerAssignment: failed to compile assigned indexer node <{indexer}>, assignee: {assignee.Name} in node: <{ast_node}>");
+                    return false;
+                }
+            }
+
+            if (!is_constant_cdata_assignment)
+            {
+                code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
+            }
+
+            return true; 
+        }
+
+        #endregion 
+
+     
+
 
         /// <summary>
         /// Compile a node into bytecode 
@@ -1078,14 +1424,14 @@ namespace NSS.Blast.Compiler.Stage
             // >> this should not happen if the flatten operation went ok, but its fixable be we should log warnings  
             if (ast_node.IsCompound && ast_node.HasOneChild && ast_node.type != nodetype.whilecompound)
             {
-                data.LogWarning($"CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>");
+                data.LogWarning($"Blast.Compiler.CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>");
 
                 // if so just skip it 
                 if (ast_node.HasDependencies)
                 {
                     // but keep dependencies 
                     ast_node.children[0].depends_on.InsertRange(0, ast_node.depends_on);
-                    data.LogWarning($"CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>, {ast_node.DependencyCount} dependencies moved to <{ast_node.children[0]}>");
+                    data.LogWarning($"Blast.Compiler.CompileNode: skipping compound of node <{ast_node.parent}>.<{ast_node}>, {ast_node.DependencyCount} dependencies moved to <{ast_node.children[0]}>");
                 }
                 ast_node = ast_node.children[0];
             }
@@ -1102,12 +1448,12 @@ namespace NSS.Blast.Compiler.Stage
 
                     if(Blast.IsError(data.LastError = AnalyzeCompoundNesting(data, initializer)))                        
                     {
-                        data.LogError($"CompileNode: failed to compile resolve compound nesting in dependencies for node: <{ast_node}>.<{initializer}>, failed with error {data.LastError}");
+                        data.LogError($"Blast.Compiler.CompileNode: failed to compile resolve compound nesting in dependencies for node: <{ast_node}>.<{initializer}>, failed with error {data.LastError}");
                         return null;
                     }
                     if (CompileNode(data, initializer, code) == null)
                     {
-                        data.LogError($"CompileNode: failed to compile dependencies for node: <{ast_node}>.<{initializer}>");
+                        data.LogError($"Blast.Compiler.CompileNode: failed to compile dependencies for node: <{ast_node}>.<{initializer}>");
                         return null;
                     }
                 }
@@ -1120,7 +1466,7 @@ namespace NSS.Blast.Compiler.Stage
                 case nodetype.none:
                     if (ast_node.HasChildren)
                     {
-                        data.LogError($"CompileNode: encountered [nop] node <{ast_node}> with child nodes => this is not allowed without a valid type");
+                        data.LogError($"Blast.Compiler.CompileNode: encountered [nop] node <{ast_node}> with child nodes => this is not allowed without a valid type");
                         return null;
                     }
                     if (compile_nops) code.Add(blast_operation.nop);
@@ -1128,7 +1474,7 @@ namespace NSS.Blast.Compiler.Stage
 
                 // if we get here something is very wrong 
                 case nodetype.root:
-                    data.LogError($"CompileNode: encountered a node typed as root => this is only allowed for the root of the AST");
+                    data.LogError($"Blast.Compiler.CompileNode: encountered a node typed as root => this is only allowed for the root of the AST");
                     return null;
 
                 // an operation may be encountered only if != root 
@@ -1153,13 +1499,13 @@ namespace NSS.Blast.Compiler.Stage
                             case BlastScriptToken.Xor: code.Add(blast_operation.xor); break;
                             case BlastScriptToken.Not: code.Add(blast_operation.not); break;
                             default:
-                                data.LogError($"CompileNode: encountered an unsupported operation type, node: <{ast_node.parent}><{ast_node}>");
+                                data.LogError($"Blast.Compiler.CompileNode: encountered an unsupported operation type, node: <{ast_node.parent}><{ast_node}>");
                                 return null;
                         }
                     }
                     else
                     {
-                        data.LogError($"CompileNode: encountered an unsupported operation type for direct compilation into root, node: <{ast_node}>");
+                        data.LogError($"Blast.Compiler.CompileNode: encountered an unsupported operation type for direct compilation into root, node: <{ast_node}>");
                         return null;
                     }
                     break;
@@ -1171,7 +1517,7 @@ namespace NSS.Blast.Compiler.Stage
                 case nodetype.switchnode:
                 case nodetype.switchcase:
                 case nodetype.switchdefault:
-                    data.LogError($"CompileNode: encountered an unsupported node type for direct compilation into root, node: <{ast_node}>");
+                    data.LogError($"Blast.Compiler.CompileNode: encountered an unsupported node type for direct compilation into root, node: <{ast_node}>");
                     return null;
 
                 // only insert yields if supported by options 
@@ -1184,12 +1530,12 @@ namespace NSS.Blast.Compiler.Stage
                         }
                         else
                         {
-                            data.LogError("CompileNode: skipped yield opcode, yield is not supported by current conflicting compilation options, yield cannot work without packaging a stack");
+                            data.LogError("Blast.Compiler.CompileNode: skipped yield opcode, yield is not supported by current conflicting compilation options, yield cannot work without packaging a stack");
                         }
                     }
                     else
                     {
-                        data.LogWarning("CompileNode: skipped yield opcode, yield is not supported by current compilation options");
+                        data.LogWarning("Blast.Compiler.CompileNode: skipped yield opcode, yield is not supported by current compilation options");
                     }
                     break;
 
@@ -1199,14 +1545,14 @@ namespace NSS.Blast.Compiler.Stage
                         // is it inlined or api 
                         if (ast_node.IsFunction && ast_node.function.FunctionId == -1)
                         {
-                            data.LogError($"CompileNode: inline function: <{ast_node}> found in node tree, these should not be compiled as api calls."); 
+                            data.LogError($"Blast.Compiler.CompileNode: inline function: <{ast_node}> found in node tree, these should not be compiled as api calls."); 
                         }
                         else
                         {
                             // compile an API function call 
                             if (!ast_node.IsFunction || ast_node.function.FunctionId <= 0)
                             {
-                                data.LogError($"CompileNode: encountered function node with no function set, node: <{ast_node}>");
+                                data.LogError($"Blast.Compiler.CompileNode: encountered function node with no function set, node: <{ast_node}>");
                                 return null;
                             }
                             if ((ast_node.parent == null || ast_node.parent.type == nodetype.root) && ast_node.function.ReturnsVectorSize > 0)
@@ -1227,7 +1573,7 @@ namespace NSS.Blast.Compiler.Stage
                                         {
                                             if (!CompileFunction(data, ast_node, code))
                                             {
-                                                data.LogError($"CompileNode: failed to compile function: {ast_node}.");
+                                                data.LogError($"Blast.Compiler.CompileNode: failed to compile function: {ast_node}.");
                                                 return null;
                                             }
                                         }
@@ -1235,7 +1581,7 @@ namespace NSS.Blast.Compiler.Stage
 
                                     default:
                                         data.LogToDo($"todo: allow functions on root");
-                                        data.LogError($"CompileNode: only procedures are allowed to execute at root, no functions, found {ast_node.function.GetFunctionName()}");
+                                        data.LogError($"Blast.Compiler.CompileNode: only procedures are allowed to execute at root, no functions, found {ast_node.function.GetFunctionName()}");
                                         return null;
                                 }
                             }
@@ -1243,7 +1589,7 @@ namespace NSS.Blast.Compiler.Stage
                             {
                                 if (!CompileFunction(data, ast_node, code))
                                 {
-                                    data.LogError($"CompileNode: failed to compile function: <{ast_node}>.");
+                                    data.LogError($"Blast.Compiler.CompileNode: failed to compile function: <{ast_node}>.");
                                     return null;
                                 }
                             }
@@ -1271,204 +1617,11 @@ namespace NSS.Blast.Compiler.Stage
                     }
 
                 case nodetype.assignment:
-
-                    BlastVariable assignee = ast_node.variable;
-                    if (assignee == null)
+                    if(CompileAssignmentNode(data, ast_node, code) == null)
                     {
-                        data.LogError($"CompileNode: assignment node: <{ast_node}> could not get id for assignee identifier {ast_node.identifier}");
-                        return null;
+                        data.LogError($"Blast.Compiler.CompileNode: failed to compile assignment <{ast_node}>");
+                        return null; 
                     }
-                    // numeric/id value, add its variableId to output code
-                    // it should add p_id.Id as its offset into data 
-                    if (assignee.Id < 0 || assignee.Id >= data.OffsetCount)
-                    {
-                        data.LogError($"CompileNode: assignment node: <{ast_node}>, assignment destination variable not correctly offset: '{assignee}'");
-                        break;
-                    }
-
-                    // start out with assuming matching datatype
-                    BlastVariableDataType assigned_datatype = ast_node.variable.DataType; 
-
-                    // if the assignment is indexed we have to add extra opcodes
-                    bool is_indexed_assignment = ast_node.HasIndexers;
-                    blast_operation op_indexer = blast_operation.nop;
-
-                    if(is_indexed_assignment)
-                    {
-                        // first node should contain the indexer operation
-                        op_indexer = ast_node.indexers[0].constant_op; 
-                        if(op_indexer == blast_operation.nop)
-                        {
-                            data.LogError($"CompileNode: assignment node: <{ast_node}>, assignment destination variable not correctly indexed: '{assignee}'");
-                            break;
-                        }
-                    }
-                     
-                    //
-                    // in _all_ cases the first byte after assignment is opt_ident or higher
-                    // the index-x y z w n operations all have a lower byte value that the interpretor can check 
-                    //
-
-                    // assigning a single value or pop?  
-                    if (ast_node.ChildCount == 1 && node.IsSingleValueOrPop(ast_node.FirstChild))
-                    {
-                        // ASSIGNS | op.sets 
-                        // encode assigns instead of assign, this saves a trip through get_compound and 1 byte closing that compound
-                        //
-                        code.Add(blast_operation.assigns);
-                        if(is_indexed_assignment) code.Add(op_indexer);
-                        code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
-
-                        // encode variable, constant value or pop instruction 
-                        if (!CompileParameter(data, ast_node.FirstChild, code, true))
-                        {
-                            data.LogError($"CompileNode: assignment node: <{ast_node.parent}>.<{ast_node}>, failed to compile single parameter <{ast_node.FirstChild}> into assigns operation");
-                            return null;
-                        }
-
-                        // if its a Bool32 then the node has this information and as we compiled only a single 
-                        // node we can be sure we set this datatype 
-                        assigned_datatype = ast_node.FirstChild.datatype; 
-                    }
-                    else
-                    // assigning a single function result | and not a stack pusp/pop
-                    if (ast_node.ChildCount == 1 && ast_node.FirstChild.type == nodetype.function && !ast_node.IsStackFunction)
-                    {
-                        code.Add(ast_node.function.IsExternalCall ? blast_operation.assignfe : blast_operation.assignf);
-                        if (is_indexed_assignment) code.Add(op_indexer);
-                        code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
-                        CompileNode(data, ast_node.FirstChild, code);
-                        if (!data.IsOK)
-                        {
-                            data.LogError($"CompileNode: assignment node: <{ast_node.parent}>.<{ast_node}>, failed to compile assignment of function <{ast_node.FirstChild}> into assignf operation"); 
-                            return null;
-                        }
-                    }
-                    else
-                    // assigning a negated function result 
-                    if (ast_node.ChildCount == 2
-                        &&
-                        (ast_node.FirstChild.type == nodetype.operation && (ast_node.FirstChild.token == BlastScriptToken.Substract))
-                        &&
-                        !ast_node.IsStackFunction                                                    
-                        &&
-                        ast_node.LastChild.type == nodetype.function)
-                    {
-                        code.Add(ast_node.function.IsExternalCall ? blast_operation.assignfen : blast_operation.assignfn);
-                        if (is_indexed_assignment) code.Add(op_indexer);
-                        code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
-                        CompileNode(data, ast_node.FirstChild, code);                                                         
-                        {
-                            data.LogError($"CompileNode: assignment node: <{ast_node.parent}>.<{ast_node}>, failed to compile negated assignment of function <{ast_node.FirstChild}> into assignf operation");
-                            return null;
-                        }
-                    }
-                    else
-                    //
-                    // assigning a simple vector built from components 
-                    // - flatten will have removed all nesting at this point, still check it though
-                    //
-                    if (ast_node.is_vector && ast_node.IsSimplexVectorDefinition())
-                    {
-
-                        code.Add((byte)blast_operation.assignv);
-                        if (is_indexed_assignment) code.Add(op_indexer);
-                        code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
-                        
-                        // assingv deduces vectorsize and parametercount at interpretation and assumes compiler has generated correct code 
-                        // code.Add((byte)node.encode44(ast_node, (byte)ast_node.ChildCount));
-
-                        if (!CompileSimplexFunctionParameterList(data, ast_node, ast_node.children, code))
-                        {
-                            data.LogError($"Compile: error compiling {ast_node.function.ScriptOp} function parameters for node <{ast_node.parent}>.<{ast_node}>");
-                            return null;
-                        }
-
-                        // 
-                        // assignV allows the minus symbol directly in the vector definition..... 
-                        // because we flattened that away it cant easily use that feature here 
-                        // 
-                        // TODO: update flattener, allow it to leave the minus in this case 
-                        //       IsSimplexVectorDefinition should then also allow the -compounds 
-                        //       CompileSimplexfunctionParameterList must then also write these in only this situatiion 
-                        //
-                        // 
-                        
-
-                    }
-                    // default compound assignment 
-                    else
-                    {
-                        // encode first part of assignment 
-                        // [op:assign][var:id+128]
-                        code.Add(blast_operation.assign);
-                        if (is_indexed_assignment) code.Add(op_indexer);
-                        code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident)); // nop + 1 for ids on variables 
-
-                        // compile child nodes 
-                        foreach (node ast_child in ast_node.children)
-                        {
-                            // make sure only valid node types are supplied 
-                            if (ast_child.ValidateType(data, new nodetype[] {
-                                nodetype.parameter,
-                                nodetype.operation,
-                                nodetype.compound,
-                                nodetype.function
-                            }))
-                            {
-                                CompileNode(data, ast_child, code);
-                                if (!data.IsOK)
-                                {
-                                    data.LogError($"CompileNode: failed to compile part of assignment: <{ast_node}>");
-                                    return null;
-                                }
-                            }
-                        }
-                        // end with a nop operation
-                        // - signal interpretor that this statement is complete.
-                        // - variable length vectors really need either this or a counter... 
-                        //   better always have a nop, makes the assembly easier to read from bytes
-                        code.Add(blast_operation.nop);
-                    }
-
-                    // detect datatype of assignemnt 
-
-                    // :assigns: 
-                    // the first node was succesfully compiled as a parameter, 
-                    // should the assigned value be interpreted as a boolean and is b.datatype different:
-                    // then inject a reinterpret_bool32( assignee ); 
-
-                    if(assigned_datatype != assignee.DataType)
-                    {
-                        switch (assigned_datatype)
-                        {
-                            case BlastVariableDataType.Bool32:
-                                {
-                                    // encode: reinterpret_bool32( assignee_var );
-                                    code.Add(blast_operation.ex_op);
-                                    code.Add((byte)extended_blast_operation.reinterpret_bool32);
-                                    code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
-                                }
-                                break;
-
-                            case BlastVariableDataType.Numeric:
-                                {
-                                    // encode: reinterpret_float( assignee_var );
-                                    code.Add(blast_operation.ex_op);
-                                    code.Add((byte)extended_blast_operation.reinterpret_float);
-                                    code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
-                                }
-                                break;
-
-                            default:
-                                {
-                                    data.LogError($"CompileNode: failed to compile assignment: <{ast_node}>. The assigned datatype: {assigned_datatype} mismatches the datatype of the assignee and this conversion is not supported"); 
-                                    return null;
-                                }
-                        }
-                    }
-
-
                     break;
 
                 // groups of statements, for compilation they are all the same  
@@ -1482,7 +1635,7 @@ namespace NSS.Blast.Compiler.Stage
                     {
                         if(CompileNode(data, ast_child, code) == null)
                         {
-                            data.LogError($"CompileNode: failed to compile {ast_node.type} child node: <{ast_node}>.<{ast_child}>");
+                            data.LogError($"Blast.Compiler.CompileNode: failed to compile {ast_node.type} child node: <{ast_node}>.<{ast_child}>");
                             return null;  
                         }
                     }
@@ -1493,7 +1646,7 @@ namespace NSS.Blast.Compiler.Stage
                 case nodetype.parameter:
                     if(!CompileParameter(data, ast_node, code))
                     {
-                        data.LogError($"CompileNode: failed to compile parameter node: <{ast_node.parent}>.<{ast_node}>");
+                        data.LogError($"Blast.Compiler.CompileNode: failed to compile parameter node: <{ast_node.parent}>.<{ast_node}>");
                         return null; 
                     }
                     break;
@@ -1504,14 +1657,14 @@ namespace NSS.Blast.Compiler.Stage
                         node n_while_condition = ast_node.GetChild(nodetype.condition);
                         if (n_while_condition == null)
                         {
-                            data.LogError($"CompileNode: malformed while node: <{ast_node}>, no while condition found");
+                            data.LogError($"Blast.Compiler.CompileNode: malformed while node: <{ast_node}>, no while condition found");
                             return null;
                         }
 
                         node n_while_compound = ast_node.GetChild(nodetype.whilecompound);
                         if (n_while_compound == null)
                         {
-                            data.LogError($"CompileNode: malformed while node: <{ast_node}>, no while compound found");
+                            data.LogError($"Blast.Compiler.CompileNode: malformed while node: <{ast_node}>, no while compound found");
                             return null;
                         }
 
@@ -1545,7 +1698,7 @@ namespace NSS.Blast.Compiler.Stage
                         {
                             if (CompileNode(data, ast_condition_child, code) == null)
                             {
-                                data.LogError($"CompileNode: failed to compile child node of while condition: <{n_while_condition}>.<{ast_condition_child}>");
+                                data.LogError($"Blast.Compiler.CompileNode: failed to compile child node of while condition: <{n_while_condition}>.<{ast_condition_child}>");
                                 return null;
                             }
                         }
@@ -1558,14 +1711,14 @@ namespace NSS.Blast.Compiler.Stage
                         // compile the condition 
                         if (CompileNode(data, n_while_condition, code) == null)
                         {
-                            data.LogError($"CompileNode: failed to compile while condition: <{n_while_condition}>");
+                            data.LogError($"Blast.Compiler.CompileNode: failed to compile while condition: <{n_while_condition}>");
                             return null;
                         }
 
                         // followed by the compound 
                         if (CompileNode(data, n_while_compound, code) == null)
                         {
-                            data.LogError($"CompileNode: failed to compile while compound: <{n_while_compound}>");
+                            data.LogError($"Blast.Compiler.CompileNode: failed to compile while compound: <{n_while_compound}>");
                             return null;
                         }
                                                                    
@@ -1673,6 +1826,8 @@ namespace NSS.Blast.Compiler.Stage
 
             return code;
         }
+
+
 
         /// <summary>
         /// analyze node tree structure, find any nested compound that shouldnt be 
