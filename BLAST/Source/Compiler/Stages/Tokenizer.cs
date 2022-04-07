@@ -254,7 +254,6 @@ namespace NSS.Blast.Compiler.Stage
                                 }
                             }
                             variable_default[0] = f;
-<<<<<<< HEAD
                         }
                         break;
 
@@ -279,32 +278,6 @@ namespace NSS.Blast.Compiler.Stage
                             byte_size = constant_data.Length;
                         }
                         break;
-=======
-                        }
-                        break;
-
-
-                    case BlastVariableDataType.CData:
-                        {
-                            if (!is_input)
-                            {
-                                data.LogError($"Blast.Tokenizer.read_input_output_mapping: cdata is only allowed as input, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}, data = {a[3]}", (int)BlastError.error_input_ouput_invalid_default);
-                                return null;
-                            }
-
-                            // all data after a[2] is part of the datastream 
-                            constant_data = ReadCDATAFromMapping(data, comment, a);
-                            if (constant_data == null)
-                            {
-                                // it should already have logged why 
-                                return null;
-                            }
-
-                            vector_size = 0; //(int)math.ceil((float)constant_data.Length / 4);
-                            byte_size = constant_data.Length;
-                        }
-                        break;
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                 }
             }
 
@@ -434,25 +407,12 @@ namespace NSS.Blast.Compiler.Stage
             Assert.IsTrue(a != null && a.Length > 2);
 
             // if first token is: float|numeric  bool32   
-<<<<<<< HEAD
-=======
             BlastVectorSizes datatype ;
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
             string possible_datatype = a[2];
             int offset_for_datatype = 0; 
             switch(possible_datatype.ToLowerInvariant())
             {
                 // default to numerics
-<<<<<<< HEAD
-                // - things will change later
-                default: break; 
-                
-                case "float":
-                case "numeric": offset_for_datatype = 1; break; 
-
-                case "bool32": offset_for_datatype = 1; break; 
-                case "string": offset_for_datatype = 1; break; 
-=======
                 default: datatype = BlastVectorSizes.float1; break; 
                 
                 case "float":
@@ -460,7 +420,6 @@ namespace NSS.Blast.Compiler.Stage
 
                 case "bool32": datatype = BlastVectorSizes.bool32; offset_for_datatype = 1; break; 
                 case "string": datatype = BlastVectorSizes.none; offset_for_datatype = 1; break; 
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
             }
 
             // classify the first value, anything in a is at least 1 char long
@@ -474,11 +433,7 @@ namespace NSS.Blast.Compiler.Stage
             //       but this is cheaper to do considering its probably rare to be used 
             if (ch == '\'' || ch == '"')
             {
-<<<<<<< HEAD
-                // datatype = BlastVectorSizes.none; 
-=======
                 datatype = BlastVectorSizes.none; 
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                 constant_data = ReadCDATAString(data, comment, a, 2 + offset_for_datatype);
                 if (constant_data == null) return false;
             }
@@ -492,11 +447,7 @@ namespace NSS.Blast.Compiler.Stage
                 if (a.Length == 3 || a[3].StartsWith("#"))
                 {
                     constant_data = ReadCDATABinary(data, comment, a[2 + offset_for_datatype]);
-<<<<<<< HEAD
-                    // datatype = BlastVectorSizes.bool32;
-=======
                     datatype = BlastVectorSizes.bool32;
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                 }
                 else
                 {

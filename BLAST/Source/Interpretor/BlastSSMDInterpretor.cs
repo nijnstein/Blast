@@ -933,17 +933,19 @@ namespace NSS.Blast.SSMD
             switch (expand_into_n)
             {
                 case 2:
+                    float2 f2 = constant;
+                    for (int i = 0; i < ssmd_datacount; i++) destination[i].xy = f2;
+                    break;
+
                 case 3:
+                    float3 f3 = constant;
+                    for (int i = 0; i < ssmd_datacount; i++) destination[i].xyz = f3;
+                    break;
+
                 case 4:
-                    {
-                        float4 f4 = constant;
-#if STANDALONE_VSBUILD
-                        for (int i = 0; i < ssmd_datacount; i++) destination[i] = f4;
-#else
-                        UnsafeUtility.MemCpy(destination, &f4, ssmd_datacount * 16);
-#endif
-                        break;
-                    }
+                    float4 f4 = constant;
+                    for (int i = 0; i < ssmd_datacount; i++) destination[i] = f4;
+                    break;
 
 #if DEVELOPMENT_BUILD || TRACE
                 default:
@@ -1529,10 +1531,6 @@ namespace NSS.Blast.SSMD
         {
             int vin_size = sizeof(Tin) >> 2;
             int vout_size = sizeof(Tout) >> 2;
-<<<<<<< HEAD
-            float4 f4; 
-=======
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
 
             // at some point datattyype and vectorsize merge and this dual switch becomes 1
             switch (datatype)
@@ -1569,12 +1567,7 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.and:
                                                 if (constant == 0)
                                                 {
-<<<<<<< HEAD
-                                                    // for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 0f;
-                                                    UnsafeUtility.MemClear(f1_out, ssmd_datacount * 4); 
-=======
                                                     for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 0f;
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                                                 }
                                                 else
                                                 {
@@ -1641,12 +1634,7 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.and:
                                                 if (constant == 0)
                                                 {
-<<<<<<< HEAD
-                                                    // for (int i = 0; i < ssmd_datacount; i++) //  f4_out[i].x = 0f;
-                                                    UnsafeUtility.MemClear(f4_out, 16 * ssmd_datacount); 
-=======
                                                     for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 0f;
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                                                 }
                                                 else
                                                 {
@@ -1735,12 +1723,7 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.and:
                                                 if (constant == 0)
                                                 {
-<<<<<<< HEAD
-                                                    // for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = 0f;
-                                                    UnsafeUtility.MemClear(f2_out, ssmd_datacount * 8);
-=======
                                                     for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = 0f;
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                                                 }
                                                 else
                                                 {
@@ -1799,12 +1782,7 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.and:
                                                 if (constant == 0)
                                                 {
-<<<<<<< HEAD
-                                                    UnsafeUtility.MemClear(f4_out, ssmd_datacount * 16);
-                                                    //for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 0f;
-=======
                                                     for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 0f;
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                                                 }
                                                 else
                                                 {
@@ -1849,165 +1827,6 @@ namespace NSS.Blast.SSMD
                                         float* f1_out = (float*)output;
                                         // only these operations will result in single sized outputs from size3 input
                                         switch (op)
-<<<<<<< HEAD
-                                        {
-                                            case blast_operation.mina:
-                                            case blast_operation.csum:
-                                            case blast_operation.maxa:
-                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
-                                                return;
-                                        }
-                                    }
-                                    break;
-
-                                // pop f3 with op into f3
-                                case 3:
-                                    {
-                                        float3* f3_out = (float3*)output;
-                                        switch (op)
-                                        {
-                                            case blast_operation.multiply:
-                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] * constant;
-                                                return;
-
-                                            case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] + constant;
-                                                return;
-
-                                            case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] - constant;
-                                                return;
-
-                                            case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] / constant;
-                                                return;
-
-                                            case blast_operation.and:
-                                                if (constant == 0)
-                                                {
-                                                    UnsafeUtility.MemClear(f3_out, ssmd_datacount * 12);
-                                                    // for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = 0f;
-                                                }
-                                                else
-                                                {
-                                                    for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.select(0, 1f, f3_in[i] != 0);
-                                                }
-                                                return;
-
-                                            case blast_operation.or:
-                                                if (constant == 0)
-                                                {
-                                                    // nothing changes if its the same buffer so skip doing stuff in that case
-                                                    if (output != buffer)
-                                                    {
-                                                        // if not the same buffer then we still need to copy the data 
-                                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i];
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    // just write true,  | true is always true 
-                                                    for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = 1f;
-                                                }
-                                                return;
-
-                                            case blast_operation.min:
-                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.min(f3_in[i], constant);
-                                                return;
-
-                                            case blast_operation.max:
-                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = math.max(f3_in[i], constant);
-                                                return;
-                                        }
-                                    }
-                                    break;
-
-                                // pop f3 with op into f4
-                                case 4:
-                                    {
-                                        float4* f4_out = (float4*)output;
-                                        switch (op)
-                                        {
-                                            case blast_operation.multiply:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] * constant;
-                                                return;
-
-                                            case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] + constant;
-                                                return;
-
-                                            case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] - constant;
-                                                return;
-
-                                            case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] / constant;
-                                                return;
-
-                                            case blast_operation.and:
-                                                if (constant == 0)
-                                                {
-                                                    UnsafeUtility.MemClear(f4_out, ssmd_datacount * 16);
-                                                    // for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = 0f;
-                                                }
-                                                else
-                                                {
-                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.select(0, 1f, f3_in[i] != 0);
-                                                }
-                                                return;
-
-                                            case blast_operation.or:
-                                                if (constant == 0)
-                                                {
-                                                    if (output != buffer)
-                                                    {
-                                                        // if not the same buffer then we still need to copy the data 
-                                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i];
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 1f;
-                                                }
-                                                return;
-
-                                            case blast_operation.min:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.min(f3_in[i], constant);
-                                                return;
-
-                                            case blast_operation.max:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.max(f3_in[i], constant);
-                                                return;
-                                        }
-
-                                    }
-                                    break;
-                            }
-                            break;
-
-                        case 4:
-                            float4* f4_in = (float4*)buffer;
-
-                            switch (vout_size)
-                            {
-                                case 1:
-                                    {
-                                        float* f1_out = (float*)output;
-                                        // only these operations will result in single sized outputs from size3 input
-                                        switch (op)
-                                        {
-                                            case blast_operation.mina:
-                                            case blast_operation.csum:
-                                            case blast_operation.maxa:
-
-                                                UnsafeUtility.MemCpyReplicate(f1_out, &constant, 4, ssmd_datacount);
-                                                // for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
-                                                return;
-                                        }
-                                    }
-                                    break;
-
-=======
                                         {
                                             case blast_operation.mina:
                                             case blast_operation.csum:
@@ -2080,28 +1899,12 @@ namespace NSS.Blast.SSMD
                                     break;
 
                                 // pop f3 with op into f4
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                                 case 4:
                                     {
                                         float4* f4_out = (float4*)output;
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-<<<<<<< HEAD
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] * constant;
-                                                return;
-
-                                            case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] + constant;
-                                                return;
-
-                                            case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] - constant;
-                                                return;
-
-                                            case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] / constant;
-=======
                                                 for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] * constant;
                                                 return;
 
@@ -2115,67 +1918,35 @@ namespace NSS.Blast.SSMD
 
                                             case blast_operation.divide:
                                                 for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] / constant;
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                                                 return;
 
                                             case blast_operation.and:
                                                 if (constant == 0)
                                                 {
-<<<<<<< HEAD
-                                                    UnsafeUtility.MemClear(f4_out, ssmd_datacount * 16);
-                                                    //for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = 0f;
-                                                }
-                                                else
-                                                {
-                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.select(0, 1f, f4_in[i] != 0);
-=======
                                                     for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = 0f;
                                                 }
                                                 else
                                                 {
                                                     for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.select(0, 1f, f3_in[i] != 0);
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                                                 }
                                                 return;
 
                                             case blast_operation.or:
                                                 if (constant == 0)
                                                 {
-<<<<<<< HEAD
-                                                    // nothing changes if its the same buffer so skip doing stuff in that case
-                                                    if (output != buffer)
-                                                    {
-                                                        // if not the same buffer then we still need to copy the data 
-                                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i];
-=======
                                                     if (output != buffer)
                                                     {
                                                         // if not the same buffer then we still need to copy the data 
                                                         for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i];
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                                                     }
                                                 }
                                                 else
                                                 {
-<<<<<<< HEAD
-                                                    // just write true,  | true is always true 
-                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = 1f;
-=======
                                                     for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 1f;
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                                                 }
                                                 return;
 
                                             case blast_operation.min:
-<<<<<<< HEAD
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.min(f4_in[i], constant);
-                                                return;
-
-                                            case blast_operation.max:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = math.max(f4_in[i], constant);
-                                                return;
-                                        }
-=======
                                                 for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = math.min(f3_in[i], constant);
                                                 return;
 
@@ -2184,103 +1955,10 @@ namespace NSS.Blast.SSMD
                                                 return;
                                         }
 
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                                     }
                                     break;
                             }
                             break;
-<<<<<<< HEAD
-                    }
-                    break;
-
-                case BlastVariableDataType.Bool32:
-                    if (vin_size == 1)
-                    {
-                        float* f1_in = (float*)buffer;
-
-                        switch (vout_size)
-                        {
-                            case 1:
-                                {
-                                    float* f1_out = (float*)output;
-                                    
-                                    switch (op)
-                                    {
-                                        case blast_operation.all:
-                                            bool ball = Bool32.From(constant).All;
-                                            if (ball)
-                                            {
-                                                UnsafeUtility.MemCpy(f1_out, f1_in, ssmd_datacount * 4); 
-                                                // for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i];
-                                            }
-                                            else
-                                            {
-                                                UnsafeUtility.MemClear(f1_out, ssmd_datacount * 1);
-                                                //for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 0f;
-                                            }
-                                            return;
-
-                                        case blast_operation.any:
-                                            bool bany = constant != 0;
-                                            if (bany)
-                                            {
-                                                constant = 1f;
-                                                UnsafeUtility.MemCpyReplicate(f1_out, &constant, 4, ssmd_datacount);
-                                                //for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 1f;
-                                            }
-                                            else
-                                            {
-                                                UnsafeUtility.MemCpy(f1_out, f1_in, ssmd_datacount * 4);
-                                                //for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i];
-                                            }
-                                            return;
-
-                                    }
-                                }
-                                break;
-
-                            case 0:
-                            case 4:
-                                {
-                                    float4* f4_out = (float4*)output;
-                                    switch (op)
-                                    {
-                                        case blast_operation.all:
-                                            bool ball = Bool32.From(constant).All;
-                                            if (ball)
-                                            {
-                                                UnsafeUtility.MemCpyStride(f4_out, 12, f1_in, 0, 4, ssmd_datacount);
-                                                //for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
-                                            }
-                                            else
-                                            {
-                                                UnsafeUtility.MemClear(f4_out, ssmd_datacount * 16);
-                                                //for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 0f;
-                                            }
-
-                                            return;
-
-                                        case blast_operation.any:
-                                            bool bany = constant != 0;
-                                            if (bany)
-                                            {
-                                                f4 = 1; 
-                                                UnsafeUtility.MemCpyReplicate(f4_out, &f4, 16, ssmd_datacount);
-                                                // for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 1f;
-                                            }
-                                            else
-                                            {
-                                                UnsafeUtility.MemCpyStride(f4_out, 12, f1_in, 0, 16, ssmd_datacount);
-                                                // for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
-                                            }
-                                            return;
-
-                                    }
-                                }
-                                break;
-                        }
-                    }
-=======
 
                         case 4:
                             float4* f4_in = (float4*)buffer;
@@ -2427,7 +2105,6 @@ namespace NSS.Blast.SSMD
                                 break;
                         }
                     }
->>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
                     // other vectorsize then 1 should result in the error below
                     break; 
 
