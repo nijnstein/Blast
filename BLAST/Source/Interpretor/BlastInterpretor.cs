@@ -6243,7 +6243,11 @@ namespace NSS.Blast.Interpretor
 
 
                         BlastVariableDataType datatype2;
+<<<<<<< HEAD
                         float* findex = (float*)pop_with_info(code_pointer + 1, out datatype2, out vector_size);
+=======
+                        float* findex = (float*)pop_with_info(code_pointer + 1, out datatype, out vector_size);
+>>>>>>> faab656f19c7ba0a7a9c6acaed4c5366364ad5bd
 
                         // vectorsize should be 1
                         f4.x = index_cdata_f1(fdata, (int)findex[0]);
