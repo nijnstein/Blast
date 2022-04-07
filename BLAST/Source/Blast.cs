@@ -49,7 +49,7 @@ namespace NSS.Blast
     {
         /// <summary>
         /// constant values selected by opcodes and shared among threads 
-        /// - these are set by the constant value operations and they can be replaced with other values... if you are brave|mad|both
+        /// - index maps directly to blast_operation
         /// </summary>
         public float* constants;
 
@@ -123,6 +123,11 @@ namespace NSS.Blast
         /// base random number generator, all random actions have their origin in this random number generator
         /// </summary>
         public Random random;
+
+        /// <summary>
+        /// warnings as flags, if shown once between packages, dont show again (this will someday also allow us to disable stuff)
+        /// </summary>
+        public uint warnings_shown_once;
 
         /// <summary>
         /// seed the base random number generator, altering the origen for all random actions in blast 
@@ -498,6 +503,7 @@ namespace NSS.Blast
             blast.data = (BlastEngineData*)UnsafeUtils.Malloc(sizeof(BlastEngineData), 8, blast.allocator);
             blast.data->constants = (float*)UnsafeUtils.Malloc(4 * 256 * 2, 4, blast.allocator);
             blast.data->random = Random.CreateFromIndex(1);
+            blast.data->warnings_shown_once = 0; 
 
             // setup randomizers in interpretors
             // - note: this only initializes them in -this- thread and this might be useless ...  

@@ -15,6 +15,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefineConstants>TRACE;DEBUG;STANDALONE_VSBUILD;</DefineConstants>
     <DocumentationFile>F:\Repo\Nijnstein\Blast\BLAST\BLAST.xml</DocumentationFile>
+    <OutputPath>G:\Repo\Nijnstein\BLAST Windows Build\</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

@@ -7,8 +7,8 @@
 using NSS.Blast.Standalone;
 using System.Reflection;
 #else
-    using UnityEngine;
-    using Unity.Burst.CompilerServices;
+using UnityEngine;
+using Unity.Burst.CompilerServices;
 #endif
 
 
@@ -152,10 +152,93 @@ namespace NSS.Blast.SSMD
         /// </summary>
         public bool ValidateOnce;
 
+        // 
+        // gather alignment information of stack and data 
+        // - if aligned -> space between records is equal 
+        // 
+        private int stack_rowsize;     // rowsize == recordsize + stride
+        private bool stack_is_aligned;
+
+        private int data_rowsize;      // note that row size might be negative
+        private bool data_is_aligned;
+
+
+        /// <summary>
+        /// Warning code: this means that the elements in the dataarray given to process doenst have all 
+        /// data segments evenly spaced, as such some optimizations are not possible 
+        /// </summary>
+        public const byte WARN_SSMD_DATASEGMENTS_NOT_EVENLY_SPACED = 0;
+
+        /// <summary>
+        /// Warning code: this means that the stacksegments are not evenly spaced in the given datasegment array
+        /// CompilerOptions.PackageStack can be set to false, resulting in volatile thread local stack that is 
+        /// always packed regardless the datasegment spacing, this can be a big optimization so warn 
+        /// </summary>
+        public const byte WARN_SSMD_STACKSEGMENTS_NOT_EVENLY_SPACED = 1;
+
+#if STANDALONE_VSBUILD
+        const bool standalone_vsbuild = true;
+#else
+        const bool standalone_vsbuild = false;
+#endif
+
+
 
         #endregion
 
         #region Public SetPackage & Execute 
+
+        #region Warnings
+        /// <summary>
+        /// reset any warning counters, blast wil sent most warnings only once
+        /// </summary>
+        public void ResetWarnings()
+        {
+            if (engine_ptr != null)
+            {
+                engine_ptr->warnings_shown_once = 0;
+            }
+        }
+
+        /// <summary>
+        /// disable showing a specifik warning 
+        /// </summary>
+        public void DisableWarning(byte warning)
+        {
+            if (engine_ptr != null)
+            {
+                ((Bool32*)&engine_ptr->warnings_shown_once)->SetBitSafe(warning, true);
+            }
+        }
+
+        /// <summary>
+        /// true is given warning was shown already
+        /// </summary>
+        public bool ShownWarning(byte warning)
+        {
+            if (engine_ptr != null)
+            {
+                return Bool32.From(engine_ptr->warnings_shown_once).GetBit(warning);
+            }
+            else return false;
+        }
+
+        /// <summary>
+        /// show a warning once 
+        /// </summary>
+        public bool ShowWarningOnce(byte warning)
+        {
+            if (!ShownWarning(WARN_SSMD_DATASEGMENTS_NOT_EVENLY_SPACED))
+            {
+                DisableWarning(WARN_SSMD_DATASEGMENTS_NOT_EVENLY_SPACED);
+                Debug.LogWarning("Blast.SSMD.Interpretor: data segments not equally spaced, this will cost some performance");
+                return true;
+            }
+            return false;
+        }
+
+        #endregion
+
         /// <summary>
         /// set ssmd package data 
         /// </summary>
@@ -321,10 +404,21 @@ namespace NSS.Blast.SSMD
             // update metadata with type set 
             SetStackMetaData(BlastVariableDataType.Numeric, 1, (byte)stack_offset);
 
-            // then push the actual data for each element 
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (standalone_vsbuild || !stack_is_aligned)
             {
-                ((float*)stack[i])[stack_offset] = register[i].x;
+                // then push the actual data for each element 
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    ((float*)stack[i])[stack_offset] = register[i].x;
+                }
+            }
+            else
+            {
+                // calc destination offset  
+                byte* p = (byte*)(stack[0]) + (stack_offset * 4);
+
+                // and copy skipping over register.yzw
+                UnsafeUtils.MemCpyStride(p, stack_rowsize, register, 16, 4, ssmd_datacount);
             }
 
             // advance 1 element in stack offset 
@@ -340,11 +434,19 @@ namespace NSS.Blast.SSMD
             // update metadata with type set 
             SetStackMetaData(BlastVariableDataType.Numeric, 1, (byte)stack_offset);
 
-            // then push the actual data for each element 
-            for (int i = 0; i < ssmd_datacount; i++)
+            // perform a simd copy if all data is aligned
+            if (!standalone_vsbuild && data_is_aligned && stack_is_aligned)
             {
-                float* p = ((float*)stack[i]);
-                p[stack_offset] = ((float*)(data[i]))[index];
+                UnsafeUtils.MemCpyStride(&((float*)stack[0])[stack_offset], stack_rowsize, &((float*)(data[0]))[index], data_rowsize, 4, ssmd_datacount); 
+            }
+            else
+            {
+                // then push the actual data for each element 
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    float* p = ((float*)stack[i]);
+                    p[stack_offset] = ((float*)(data[i]))[index];
+                }
             }
 
             // advance 1 element in stack offset 
@@ -357,10 +459,18 @@ namespace NSS.Blast.SSMD
         void push_register_f2()
         {
             SetStackMetaData(BlastVariableDataType.Numeric, 2, (byte)stack_offset);
-            for (int i = 0; i < ssmd_datacount; i++)
+
+            if (!standalone_vsbuild && stack_is_aligned)
             {
-                ((float*)stack[i])[stack_offset] = register[i].x;
-                ((float*)stack[i])[stack_offset + 1] = register[i].y;
+                UnsafeUtils.MemCpyStride(&((float*)stack[0])[stack_offset], stack_rowsize, register, 16, 8, ssmd_datacount); 
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    ((float*)stack[i])[stack_offset] = register[i].x;
+                    ((float*)stack[i])[stack_offset + 1] = register[i].y;
+                }
             }
             stack_offset += 2;
         }
@@ -376,11 +486,18 @@ namespace NSS.Blast.SSMD
         void push_f3(float4* f4)
         {
             SetStackMetaData(BlastVariableDataType.Numeric, 3, (byte)stack_offset);
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (!standalone_vsbuild && stack_is_aligned)
             {
-                ((float*)stack[i])[stack_offset] = f4[i].x;
-                ((float*)stack[i])[stack_offset + 1] = f4[i].y;
-                ((float*)stack[i])[stack_offset + 2] = f4[i].z;
+                UnsafeUtils.MemCpyStride(&((float*)stack[0])[stack_offset], stack_rowsize, register, 16, 12, ssmd_datacount);
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    ((float*)stack[i])[stack_offset] = f4[i].x;
+                    ((float*)stack[i])[stack_offset + 1] = f4[i].y;
+                    ((float*)stack[i])[stack_offset + 2] = f4[i].z;
+                }
             }
             stack_offset += 3;  // size 3
         }
@@ -397,12 +514,20 @@ namespace NSS.Blast.SSMD
         void push_f4(float4* f4)
         {
             SetStackMetaData(BlastVariableDataType.Numeric, 4, (byte)stack_offset);
-            for (int i = 0; i < ssmd_datacount; i++)
+
+            if (!standalone_vsbuild && stack_is_aligned)
             {
-                ((float*)stack[i])[stack_offset] = f4[i].x;
-                ((float*)stack[i])[stack_offset + 1] = f4[i].y;
-                ((float*)stack[i])[stack_offset + 2] = f4[i].z;
-                ((float*)stack[i])[stack_offset + 3] = f4[i].w;
+                UnsafeUtils.MemCpyStride(&((float*)stack[0])[stack_offset], stack_rowsize, register, 16, 16, ssmd_datacount);
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    ((float*)stack[i])[stack_offset] = f4[i].x;
+                    ((float*)stack[i])[stack_offset + 1] = f4[i].y;
+                    ((float*)stack[i])[stack_offset + 2] = f4[i].z;
+                    ((float*)stack[i])[stack_offset + 3] = f4[i].w;
+                }
             }
             stack_offset += 4;  // size 4
         }
@@ -836,7 +961,7 @@ namespace NSS.Blast.SSMD
                                 }
                             }
                             else
-                            { 
+                            {
                                 if (size != 1 || type != BlastVariableDataType.Numeric)
                                 {
                                     Debug.LogError($"blast.ssmd.stack.expand_f1_into_fn -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
@@ -861,11 +986,19 @@ namespace NSS.Blast.SSMD
                 case 2:
                     if (!substract)
                     {
-                        for (int i = 0; i < ssmd_datacount; i++)
+                        if (!standalone_vsbuild && data_is_aligned)
                         {
-                            float f = f1(data, offset, i);
-                            destination[i].x = f;
-                            destination[i].y = f;
+                            UnsafeUtils.MemCpyStride(destination, 16, &((float*)data[0])[offset], data_rowsize, 4, ssmd_datacount);
+                            UnsafeUtils.MemCpyStride(destination, 16, 4, &((float*)data[0])[offset], data_rowsize, 4, ssmd_datacount);
+                        }
+                        else
+                        {
+                            for (int i = 0; i < ssmd_datacount; i++)
+                            {
+                                float f = f1(data, offset, i);
+                                destination[i].x = f;
+                                destination[i].y = f;
+                            }
                         }
                     }
                     else
@@ -1192,7 +1325,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
                                 if (code[c_index] != (byte)blast_operation.constant_f1_h)
                                 {
-                                    Debug.LogError($"blast.ssmd.pop_fx_int_ref<t>: constant reference error, short constant reference at {code_pointer-1} points at invalid operation {code[c_index]} at {c_index}");
+                                    Debug.LogError($"blast.ssmd.pop_fx_int_ref<t>: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
                                 }
 #endif
 
@@ -1337,8 +1470,8 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
                         type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                         size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
-                        size = math.select(size, 4, size == 0); 
-                        if (math.select(size,1,indexed >= 0) != vector_size || type != BlastVariableDataType.Numeric)
+                        size = math.select(size, 4, size == 0);
+                        if (math.select(size, 1, indexed >= 0) != vector_size || type != BlastVariableDataType.Numeric)
                         {
                             Debug.LogError($"blast.ssmd.pop_fx_into_ref<T> -> data mismatch, expecting numeric of size {vector_size}, found type {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
                             return false;
@@ -1435,7 +1568,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
             Debug.LogError($"blast.pop_fx_into_constant_handler: -> codepointer {code_pointer} unsupported operation Vin: {vsize}");
             return;
-#endif                 
+#endif
         }
 
 
@@ -1488,7 +1621,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
             Debug.LogError($"blast.pop_fx_into_constant_handler: -> codepointer {code_pointer} unsupported operation Vin: {vsize}");
             return;
-#endif                 
+#endif
         }
 
         void pop_fx_into_constant_handler(in byte vector_size, [NoAlias] void** buffer, int offset, float constant)
@@ -1529,7 +1662,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
             Debug.LogError($"blast.pop_fx_into_constant_handler: -> codepointer {code_pointer} unsupported operation Vin: {vector_size}");
             return;
-#endif                 
+#endif
         }
 
         void pop_fx_with_op_into_fx_constant_handler<Tin, Tout>([NoAlias] Tin* buffer, [NoAlias] Tout* output, blast_operation op, float constant, BlastVariableDataType datatype)
@@ -1661,7 +1794,7 @@ namespace NSS.Blast.SSMD
                                                     {
                                                         // if not the same buffer then we still need to copy the data 
                                                         // for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
-                                                        UnsafeUtils.MemCpyStride(f4_out, 12, f1_in, 0, 4, ssmd_datacount);
+                                                        UnsafeUtils.MemCpyStride(f4_out, 16, f1_in, 4, 4, ssmd_datacount);
                                                     }
                                                 }
                                                 else
@@ -1820,7 +1953,7 @@ namespace NSS.Blast.SSMD
                                                     {
                                                         // if not the same buffer then we still need to copy the data 
                                                         for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i];
-                                                        UnsafeUtils.MemCpyStride(f4_out, 8, f2_in, 0, 8, ssmd_datacount);
+                                                        UnsafeUtils.MemCpyStride(f4_out, 16, f2_in, 8, 8, ssmd_datacount);
                                                     }
                                                 }
                                                 else
@@ -1969,7 +2102,7 @@ namespace NSS.Blast.SSMD
                                                     {
                                                         // if not the same buffer then we still need to copy the data 
                                                         //for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i];
-                                                        UnsafeUtils.MemCpyStride(f4_out, 4, f3_in, 0, 12, ssmd_datacount);
+                                                        UnsafeUtils.MemCpyStride(f4_out, 16, f3_in, 12, 12, ssmd_datacount);
                                                     }
                                                 }
                                                 else
@@ -2138,7 +2271,7 @@ namespace NSS.Blast.SSMD
                                             bool ball = Bool32.From(constant).All;
                                             if (ball)
                                             {
-                                                UnsafeUtils.MemCpyStride(f4_out, 12, f1_in, 0, 4, ssmd_datacount);
+                                                UnsafeUtils.MemCpyStride(f4_out, 16, f1_in, 4, 4, ssmd_datacount);
                                                 //for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
                                             }
                                             else
@@ -2159,7 +2292,7 @@ namespace NSS.Blast.SSMD
                                             }
                                             else
                                             {
-                                                UnsafeUtils.MemCpyStride(f4_out, 12, f1_in, 0, 4, ssmd_datacount);
+                                                UnsafeUtils.MemCpyStride(f4_out, 16, f1_in, 4, 4, ssmd_datacount);
                                                 // for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
                                             }
                                             return;
@@ -2176,8 +2309,8 @@ namespace NSS.Blast.SSMD
 
 
 #if DEVELOPMENT_BUILD || TRACE
-                Debug.LogError($"blast.pop_fx_with_op_into_fx_constant_handler: -> codepointer {code_pointer} unsupported operation supplied: {op}, datatype: {datatype}, Vin: {vin_size}, Vout: {vout_size}");
-                return;
+            Debug.LogError($"blast.pop_fx_with_op_into_fx_constant_handler: -> codepointer {code_pointer} unsupported operation supplied: {op}, datatype: {datatype}, Vin: {vin_size}, Vout: {vout_size}");
+            return;
 #endif
         }
 
@@ -2965,13 +3098,24 @@ namespace NSS.Blast.SSMD
 
                 if (!minus)
                 {
-                    for (int i = 0; i < ssmd_datacount; i++)
+                    if (!standalone_vsbuild && data_is_aligned)
                     {
-                        ((float*)data[i])[dataindex] = ((float*)data[i])[c - BlastInterpretor.opt_id];
+                        UnsafeUtils.MemCpyStride(&((float*)data[0])[dataindex], data_rowsize,
+                                                    &((float*)data[0])[c - BlastInterpretor.opt_id], data_rowsize,
+                                                    4,
+                                                    ssmd_datacount);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            ((float*)data[i])[dataindex] = ((float*)data[i])[c - BlastInterpretor.opt_id];
+                        }
                     }
                 }
                 else
                 {
+                    // the minus screws up stuff 
                     for (int i = 0; i < ssmd_datacount; i++)
                     {
                         ((float*)data[i])[dataindex] = -((float*)data[i])[c - BlastInterpretor.opt_id];
@@ -2997,9 +3141,20 @@ namespace NSS.Blast.SSMD
                 if (is_indexed) dataindex = indexoffset;
                 if (!minus)
                 {
-                    for (int i = 0; i < ssmd_datacount; i++)
+                    if (!standalone_vsbuild && data_is_aligned && stack_is_aligned)
                     {
-                        ((float*)data[i])[dataindex] = ((float*)stack[i])[stack_offset];
+                        UnsafeUtils.MemCpyStride(
+                            &((float*)data[0])[dataindex], data_rowsize,
+                            &((float*)stack[0])[stack_offset], stack_rowsize,
+                            4,
+                            ssmd_datacount);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            ((float*)data[i])[dataindex] = ((float*)stack[i])[stack_offset];
+                        }
                     }
                 }
                 else
@@ -3016,9 +3171,21 @@ namespace NSS.Blast.SSMD
                 float constant = engine_ptr->constants[c];
                 constant = math.select(constant, -constant, minus);
                 if (is_indexed) dataindex = indexoffset;
-                for (int i = 0; i < ssmd_datacount; i++)
+
+                if (!standalone_vsbuild && data_is_aligned)
                 {
-                    ((float*)data[i])[dataindex] = constant;
+                    UnsafeUtils.MemCpyReplicateStride(
+                        &((float*)data[0])[dataindex], data_rowsize,
+                        &constant, 
+                        4, 
+                        ssmd_datacount);
+                }
+                else
+                {
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        ((float*)data[i])[dataindex] = constant;
+                    }
                 }
             }
             else
@@ -3438,9 +3605,16 @@ namespace NSS.Blast.SSMD
         /// <param name="index">data index</param>
         void set_data_from_register_f1(in int index)
         {
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (!standalone_vsbuild && data_is_aligned)
             {
-                ((float*)data[i])[index] = register[i].x;
+                UnsafeUtility.MemCpyStride(&((float*)data[0])[index], data_rowsize, register, 16, 4, ssmd_datacount);
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    ((float*)data[i])[index] = register[i].x;
+                }
             }
         }
 
@@ -3462,9 +3636,16 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void set_from_data_f1([NoAlias] float4* destination, [NoAlias] void** data, in int offset)
         {
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (!standalone_vsbuild && data_is_aligned)
             {
-                destination[i].x = ((float*)data[i])[offset];
+                UnsafeUtils.MemCpyStride(destination, 16, &((float*)data[0])[offset], data_rowsize, 4, ssmd_datacount);
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i].x = ((float*)data[i])[offset];
+                }
             }
         }
 
@@ -3473,22 +3654,25 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void set_from_data_f1([NoAlias] float4* destination, [NoAlias] void** data, in int offset, in bool minus, in bool not)
         {
-            if (minus)
+            if (minus || not)
             {
-                for (int i = 0; i < ssmd_datacount; i++)
+                if (minus)
                 {
-                    destination[i].x = -((float*)data[i])[offset];
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        destination[i].x = -((float*)data[i])[offset];
+                    }
+                    return;
                 }
-                return;
-            }
 
-            if (not)
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
+                if (not)
                 {
-                    destination[i].x = math.select(0, 1, ((float*)data[i])[offset] == 0);
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        destination[i].x = math.select(0, 1, ((float*)data[i])[offset] == 0);
+                    }
+                    return;
                 }
-                return;
             }
 
             set_from_data_f1(destination, data, offset);
@@ -3499,11 +3683,18 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void set_from_data_f2([NoAlias] float4* destination, [NoAlias] void** data, in int offset)
         {
-            int offsetb = offset + 1;
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (!standalone_vsbuild && data_is_aligned)
             {
-                destination[i].x = ((float*)data[i])[offset];
-                destination[i].y = ((float*)data[i])[offsetb];
+                UnsafeUtils.MemCpyStride(destination, 16, &((float*)data[0])[offset], data_rowsize, 8, ssmd_datacount);
+            }
+            else
+            {
+                int offsetb = offset + 1;
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i].x = ((float*)data[i])[offset];
+                    destination[i].y = ((float*)data[i])[offsetb];
+                }
             }
         }
 
@@ -3512,26 +3703,28 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void set_from_data_f2([NoAlias] float4* destination, [NoAlias] void** data, in int offset, in bool minus, in bool not)
         {
-            int offsetb = offset + 1;
-            if (minus)
+            if (minus || not)
             {
-                for (int i = 0; i < ssmd_datacount; i++)
+                int offsetb = offset + 1;
+                if (minus)
                 {
-                    destination[i].x = -((float*)data[i])[offset];
-                    destination[i].y = -((float*)data[i])[offsetb];
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        destination[i].x = -((float*)data[i])[offset];
+                        destination[i].y = -((float*)data[i])[offsetb];
+                    }
+                    return;
                 }
-                return;
-            }
-            if (not)
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
+                if (not)
                 {
-                    destination[i].x = math.select(0f, 1f, ((float*)data[i])[offset] == 0);
-                    destination[i].y = math.select(0f, 1f, ((float*)data[i])[offsetb] == 0);
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        destination[i].x = math.select(0f, 1f, ((float*)data[i])[offset] == 0);
+                        destination[i].y = math.select(0f, 1f, ((float*)data[i])[offsetb] == 0);
+                    }
+                    return;
                 }
-                return;
             }
-
             set_from_data_f2(destination, data, offset);
         }
 
@@ -3541,13 +3734,20 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void set_from_data_f3([NoAlias] float4* destination, [NoAlias] void** data, in int offset)
         {
-            int offsetb = offset + 1;
-            int offsetc = offset + 2;
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (!standalone_vsbuild && data_is_aligned)
             {
-                destination[i].x = ((float*)data[i])[offset];
-                destination[i].y = ((float*)data[i])[offsetb];
-                destination[i].z = ((float*)data[i])[offsetc];
+                UnsafeUtils.MemCpyStride(destination, 16, &((float*)data[0])[offset], data_rowsize, 12, ssmd_datacount);
+            }
+            else
+            {
+                int offsetb = offset + 1;
+                int offsetc = offset + 2;
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i].x = ((float*)data[i])[offset];
+                    destination[i].y = ((float*)data[i])[offsetb];
+                    destination[i].z = ((float*)data[i])[offsetc];
+                }
             }
         }
 
@@ -3556,29 +3756,31 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void set_from_data_f3([NoAlias] float4* destination, [NoAlias] void** data, in int offset, in bool minus, in bool not)
         {
-            int offsetb = offset + 1;
-            int offsetc = offset + 2;
-            if (minus)
+            if (minus || not)
             {
-                for (int i = 0; i < ssmd_datacount; i++)
+                int offsetb = offset + 1;
+                int offsetc = offset + 2;
+                if (minus)
                 {
-                    destination[i].x = -((float*)data[i])[offset];
-                    destination[i].y = -((float*)data[i])[offsetb];
-                    destination[i].z = -((float*)data[i])[offsetc];
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        destination[i].x = -((float*)data[i])[offset];
+                        destination[i].y = -((float*)data[i])[offsetb];
+                        destination[i].z = -((float*)data[i])[offsetc];
+                    }
+                    return;
                 }
-                return;
-            }
-            if (not)
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
+                if (not)
                 {
-                    destination[i].x = math.select(0f, 1f, ((float*)data[i])[offset] == 0);
-                    destination[i].y = math.select(0f, 1f, ((float*)data[i])[offsetb] == 0);
-                    destination[i].z = math.select(0f, 1f, ((float*)data[i])[offsetc] == 0);
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        destination[i].x = math.select(0f, 1f, ((float*)data[i])[offset] == 0);
+                        destination[i].y = math.select(0f, 1f, ((float*)data[i])[offsetb] == 0);
+                        destination[i].z = math.select(0f, 1f, ((float*)data[i])[offsetc] == 0);
+                    }
+                    return;
                 }
-                return;
             }
-
             set_from_data_f3(destination, data, offset);
         }
 
@@ -3588,9 +3790,16 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void set_from_data_f4([NoAlias] float4* destination, [NoAlias] void** data, in int offset)
         {
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (!standalone_vsbuild && data_is_aligned)
             {
-                destination[i] = ((float4*)(void*)&((float*)data[i])[offset])[0];
+                UnsafeUtils.MemCpyStride(destination, 16, &((float*)data[0])[offset], data_rowsize, 16, ssmd_datacount);
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    destination[i] = ((float4*)(void*)&((float*)data[i])[offset])[0];
+                }
             }
         }
 
@@ -3599,23 +3808,25 @@ namespace NSS.Blast.SSMD
         /// </summary>
         void set_from_data_f4([NoAlias] float4* destination, [NoAlias] void** data, in int offset, in bool minus, in bool not)
         {
-            if (minus)
+            if (minus || not)
             {
-                for (int i = 0; i < ssmd_datacount; i++)
+                if (minus)
                 {
-                    destination[i] = -((float4*)(void*)&((float*)data[i])[offset])[0];
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        destination[i] = -((float4*)(void*)&((float*)data[i])[offset])[0];
+                    }
+                    return;
                 }
-                return;
-            }
-            if (not)
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
+                if (not)
                 {
-                    destination[i] = math.select((float4)0f, (float4)1f, ((float4*)(void*)&((float*)data[i])[offset])[0] == (float4)0f);
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        destination[i] = math.select((float4)0f, (float4)1f, ((float4*)(void*)&((float*)data[i])[offset])[0] == (float4)0f);
+                    }
+                    return;
                 }
-                return;
             }
-
             set_from_data_f4(destination, data, offset);
         }
 
@@ -3626,11 +3837,18 @@ namespace NSS.Blast.SSMD
         /// <param name="index">data index</param>
         void set_data_from_register_f2(in int index)
         {
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (!standalone_vsbuild && data_is_aligned)
             {
-                float* p = (float*)(data[i]);
-                p[index] = register[i].x;
-                p[index + 1] = register[i].y;
+                UnsafeUtils.MemCpyStride(&((float*)data[0])[index], data_rowsize, register, 16, 8, ssmd_datacount);
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    float* p = (float*)(data[i]);
+                    p[index] = register[i].x;
+                    p[index + 1] = register[i].y;
+                }
             }
         }
 
@@ -3654,12 +3872,19 @@ namespace NSS.Blast.SSMD
         /// <param name="index">data index</param>
         void set_data_from_register_f3(in int index)
         {
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (!standalone_vsbuild && data_is_aligned)
             {
-                float* p = (float*)(data[i]);
-                p[index] = register[i].x;
-                p[index + 1] = register[i].y;
-                p[index + 2] = register[i].z;
+                UnsafeUtils.MemCpyStride(&((float*)data[0])[index], data_rowsize, register, 16, 12, ssmd_datacount);
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    float* p = (float*)(data[i]);
+                    p[index] = register[i].x;
+                    p[index + 1] = register[i].y;
+                    p[index + 2] = register[i].z;
+                }
             }
         }
         /// <summary>
@@ -3682,13 +3907,20 @@ namespace NSS.Blast.SSMD
         /// <param name="index">data index</param>
         void set_data_from_register_f4(in int index)
         {
-            for (int i = 0; i < ssmd_datacount; i++)
+            if (!standalone_vsbuild && data_is_aligned)
             {
-                float* p = (float*)(data[i]);
-                p[index] = register[i].x;
-                p[index + 1] = register[i].y;
-                p[index + 2] = register[i].z;
-                p[index + 3] = register[i].w;
+                UnsafeUtils.MemCpyStride(&((float*)data[0])[index], data_rowsize, register, 16, 16, ssmd_datacount);
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    float* p = (float*)(data[i]);
+                    p[index] = register[i].x;
+                    p[index + 1] = register[i].y;
+                    p[index + 2] = register[i].z;
+                    p[index + 3] = register[i].w;
+                }
             }
         }
         /// <summary>
@@ -3787,8 +4019,8 @@ namespace NSS.Blast.SSMD
                     Debug.LogError($"blast.ssmd.handle_op_fx_fy: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, constant = {constant}");
 #endif
                     return;
-                case blast_operation.nop: UnsafeUtils.MemCpyReplicateStride(a, 12, &constant, 4, ssmd_datacount); break; //  // for (int i = 0; i < ssmd_datacount; i++) a[i].x = constant; break;
-                case blast_operation.not: constant = math.select(0f, 1f, constant == 0); UnsafeUtils.MemCpyReplicateStride(a, 12, &constant, 4, ssmd_datacount); break; //for (int i = 0; i < ssmd_datacount; i++) a[i].x = constant; break;
+                case blast_operation.nop: UnsafeUtils.MemCpyReplicateStride(a, 16, &constant, 4, ssmd_datacount); break; //  // for (int i = 0; i < ssmd_datacount; i++) a[i].x = constant; break;
+                case blast_operation.not: constant = math.select(0f, 1f, constant == 0); UnsafeUtils.MemCpyReplicateStride(a, 16, &constant, 4, ssmd_datacount); break; //for (int i = 0; i < ssmd_datacount; i++) a[i].x = constant; break;
 
                 case blast_operation.add: for (int i = 0; i < ssmd_datacount; i++) a[i].x = a[i].x + constant; return;
                 case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i].x = a[i].x - constant; return;
@@ -3912,11 +4144,11 @@ namespace NSS.Blast.SSMD
                     return;
 
                 //case blast_operation.nop: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = b[i].x; break;
-                case blast_operation.nop: 
+                case blast_operation.nop:
                     // set x 
-                    UnsafeUtils.MemCpyStride(a, 12, b, 12, 4, ssmd_datacount);
+                    UnsafeUtils.MemCpyStride(a, 16, b, 16, 4, ssmd_datacount);
                     // set y 
-                    UnsafeUtils.MemCpyStride(((byte*)a) + 4, 12, b, 12, 4, ssmd_datacount);
+                    UnsafeUtils.MemCpyStride(((byte*)a) + 4, 16, b, 16, 4, ssmd_datacount);
                     break;
 
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select((float2)1, (float2)0, b[i].x != 0); break;
@@ -3951,8 +4183,8 @@ namespace NSS.Blast.SSMD
                     Debug.LogError($"blast.ssmd.handle_op_fx_fy: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, constant = {constant}");
 #endif
                     return;
-                case blast_operation.nop: UnsafeUtils.MemCpyReplicateStride(a, 8, &f2, 8, ssmd_datacount); break; 
-                case blast_operation.not: bconstant = constant != 0; constant = math.select(1, 0, bconstant); f2 = constant; UnsafeUtils.MemCpyReplicateStride(a, 8, &f2, 8, ssmd_datacount); break;
+                case blast_operation.nop: UnsafeUtils.MemCpyReplicateStride(a, 16, &f2, 8, ssmd_datacount); break;
+                case blast_operation.not: bconstant = constant != 0; constant = math.select(1, 0, bconstant); f2 = constant; UnsafeUtils.MemCpyReplicateStride(a, 16, &f2, 8, ssmd_datacount); break;
 
                 //case blast_operation.nop: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = constant; break;
                 //case blast_operation.not: bconstant = constant != 0; constant = math.select(1, 0, bconstant); for (int i = 0; i < ssmd_datacount; i++) a[i].xy = constant; break;
@@ -3991,11 +4223,11 @@ namespace NSS.Blast.SSMD
                         if (a != b)
                         {
                             // dont bother to stride, probably faster: TODO test this 
-                            UnsafeUtils.MemCpy(a, b, ssmd_datacount * 16); 
+                            UnsafeUtils.MemCpy(a, b, ssmd_datacount * 16);
                             //for (int i = 0; i < ssmd_datacount; i++) a[i].xy = b[i].xy;
                         }
                     }
-                    break; 
+                    break;
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select((float2)1, (float2)0, b[i].xy != 0); break;
 
                 case blast_operation.add: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = a[i].xy + b[i].xy; return;
@@ -4050,6 +4282,8 @@ namespace NSS.Blast.SSMD
         {
             vector_size = 3;
             bool bconstant;
+            float4 f4;
+
             switch (op)
             {
                 default:
@@ -4057,8 +4291,31 @@ namespace NSS.Blast.SSMD
                     Debug.LogError($"blast.ssmd.handle_op_fx_fy: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, constant = {constant}");
 #endif
                     return;
-                case blast_operation.nop: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = constant; break;
-                case blast_operation.not: constant = math.select(1, 0, constant != 0); for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = constant; break;
+                case blast_operation.nop:
+                    {
+#if STANDALONE_VSBUILD
+                        float3 f3 = constant;
+                        for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = f3; break;
+#else
+                        f4 = constant;
+                        UnsafeUtils.MemCpyReplicate(a, &f4, 16, ssmd_datacount);
+#endif
+                        break;
+                    }
+                case blast_operation.not:
+                    {
+#if STANDALONE_VSBUILD
+                        float3 f3 = math.select(1f, 0f, constant != 0);
+                        for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = f3; 
+#else
+                        f4 = math.select(1f, 0f, constant != 0);
+                        UnsafeUtils.MemCpyReplicate(a, &f4, 16, ssmd_datacount);
+#endif
+                        break;
+                    }
+
+                //case blast_operation.nop: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = constant; break;
+                //case blast_operation.not: constant = math.select(1, 0, constant != 0); for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = constant; break;
 
                 case blast_operation.add: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = a[i].xyz + constant; return;
                 case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = a[i].xyz - constant; return;
@@ -4149,9 +4406,9 @@ namespace NSS.Blast.SSMD
                     Debug.LogError($"blast.ssmd.handle_op_fx_fy: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, constant = {constant}");
 #endif
                     return;
-                case blast_operation.nop: UnsafeUtils.MemSet(a, constant, ssmd_datacount); break; 
+                case blast_operation.nop: UnsafeUtils.MemSet(a, constant, ssmd_datacount); break;
                 // case blast_operation.nop: for (int i = 0; i < ssmd_datacount; i++) a[i] = constant; break;
-                case blast_operation.not: UnsafeUtils.MemSet(a, math.select(1f, 0f, constant != 0), ssmd_datacount); break; 
+                case blast_operation.not: UnsafeUtils.MemSet(a, math.select(1f, 0f, constant != 0), ssmd_datacount); break;
                 // case blast_operation.not: constant = math.select(1, 0, constant != 0); for (int i = 0; i < ssmd_datacount; i++) a[i] = constant; break;
 
                 case blast_operation.add: for (int i = 0; i < ssmd_datacount; i++) a[i] = a[i] + constant; return;
@@ -4344,7 +4601,7 @@ namespace NSS.Blast.SSMD
 
                     case 1:
                         {
-                            UnsafeUtils.MemCpyReplicateStride(register, 12, &constant, 4, ssmd_datacount);
+                            UnsafeUtils.MemCpyReplicateStride(register, 16, &constant, 4, ssmd_datacount);
                             //for (int i = 0; i < ssmd_datacount; i++) register[i].x = constant;
                         }
                         return;
@@ -4352,7 +4609,7 @@ namespace NSS.Blast.SSMD
                     case 2:
                         {
                             float2 f2 = constant;
-                            UnsafeUtils.MemCpyStride(register, 8, &f2, 0, 8, ssmd_datacount);
+                            UnsafeUtils.MemCpyStride(register, 16, &f2, 8, 8, ssmd_datacount);
                             //for (int i = 0; i < ssmd_datacount; i++) register[i].xy = f2;
                         }
                         return;
@@ -6982,7 +7239,7 @@ namespace NSS.Blast.SSMD
             // check that all constant arrays are actually of all the same values 
             // this would indicate a serious bug in constant handling early 
 
-            if(b_constant_index)
+            if (b_constant_index)
             {
                 float f1 = fp_index[0];
                 for (int i = 1; i < ssmd_datacount; i++)
@@ -7008,18 +7265,18 @@ namespace NSS.Blast.SSMD
                 }
             }
 
-#endif 
+#endif
 
             //
             // when index or value is constant we can do some very nice optimizations, in this case we can even skip stuff 
             // 
-             
+
             if (b_constant_value)
             {
-                if(b_constant_index)
+                if (b_constant_index)
                 {
                     // mask always the same 
-                    uint mask = (uint)(1 << (byte)fp_index[0]);   
+                    uint mask = (uint)(1 << (byte)fp_index[0]);
 
                     // value always the same 
                     if (((uint*)fp_value)[0] == 0)
@@ -7044,7 +7301,7 @@ namespace NSS.Blast.SSMD
                     else
                     {
                         // set bits: OR the mask
-                        if(mask == 0)
+                        if (mask == 0)
                         {
                             // mask all 0, data remains equal 
                         }
@@ -7097,7 +7354,7 @@ namespace NSS.Blast.SSMD
                 if (b_constant_index)
                 {
                     // mask always the same 
-                    uint mask = (uint)(1 << (byte)fp_index[0]);   
+                    uint mask = (uint)(1 << (byte)fp_index[0]);
 
                     for (int i = 0; i < ssmd_datacount; i++)
                     {
@@ -7147,7 +7404,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.get_bit: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
                 return;
             }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex); 
+            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
             if (datatype != BlastVariableDataType.Bool32)
             {
                 Debug.LogError($"ssmd.get_bit: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
@@ -7168,7 +7425,7 @@ namespace NSS.Blast.SSMD
             // in release we assume compiler did its job
 #endif
 
-            bool b_constant_index =  pop_fx_into_ref<float>(ref code_pointer, fp_index);
+            bool b_constant_index = pop_fx_into_ref<float>(ref code_pointer, fp_index);
 
 #if DEVELOPMENT_BUILD || TRACE
             if (b_constant_index)
@@ -7183,7 +7440,7 @@ namespace NSS.Blast.SSMD
                     }
                 }
             }
-#endif 
+#endif
 
             if (b_constant_index)
             {
@@ -7199,7 +7456,7 @@ namespace NSS.Blast.SSMD
 
             }
             else
-            {       
+            {
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
                     uint current = ((uint*)data[i])[dataindex];
@@ -7314,7 +7571,7 @@ namespace NSS.Blast.SSMD
                             // something & 0 == always zero 
                             for (int i = 0; i < ssmd_datacount; i++)
                             {
-                                ((uint*)data[i])[dataindex] = 0; 
+                                ((uint*)data[i])[dataindex] = 0;
                             }
                         }
                         else
@@ -7444,7 +7701,7 @@ namespace NSS.Blast.SSMD
             bool is_constant_mask = pop_fx_into_ref<float>(ref code_pointer, fp_mask);
 
 #if DEVELOPMENT_BUILD || TRACE
-            if (is_constant_mask && !UnsafeUtils.AllEqual(fp_mask, ssmd_datacount)) 
+            if (is_constant_mask && !UnsafeUtils.AllEqual(fp_mask, ssmd_datacount))
             {
                 Debug.LogError($"ssmd.get_bits: the mask is marked constant but not all ssmd records have the same value at codepointer {code_pointer}");
                 return;
@@ -7473,7 +7730,7 @@ namespace NSS.Blast.SSMD
             code_pointer--;
         }
 
-        
+
         /// <summary>
         /// count bits set and return result to f4 register.x
         /// </summary>
@@ -7661,7 +7918,7 @@ namespace NSS.Blast.SSMD
             bool constant_rol = pop_fx_into_ref<float>(ref code_pointer, fp);
 
 #if DEVELOPMENT_BUILD || TRACE
-            if(constant_rol && !UnsafeUtils.AllEqual(fp, ssmd_datacount))
+            if (constant_rol && !UnsafeUtils.AllEqual(fp, ssmd_datacount))
             {
                 Debug.LogError($"ssmd.get_rol: constant defined rol does not have all values equal");
                 return;
@@ -7730,16 +7987,16 @@ namespace NSS.Blast.SSMD
             bool constant_ror = pop_fx_into_ref<float>(ref code_pointer, fp);
 
 #if DEVELOPMENT_BUILD || TRACE
-            if(constant_ror && !UnsafeUtils.AllEqual(fp, ssmd_datacount))
+            if (constant_ror && !UnsafeUtils.AllEqual(fp, ssmd_datacount))
             {
                 Debug.LogError($"ssmd.get_ror: although ror is called with a constant its values are not equal accross all ssmd records at {code_pointer}");
-                return; 
+                return;
             }
 #endif
 
             if (constant_ror)
             {
-                int ror = (int)fp[0]; 
+                int ror = (int)fp[0];
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
                     uint* current = &((uint*)data[i])[dataindex];
@@ -7804,10 +8061,10 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.get_shl: shift constant not equal across all ssmd records at codepointer {code_pointer}");
                 return;
             }
-#endif 
+#endif
             if (constant_shift)
             {
-                int shift = (int)fp[0]; 
+                int shift = (int)fp[0];
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
                     uint* current = &((uint*)data[i])[dataindex];
@@ -7871,7 +8128,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.get_shr: shift constant not equal across all ssmd records at codepointer {code_pointer}");
                 return;
             }
-#endif 
+#endif
             if (constant_shift)
             {
                 int shift = (int)fp[0];
@@ -7957,9 +8214,9 @@ namespace NSS.Blast.SSMD
 
 
 
-#endregion
+        #endregion
 
-#region Reinterpret XXXX [DataIndex]
+        #region Reinterpret XXXX [DataIndex]
 
         /// <summary>
         /// reinterpret the value at index as a boolean value (set metadata type to bool32)
@@ -8022,9 +8279,9 @@ namespace NSS.Blast.SSMD
             BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Numeric, 1, (byte)dataindex);
         }
 
-#endregion
+        #endregion
 
-#region External Function Handler 
+        #region External Function Handler 
 
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
@@ -8049,22 +8306,22 @@ namespace NSS.Blast.SSMD
             if (engine_ptr->CanBeAValidFunctionId(id))
             {
 #endif
-            BlastScriptFunction p = engine_ptr->Functions[id];
+                BlastScriptFunction p = engine_ptr->Functions[id];
 
-            // get parameter count (expected from script excluding the 3 data pointers: engine, env, caller) 
-            // but dont call it in validation mode 
-            if (ValidateOnce == true)
-            {
-                // external functions (to blast) always have a fixed amount of parameters 
+                // get parameter count (expected from script excluding the 3 data pointers: engine, env, caller) 
+                // but dont call it in validation mode 
+                if (ValidateOnce == true)
+                {
+                    // external functions (to blast) always have a fixed amount of parameters 
 #if DEVELOPMENT_BUILD || TRACE
                     if (id > (int)ReservedBlastScriptFunctionIds.Offset && p.MinParameterCount != p.MaxParameterCount)
                     {
                         Debug.LogError($"blast.ssmd.interpretor.call-external: function {id} min/max parameters should be of equal size");
                     }
 #endif
-                code_pointer += p.MinParameterCount;
-                return;
-            }
+                    code_pointer += p.MinParameterCount;
+                    return;
+                }
 
 #if DEVELOPMENT_BUILD || TRACE
                 Debug.Log($"call fp id: {id} <env:{environment_ptr.ToInt64()}> <ssmd:no-caller-data>, parmetercount = {p.MinParameterCount}");
@@ -8087,48 +8344,48 @@ namespace NSS.Blast.SSMD
             vector_size = 1;
 #endif
 
-            // 
-            // first gather up to MinParameterCount parameter components 
-            // - external functions have a fixed amount of parameters 
-            // - there is no vectorsize check on external functions, user should make sure call is correct or errors will result 
-            // 
+                // 
+                // first gather up to MinParameterCount parameter components 
+                // - external functions have a fixed amount of parameters 
+                // - there is no vectorsize check on external functions, user should make sure call is correct or errors will result 
+                // 
 
-            int p_count = 0;
-            float* p_data = stackalloc float[p.MinParameterCount * ssmd_datacount];
+                int p_count = 0;
+                float* p_data = stackalloc float[p.MinParameterCount * ssmd_datacount];
 
-            while (p_count < p.MinParameterCount)
-            {
-                byte vsize;
-                // code_pointer++;
-
-                pop_op_meta_cp(code_pointer, out BlastVariableDataType dtype, out vsize);
-
-                switch (vsize)
+                while (p_count < p.MinParameterCount)
                 {
-                    case 0:
-                    case 4:
-                        vsize = 4;
-                        pop_fx_into_ref<float4>(ref code_pointer, (float4*)(void*)&p_data[p_count * ssmd_datacount]);
-                        break;
+                    byte vsize;
+                    // code_pointer++;
 
-                    case 1:
-                        pop_fx_into_ref<float>(ref code_pointer, (float*)(void*)&p_data[p_count * ssmd_datacount]);
-                        break;
+                    pop_op_meta_cp(code_pointer, out BlastVariableDataType dtype, out vsize);
 
-                    case 2:
-                        pop_fx_into_ref<float2>(ref code_pointer, (float2*)(void*)&p_data[p_count * ssmd_datacount]);
-                        break;
+                    switch (vsize)
+                    {
+                        case 0:
+                        case 4:
+                            vsize = 4;
+                            pop_fx_into_ref<float4>(ref code_pointer, (float4*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
 
-                    case 3:
-                        pop_fx_into_ref<float3>(ref code_pointer, (float3*)(void*)&p_data[p_count * ssmd_datacount]);
-                        break;
+                        case 1:
+                            pop_fx_into_ref<float>(ref code_pointer, (float*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
+
+                        case 2:
+                            pop_fx_into_ref<float2>(ref code_pointer, (float2*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
+
+                        case 3:
+                            pop_fx_into_ref<float3>(ref code_pointer, (float3*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
+                    }
+
+                    for (int i = 0; i < vsize && p_count < p.MinParameterCount; i++)
+                    {
+                        p_count++;
+                    }
                 }
-
-                for (int i = 0; i < vsize && p_count < p.MinParameterCount; i++)
-                {
-                    p_count++;
-                }
-            }
 
 
 #if STANDALONE_VSBUILD
@@ -8165,140 +8422,140 @@ namespace NSS.Blast.SSMD
 #else
                 // the native bursted version is a little more invloved ... 
 
-                if(!ValidateOnce)
+                if (!ValidateOnce)
                 {
-                if (p.IsShortDefinition)
-                {
-
-                    switch (p.MinParameterCount)
+                    if (p.IsShortDefinition)
                     {
-                        // failure case -> could not map delegate
-                        case 112:
-#if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"blast.ssmd.interpretor.call_external: error mapping external fuction pointer, function id {p.FunctionId} parametercount = {p.MinParameterCount}");
-#endif
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                f4[i].x = float.NaN; 
-                            }                            
-                            break;
 
-                        case 0:
-                            FunctionPointer<BlastDelegate_f0_s> fp0_s = p.Generic<BlastDelegate_f0_s>();
-                            if (fp0_s.IsCreated && fp0_s.Value != IntPtr.Zero)
-                            {
-                                for (int i = 0; i < ssmd_datacount; i++) f4[i].x = fp0_s.Invoke();
-                                return;
-                            }
-                            goto case 112;
-
-
-                        case 1:
-                            FunctionPointer<BlastDelegate_f1_s> fp1_s = p.Generic<BlastDelegate_f1_s>();
-                            if (fp1_s.IsCreated && fp1_s.Value != IntPtr.Zero)
-                            {
-                               for (int i = 0; i < ssmd_datacount; i++) f4[i].x = fp1_s.Invoke(p_data[i]);
-                               return;
-                            }
-                            goto case 112;
-
-                        case 2:
-                        FunctionPointer<BlastDelegate_f11_s> fp11_s = p.Generic<BlastDelegate_f11_s>();
-                        if (fp11_s.IsCreated && fp11_s.Value != IntPtr.Zero)
+                        switch (p.MinParameterCount)
                         {
-                            for (int i = 0; i < ssmd_datacount; i++) 
-                            {
-                                f4[i].x = fp11_s.Invoke(p_data[i], p_data[1 * ssmd_datacount + i]);
-                            }
-                            return;
+                            // failure case -> could not map delegate
+                            case 112:
+#if DEVELOPMENT_BUILD || TRACE
+                                Debug.LogError($"blast.ssmd.interpretor.call_external: error mapping external fuction pointer, function id {p.FunctionId} parametercount = {p.MinParameterCount}");
+#endif
+                                for (int i = 0; i < ssmd_datacount; i++)
+                                {
+                                    f4[i].x = float.NaN;
+                                }
+                                break;
+
+                            case 0:
+                                FunctionPointer<BlastDelegate_f0_s> fp0_s = p.Generic<BlastDelegate_f0_s>();
+                                if (fp0_s.IsCreated && fp0_s.Value != IntPtr.Zero)
+                                {
+                                    for (int i = 0; i < ssmd_datacount; i++) f4[i].x = fp0_s.Invoke();
+                                    return;
+                                }
+                                goto case 112;
+
+
+                            case 1:
+                                FunctionPointer<BlastDelegate_f1_s> fp1_s = p.Generic<BlastDelegate_f1_s>();
+                                if (fp1_s.IsCreated && fp1_s.Value != IntPtr.Zero)
+                                {
+                                    for (int i = 0; i < ssmd_datacount; i++) f4[i].x = fp1_s.Invoke(p_data[i]);
+                                    return;
+                                }
+                                goto case 112;
+
+                            case 2:
+                                FunctionPointer<BlastDelegate_f11_s> fp11_s = p.Generic<BlastDelegate_f11_s>();
+                                if (fp11_s.IsCreated && fp11_s.Value != IntPtr.Zero)
+                                {
+                                    for (int i = 0; i < ssmd_datacount; i++)
+                                    {
+                                        f4[i].x = fp11_s.Invoke(p_data[i], p_data[1 * ssmd_datacount + i]);
+                                    }
+                                    return;
+                                }
+                                goto case 112;
+
                         }
-                        goto case 112;
-
                     }
-                }
-                else
-                {
-                    switch (p.MinParameterCount)
+                    else
                     {
-                        // zero parameters 
-                        case 0:
-                            FunctionPointer<BlastDelegate_f0> fp0 = p.Generic<BlastDelegate_f0>();
-                            if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
-                            {
-                                vector_size = 1;
-
-                                for (int i = 0; i < ssmd_datacount; i++)
+                        switch (p.MinParameterCount)
+                        {
+                            // zero parameters 
+                            case 0:
+                                FunctionPointer<BlastDelegate_f0> fp0 = p.Generic<BlastDelegate_f0>();
+                                if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
                                 {
-                                    f4[i].x = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero);
-                                }
-                                return;
-                            }
-                            break;
+                                    vector_size = 1;
 
-                        //
-                        // obviously this would be a whole lot more efficient if we vectorize the external functions 
-                        // - this is however not always good: 
-                        // - if the function is expensive to execute there would be very little benefit
-                        // - small lightweight functions would benefit greatly
-                        // - user should be able to optionally register a vectorized variant and we use that here if present
-                        // 
-                        case 1:
-                            FunctionPointer<BlastDelegate_f1> fp1 = p.Generic<BlastDelegate_f1>();
-                            if (fp1.IsCreated && fp1.Value != IntPtr.Zero)
-                            {
-                                for (int i = 0; i < ssmd_datacount; i++)
-                                {
-                                    f4[i].x = fp1.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i]);
+                                    for (int i = 0; i < ssmd_datacount; i++)
+                                    {
+                                        f4[i].x = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero);
+                                    }
+                                    return;
                                 }
-                                return;
-                            }
-                            break;
+                                break;
 
-                        case 2:
-                            FunctionPointer<BlastDelegate_f11> fp2 = p.Generic<BlastDelegate_f11>();
-                            if (fp2.IsCreated && fp2.Value != IntPtr.Zero)
-                            {
-                                for (int i = 0; i < ssmd_datacount; i++)
+                            //
+                            // obviously this would be a whole lot more efficient if we vectorize the external functions 
+                            // - this is however not always good: 
+                            // - if the function is expensive to execute there would be very little benefit
+                            // - small lightweight functions would benefit greatly
+                            // - user should be able to optionally register a vectorized variant and we use that here if present
+                            // 
+                            case 1:
+                                FunctionPointer<BlastDelegate_f1> fp1 = p.Generic<BlastDelegate_f1>();
+                                if (fp1.IsCreated && fp1.Value != IntPtr.Zero)
                                 {
-                                    f4[i].x = fp2.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i]);
+                                    for (int i = 0; i < ssmd_datacount; i++)
+                                    {
+                                        f4[i].x = fp1.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i]);
+                                    }
+                                    return;
                                 }
-                                return;
-                            }
-                            break;
+                                break;
 
-                        case 3:
-                            FunctionPointer<BlastDelegate_f111> fp3 = p.Generic<BlastDelegate_f111>();
-                            if (fp3.IsCreated && fp3.Value != IntPtr.Zero)
-                            {
-                                for (int i = 0; i < ssmd_datacount; i++)
+                            case 2:
+                                FunctionPointer<BlastDelegate_f11> fp2 = p.Generic<BlastDelegate_f11>();
+                                if (fp2.IsCreated && fp2.Value != IntPtr.Zero)
                                 {
-                                    f4[i].x = fp3.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i], p_data[2 * ssmd_datacount + i]);
+                                    for (int i = 0; i < ssmd_datacount; i++)
+                                    {
+                                        f4[i].x = fp2.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i]);
+                                    }
+                                    return;
                                 }
-                                return;
-                            }
-                            break;
+                                break;
 
-                        case 4:
-                            FunctionPointer<BlastDelegate_f1111> fp4 = p.Generic<BlastDelegate_f1111>();
-                            if (fp4.IsCreated && fp4.Value != IntPtr.Zero)
-                            {
-                                for (int i = 0; i < ssmd_datacount; i++)
+                            case 3:
+                                FunctionPointer<BlastDelegate_f111> fp3 = p.Generic<BlastDelegate_f111>();
+                                if (fp3.IsCreated && fp3.Value != IntPtr.Zero)
                                 {
-                                    f4[i].x = fp4.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i], p_data[2 * ssmd_datacount + i], p_data[3 * ssmd_datacount + i]);
+                                    for (int i = 0; i < ssmd_datacount; i++)
+                                    {
+                                        f4[i].x = fp3.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i], p_data[2 * ssmd_datacount + i]);
+                                    }
+                                    return;
                                 }
-                                return;
-                            }
-                            break;
+                                break;
+
+                            case 4:
+                                FunctionPointer<BlastDelegate_f1111> fp4 = p.Generic<BlastDelegate_f1111>();
+                                if (fp4.IsCreated && fp4.Value != IntPtr.Zero)
+                                {
+                                    for (int i = 0; i < ssmd_datacount; i++)
+                                    {
+                                        f4[i].x = fp4.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i], p_data[2 * ssmd_datacount + i], p_data[3 * ssmd_datacount + i]);
+                                    }
+                                    return;
+                                }
+                                break;
 
 
 
 #if DEVELOPMENT_BUILD || TRACE
-                        default:
-                            Debug.LogError($"blast.ssmd.interpretor.call-external: function id {id}, with parametercount {p.MinParameterCount} is not supported yet");
-                            break;
+                            default:
+                                Debug.LogError($"blast.ssmd.interpretor.call-external: function id {id}, with parametercount {p.MinParameterCount} is not supported yet");
+                                break;
 #endif
+                        }
                     }
-                }
                 }
 
 #endif
@@ -8313,9 +8570,9 @@ namespace NSS.Blast.SSMD
 #endif
         }
 
-#endregion
+        #endregion
 
-#region GetFunction|Sequence and Execute (privates)
+        #region GetFunction|Sequence and Execute (privates)
 
         /// <summary>
         /// 
@@ -8503,7 +8760,7 @@ namespace NSS.Blast.SSMD
         void RunDebugStack()
         {
 #if DEVELOPMENT_BUILD || TRACE
-            if (ValidateOnce) return; 
+            if (ValidateOnce) return;
 
             int i = 0, ssmdi = 0;
 
@@ -8657,7 +8914,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
             if (ValidateOnce) return;
 
-            if(offset < 0 || offset > (package.O3 >> 2))
+            if (offset < 0 || offset > (package.O3 >> 2))
             {
                 Debug.LogError($"DATA_SEGMENT[{offset}] = offset out of range");
             }
@@ -8758,26 +9015,26 @@ namespace NSS.Blast.SSMD
                                 return idata + 3;
                         }
 #else
-            // less string magic for burstable code 
-            switch (size)
-            {
-                case 1:
-                    Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])} {dt}[{size}]");
-                    return idata + 1;
+                        // less string magic for burstable code 
+                        switch (size)
+                        {
+                            case 1:
+                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])} {dt}[{size}]");
+                                return idata + 1;
 
-                case 0:
-                case 4:
-                    Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])}{(((float*)data[ssmdi])[idata + 3])} {dt}[{size}]");
-                    return idata + 4;
+                            case 0:
+                            case 4:
+                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])}{(((float*)data[ssmdi])[idata + 3])} {dt}[{size}]");
+                                return idata + 4;
 
-                case 2:
-                    Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])} {dt}[{size}]");
-                    return idata + 2;
+                            case 2:
+                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])} {dt}[{size}]");
+                                return idata + 2;
 
-                case 3:
-                    Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])} {dt}[{size}]");
-                    return idata + 3;
-            }
+                            case 3:
+                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])} {dt}[{size}]");
+                                return idata + 3;
+                        }
 #endif
                     }
                     break;
@@ -9585,7 +9842,7 @@ namespace NSS.Blast.SSMD
 
 
 
-#region Stack Operation Handlers 
+        #region Stack Operation Handlers 
 
         BlastError push(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp)
         {
@@ -9758,10 +10015,10 @@ namespace NSS.Blast.SSMD
             return BlastError.success;
         }
 
-#endregion
+        #endregion
 
 
-#region Assign[s|f] operation handlers
+        #region Assign[s|f] operation handlers
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void determine_assigned_indexer(ref int code_pointer, ref byte assignee_op, out bool is_indexed, out blast_operation indexer)
@@ -10126,7 +10383,8 @@ namespace NSS.Blast.SSMD
         }
 
 
-#endregion
+        #endregion
+
 
 
         /// <summary>
@@ -10238,6 +10496,52 @@ namespace NSS.Blast.SSMD
             int iterations = 0;
             int ires = 0; // anything < 0 == error
             code_pointer = 0;
+
+            //*************************************************************************************************************************
+            // check data array, is it equaly spaced => ifso this opens up optimizations on dataaccess  
+            // - dont use the optimizations in vsbuild, they are slower compiled in .net 
+            //*************************************************************************************************************************
+            data_is_aligned = !standalone_vsbuild && ssmd_datacount > 1;
+            if (data_is_aligned)
+            {
+                data_rowsize = (int)(((ulong*)data)[1] - ((ulong*)data)[0]);
+                for (int i = 1; data_is_aligned && i < ssmd_datacount - 1; i++)
+                {
+                    data_is_aligned = data_rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i]);
+                }
+                // if stack is packaged, it is aligned the same as data, otherwise it has been packed on function stack (perfectly aligned)
+            }
+            else
+            {
+                data_is_aligned = false;
+                data_rowsize = 0;
+            }
+
+            // check out stack 
+            if (package.HasStackPackaged)
+            {
+                stack_is_aligned = data_is_aligned;
+                stack_rowsize = data_rowsize;
+            }
+            else
+            {
+                // using thread stack, always packed 
+                stack_is_aligned = true;
+                stack_rowsize = (int)package.StackSize;
+            }
+
+
+#if DEVELOPMENT_BUILD || TRACE
+            if (!standalone_vsbuild && ssmd_datacount > 1 && !data_is_aligned)
+            {
+                ShowWarningOnce(WARN_SSMD_DATASEGMENTS_NOT_EVENLY_SPACED);
+            }
+
+            if (!standalone_vsbuild && ssmd_datacount > 1 && !stack_is_aligned)
+            {
+                ShowWarningOnce(WARN_SSMD_STACKSEGMENTS_NOT_EVENLY_SPACED);
+            }
+#endif
 
             //*************************************************************************************************************************
             // start the main interpretor loop 
@@ -10421,6 +10725,6 @@ namespace NSS.Blast.SSMD
         }
 
 
-#endregion
+        #endregion
     }
 }

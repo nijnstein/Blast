@@ -110,7 +110,7 @@ namespace NSS.Blast
         }
 
         /// <summary>
-        /// cpy memory with strides 
+        /// cpy memory with strides  
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static void MemCpyStride(void* pout, int stride1, void* pin, int stride2, int element_size, int ssmd_datacount)
@@ -120,6 +120,10 @@ namespace NSS.Blast
 
             int ii = 0;
             int io = 0;
+
+            stride1 = stride1 - element_size; 
+            stride2 = stride2 - element_size; 
+
             for (int i = 0; i < ssmd_datacount; i++)
             {
                 for (int j = 0; j < element_size; j++)
@@ -129,6 +133,23 @@ namespace NSS.Blast
                 io += stride1;
                 ii += stride2;
             }
+        }
+
+        /// <summary>
+        /// copy with strides and offset into destination
+        /// </summary>
+        /// <param name="pout"></param>
+        /// <param name="stride1"></param>
+        /// <param name="offset_into_pout"></param>
+        /// <param name="pin"></param>
+        /// <param name="stride2"></param>
+        /// <param name="element_size"></param>
+        /// <param name="ssmd_datacount"></param>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static void MemCpyStride(void* pout, int stride1, int offset_into_pout, void* pin, int stride2, int element_size, int ssmd_datacount)
+        {
+            byte* p = (byte*)pout;
+            MemCpyStride(&p[offset_into_pout], stride1, pin, stride2, element_size, ssmd_datacount); 
         }
 
 
@@ -187,13 +208,21 @@ namespace NSS.Blast
 
         /// <summary>
         /// replicate memory at pin 
+        /// - stride is the total rowsize of each target
+        /// - elementsize
         /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public static void MemCpyReplicateStride(void* pout, int stride1, void* pin, int element_size, int ssmd_datacount)
         {
+#if !STANDALONE_VSBUILD
+            MemCpyStride(pout, stride1, pin, 0, element_size, ssmd_datacount);
+#else
             byte* d = (byte*)pout;
             byte* s = (byte*)pin;
-
+            
             int io = 0;
+            stride1 = stride1 - element_size;  
+            
             for (int i = 0; i < ssmd_datacount; i++)
             {
                 for (int j = 0; j < element_size; j++)
@@ -202,11 +231,8 @@ namespace NSS.Blast
                 }
                 io += stride1;
             }
+#endif 
         }
-
-
-
-
 
 
         /// <summary>
