@@ -1571,7 +1571,7 @@ namespace NSS.Blast.SSMD
                                                 if (constant == 0)
                                                 {
                                                     // for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 0f;
-                                                    UnsafeUtility.MemClear(f1_out, ssmd_datacount * 4); 
+                                                    UnsafeUtils.MemClear(f1_out, ssmd_datacount * 4); 
                                                 }
                                                 else
                                                 {
@@ -1639,7 +1639,7 @@ namespace NSS.Blast.SSMD
                                                 if (constant == 0)
                                                 {
                                                     // for (int i = 0; i < ssmd_datacount; i++) //  f4_out[i].x = 0f;
-                                                    UnsafeUtility.MemClear(f4_out, 16 * ssmd_datacount); 
+                                                    UnsafeUtils.MemClear(f4_out, 16 * ssmd_datacount); 
                                                 }
                                                 else
                                                 {
@@ -1658,7 +1658,9 @@ namespace NSS.Blast.SSMD
                                                 }
                                                 else
                                                 {
-                                                    for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 1f;
+                                                    f4 = 1f;
+                                                    UnsafeUtils.MemCpyReplicate(f4_out, &f4, 16, ssmd_datacount);
+                                                    //for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 1f;
                                                 }
                                                 return;
 
@@ -1673,7 +1675,9 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.mina:
                                             case blast_operation.maxa:
                                             case blast_operation.csum:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = constant;
+                                                f4 = constant;
+                                                // for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = constant;
+                                                UnsafeUtils.MemCpyReplicate(f4_out, &f4, 16, ssmd_datacount); 
                                                 return;
                                         }
                                     }
@@ -1696,7 +1700,8 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.mina:
                                             case blast_operation.csum:
                                             case blast_operation.maxa:
-                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
+                                                //  for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
+                                                UnsafeUtils.MemCpyReplicate(f1_out, &constant, 4, ssmd_datacount); 
                                                 return;
                                         }
                                     }
@@ -1729,7 +1734,7 @@ namespace NSS.Blast.SSMD
                                                 if (constant == 0)
                                                 {
                                                     // for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = 0f;
-                                                    UnsafeUtility.MemClear(f2_out, ssmd_datacount * 8);
+                                                    UnsafeUtils.MemClear(f2_out, ssmd_datacount * 8);
                                                 }
                                                 else
                                                 {
@@ -1743,12 +1748,15 @@ namespace NSS.Blast.SSMD
                                                     if (output != buffer)
                                                     {
                                                         // if not the same buffer then we still need to copy the data 
-                                                        for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i];
+                                                        // for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i];
+                                                        UnsafeUtils.MemCpy(f2_out, f2_in, ssmd_datacount * 8); 
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = 1f;
+                                                    float2 f2 = 1f;
+                                                    // for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = 1f;
+                                                    UnsafeUtils.MemCpyReplicate(f2_out, &f2, 8, ssmd_datacount); 
                                                 }
                                                 return;
 
@@ -1788,7 +1796,7 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.and:
                                                 if (constant == 0)
                                                 {
-                                                    UnsafeUtility.MemClear(f4_out, ssmd_datacount * 16);
+                                                    UnsafeUtils.MemClear(f4_out, ssmd_datacount * 16);
                                                     //for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = 0f;
                                                 }
                                                 else
@@ -1869,7 +1877,7 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.and:
                                                 if (constant == 0)
                                                 {
-                                                    UnsafeUtility.MemClear(f3_out, ssmd_datacount * 12);
+                                                    UnsafeUtils.MemClear(f3_out, ssmd_datacount * 12);
                                                     // for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = 0f;
                                                 }
                                                 else
@@ -1885,13 +1893,16 @@ namespace NSS.Blast.SSMD
                                                     if (output != buffer)
                                                     {
                                                         // if not the same buffer then we still need to copy the data 
-                                                        for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i];
+                                                        // for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i];
+                                                        UnsafeUtils.MemCpy(f3_out, f3_in, ssmd_datacount * 3); 
                                                     }
                                                 }
                                                 else
                                                 {
                                                     // just write true,  | true is always true 
-                                                    for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = 1f;
+                                                    float3 f3 = 1f;
+                                                    //for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = 1f;
+                                                    UnsafeUtils.MemCpyReplicate(f3_out, &f3, 12, ssmd_datacount); 
                                                 }
                                                 return;
 
@@ -1931,7 +1942,7 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.and:
                                                 if (constant == 0)
                                                 {
-                                                    UnsafeUtility.MemClear(f4_out, ssmd_datacount * 16);
+                                                    UnsafeUtils.MemClear(f4_out, ssmd_datacount * 16);
                                                     // for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = 0f;
                                                 }
                                                 else
@@ -1984,7 +1995,7 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.csum:
                                             case blast_operation.maxa:
 
-                                                UnsafeUtility.MemCpyReplicate(f1_out, &constant, 4, ssmd_datacount);
+                                                UnsafeUtils.MemCpyReplicate(f1_out, &constant, 4, ssmd_datacount);
                                                 // for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
                                                 return;
                                         }
@@ -2015,7 +2026,7 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.and:
                                                 if (constant == 0)
                                                 {
-                                                    UnsafeUtility.MemClear(f4_out, ssmd_datacount * 16);
+                                                    UnsafeUtils.MemClear(f4_out, ssmd_datacount * 16);
                                                     //for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = 0f;
                                                 }
                                                 else
@@ -2073,12 +2084,12 @@ namespace NSS.Blast.SSMD
                                             bool ball = Bool32.From(constant).All;
                                             if (ball)
                                             {
-                                                UnsafeUtility.MemCpy(f1_out, f1_in, ssmd_datacount * 4); 
+                                                UnsafeUtils.MemCpy(f1_out, f1_in, ssmd_datacount * 4); 
                                                 // for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i];
                                             }
                                             else
                                             {
-                                                UnsafeUtility.MemClear(f1_out, ssmd_datacount * 1);
+                                                UnsafeUtils.MemClear(f1_out, ssmd_datacount * 1);
                                                 //for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 0f;
                                             }
                                             return;
@@ -2088,12 +2099,12 @@ namespace NSS.Blast.SSMD
                                             if (bany)
                                             {
                                                 constant = 1f;
-                                                UnsafeUtility.MemCpyReplicate(f1_out, &constant, 4, ssmd_datacount);
+                                                UnsafeUtils.MemCpyReplicate(f1_out, &constant, 4, ssmd_datacount);
                                                 //for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = 1f;
                                             }
                                             else
                                             {
-                                                UnsafeUtility.MemCpy(f1_out, f1_in, ssmd_datacount * 4);
+                                                UnsafeUtils.MemCpy(f1_out, f1_in, ssmd_datacount * 4);
                                                 //for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i];
                                             }
                                             return;
@@ -2112,12 +2123,12 @@ namespace NSS.Blast.SSMD
                                             bool ball = Bool32.From(constant).All;
                                             if (ball)
                                             {
-                                                UnsafeUtility.MemCpyStride(f4_out, 12, f1_in, 0, 4, ssmd_datacount);
+                                                UnsafeUtils.MemCpyStride(f4_out, 12, f1_in, 0, 4, ssmd_datacount);
                                                 //for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
                                             }
                                             else
                                             {
-                                                UnsafeUtility.MemClear(f4_out, ssmd_datacount * 16);
+                                                UnsafeUtils.MemClear(f4_out, ssmd_datacount * 16);
                                                 //for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 0f;
                                             }
 
@@ -2128,12 +2139,12 @@ namespace NSS.Blast.SSMD
                                             if (bany)
                                             {
                                                 f4 = 1; 
-                                                UnsafeUtility.MemCpyReplicate(f4_out, &f4, 16, ssmd_datacount);
+                                                UnsafeUtils.MemCpyReplicate(f4_out, &f4, 16, ssmd_datacount);
                                                 // for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = 1f;
                                             }
                                             else
                                             {
-                                                UnsafeUtility.MemCpyStride(f4_out, 12, f1_in, 0, 16, ssmd_datacount);
+                                                UnsafeUtils.MemCpyStride(f4_out, 12, f1_in, 0, 16, ssmd_datacount);
                                                 // for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i];
                                             }
                                             return;
@@ -2152,7 +2163,7 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
                 Debug.LogError($"blast.pop_fx_with_op_into_fx_constant_handler: -> codepointer {code_pointer} unsupported operation supplied: {op}, datatype: {datatype}, Vin: {vin_size}, Vout: {vout_size}");
                 return;
-#endif                 
+#endif
         }
 
         void pop_fx_with_op_into_fx_data_handler<Tin, Tout, Tdata>([NoAlias] Tin* buffer, [NoAlias] Tout* output, blast_operation op, [NoAlias] void** data, int offset, BlastVariableDataType datatype)
@@ -3402,9 +3413,9 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
  
-        #region set_data_from_register_fx
+#region set_data_from_register_fx
                
         /// <summary>
         /// set a float1 data location from register location  
@@ -3710,12 +3721,12 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
 
  
-        #endregion
+#endregion
 
-        #region Operations Handlers 
+#region Operations Handlers 
 
         /// <summary>
         /// handle operation a.x and b.x
@@ -4154,11 +4165,11 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
 
-        #region Function Handlers 
+#region Function Handlers 
 
-        #region Single Input functions (abs, sin etc) 
+#region Single Input functions (abs, sin etc) 
 
         private void handle_single_op_constant([NoAlias]float4* register, ref byte vector_size, float constant, in blast_operation op, in extended_blast_operation ex_op, in bool is_negated = false, in bool not = false, bool is_sequenced = false)
         {
@@ -5236,10 +5247,10 @@ namespace NSS.Blast.SSMD
         //
 
 
-         #endregion
-        #endregion
+#endregion
+#endregion
 
-        #region Dual input functions: math.pow fmod cross etc. 
+#region Dual input functions: math.pow fmod cross etc. 
 
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
@@ -5664,9 +5675,9 @@ namespace NSS.Blast.SSMD
 
 
 
-        #endregion
+#endregion
 
-        #region Tripple inputs: select, clamp, lerp etc
+#region Tripple inputs: select, clamp, lerp etc
 
         /// <summary>
         /// select first input on a false condition, select the second on a true condition that is put in parameter 3
@@ -6529,9 +6540,9 @@ namespace NSS.Blast.SSMD
 
 
 
-        #endregion
+#endregion
 
-        #region op-a    NON REFERENCE
+#region op-a    NON REFERENCE
 
         /// <summary>
         /// 
@@ -6791,9 +6802,9 @@ namespace NSS.Blast.SSMD
 
 
 
-        #endregion
+#endregion
 
-        #region fused substract multiply actions
+#region fused substract multiply actions
 
         /// <summary>
         /// fused multiply add 
@@ -6854,9 +6865,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
-        #endregion
+#endregion
 
-        #region Bitwise operations
+#region Bitwise operations
 
         /// <summary>
         /// Note: sets bit in place, first parameter must be a direct data index (compiler should force this)
@@ -6891,7 +6902,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.set_bit: the index to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
                 return;
             }
-#endif 
+#endif
 
             pop_fx_into_ref<float>(ref code_pointer, fp_index);
 
@@ -6903,7 +6914,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.set_bit: the value to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
                 return;
             }
-#endif 
+#endif
 
             pop_fx_into_ref<float>(ref code_pointer, fp_value);
 
@@ -6960,7 +6971,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.get_bit: the index to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
                 return;
             }
-#else 
+#else
             // in release we assume compiler did its job
 #endif
 
@@ -7011,7 +7022,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.set_bits: the mask to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
                 return;
             }
-#endif 
+#endif
 
             pop_fx_into_ref<float>(ref code_pointer, fp_mask);
 
@@ -7023,7 +7034,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.set_bits: the value to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
                 return;
             }
-#endif 
+#endif
 
             pop_fx_into_ref<float>(ref code_pointer, fp_value);
 
@@ -7080,7 +7091,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.get_bits: the mask to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
                 return;
             }
-#else 
+#else
             // in release we assume compiler did its job
 #endif
 
@@ -7274,7 +7285,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.get_rol: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
                 return;
             }
-#else 
+#else
             // in release we assume compiler did its job
 #endif
 
@@ -7323,7 +7334,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.get_ror: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
                 return;
             }
-#else 
+#else
             // in release we assume compiler did its job
 #endif
 
@@ -7372,7 +7383,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.get_shl: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
                 return;
             }
-#else 
+#else
             // in release we assume compiler did its job
 #endif
 
@@ -7421,7 +7432,7 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"ssmd.get_shr: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
                 return;
             }
-#else 
+#else
             // in release we assume compiler did its job
 #endif
 
@@ -7491,9 +7502,9 @@ namespace NSS.Blast.SSMD
 
 
 
-        #endregion
+#endregion
 
-        #region Reinterpret XXXX [DataIndex]
+#region Reinterpret XXXX [DataIndex]
 
         /// <summary>
         /// reinterpret the value at index as a boolean value (set metadata type to bool32)
@@ -7556,9 +7567,9 @@ namespace NSS.Blast.SSMD
             BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Numeric, 1, (byte)dataindex);
         }
 
-        #endregion 
+#endregion
 
-        #region External Function Handler 
+#region External Function Handler 
 
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
@@ -7847,9 +7858,9 @@ namespace NSS.Blast.SSMD
 #endif
         }
 
-        #endregion
+#endregion
 
-        #region GetFunction|Sequence and Execute (privates)
+#region GetFunction|Sequence and Execute (privates)
 
         /// <summary>
         /// 
@@ -8323,7 +8334,7 @@ namespace NSS.Blast.SSMD
                         uint b32 = ((uint*)data[ssmdi])[idata];
 #if STANDALONE_VSBUILD
                         Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {CodeUtils.FormatBool32(b32)} BOOL32[1]");
-#else 
+#else
                         Debug.Log($"Element: {idata} = {b32} BOOL32[1]");
 #endif
                     }
@@ -9743,7 +9754,7 @@ namespace NSS.Blast.SSMD
                     // there is no way to check the result
 #if TRACE || DEVELOPMENT_BUILD
                     Debug.LogWarning("BlastSSMDInterpretor: executing with validation enabled but not with a packaged stack, stacksize estimation wont be possible");
-#endif 
+#endif
                 }
                 // done by caller in packaged stack
                 //else

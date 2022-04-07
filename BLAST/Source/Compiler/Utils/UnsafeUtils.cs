@@ -9,31 +9,23 @@
 
 using System;
 using Unity.Collections;
+using Unity.Mathematics;
 
 namespace NSS.Blast
 {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils'
     unsafe public struct UnsafeUtils
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils'
     {
 #if STANDALONE_VSBUILD 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.Malloc(long, int, Allocator)'
         unsafe public static void* Malloc(long size, int alignment, Allocator allocator)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.Malloc(long, int, Allocator)'
         {
             return System.Runtime.InteropServices.Marshal.AllocHGlobal((int)size).ToPointer();
         }
-
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.Free(void*, Allocator)'
         unsafe public static void Free(void* memory, Allocator allocator)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.Free(void*, Allocator)'
         {
             System.Runtime.InteropServices.Marshal.FreeHGlobal((IntPtr)memory); 
         }
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.MemCpy(void*, void*, long)'
         unsafe public static void MemCpy(void* destination, void* source, long size)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.MemCpy(void*, void*, long)'
         {
             byte* d = (byte*)destination;
             byte* s = (byte*)source; 
@@ -43,9 +35,7 @@ namespace NSS.Blast
             }
         }
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.MemCpyReplicate(void*, void*, int, int)'
         unsafe public static void MemCpyReplicate(void* destination, void* source, int size, int count)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.MemCpyReplicate(void*, void*, int, int)'
         {
             byte* d = (byte*)destination;
             byte* s = (byte*)source;
@@ -64,9 +54,7 @@ namespace NSS.Blast
             }
         }
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.MemSet(void*, byte, long)'
         unsafe public static void MemSet(void* destination, byte value, long size)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.MemSet(void*, byte, long)'
         {
             byte* d = (byte*)destination;
             for (int i = 0; i < size; i++)
@@ -75,18 +63,32 @@ namespace NSS.Blast
             }
         }
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.MemClear(void*, long)'
         unsafe public static void MemClear(void* destination, long size)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.MemClear(void*, long)'
         {
             MemSet(destination, 0, size); 
         }
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.SizeOf(Type)'
         public static int SizeOf(Type type)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member 'UnsafeUtils.SizeOf(Type)'
         {
             return Unity.Collections.LowLevel.Unsafe.UnsafeUtility.SizeOf(type); 
+        }
+
+        public static void MemCpyStride(void* pout, int stride1, float* pin, int stride2, int size, int ssmd_datacount)
+        {
+            byte* d = (byte*)pout;
+            byte* s = (byte*)pin;
+
+            int ii = 0;
+            int io = 0; 
+            for(int i = 0; i < ssmd_datacount; i++)
+            {
+                for(int j = 0; j < size; j++)
+                {
+                    d[io++] = s[ii++];
+                }
+                io += stride1;
+                ii += stride2; 
+            }
         }
 
 #else
