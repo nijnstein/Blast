@@ -390,18 +390,117 @@ namespace NSS.Blast.Compiler.Stage
         /// </summary>
         public BlastError FlattenAssignment(IBlastCompilationData data, in node assignment, out List<node> flattened_output, bool push_function, out node pusher)
         {
+            Assert.IsNotNull(assignment);
+            Assert.IsTrue(assignment.type == nodetype.assignment); 
+
             BlastError res;
             flattened_output = new List<node>();
             pusher = null;
             List<node> flat = new List<node>();
 
-            int iter = 0; 
+            int iter = 0;
 
             // special cases
             // - assigning single value     => compiler transforms into assignS - done 
             // - assigning function         => compiler transforms into assignF|FN|FE|FEN - done
             // - assigning vector        ?                                       
 
+            // check for assigning a vector, first find out if the node is even a vector
+            if (assignment.is_vector)
+            {
+                // assignment of a vector, should be n vectorsize children in this node 
+                node n = assignment;
+                while (n.HasSingleCompoundAsChild()) n = n.FirstChild;
+
+                int total_vector_size = 0;
+
+                if (n.HasChild(nodetype.operation) && n.IsOperationList())
+                {
+                    // the assignment node has at least 1 child with an operation 
+                    total_vector_size = n.DetermineSequenceVectorSize();
+                }
+                else
+                if(n.HasOneChild && n.FirstChild.IsFunction)
+                {
+                    total_vector_size = n.FirstChild.GetFunctionResultVectorSize(); 
+                }
+                else
+                {
+                    // this node should be n
+                    if (n.ChildCount == assignment.vector_size)
+                    {
+                        // verify assignee variable is a vector
+
+                        // every child should be a negation, value or function 
+                        for (int i = 0; i < n.ChildCount; i++)
+                        {
+                            node c = n.children[i];
+                            if (c.IsCompoundWithSingleNegationOfValue())
+                            {
+                                total_vector_size += c.GetNegatedCompoundVectorSize();
+                            }
+                            else
+                            if (c.type == nodetype.parameter)
+                            {
+                                if (c.HasVariable)
+                                {
+                                    total_vector_size += c.variable.VectorSize;
+                                }
+                                else
+                                if (c.IsConstantValue)
+                                {
+                                    // constant value
+                                    total_vector_size += 1;
+                                }
+                                else
+                                if (c.type == nodetype.function)
+                                {
+                                    total_vector_size += c.GetFunctionResultVectorSize();
+                                }
+                            }
+                            else
+                            if (c.type == nodetype.function)
+                            {
+                                total_vector_size += c.GetFunctionResultVectorSize();
+                            }
+                            else
+                            {
+                                // vector define error  -> THIS MUST BE CORRECT AFTER MAPIDENTIFIERS 
+                                data.LogError($"Blast.Compiler.FlattenAssignment: failed to check vectorsize of assignment node: <{assignment}>");
+                                return BlastError.error_assign_vector_size_mismatch;
+                            }
+                        }
+
+                    }
+                }
+
+                // check the calculated total size 
+                if (total_vector_size != n.vector_size)
+                {
+                    // error vectorsize mismatch  -> THIS MUST BE CORRECT AFTER MAPIDENTIFIERS 
+                    data.LogError($"Blast.Compiler.FlattenAssignment: vectorsize mismatch, assignment set to size {assignment.vector_size} while flattener estimated a size of {total_vector_size}");
+                    return BlastError.error_assign_vector_size_mismatch;
+                }
+            }
+
+
+            // check size from any variable set to the assignment node 
+            int vsize = assignment.HasIndexers ? 1 : (assignment.HasVariable ? assignment.variable.VectorSize : 1); 
+            if (vsize != assignment.vector_size) 
+            {
+                if (assignment.vector_size == 0)
+                {
+                    assignment.vector_size = vsize;
+                }
+                else
+                {
+                    // error vectorsize mismatch in assignment  -> THIS MUST BE CORRECT AFTER MAPIDENTIFIERS 
+                    data.LogError($"Blast.Compiler.FlattenAssignment: vectorsize mismatch, assignment set to size {assignment.vector_size} while the assigned variable {assignment.variable.Name} is of size {assignment.variable.VectorSize}");
+                    return BlastError.error_assign_vector_size_mismatch;
+                }
+            }
+
+            // 
             do
             {
                 iter++; 
@@ -426,24 +525,32 @@ namespace NSS.Blast.Compiler.Stage
                                 // if there was no output flattened, push whole compound 
                                 if (flattened_output_of_compound == null || flattened_output_of_compound.Count == 0)
                                 {
-                                    node push;
-                                    if (child.IsNonNestedVectorDefinition())
+                                    if (node.IsNegationOfValue(child, false))
                                     {
-                                        // pushv vector 
-                                        push = CreatePushNodeAndAddChild(data, child);
+                                        // node stays
                                     }
                                     else
                                     {
-                                        // pushc whole compound without the compound 
-                                        push = CreatePushNodeAndAddChildsChildren(data, child);
+                                        // else we need to push it 
+                                        node push;
+                                        if (child.IsNonNestedVectorDefinition())
+                                        {
+                                            // pushv vector 
+                                            push = CreatePushNodeAndAddChild(data, child);
+                                        }
+                                        else
+                                        {
+                                            // pushc whole compound without the compound 
+                                            push = CreatePushNodeAndAddChildsChildren(data, child);
+                                        }
+                                        flat.Insert(0, push);
+
+                                        // and pop back its result in child
+                                        node pop = node.CreatePopNode(data.Blast, push);
+
+                                        assignment.children[i] = pop;
+                                        pop.parent = assignment;
                                     }
-                                    flat.Insert(0, push);
-
-                                    // and pop back its result in child
-                                    node pop = node.CreatePopNode(data.Blast, push);
-
-                                    assignment.children[i] = pop;
-                                    pop.parent = assignment;
                                 }
                                 else
                                 {
@@ -497,9 +604,9 @@ namespace NSS.Blast.Compiler.Stage
                     }
                 }
             }
-            while (!assignment.IsFlat() && iter < 10);
+            while (!assignment.IsFlat(false, true) && iter < 10);
 
-            // probably should remove this
+            // probably should remove this but it was never the intention to have this.. 
             if(iter == 10)
             {
                 data.LogError("compiler: too much nesting or couldnt resolve nested assignment.");
@@ -516,7 +623,7 @@ namespace NSS.Blast.Compiler.Stage
                 // 
                 // - is is nice to have a check here, even if compound was updated it would be a nice debug step 
                 //
-                if(!f.IsFlat(true))
+                if(!f.IsFlat(true, true))
                 {
                     iter = 0; 
                     do
@@ -530,7 +637,7 @@ namespace NSS.Blast.Compiler.Stage
                             return BlastError.error;
                         }
                     }
-                    while (!f.IsFlat(true)); 
+                    while (!f.IsFlat(true, true)); 
                 }
             }
 

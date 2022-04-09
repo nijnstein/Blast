@@ -64,6 +64,13 @@ namespace NSS.Blast.Compiler.Stage
                 return false;
             }
 
+            // if a negation, encode the substraction then the value 
+            if(ast_param.IsNegationOfValue(false))
+            {
+                code.Add(blast_operation.substract);
+                return CompileParameter(data, ast_param.LastChild, code, allow_pop); 
+            }
+
             if (ast_param == null || (string.IsNullOrWhiteSpace(ast_param.identifier)))//&& !ast_param.IsOperation))
             {
                 data.LogError($"CompileParameter: can not compile parameter with unset identifiers, node:  <{ast_param.parent}>.<{ast_param}>");
@@ -298,8 +305,11 @@ namespace NSS.Blast.Compiler.Stage
             {
                 if (n_param.children.Count > 0)
                 {
-                    data.LogError($"CompileParameters: failed to compile parameter list, only single values, constants and stack operations are supported, parameter node: <{n_param}> ");
-                    return false;
+                    if (!n_param.IsNegationOfValue(false))
+                    {
+                        data.LogError($"CompileParameters: failed to compile parameter list, only single values, constants and stack operations are supported, parameter node: <{n_param}> ");
+                        return false;
+                    }
                 }
             }
 
@@ -650,7 +660,7 @@ namespace NSS.Blast.Compiler.Stage
 
             // if its a compound with a flat list also.. 
 
-            bool is_flat_parameter_list = node.IsFlatParameterList(ast_function.children);
+            bool is_flat_parameter_list = node.IsFlatParameterList(ast_function.children, true);
 
             // if not a flat parameter list => attempt to make it flat 
             if (!is_flat_parameter_list)
@@ -668,18 +678,15 @@ namespace NSS.Blast.Compiler.Stage
                     
                     ast_function.children.Clear(); 
                     ast_function.SetChildren(children);
-                    is_flat_parameter_list = node.IsFlatParameterList(ast_function.children);
+                    is_flat_parameter_list = node.IsFlatParameterList(ast_function.children, true);
                 }
                 //
                 // TODO 
                 // 
                 // 
-            }
-            
+            }                                            
 
-
-
-            // check if the list of children is flat                
+            // check if the list of children is flat (allowing negations..)                 
             if (is_flat_parameter_list)
             {
                 bool has_variable_paramcount = ast_function.function.MinParameterCount != ast_function.function.MaxParameterCount;

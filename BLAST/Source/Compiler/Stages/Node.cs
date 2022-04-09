@@ -316,7 +316,17 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// the variable set to the node 
         /// </summary>
-        public bool HasVariable => variable != null; 
+        public bool HasVariable => variable != null;
+
+        /// <summary>
+        /// true if this is a constant something 
+        /// </summary>
+        public bool IsConstant => is_constant;
+
+        /// <summary>
+        /// true if this is a constant op resulting in a constant value 
+        /// </summary>
+        public bool IsConstantValue => is_constant && constant_op != blast_operation.nop;
 
 
         /// <summary>
@@ -470,6 +480,13 @@ namespace NSS.Blast.Compiler
             return IsNonNestedVectorDefinition(this);
         }
 
+        public static bool IsNegationCompound(node child)
+        {
+            return child == null 
+                && child.ChildCount == 2
+                && child.children[0].token == BlastScriptToken.Substract
+                && child.children[1].token == BlastScriptToken.Identifier;
+        }
         /// <summary>
         /// check if given node contains a non nested vector define: node = (1 2 3 4)  | node = (1 2 (-3) 4)
         /// </summary>
@@ -502,7 +519,7 @@ namespace NSS.Blast.Compiler
             {
                 node child = n.children[i];
 
-                if (child.HasChildren) continue;  // may still be something resulting in 1 var 
+                if (child.HasChildren && IsNegationCompound(child)) continue;  // may still be something resulting in 1 var 
                 if (child.is_constant || child.IsScriptVariable) continue; // these might be ok
 
                 // this does assume its a vectorsize 1 pop.... 
@@ -533,11 +550,7 @@ namespace NSS.Blast.Compiler
                         // - this is done by parser to negate constants 
                         //
                         {
-                            if (child.ChildCount == 2
-                                &&
-                                child.children[0].token == BlastScriptToken.Substract
-                                &&
-                                child.children[1].token == BlastScriptToken.Identifier)
+                            if (IsNegationCompound(child))
                             {
                                 continue;
                             }
@@ -912,7 +925,31 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public bool IsCompoundWithSingleNegationOfValue()
         {
-            return IsCompoundWithSingleNegationOfValue(this);
+            return node.IsCompoundWithSingleNegationOfValue(this);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int GetNegatedCompoundVectorSize()
+        {
+            return node.GetNegatedCompoundVectorSize(this);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int GetFunctionResultVectorSize()
+        {
+            return node.GetFunctionResultVectorSize(this); 
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int DetermineSequenceVectorSize()
+        {
+            return node.DetermineSequenceVectorSize(this);
         }
 
 
@@ -933,6 +970,91 @@ namespace NSS.Blast.Compiler
                 node.LastChild.IsSingleValueOrPop();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="node"></param>
+        public static int GetNegatedCompoundVectorSize(node node)
+        {
+            Assert.IsNotNull(node); 
+            Assert.IsTrue(IsCompoundWithSingleNegationOfValue(node));
+
+            node v = node.LastChild;
+
+            // either a variable
+            if (v.type == nodetype.parameter)
+            {
+                if (v.HasVariable)
+                {
+                    return v.variable.VectorSize;
+                }
+                else
+                if (v.IsConstantValue)
+                {
+                    return 1;
+                }
+                else
+                if (v.IsFunction)
+                {
+                    return GetFunctionResultVectorSize(v);
+                }
+
+            }
+            else
+            // or a function 
+            if(v.type == nodetype.function)
+            {
+                return GetFunctionResultVectorSize(v); 
+            }
+                                                
+            Assert.IsTrue(false, "check this out ");
+            return 0; 
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static int GetFunctionResultVectorSize(node node)
+        {
+            Assert.IsTrue(node != null && node.IsFunction, "only call node.GetFuctionResultVectorSize on nodes with functions");
+
+
+            if (node.function.IsPopVariant)
+            {
+                // size of linked push 
+                Assert.IsTrue(node.HasDependencies, "a pop node must have its push in its dependancy list"); 
+                 
+
+            }
+            else 
+            
+            if(node.function.ReturnsVectorSize > 0)
+            {
+                return node.function.ReturnsVectorSize; 
+            }
+
+            // depends on parameters 
+            if(node.ChildCount > 0)
+            {
+                return node.FirstChild.vector_size;
+            }
+
+            return 0; 
+        }
+
+
+        public static int DetermineSequenceVectorSize(node node)
+        {
+            Assert.IsTrue(IsOperationList(node), "only call determinesequenccevectorsize on operationlists");
+
+            int m = 0;
+            foreach(node child in node.children)
+            {
+                m = math.max(child.vector_size, m); 
+            }
+
+            return m; 
+        }
 
 
         /// <summary>
@@ -943,6 +1065,29 @@ namespace NSS.Blast.Compiler
         public static bool IsOperationList(node node)
         {
             return IsOperationList(node, out blast_operation op);
+        }
+
+
+        /// <summary>
+        /// check is node has 2 children  - [value|function]
+        /// </summary>
+        public bool IsNegationOfValue(bool allow_function)
+        {
+            return IsNegationOfValue(this, allow_function); 
+        }
+
+
+        /// <summary>
+        /// check is node has 2 children  - [value|function]
+        /// </summary>
+        public static bool IsNegationOfValue(node n, bool allow_function = true)
+        {
+            return 
+                n.ChildCount == 2
+                &&
+                n.FirstChild.token == BlastScriptToken.Substract 
+                &&
+                (n.LastChild.HasVariable || n.LastChild.IsConstantValue || (allow_function && n.LastChild.IsFunction));
         }
 
         /// <summary>
@@ -960,7 +1105,8 @@ namespace NSS.Blast.Compiler
             if (node.ChildCount == 2)
             {
                 // only a negation should be possible to be 2 long 
-                if (IsCompoundWithSingleNegationOfValue(node))
+                if (node.FirstChild.token == BlastScriptToken.Substract &&
+                    (node.LastChild.IsFunction || node.LastChild.HasVariable || node.LastChild.IsConstantValue)) 
                 {
                     singleop = blast_operation.substract;
                     return true;
@@ -1512,7 +1658,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         /// <param name="nodes">node list to check</param>
         /// <returns></returns>
-        static public bool IsFlatParameterList(IEnumerable<node> nodes)
+        static public bool IsFlatParameterList(IEnumerable<node> nodes, bool allow_negations = false)
         {
             if (nodes == null || nodes.Count() == 0)
             {
@@ -1524,11 +1670,17 @@ namespace NSS.Blast.Compiler
             {
                 if (c.children.Count > 0)
                 {
+                    if (allow_negations)
+                    {
+                        if (c.IsNegationOfValue(false)) continue;
+                    }
                     // should have flattened in earlier stage 
                     return false;
                 }
                 if (c.type != nodetype.parameter)
                 {
+
+
                     // allow a pop without parameters 
                     if (c.type == nodetype.function)
                     {
@@ -1577,6 +1729,16 @@ namespace NSS.Blast.Compiler
         /// <code>
         /// a = (a 2 pop2);   
         /// </code>
+        /// 
+        /// 
+        /// 8-4-2022
+        /// 
+        /// added code to allow negations 
+        /// <code>
+        /// a = (-1, -2);
+        /// </code>
+        /// 
+        /// 
         /// </remarks>
         /// </summary>
         public bool IsSimplexVectorDefinition()
@@ -1600,12 +1762,15 @@ namespace NSS.Blast.Compiler
 
                     case nodetype.compound:
 
-                        //
-                        // FLATTEN WILL REMOVE NESTED COMPOUNDS AND PUT THEM IN A PUSH CONSTRUCT 
-                        // - we should allow flatten to keep it in this case, saving a push-pop pair during compilation 
-                        //
+                        if (!child.IsNegationOfValue(false))
+                        {
+                            //
+                            // FLATTEN WILL REMOVE NESTED COMPOUNDS AND PUT THEM IN A PUSH CONSTRUCT 
+                            // - we should allow flatten to keep it in this case, saving a push-pop pair during compilation 
+                            //
 
-                        if (!child.IsSimplexVectorDefinition()) return false;
+                            if (!child.IsSimplexVectorDefinition()) return false;
+                        }
                         break;
 
                     default: return false;
@@ -1633,11 +1798,19 @@ namespace NSS.Blast.Compiler
         /// - contains no object with children other then a function
         /// </summary>
         /// <returns></returns>
-        public bool IsFlat(bool allow_vector_root_compound = false)
+        public bool IsFlat(bool allow_vector_root_compound = false, bool allow_negation_of_values = false)
         {
             if (ChildCount == 0) return true;
+
+            if(allow_negation_of_values)
+            {
+                if (IsNegationOfValue(false)) return true; 
+            }
+
             foreach (node child in children)
             {
+                if (allow_negation_of_values && child.IsNegationOfValue(false)) continue; 
+
                 switch (child.type)
                 {
                     case nodetype.root:

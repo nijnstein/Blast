@@ -135,22 +135,6 @@ namespace NSS.Blast
             }
         }
 
-        /// <summary>
-        /// copy with strides and offset into destination
-        /// </summary>
-        /// <param name="pout"></param>
-        /// <param name="stride1"></param>
-        /// <param name="offset_into_pout"></param>
-        /// <param name="pin"></param>
-        /// <param name="stride2"></param>
-        /// <param name="element_size"></param>
-        /// <param name="ssmd_datacount"></param>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public static void MemCpyStride(void* pout, int stride1, int offset_into_pout, void* pin, int stride2, int element_size, int ssmd_datacount)
-        {
-            byte* p = (byte*)pout;
-            MemCpyStride(&p[offset_into_pout], stride1, pin, stride2, element_size, ssmd_datacount); 
-        }
 
 
 
@@ -204,6 +188,22 @@ namespace NSS.Blast
         }
 #endif
 
+        /// <summary>
+        /// copy with strides and offset into destination
+        /// </summary>
+        /// <param name="pout"></param>
+        /// <param name="stride1"></param>
+        /// <param name="offset_into_pout"></param>
+        /// <param name="pin"></param>
+        /// <param name="stride2"></param>
+        /// <param name="element_size"></param>
+        /// <param name="ssmd_datacount"></param>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static void MemCpyStride(void* pout, int stride1, int offset_into_pout, void* pin, int stride2, int element_size, int ssmd_datacount)
+        {
+            byte* p = (byte*)pout;
+            MemCpyStride(&p[offset_into_pout], stride1, pin, stride2, element_size, ssmd_datacount);
+        }
 
 
         /// <summary>

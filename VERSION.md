@@ -1,3 +1,11 @@
+
+
+- Interpretors now allow to nest negations reducing stack operations  
+
+SSMD:
+
+
+
 **V1.0.4** 2022-04-06
 
 - bugfix: fixed bug causing error in sample6 dueue to a wrong check in packaging
@@ -8,8 +16,6 @@ NORMAL PACKAGEMODE
 - added: constant cdata sections providing fixed arrays
 - added: array [] indexers
 - optimized: reduced controlflow interpreting (indexed) assignments 
-
-
 
 **V1.0.3** 2022-04-03
 
