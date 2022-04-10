@@ -7854,7 +7854,7 @@ namespace NSS.Blast.Interpretor
 
                     case blast_operation.begin:
 
-                        // only allow to nest for a simple negations (maybe more in the future)
+                        // allow to nest simple negations (maybe more in the future)
                         if (code[code_pointer + 1] == (byte)blast_operation.substract)
                         {
                             minus = true;
@@ -7864,7 +7864,10 @@ namespace NSS.Blast.Interpretor
                             // level + 1, negate next value
                             continue;
                         }
+
+#if DEVELOPMENT_BUILD || TRACE
                         Assert.IsTrue(false, "should not be nesting compounds... compiler did not do its job wel");
+#endif
                         break;
 
                     // in development builds assert on non supported operations
@@ -8441,9 +8444,40 @@ namespace NSS.Blast.Interpretor
                         code_pointer++;
                         break;
                     case blast_operation.pushf:
-                        code_pointer++;
-                        pushf(ref code_pointer, ref vector_size, ref f4_register);
-                        code_pointer++;
+                        {
+                            code_pointer++;
+
+                            // pushf -> inlined so we may skip the push-pop pair 
+                            get_function_result(ref code_pointer, ref vector_size, out f4_register);
+                            code_pointer++;
+
+                            // if next up is (pop) then skip the push-pop altogehter 
+                            if ((blast_operation)code[code_pointer + 0] == blast_operation.begin &&
+                                (blast_operation)code[code_pointer + 1] == blast_operation.pop &&
+                                (blast_operation)code[code_pointer + 2] == blast_operation.end)
+                            {
+                                // we save a stack operation -> compiler should not compile this sequence to start with...  TODO FIX flatten_condition
+                                // no need to do anything but skip the code_pointer 
+                                code_pointer += 3;
+                                return;
+                            }
+                            else
+                            {
+                                switch (vector_size)
+                                {
+                                    case 1: push(f4_register.x); break;
+                                    case 2: push(f4_register.xy); break;
+                                    case 3: push(f4_register.xyz); break;
+                                    case 4: push(f4_register.xyzw); break;
+#if DEVELOPMENT_BUILD || TRACE
+                            default:
+                                Debug.LogError("blast.interpretor pushf error: variable vector size not yet supported on stack push");
+                                break;
+#endif
+                                }
+                            }
+                            code_pointer++;
+                        }
                         break;
                     case blast_operation.pushv:
                         code_pointer++;
@@ -8458,6 +8492,11 @@ namespace NSS.Blast.Interpretor
             while (is_push && code_pointer < package.CodeSize);
 
             // get result from condition
+            // compiler has put braces|compound around it in certain situations    TODO FIX
+            // while they are not always needed 
+            code_pointer = math.select(code_pointer, code_pointer + 1, (blast_operation)code[code_pointer] == blast_operation.begin);
+
+            // if the next is pop followed by end, we hold f4_register and just decrease stackpointer 
             get_sequence_result(ref code_pointer, ref vector_size, out f4_register);
         }
 
@@ -8498,7 +8537,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD || TRACE
             // it should not be used except in trace builds 
             int cdata_length = 0;
-#endif 
+#endif
 
             BlastVariableDataType assignee_type = BlastVariableDataType.Numeric; 
 
@@ -8545,7 +8584,7 @@ namespace NSS.Blast.Interpretor
                         yield(f4_register);
                         return (int)BlastError.yield;
 
-                    #region Stack
+#region Stack
 
                     case blast_operation.push:
                         push(ref code_pointer, ref vector_size, ref f4_register);
@@ -8572,9 +8611,9 @@ namespace NSS.Blast.Interpretor
                         pushc(ref code_pointer, ref vector_size, ref f4_register);
                         break;
 
-                    #endregion 
+#endregion
 
-                    #region Index & Assingments 
+#region Index & Assingments 
 
                     //
                     // compiler should send indexed assignements here in normal packaging
@@ -8823,13 +8862,13 @@ namespace NSS.Blast.Interpretor
                                     {
                                         // cdata assignment of something with vector_size 
                                         // - all cdata assignments at this point should be indexed so vector_size SHOULD BE 1 
-#if DEVELOPMENT_BUILD || TRACE 
+#if DEVELOPMENT_BUILD || TRACE
                                         if( index > (cdata_length / 4))
                                         {
                                             Debug.LogError($"Blast.Interpretor.assign_result: assigned cdata index {index} is out of bounds for cdata at {cdata_offset} with byte length {cdata_length}");
                                             return (int)BlastError.error_indexer_out_of_bounds;
                                         }
-#endif                                  
+#endif
                                         set_cdata_float(cdata_offset, index, f4_register.x);
                                     }
                                     break; 
@@ -8996,9 +9035,9 @@ namespace NSS.Blast.Interpretor
                             goto case (blast_operation)blast_operation_jumptarget.jump_assign_result;
                         }
 
-                    #endregion 
+#endregion
 
-                    #region Jumps 
+#region Jumps 
 
                     //
                     // JZ Long: a condition may contain push commands that should run from the root
@@ -9095,9 +9134,9 @@ namespace NSS.Blast.Interpretor
                             break;
                         }
 
-                    #endregion
+#endregion
 
-                    #region Root Procedures
+#region Root Procedures
  
                     //    
                     // by executing these in the root we save a lot on function calls and stack operations
@@ -9130,7 +9169,7 @@ namespace NSS.Blast.Interpretor
                         code_pointer--;
                         get_zero_result(ref code_pointer, ref vector_size);
                         break;
-                    #endregion 
+#endregion
 
 
                     //
@@ -9276,7 +9315,7 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #endregion
+#endregion
 
     }
 }

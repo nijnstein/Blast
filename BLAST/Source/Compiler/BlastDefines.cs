@@ -467,6 +467,10 @@ namespace NSS.Blast
 #endregion
     }
 
+    /// <summary>
+    /// blast_operation jumptargets, in loops we use these to override flow with cases not used in that flow
+    /// giving them a different name makes it a little more readable
+    /// </summary>
 
     public enum blast_operation_jumptarget : byte
     {

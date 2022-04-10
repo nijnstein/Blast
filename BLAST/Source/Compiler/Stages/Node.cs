@@ -480,6 +480,17 @@ namespace NSS.Blast.Compiler
             return IsNonNestedVectorDefinition(this);
         }
 
+        /// <summary>
+        /// true if this node is an indexer function 
+        /// </summary>
+        /// <returns></returns>
+        public bool IsIndexFunction => IsFunction && function.IsIndexFunction; 
+
+        /// <summary>
+        /// true if the is a negation of an identifier
+        /// </summary>
+        /// <param name="child"></param>
+        /// <returns></returns>
         public static bool IsNegationCompound(node child)
         {
             return child == null 
@@ -1090,6 +1101,27 @@ namespace NSS.Blast.Compiler
                 (n.LastChild.HasVariable || n.LastChild.IsConstantValue || (allow_function && n.LastChild.IsFunction));
         }
 
+
+        public bool ContainsNonNegationCompound(bool allow_functoin_negation)
+        {
+            return node.ContainsNonNegationCompound(this, allow_functoin_negation);
+        }
+        public static bool ContainsNonNegationCompound(node n, bool allow_function_negation)
+        {
+            if (n.ChildCount > 0)
+            {
+                foreach (node c in n.children)
+                {
+                    if (c.IsCompound)
+                    {
+                        if (node.IsNegationOfValue(c, allow_function_negation)) continue;
+                        else return true;
+                    }
+                }
+            }
+            return false; 
+        }
+
         /// <summary>
         /// check if the node is an operation sequence in the form: 3 + a + 4 + 4 + max(3093) + (4 + 0) 
         /// </summary>
@@ -1648,7 +1680,6 @@ namespace NSS.Blast.Compiler
 
             return push;
         }
-
 
 
         /// <summary>

@@ -232,10 +232,23 @@ namespace NSS.Blast.Compiler.Stage
                 }
                 else
                 {
-                    // parameter (it must have been asssinged somewhere before comming here) 
-                    // - did flatten fail and left stuff that cannot be a parameter to a function ? 
-                    data.LogError($"CompileParameter: node: <{ast_param.parent}>.<{ast_param}>, identifier/variable not connected: '{ast_param.identifier}'");
-                    return false;
+                    // indexer if allowed by flatten 
+                    if (ast_param.IsIndexFunction && data.CompilerOptions.PackageMode == BlastPackageMode.SSMD)
+                    {
+                        // inline the indexer 
+                        if (!CompileFunction(data, ast_param, code))
+                        {
+                            data.LogError($"CompileParameter: node: <{ast_param.parent}>.<{ast_param}>, failed to compile inline indexfunction {ast_param.function.GetFunctionName()}");
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        // parameter (it must have been asssinged somewhere before comming here) 
+                        // - did flatten fail and left stuff that cannot be a parameter to a function ? 
+                        data.LogError($"CompileParameter: node: <{ast_param.parent}>.<{ast_param}>, identifier/variable not connected: '{ast_param.identifier}'");
+                        return false;
+                    }
                 }
             }
 
@@ -390,6 +403,14 @@ namespace NSS.Blast.Compiler.Stage
                 case blast_operation.push:
                 case blast_operation.pushv:
                     {
+                        // check if pushing pop 
+                        if(ast_function.HasOneChild && ast_function.FirstChild.IsPopFunction)
+                        {
+                            // skip it
+                            ast_function.skip_compilation = true;
+                            return true;                        
+                        }
+
                         // check for direct pushv with n childs 
                         if (ast_function.IsNonNestedVectorDefinition())
                         {

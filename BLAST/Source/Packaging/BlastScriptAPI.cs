@@ -260,11 +260,27 @@ namespace NSS.Blast
             }
         }
 
+        public bool IsIndexFunction
+        {
+            get
+            {
+                switch(this.ScriptOp)
+                {
+                    case blast_operation.index_x:
+                    case blast_operation.index_y:
+                    case blast_operation.index_z:
+                    case blast_operation.index_w:
+                    case blast_operation.index_n: return true; 
+                }
+
+                return false;
+            }
+        }
+
         /// <summary>
         /// true if the function can have parameters
         /// </summary>
         public bool CanHaveParameters => MaxParameterCount > 0;
-
 
         /// <summary>
         /// returns true if the function accepts a variable sized list of paramaters 

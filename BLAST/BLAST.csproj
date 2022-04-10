@@ -13,7 +13,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>DEBUG;STANDALONE_VSBUILD;</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;STANDALONE_VSBUILD;</DefineConstants>
     <DocumentationFile>F:\Repo\Nijnstein\Blast\BLAST\BLAST.xml</DocumentationFile>
     <OutputPath>G:\Repo\Nijnstein\BLAST Windows Build\</OutputPath>
   </PropertyGroup>

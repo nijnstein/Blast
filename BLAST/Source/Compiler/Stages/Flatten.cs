@@ -39,11 +39,19 @@ namespace NSS.Blast.Compiler.Stage
         /// <param name="compound"></param>
         /// <param name="flattened_output"></param>
         /// <returns></returns>
-        public BlastError FlattenCompound(IBlastCompilationData data, in node compound, out List<node> flattened_output)
+        public BlastError FlattenCompound(IBlastCompilationData data, in node compound, out List<node> flattened_output, bool allow_indexer = true)
         {
             Assert.IsNotNull(compound);
 
             flattened_output = new List<node>();
+
+            // determine if we have to flatten this
+            if (node.IsFlatParameterList(compound.children, true)  
+                && !(compound.ChildCount == 1 && node.IsNonNestedVectorDefinition(compound.FirstChild))
+                && !(compound.ChildCount > 0 && node.IsNonNestedVectorDefinition(compound)))                
+            {
+                return BlastError.success; 
+            }
 
             // does the compound contain nested compounds? we will reduce them all
             int i = 0;
@@ -53,28 +61,42 @@ namespace NSS.Blast.Compiler.Stage
                 switch (child.type)
                 {
                     case nodetype.function:
-                        // dont further flatten stack operations
-                        if (!(child.function.IsPopVariant || child.function.IsPushVariant))
+                        // dont further flatten stack|index operations
+                        if (!(child.function.IsPopVariant || child.function.IsPushVariant) 
+                            &&
+                            !(allow_indexer && child.IsIndexFunction && data.CompilerOptions.PackageMode == BlastPackageMode.SSMD))
                         {
                             //
-                            // should we allow indexing functions to persist? they are leafs by definition, it would ad a layer to pops... TODO 
+                            // if the function contains:
+                            // - no nesting in parameters
+                            // - is not a vector definition ->   could allow that in SSMD  
                             //
-
-                            // this must be flattened out 
-                            BlastError res;
-                            if (BlastError.success == (res = FlattenFunction(data, child, out List<node> flattened_output_of_compound, true, out node pusher)))
+                           /* if (node.IsFlatParameterList(child.children, true) 
+                                && !(child.ChildCount == 1 && node.IsNonNestedVectorDefinition(child.FirstChild))
+                                && !(child.ChildCount > 0 && node.IsNonNestedVectorDefinition(child)))
                             {
-                                // insert in output 
-                                flattened_output.InsertRange(0, flattened_output_of_compound);
-
-                                // replace flattened function node with the newly created pop node linked to the push
-                                compound.children[i] = node.CreatePopNode(data.Blast, pusher);
-                                compound.children[i].parent = compound;
+                                //
+                                // dont flatten function out keep it inline 
+                                // 
                             }
-                            else
+                            else*/ 
                             {
-                                data.LogError($"Flatten.Compound: failed to flatten child function: <{compound}>.<{child}>", (int)res);
-                                return res;
+                                // this must be flattened out 
+                                BlastError res;
+                                if (BlastError.success == (res = FlattenFunction(data, child, out List<node> flattened_output_of_compound, true, out node pusher)))
+                                {
+                                    // insert in output 
+                                    flattened_output.InsertRange(0, flattened_output_of_compound);
+
+                                    // replace flattened function node with the newly created pop node linked to the push
+                                    compound.children[i] = node.CreatePopNode(data.Blast, pusher);
+                                    compound.children[i].parent = compound;
+                                }
+                                else
+                                {
+                                    data.LogError($"Flatten.Compound: failed to flatten child function: <{compound}>.<{child}>", (int)res);
+                                    return res;
+                                }
                             }
                         }
                         break; 
@@ -287,12 +309,24 @@ namespace NSS.Blast.Compiler.Stage
 
             // scan parameters:
             // - if a simple parameter list: nothing needs to be done, we can move the node asis
+            // - allow simple negations 
+            // - allow vector definitions
+            // - NO 
             bool flat = true;
+            bool ssmd = data.CompilerOptions.PackageMode == BlastPackageMode.SSMD; 
+
             foreach (node param in function.children)
             {
                 if (param.type == nodetype.parameter && param.ChildCount == 1)
                 {
                     continue;
+                }
+
+                if(param.IsCompoundWithSingleNegationOfValue()
+                    ||
+                    (ssmd && param.IsSimplexVectorDefinition()))
+                {
+                    break; 
                 }
 
                 if (param.IsCompound || (param.IsFunction && !param.function.IsPopVariant) || param.IsOperation)
@@ -778,23 +812,19 @@ namespace NSS.Blast.Compiler.Stage
             return BlastError.success; 
         }
 
+
         /// <summary>
-        /// flatten an ifthenelse construct 
+        /// 
         /// </summary>
-        BlastError FlattenIfThenElse(IBlastCompilationData data, node ifthenelse)
+        /// <param name="data"></param>
+        /// <param name="condition"></param>
+        /// <returns></returns>
+        BlastError FlattenCondition(IBlastCompilationData data, node condition, out List<node> flattened_condition)
         {
-            List<node> flattened_condition = new List<node>();
-            List<node> flattened_then = new List<node>();
-            List<node> flattened_else = new List<node>();
-
-            node condition = ifthenelse.GetChild(nodetype.condition);
-            Assert.IsNotNull(condition);
-
-            // the condition 
             BlastError res = FlattenCompound(data, condition, out flattened_condition);
             if (res != BlastError.success)
             {
-                data.LogError($"FlattenIfThenElse: failed to flatten if condition <{ifthenelse}>.<{condition}>");
+                data.LogError($"Blast.Compiler.FlattenCondition: failed to flatten condition <{condition}>");
                 return res;
             }
             if (flattened_condition.Count == 0)
@@ -803,11 +833,61 @@ namespace NSS.Blast.Compiler.Stage
             }
             flattened_condition.Add(condition);
 
+            return BlastError.success; 
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        bool ConditionIsNested(IBlastCompilationData data, node condition)
+        {
+            Assert.IsNotNull(condition);
+
+            if((condition.IsSingleValueOrPop() || 
+                condition.IsOperationList() ||
+                condition.IsNegationOfValue(true))
+                && 
+                !condition.ContainsNonNegationCompound(true))
+            {
+                return false; 
+            }
+
+            return true; 
+        }
+
+        /// <summary>
+        /// flatten an ifthenelse construct 
+        /// </summary>
+        BlastError FlattenIfThenElse(IBlastCompilationData data, node ifthenelse)
+        {
+            List<node> flattened_then = new List<node>();
+            List<node> flattened_else = new List<node>();
+
+            node condition = ifthenelse.GetChild(nodetype.condition);
+            Assert.IsNotNull(condition);
+
+            // the condition 
+            List<node> flattened_condition;
+            if (!ConditionIsNested(data, condition))
+            {
+                flattened_condition = new List<node>(1);
+                flattened_condition.Add(condition); 
+            }
+            else
+            {
+                BlastError res = FlattenCondition(data, condition, out flattened_condition);
+                if (res != BlastError.success)
+                {
+                    data.LogError("Blast.Compiler.FlattenIfThenElse: failed to flatten condition of if-then-else construct <{ifthenelse}>");
+                    return res;
+                }
+            }
+
             // the ifthen 
             node ifthen = ifthenelse.GetChild(nodetype.ifthen);
             if (ifthen != null)
             {
-                res = FlattenStatements(data, ifthen, out flattened_then);
+                BlastError res = FlattenStatements(data, ifthen, out flattened_then);
                 if (res != BlastError.success)
                 {
                     data.LogError($"FlattenIfThenElse: failed to flatten then compound <{ifthenelse}>.<{ifthen}>, error: {res}");
@@ -824,7 +904,7 @@ namespace NSS.Blast.Compiler.Stage
             node ifelse = ifthenelse.GetChild(nodetype.ifelse);
             if (ifelse != null)
             {
-                res = FlattenStatements(data, ifelse, out flattened_else);
+                BlastError res = FlattenStatements(data, ifelse, out flattened_else);
                 if (res != BlastError.success)
                 {
                     data.LogError($"FlattenIfThenElse: failed to flatten else compound <{ifthenelse}>.<{ifelse}>, error: {res}");
