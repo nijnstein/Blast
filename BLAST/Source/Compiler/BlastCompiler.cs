@@ -269,7 +269,9 @@ namespace NSS.Blast.Compiler
             if(this.PackageMode == BlastPackageMode.SSMD)
             {
                 this.InlineConstantData = true;
-                this.InlineIndexers = true; 
+                this.InlineIndexers = true;
+                this.PackageStack = false;
+                this.EstimateStackSize = true;
             }
 
             // in normal it is not allowed (as of now... could be sometime..
@@ -277,6 +279,8 @@ namespace NSS.Blast.Compiler
             {
                 this.InlineConstantData = false;
                 this.InlineIndexers = false;
+                this.PackageStack = true;
+                this.EstimateStackSize = true;
             }
 
             // entity mode should decide for itself 

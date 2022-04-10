@@ -3,13 +3,12 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
 // Proprietary and confidential                                                                       (__) #
 //##########################################################################################################
-#if !STANDALONE_VSBUILD
-    using Unity.Collections.LowLevel.Unsafe; 
-#endif
-
 using System;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Collections.LowLevel.Unsafe;
+
 
 namespace NSS.Blast
 {
@@ -134,8 +133,7 @@ namespace NSS.Blast
                 ii += stride2;
             }
         }
-
-
+      
 
 
 #else
@@ -199,7 +197,7 @@ namespace NSS.Blast
         /// <param name="element_size"></param>
         /// <param name="ssmd_datacount"></param>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public static void MemCpyStride(void* pout, int stride1, int offset_into_pout, void* pin, int stride2, int element_size, int ssmd_datacount)
+        public static void MemCpyStride([NoAlias] void* pout, int stride1, int offset_into_pout, [NoAlias] void* pin, int stride2, int element_size, int ssmd_datacount)
         {
             byte* p = (byte*)pout;
             MemCpyStride(&p[offset_into_pout], stride1, pin, stride2, element_size, ssmd_datacount);
@@ -212,7 +210,7 @@ namespace NSS.Blast
         /// - elementsize
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public static void MemCpyReplicateStride(void* pout, int stride1, void* pin, int element_size, int ssmd_datacount)
+        public static void MemCpyReplicateStride([NoAlias] void* pout, int stride1, [NoAlias] void* pin, int element_size, int ssmd_datacount)
         {
 #if !STANDALONE_VSBUILD
             MemCpyStride(pout, stride1, pin, 0, element_size, ssmd_datacount);
@@ -239,7 +237,7 @@ namespace NSS.Blast
         /// fill with ones 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public static void Ones(float* p, int element_count)
+        public static void Ones([NoAlias]float* p, int element_count)
         {
             float f = 1f;
             MemCpyReplicate(p, &f, 4, element_count);
@@ -249,7 +247,7 @@ namespace NSS.Blast
         /// fill with ones 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public static void Ones(float2* p, int element_count)
+        public static void Ones([NoAlias] float2* p, int element_count)
         {
             float2 f = 1f;
             MemCpyReplicate(p, &f, 8, element_count);
@@ -259,7 +257,7 @@ namespace NSS.Blast
         /// fill with ones 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public static void Ones(float3* p, int element_count)
+        public static void Ones([NoAlias] float3* p, int element_count)
         {
             float3 f = 1f;
             MemCpyReplicate(p, &f, 12, element_count);
@@ -269,7 +267,7 @@ namespace NSS.Blast
         /// fill with ones 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public static void Ones(float4* p, int element_count)
+        public static void Ones([NoAlias] float4* p, int element_count)
         {
             float4 f = 1f;
             MemCpyReplicate(p, &f, 16, element_count);
@@ -279,7 +277,7 @@ namespace NSS.Blast
         /// check if all values are equal 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static public bool AllEqual(float* fp_mask, int ssmd_datacount)
+        static public bool AllEqual([NoAlias] float* fp_mask, int ssmd_datacount)
         {
             float f = fp_mask[0];
             // dont start at 1 although we know it matches, it might kill optimizations when ssmd_datacount != dividable by 4 8 or 16\
@@ -294,7 +292,7 @@ namespace NSS.Blast
         /// check if all values are equal 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static public bool AllEqual(float2* fp_mask, int ssmd_datacount)
+        static public bool AllEqual([NoAlias] float2* fp_mask, int ssmd_datacount)
         {
             float2 f = fp_mask[0];
             for (int i = 0; i < ssmd_datacount; i++)
@@ -308,7 +306,7 @@ namespace NSS.Blast
         /// check if all values are equal 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static public bool AllEqual(float3* fp_mask, int ssmd_datacount)
+        static public bool AllEqual([NoAlias] float3* fp_mask, int ssmd_datacount)
         {
             float3 f = fp_mask[0];
             for (int i = 0; i < ssmd_datacount; i++)
@@ -322,7 +320,7 @@ namespace NSS.Blast
         /// check if all values are equal 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static public bool AllEqual(float4* fp_mask, int ssmd_datacount)
+        static public bool AllEqual([NoAlias] float4* fp_mask, int ssmd_datacount)
         {
             float4 f = fp_mask[0];
             for (int i = 0; i < ssmd_datacount; i++)
@@ -336,7 +334,7 @@ namespace NSS.Blast
         /// check if all values are equal 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static public bool AllEqual(uint* fp_mask, int ssmd_datacount)
+        static public bool AllEqual([NoAlias] uint* fp_mask, int ssmd_datacount)
         {
             uint f = fp_mask[0];
             for (int i = 0; i < ssmd_datacount; i++)
@@ -350,7 +348,7 @@ namespace NSS.Blast
         /// set memory 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static public void MemSet(float4* destination, float constant, int count)
+        static public void MemSet([NoAlias] float4* destination, float constant, int count)
         {
             float4 f4 = constant;
             MemCpyReplicate(destination, &f4, 16, count);
@@ -360,7 +358,7 @@ namespace NSS.Blast
         /// set memory 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static public void MemSet(float3* destination, float constant, int count)
+        static public void MemSet([NoAlias] float3* destination, float constant, int count)
         {
             float3 f3 = constant;
             MemCpyReplicate(destination, &f3, 12, count);
@@ -370,7 +368,7 @@ namespace NSS.Blast
         /// set memory 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static public void MemSet(float2* destination, float constant, int count)
+        static public void MemSet([NoAlias] float2* destination, float constant, int count)
         {
             float2 f2 = constant;
             MemCpyReplicate(destination, &f2, 8, count);
@@ -380,7 +378,7 @@ namespace NSS.Blast
         /// set memory 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static public void MemSet(float* destination, float constant, int count)
+        static public void MemSet([NoAlias] float* destination, float constant, int count)
         {
             MemCpyReplicate(destination, &constant, 4, count);
         }

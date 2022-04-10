@@ -1512,6 +1512,22 @@ namespace NSS.Blast.Interpretor
         }
 
         /// <summary>
+        /// true if op is expand_vx
+        /// </summary>
+        public static bool IsExpansionOperator(blast_operation op)
+        {
+            switch(op)
+            {
+                case blast_operation.expand_v2:
+                case blast_operation.expand_v3:
+                case blast_operation.expand_v4:
+                    return true; 
+            }
+            return false;
+        }
+
+
+        /// <summary>
         /// WARNING checks if is operation, uses value op enum blast_operation.add until blast_operation.not_equals 
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -6527,7 +6543,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD || TRACE
 
             BlastVariableDataType datatype;
-            bool neg1, neg2;
+            bool neg1;
 
             // 
             // TODO: could pack into 1 value with additional compiler support
@@ -7479,7 +7495,6 @@ namespace NSS.Blast.Interpretor
         {
             // param_count == vector_size and vector_size > 1, compiler enforces it so we should not check it in release 
             // this means that vector is build from multiple data points
-            int cp = 0;
             switch (vector_size)
             {
                 case 1:
@@ -9312,10 +9327,7 @@ namespace NSS.Blast.Interpretor
             return (int)BlastError.success;
         }
 
-
-
-
-#endregion
+         #endregion
 
     }
 }

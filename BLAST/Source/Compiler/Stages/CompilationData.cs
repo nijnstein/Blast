@@ -293,23 +293,6 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public List<Message> CompilerMessages = new List<Message>();
 
-        /// <summary>
-        /// on older .net versions we could get the stackframe 
-        /// see: https://stackoverflow.com/questions/12556767/how-do-i-get-the-current-line-number
-        /// and: https://stackoverflow.com/questions/38476796/how-to-set-net-core-in-if-statement-for-compilation
-        /// </summary>
-        public void LogMessage(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
-        {
-            if (CompilerOptions.TraceLogging || CompilerOptions.TraceLogging) CompilerMessages.Add(new Message() { Content = msg, LineNumber = linenr, CallerMember = member });
-            if (CompilerOptions.VerboseLogging)
-            {
-#if !STANDALONE_VSBUILD
-                Debug.Log(msg);
-#else
-                System.Diagnostics.Debug.WriteLine(msg);
-#endif
-            }
-        }
 
         /// <summary>
         /// Trace a message, does nothing in release builds 

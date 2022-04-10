@@ -407,7 +407,9 @@ namespace NSS.Blast.Compiler.Stage
             Assert.IsTrue(a != null && a.Length > 2);
 
             // if first token is: float|numeric  bool32   
+#pragma warning disable CS0219 // Variable is assigned but its value is never used
             BlastVectorSizes datatype ;
+#pragma warning restore CS0219 // Variable is assigned but its value is never used
             string possible_datatype = a[2];
             int offset_for_datatype = 0; 
             switch(possible_datatype.ToLowerInvariant())
