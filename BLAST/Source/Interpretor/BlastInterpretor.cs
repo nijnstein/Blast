@@ -6213,9 +6213,14 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         bool follow_cdataref(int code_pointer, out int offset, out int length)
+        {
+            return follow_cdataref(code, code_pointer, out offset, out length); 
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal bool follow_cdataref([NoAlias]byte* code, int code_pointer, out int offset, out int length)
         {
             // validate codepointer is at cdataref 
 #if DEVELOPMENT_BUILD || TRACE || CHECK_CDATA
@@ -6270,6 +6275,12 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         float index_cdata_f1(in int offset, in int index, in int byte_length)
         {
+            return index_cdata_f1(code, offset, index, byte_length); 
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal float index_cdata_f1([NoAlias]byte* code, in int offset, in int index, in int byte_length)
+        {
             int i = offset + 3 + index * 4;
 
 #if DEVELOPMENT_BUILD || TRACE || CHECK_CDATA
@@ -6281,8 +6292,7 @@ namespace NSS.Blast.Interpretor
             }
 #endif 
 
-            return map_cdata_float(i);
-
+            return map_cdata_float(code, i);
         }
 
 
@@ -6296,6 +6306,12 @@ namespace NSS.Blast.Interpretor
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         float map_cdata_float(in int offset_into_codebuffer)
+        {
+            return map_cdata_float(code, offset_into_codebuffer); 
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal float map_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer)
         {
             float f = default;
             byte* p = (byte*)(void*)&f;
@@ -6311,6 +6327,12 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void set_cdata_float(in int offset_into_codebuffer, int index, float f)
         {
+            set_cdata_float(code, offset_into_codebuffer, index, f); 
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal void set_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer, int index, float f)
+        {
             byte* p = (byte*)(void*)&f;
 
             int offset = offset_into_codebuffer + (index * 4) + 3; // float == 4 bytes 
@@ -6321,6 +6343,75 @@ namespace NSS.Blast.Interpretor
             code[offset + 3] = p[3];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal void set_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer, int index, float2 f)
+        {
+            byte* p = (byte*)(void*)&f;
+
+            int offset = offset_into_codebuffer + (index * 4) + 3; // float == 4 bytes 
+
+            code[offset + 0] = p[0];
+            code[offset + 1] = p[1];
+            code[offset + 2] = p[2];
+            code[offset + 3] = p[3];
+
+            code[offset + 4] = p[4];
+            code[offset + 5] = p[5];
+            code[offset + 6] = p[6];
+            code[offset + 7] = p[7];
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal void set_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer, int index, float3 f)
+        {
+            byte* p = (byte*)(void*)&f;
+
+            int offset = offset_into_codebuffer + (index * 4) + 3; // float == 4 bytes 
+
+            code[offset + 0] = p[0];
+            code[offset + 1] = p[1];
+            code[offset + 2] = p[2];
+            code[offset + 3] = p[3];
+
+            code[offset + 4] = p[4];
+            code[offset + 5] = p[5];
+            code[offset + 6] = p[6];
+            code[offset + 7] = p[7];
+
+            code[offset + 8] = p[8];
+            code[offset + 9] = p[9];
+            code[offset + 10] = p[10];
+            code[offset + 11] = p[11];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal void set_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer, int index, float4 f)
+        {
+            byte* p = (byte*)(void*)&f;
+
+            int offset = offset_into_codebuffer + (index * 4) + 3; // float == 4 bytes 
+
+            code[offset + 0] = p[0];
+            code[offset + 1] = p[1];
+            code[offset + 2] = p[2];
+            code[offset + 3] = p[3];
+
+            code[offset + 4] = p[4];
+            code[offset + 5] = p[5];
+            code[offset + 6] = p[6];
+            code[offset + 7] = p[7];
+
+            code[offset + 8] = p[8];
+            code[offset + 9] = p[9];
+            code[offset + 10] = p[10];
+            code[offset + 11] = p[11];
+
+            code[offset + 12] = p[12];
+            code[offset + 13] = p[13];
+            code[offset + 14] = p[14];
+            code[offset + 15] = p[15];
+        }
 
         void get_index_n_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
@@ -8693,7 +8784,7 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.index_n:
                         {
                             // get index 
-                            Debug.LogError("[] indexer");
+                            Debug.LogError("[] indexer found where none is expected");
                         }
                         goto case (blast_operation)blast_operation_jumptarget.jump_assign_indexed;
 

@@ -284,7 +284,6 @@ namespace NSS.Blast.Compiler
             }
 
             // entity mode should decide for itself 
-
             return this;
         }
 

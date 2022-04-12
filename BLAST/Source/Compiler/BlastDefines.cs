@@ -1932,7 +1932,19 @@ namespace NSS.Blast
         /// <summary>
         /// indexer is out of bounds or invalid (negative)
         /// </summary>
-        error_indexer_out_of_bounds = -90
+        error_indexer_out_of_bounds = -90,
+        /// <summary>
+        /// interpretor failed to read indexer on cdata object 
+        /// </summary>
+        error_failed_to_read_cdata_indexer = -91,
+        /// <summary>
+        /// interpretor failed to assing to the cdata segment 
+        /// </summary>
+        error_failed_to_interpret_cdata_assignment = -92,
+        /// <summary>
+        /// attempting to index cdata with an out of range indexer. 
+        /// </summary>
+        error_cdata_indexer_out_of_bounds = -93
     }
 
 }
