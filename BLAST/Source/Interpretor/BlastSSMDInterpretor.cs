@@ -762,10 +762,9 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion 
+        #endregion
 
-        #region pop_f[1|2|3|4]_into 
-
+        #region Expand fx 
 
         /// <summary>
         /// 
@@ -1127,6 +1126,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
+        #endregion 
+
+        #region pop_f[1|2|3|4]_into 
         /// <summary>
         /// pop value from stack, codepointer should be on the pop 
         /// </summary>
@@ -1268,11 +1270,11 @@ namespace NSS.Blast.SSMD
                             {
                                 switch(vector_size)
                                 {
-                                    case 1: move_indexed_data_as_f1_to_f1((float*)(void*)destination, stack, stack_rowsize, is_aligned, indexed, input_ssmd_datacount); break; 
-                                    case 2: move_indexed_data_as_f1_to_f2((float2*)(void*)destination, stack, stack_rowsize, is_aligned, indexed, input_ssmd_datacount); break;
-                                    case 3: move_indexed_data_as_f1_to_f3((float3*)(void*)destination, stack, stack_rowsize, is_aligned, indexed, input_ssmd_datacount); break;
+                                    case 1: simd.move_indexed_data_as_f1_to_f1((float*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break; 
+                                    case 2: simd.move_indexed_data_as_f1_to_f2((float2*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
+                                    case 3: simd.move_indexed_data_as_f1_to_f3((float3*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                     case 0:
-                                    case 4: move_indexed_data_as_f1_to_f4((float4*)(void*)destination, stack, stack_rowsize, is_aligned, indexed, input_ssmd_datacount); break;
+                                    case 4: simd.move_indexed_data_as_f1_to_f4((float4*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                 }
                                 
 
@@ -1282,11 +1284,11 @@ namespace NSS.Blast.SSMD
                                 switch (vector_size)
                                 {
                                     // when indexed the compiler would have set the assignee to be vectorsize 1
-                                    case 1: for (int i = 0; i < input_ssmd_datacount; i++) ((float*)(void*)destination)[i] = -f1(stack, indexed, i); break;
-                                    case 2: for (int i = 0; i < input_ssmd_datacount; i++) ((float2*)(void*)destination)[i].xy = -f2(stack, indexed, i); break;
-                                    case 3: for (int i = 0; i < input_ssmd_datacount; i++) ((float3*)(void*)destination)[i].xyz = -f3(stack, indexed, i); break;
+                                    case 1: simd.move_indexed_data_as_f1_to_f1_n((float*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
+                                    case 2: simd.move_indexed_data_as_f1_to_f2_n((float2*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
+                                    case 3: simd.move_indexed_data_as_f1_to_f3_n((float3*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                     case 0:
-                                    case 4: for (int i = 0; i < input_ssmd_datacount; i++) ((float4*)(void*)destination)[i] = -f4(stack, indexed, i); break;
+                                    case 4: simd.move_indexed_data_as_f1_to_f4_n((float4*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                 }
                         }
                         else
@@ -1296,24 +1298,22 @@ namespace NSS.Blast.SSMD
                             {
                                 switch (vector_size)
                                 {
-                                    // when indexed the compiler would have set the assignee to be vectorsize 1
-                                    case 1: for (int i = 0; i < input_ssmd_datacount; i++) ((float*)destination_data[i])[destination_offset] = f1(stack, indexed, i); break;
-                                    case 2: for (int i = 0; i < input_ssmd_datacount; i++) ((float2*)(void*)&((float*)destination_data[i])[destination_offset])[0] = f2(stack, indexed, i); break;
-                                    case 3: for (int i = 0; i < input_ssmd_datacount; i++) ((float3*)(void*)&((float*)destination_data[i])[destination_offset])[0] = f3(stack, indexed, i); break;
+                                    case 1: simd.move_indexed_f1(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
+                                    case 2: simd.move_indexed_f2(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break; 
+                                    case 3: simd.move_indexed_f3(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break; 
                                     case 0:
-                                    case 4: for (int i = 0; i < input_ssmd_datacount; i++) ((float4*)(void*)&((float*)destination_data[i])[destination_offset])[0] = f4(stack, indexed, i); break;
+                                    case 4: simd.move_indexed_f4(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                 }
                             }
                             else
                             {
                                 switch (vector_size)
                                 {
-                                    // when indexed the compiler would have set the assignee to be vectorsize 1
-                                    case 1: for (int i = 0; i < input_ssmd_datacount; i++) ((float*)destination_data[i])[destination_offset] = -f1(stack, indexed, i); break;
-                                    case 2: for (int i = 0; i < input_ssmd_datacount; i++) ((float2*)(void*)&((float*)destination_data[i])[destination_offset])[0] = -f2(stack, indexed, i); break;
-                                    case 3: for (int i = 0; i < input_ssmd_datacount; i++) ((float3*)(void*)&((float*)destination_data[i])[destination_offset])[0] = -f3(stack, indexed, i); break;
+                                    case 1: simd.move_indexed_f1_n(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
+                                    case 2: simd.move_indexed_f2_n(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
+                                    case 3: simd.move_indexed_f3_n(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                     case 0:
-                                    case 4: for (int i = 0; i < input_ssmd_datacount; i++) ((float4*)(void*)&((float*)destination_data[i])[destination_offset])[0] = -f4(stack, indexed, i); break;
+                                    case 4: simd.move_indexed_f4_n(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                 }
                             }
                         }
@@ -1546,21 +1546,21 @@ namespace NSS.Blast.SSMD
                             {
                                 switch (vector_size)
                                 {
-                                    case 1: move_indexed_data_as_f1_to_f1((float*)(void*)destination, data, data_rowsize, is_aligned, indexed, ssmd_datacount); is_negated = false; break;
-                                    case 2: move_indexed_data_as_f1_to_f2((float2*)(void*)destination, data, data_rowsize, is_aligned, indexed, ssmd_datacount); is_negated = false; break;
-                                    case 3: move_indexed_data_as_f1_to_f3((float3*)(void*)destination, data, data_rowsize, is_aligned, indexed, ssmd_datacount); is_negated = false; break;
+                                    case 1: simd.move_indexed_data_as_f1_to_f1((float*)(void*)destination, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); is_negated = false; break;
+                                    case 2: simd.move_indexed_data_as_f1_to_f2((float2*)(void*)destination, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); is_negated = false; break;
+                                    case 3: simd.move_indexed_data_as_f1_to_f3((float3*)(void*)destination, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); is_negated = false; break;
                                     case 0:
-                                    case 4: move_indexed_data_as_f1_to_f4((float4*)(void*)destination, data, data_rowsize, is_aligned, indexed, ssmd_datacount); is_negated = false; break;
+                                    case 4: simd.move_indexed_data_as_f1_to_f4((float4*)(void*)destination, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); is_negated = false; break;
                                 }
                             }
                             else
                                 switch (vector_size)
                                 {
-                                    case 1: for (int i = 0; i < input_ssmd_datacount; i++) ((float*)(void*)destination)[i] = -f1(data, indexed, i); break;
-                                    case 2: for (int i = 0; i < input_ssmd_datacount; i++) ((float2*)(void*)destination)[i].xy = -f2(data, indexed, i); break;
-                                    case 3: for (int i = 0; i < input_ssmd_datacount; i++) ((float3*)(void*)destination)[i].xyz = -f3(data, indexed, i); break;
+                                    case 1: simd.move_indexed_data_as_f1_to_f1((float*)(void*)destination, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); is_negated = false; break;
+                                    case 2: simd.move_indexed_data_as_f1_to_f2((float2*)(void*)destination, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); is_negated = false; break;
+                                    case 3: simd.move_indexed_data_as_f1_to_f3((float3*)(void*)destination, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); is_negated = false; break;
                                     case 0:
-                                    case 4: for (int i = 0; i < input_ssmd_datacount; i++) ((float4*)(void*)destination)[i] = -f4(data, indexed, i); break;
+                                    case 4: simd.move_indexed_data_as_f1_to_f4((float4*)(void*)destination, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); is_negated = false; break;
                                 }
                         }
                         else
@@ -1571,11 +1571,11 @@ namespace NSS.Blast.SSMD
                                 switch (vector_size)
                                 {
                                     // when indexed the compiler would have set the assignee to be vectorsize 1
-                                    case 1: for (int i = 0; i < input_ssmd_datacount; i++) ((float*)destination_data[i])[destination_offset] = f1(data, indexed, i); break;
-                                    case 2: for (int i = 0; i < input_ssmd_datacount; i++) ((float2*)(void*)&((float*)destination_data[i])[destination_offset])[0] = f2(data, indexed, i); break;
-                                    case 3: for (int i = 0; i < input_ssmd_datacount; i++) ((float3*)(void*)&((float*)destination_data[i])[destination_offset])[0] = f3(data, indexed, i); break;
+                                    case 1: simd.move_indexed_f1(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
+                                    case 2: simd.move_indexed_f2(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
+                                    case 3: simd.move_indexed_f3(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
                                     case 0:
-                                    case 4: for (int i = 0; i < input_ssmd_datacount; i++) ((float4*)(void*)&((float*)destination_data[i])[destination_offset])[0] = f4(data, indexed, i); break;
+                                    case 4: simd.move_indexed_f4(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
                                 }
                             }
                             else
@@ -1583,11 +1583,11 @@ namespace NSS.Blast.SSMD
                                 switch (vector_size)
                                 {
                                     // when indexed the compiler would have set the assignee to be vectorsize 1
-                                    case 1: move_indexed_f1(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
-                                    case 2: move_indexed_f2(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
-                                    case 3: move_indexed_f3(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
+                                    case 1: simd.move_indexed_f1_n(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
+                                    case 2: simd.move_indexed_f2_n(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
+                                    case 3: simd.move_indexed_f3_n(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
                                     case 0:
-                                    case 4: move_indexed_f4(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
+                                    case 4: simd.move_indexed_f4_n(destination_data, stride, is_aligned, destination_offset, data, data_rowsize, data_is_aligned, indexed, ssmd_datacount); break;
                                 }
                             }
                         }
@@ -1712,31 +1712,16 @@ namespace NSS.Blast.SSMD
             switch ((byte)math.select(vsize, vsize + 100, copy_only_the_first))
             {
                 case 1:
-                    {
-                        float* f1_out = (float*)buffer;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            f1_out[0] = constant;
-                            f1_out += 1;
-                        }
-                    }
+                    set_f1_from_constant((float*)buffer, constant, ssmd_datacount); 
                     return;
-
 
                 case 101:
                     ((float*)buffer)[0] = constant;
                     return;
 
                 case 2:
-                    {
-                        float* f1_out = (float*)buffer;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            f1_out[0] = constant;
-                            f1_out[1] = constant;
-                            f1_out += 2;
-                        }
-                    }
+                    // by filling 2x as much we effectively fill the same float2 array 
+                    set_f1_from_constant((float*)buffer, constant, ssmd_datacount * 2); 
                     return;
 
                 case 102:
@@ -1744,16 +1729,8 @@ namespace NSS.Blast.SSMD
                     return;
 
                 case 3:
-                    {
-                        float* f1_out = (float*)buffer;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            f1_out[0] = constant;
-                            f1_out[1] = constant;
-                            f1_out[2] = constant;
-                            f1_out += 3;
-                        }
-                    }
+                    // by filling 3x as much we effectively fill the same float3 array 
+                    set_f1_from_constant((float*)buffer, constant, ssmd_datacount * 3);
                     return;
 
                 case 103:
@@ -1761,17 +1738,8 @@ namespace NSS.Blast.SSMD
                     return;
 
                 case 4:
-                    {
-                        float* f1_out = (float*)buffer;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            f1_out[0] = constant;
-                            f1_out[1] = constant;
-                            f1_out[2] = constant;
-                            f1_out[3] = constant;
-                            f1_out += 4;
-                        }
-                    }
+                    // by filling 4x as much we effectively fill the same float4 array 
+                    set_f1_from_constant((float*)buffer, constant, ssmd_datacount * 4);
                     return;
 
                 case 104:
@@ -1809,19 +1777,19 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                mul_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount);
+                                                simd.mul_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] + constant;
+                                                simd.add_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount); 
                                                 return;
 
                                             case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] - constant;
+                                                simd.sub_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount); 
                                                 return;
 
                                             case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] / constant;
+                                                simd.div_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount); 
                                                 return;
 
                                             case blast_operation.and:
@@ -1879,19 +1847,19 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] * constant;
+                                                simd.mul_array_f14f1_constant(f4_out, f1_in, constant, ssmd_datacount); 
                                                 return;
 
                                             case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] + constant;
+                                                simd.add_array_f14f1_constant(f4_out, f1_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] - constant;
+                                                simd.sub_array_f14f1_constant(f4_out, f1_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] / constant;
+                                                simd.div_array_f14f1_constant(f4_out, f1_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -1933,7 +1901,8 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.maxa:
                                             case blast_operation.csum:
                                                 f4 = constant;
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = constant;
+                                                set_f1_from_constant(f4_out, constant, ssmd_datacount);
+                                                //for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = constant;
                                                 return;
                                         }
                                     }
@@ -1956,7 +1925,8 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.mina:
                                             case blast_operation.csum:
                                             case blast_operation.maxa:
-                                                for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
+                                                set_f1_from_constant(f1_out, constant, ssmd_datacount); 
+                                                // for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
                                                 return;
                                         }
                                     }
@@ -1970,19 +1940,19 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                mul_array_f2f2_constant(f2_out, f2_in, constant, ssmd_datacount);
+                                                simd.mul_array_f2f2_constant(f2_out, f2_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] + constant;
+                                                simd.add_array_f2f2_constant(f2_out, f2_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] - constant;
+                                                simd.sub_array_f2f2_constant(f2_out, f2_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] / constant;
+                                                simd.div_array_f2f2_constant(f2_out, f2_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -2039,19 +2009,19 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                mul_array_f2f2_constant(f4_out, f2_in, constant, ssmd_datacount);
+                                                simd.mul_array_f2f2_constant(f4_out, f2_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] + constant;
+                                                simd.add_array_f2f2_constant(f4_out, f2_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] - constant;
+                                                simd.sub_array_f2f2_constant(f4_out, f2_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] / constant;
+                                                simd.div_array_f2f2_constant(f4_out, f2_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -2136,25 +2106,19 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                mul_array_f3f3_constant(f3_out, f3_in, constant, ssmd_datacount);
+                                                simd.mul_array_f3f3_constant(f3_out, f3_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.add:
-                                                if (constant == 0) UnsafeUtils.MemCpy(f3_out, f3_in, 12 * ssmd_datacount);
-                                                else
-                                                    for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] + constant;
+                                                simd.add_array_f3f3_constant(f3_out, f3_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                if (constant == 0) UnsafeUtils.MemCpy(f3_out, f3_in, 12 * ssmd_datacount);
-                                                else
-                                                    for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] - constant;
+                                                simd.sub_array_f3f3_constant(f3_out, f3_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                if (constant == 1) UnsafeUtils.MemCpy(f3_out, f3_in, 12 * ssmd_datacount);
-                                                else
-                                                    for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] / constant;
+                                                simd.div_array_f3f3_constant(f3_out, f3_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -2207,19 +2171,19 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                mul_array_f3f3_constant(f4_out, f3_in, constant, ssmd_datacount);
+                                                simd.mul_array_f3f3_constant(f4_out, f3_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] + constant;
+                                                simd.add_array_f3f3_constant(f4_out, f3_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] - constant;
+                                                simd.sub_array_f3f3_constant(f4_out, f3_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] / constant;
+                                                simd.div_array_f3f3_constant(f4_out, f3_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -2293,19 +2257,19 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                mul_array_f4f4_constant(f4_out, f4_in, constant, ssmd_datacount); 
+                                                simd.mul_array_f4f4_constant(f4_out, f4_in, constant, ssmd_datacount); 
                                                 return;
 
                                             case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] + constant;
+                                                simd.add_array_f4f4_constant(f4_out, f4_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] - constant;
+                                                simd.sub_array_f4f4_constant(f4_out, f4_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] / constant;
+                                                simd.div_array_f4f4_constant(f4_out, f4_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -2477,19 +2441,19 @@ namespace NSS.Blast.SSMD
                                     switch (op)
                                     {
                                         case blast_operation.multiply:
-                                            mul_array_f1f1_indexed<float>(f1_out, f1_in, f1_data, offset, is_aligned, data_rowsize, ssmd_datacount);
+                                            simd.mul_array_f1f1_indexed<float>(f1_out, f1_in, f1_data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                             return;
 
                                         case blast_operation.add:
-                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] + f1_data[i][offset];
+                                            simd.add_array_f1f1_indexed<float>(f1_out, f1_in, f1_data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                             return;
 
                                         case blast_operation.substract:
-                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] - f1_data[i][offset];
+                                            simd.sub_array_f1f1_indexed<float>(f1_out, f1_in, f1_data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                             return;
 
                                         case blast_operation.divide:
-                                            for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = f1_in[i] / f1_data[i][offset];
+                                            simd.div_array_f1f1_indexed<float>(f1_out, f1_in, f1_data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                             return;
 
                                         case blast_operation.and:
@@ -2524,19 +2488,19 @@ namespace NSS.Blast.SSMD
                                     switch (op)
                                     {
                                         case blast_operation.multiply:
-                                            mul_array_f1f1_indexed<float4>((float4*)output, f1_in, f1_data, offset, is_aligned, data_rowsize, ssmd_datacount);
+                                            simd.mul_array_f1f1_indexed<float4>((float4*)output, f1_in, f1_data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                             return;
 
                                         case blast_operation.add:
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] + f1_data[i][offset];
+                                            simd.add_array_f1f1_indexed<float4>((float4*)output, f1_in, f1_data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                             return;
 
                                         case blast_operation.substract:
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] - f1_data[i][offset];
+                                            simd.sub_array_f1f1_indexed<float4>((float4*)output, f1_in, f1_data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                             return;
 
                                         case blast_operation.divide:
-                                            for (int i = 0; i < ssmd_datacount; i++) f4_out[i].x = f1_in[i] / f1_data[i][offset];
+                                            simd.div_array_f1f1_indexed<float4>((float4*)output, f1_in, f1_data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                             return;
 
                                         case blast_operation.and:
@@ -2586,20 +2550,20 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                mul_array_f2f2_indexed<float2>(f2_out, f2_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
+                                                simd.mul_array_f2f2_indexed<float2>(f2_out, f2_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 // f2_out[i] = f2_in[i] * ((float2*)(void*)&((float*)data[i])[offset])[0];
                                                 return;
 
                                             case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] + ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.add_array_f2f2_indexed<float2>(f2_out, f2_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] - ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.sub_array_f2f2_indexed<float2>(f2_out, f2_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f2_out[i] = f2_in[i] / ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.div_array_f2f2_indexed<float2>(f2_out, f2_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -2628,19 +2592,19 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                mul_array_f2f2_indexed<float4>(f4_out, f2_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
+                                                simd.mul_array_f2f2_indexed<float4>(f4_out, f2_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] + ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.add_array_f2f2_indexed<float4>(f4_out, f2_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] - ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.sub_array_f2f2_indexed<float4>(f4_out, f2_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xy = f2_in[i] / ((float2*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.div_array_f2f2_indexed<float4>(f4_out, f2_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -2675,19 +2639,19 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                mul_array_f3f3_indexed<float3>(f3_out, f3_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
+                                                simd.mul_array_f3f3_indexed<float3>(f3_out, f3_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] + ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.add_array_f3f3_indexed<float3>(f3_out, f3_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] - ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.sub_array_f3f3_indexed<float3>(f3_out, f3_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f3_out[i] = f3_in[i] / ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.div_array_f3f3_indexed<float3>(f3_out, f3_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -2716,19 +2680,19 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                mul_array_f3f3_indexed<float4>(f4_out, f3_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
+                                                simd.mul_array_f3f3_indexed<float4>(f4_out, f3_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.add:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] + ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.add_array_f3f3_indexed<float4>(f4_out, f3_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] - ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.sub_array_f3f3_indexed<float4>(f4_out, f3_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                for (int i = 0; i < ssmd_datacount; i++) f4_out[i].xyz = f3_in[i] / ((float3*)(void*)&((float*)data[i])[offset])[0];
+                                                simd.div_array_f3f3_indexed<float4>(f4_out, f3_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -2760,19 +2724,19 @@ namespace NSS.Blast.SSMD
                                 switch (op)
                                 {
                                     case blast_operation.multiply:
-                                        mul_array_f4f4_indexed(f4_out, f4_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
+                                        simd.mul_array_f4f4_indexed(f4_out, f4_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                         return;
 
                                     case blast_operation.add:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] + ((float4*)(void*)&((float*)data[i])[offset])[0];
+                                        simd.add_array_f4f4_indexed(f4_out, f4_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                         return;
 
                                     case blast_operation.substract:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] - ((float4*)(void*)&((float*)data[i])[offset])[0];
+                                        simd.sub_array_f4f4_indexed(f4_out, f4_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                         return;
 
                                     case blast_operation.divide:
-                                        for (int i = 0; i < ssmd_datacount; i++) f4_out[i] = f4_in[i] / ((float4*)(void*)&((float*)data[i])[offset])[0];
+                                        simd.div_array_f4f4_indexed(f4_out, f4_in, (float**)data, offset, is_aligned, data_rowsize, ssmd_datacount);
                                         return;
 
                                     case blast_operation.and:
@@ -3378,662 +3342,6 @@ namespace NSS.Blast.SSMD
         }
 
 
-        /// <summary>
-        /// data[][].x = data[][].x
-        /// </summary>
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal void move_indexed_f1([NoAlias] void** destination_indexbuffer, int destination_index_rowsize, bool destination_is_aligned, int destination_index, [NoAlias] void** source_indexbuffer, int source_index_rowsize, bool source_is_aligned, int source_index, int ssmd_datacount)
-        {
-            if (destination_is_aligned && source_is_aligned)
-            {
-                float* s = &((float*)source_indexbuffer[0])[source_index];
-                float* p = &((float*)destination_indexbuffer[0])[destination_index];
-
-                int stride_s = source_index_rowsize >> 2;
-                int stride_d = destination_index_rowsize >> 2;
-
-                int stride_s_2 = stride_s + stride_s;
-                int stride_d_2 = stride_d + stride_d;
-
-                int stride_d_3 = stride_d_2 + stride_d;
-                int stride_s_3 = stride_s_2 + stride_s;
-
-                int stride_d_4 = stride_d_3 + stride_d;
-                int stride_s_4 = stride_s_3 + stride_s;
-
-                int i = 0;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    p[0] = s[0];
-                    p[stride_d] = s[stride_s];
-                    p[stride_d_2] = s[stride_s_2];
-                    p[stride_d_3] = s[stride_s_3];
-
-                    s += stride_s_4;
-                    p += stride_d_4;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    p[0] = s[0];
-                    s += stride_s;
-                    p += stride_d;
-                    i++;
-                }
-                return;
-            }
-            if (destination_is_aligned)
-            {
-                // there is a high penalty when we need to index each array, especially for float 2 and 3 arrays
-                float* p = &((float*)destination_indexbuffer[0])[destination_index];
-
-                int stride_d = destination_index_rowsize >> 2;
-                int stride_d_2 = stride_d + stride_d;
-                int stride_d_3 = stride_d_2 + stride_d;
-                int stride_d_4 = stride_d_3 + stride_d;
-              
-                int i = 0;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    p[0] = ((float*)source_indexbuffer[i])[source_index];
-                    p[stride_d] = ((float*)source_indexbuffer[i + 1])[source_index];
-                    p[stride_d_2] = ((float*)source_indexbuffer[i + 2])[source_index];
-                    p[stride_d_3] = ((float*)source_indexbuffer[i + 3])[source_index];
-
-                    p += stride_d_4;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    p[0] = ((float*)source_indexbuffer[i])[source_index]; 
-                    p += stride_d;
-                    i++;
-                }
-                return;
-            }
-            if (source_is_aligned)
-            {
-                float* s = &((float*)source_indexbuffer[0])[source_index];
-
-                int stride_s = source_index_rowsize >> 2;
-                int stride_s_2 = stride_s + stride_s;
-                int stride_s_3 = stride_s_2 + stride_s;
-                int stride_s_4 = stride_s_3 + stride_s;
-
-                int i = 0;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    ((float*)destination_indexbuffer[i + 0])[destination_index] = s[0];
-                    ((float*)destination_indexbuffer[i + 1])[destination_index] = s[stride_s];
-                    ((float*)destination_indexbuffer[i + 2])[destination_index] = s[stride_s_2];
-                    ((float*)destination_indexbuffer[i + 3])[destination_index] = s[stride_s_3];
-
-                    s += stride_s_4;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    ((float*)destination_indexbuffer[i])[destination_index] = s[0];
-                    s += stride_s;
-                    i++;
-                }
-                return;
-            }
-            for (int i = 0; i < ssmd_datacount; i++)
-            {
-                ((float*)destination_indexbuffer[i])[destination_index] = ((float*)source_indexbuffer[i])[source_index];
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal void move_indexed_f2([NoAlias] void** destination_indexbuffer, int destination_index_rowsize, bool destination_is_aligned, int destination_index, [NoAlias] void** source_indexbuffer, int source_index_rowsize, bool source_is_aligned, int source_index, int ssmd_datacount)
-        {
-            if (destination_is_aligned && source_is_aligned)
-            {
-                float* s = &((float*)source_indexbuffer[0])[source_index];
-                float* p = &((float*)destination_indexbuffer[0])[destination_index];
-
-                int stride_s = source_index_rowsize >> 2;
-                int stride_d = destination_index_rowsize >> 2;
-
-                int stride_s_2 = stride_s + stride_s;
-                int stride_d_2 = stride_d + stride_d;
-
-                int stride_d_3 = stride_d_2 + stride_d;
-                int stride_s_3 = stride_s_2 + stride_s;
-
-                int stride_d_4 = stride_d_3 + stride_d;
-                int stride_s_4 = stride_s_3 + stride_s;
-
-                int i = 0;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[stride_d] = s[stride_s];
-                    p[stride_d + 1] = s[stride_s + 1];
-                    p[stride_d_2] = s[stride_s_2];
-                    p[stride_d_2 + 1] = s[stride_s_2 + 1];
-                    p[stride_d_3] = s[stride_s_3];
-                    p[stride_d_3 + 1] = s[stride_s_3 + 1];
-
-                    s += stride_s_4;
-                    p += stride_d_4;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    s += stride_s;
-                    p += stride_d;
-                    i++;
-                }
-
-                return;
-            }
-            if (destination_is_aligned)
-            {
-                float* p = &((float*)destination_indexbuffer[0])[destination_index];
-
-                int stride_d = destination_index_rowsize >> 2;
-                int stride_d_2 = stride_d + stride_d;
-                int stride_d_3 = stride_d_2 + stride_d;
-                int stride_d_4 = stride_d_3 + stride_d;
-
-                int i = 0;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    ((float2*)p)[0] = ((float2*)(void*)&((float*)source_indexbuffer[i])[source_index])[0];
-
-                    ((float2*)(void*)&p[stride_d])[0] = ((float2*)(void*)&((float*)source_indexbuffer[i + 1])[source_index])[0];
-                    ((float2*)(void*)&p[stride_d_2])[0] = ((float2*)(void*)&((float*)source_indexbuffer[i + 2])[source_index])[0];
-                    ((float2*)(void*)&p[stride_d_3])[0] = ((float2*)(void*)&((float*)source_indexbuffer[i + 3])[source_index])[0];
-
-                    p += stride_d_4;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    ((float2*)p)[0] = ((float2*)(void*)&((float*)source_indexbuffer[i])[source_index])[0];
-                    p += stride_d;
-                    i++;
-                }
-
-                return;
-            }
-            if (source_is_aligned)
-            {
-                float* s = &((float*)source_indexbuffer[0])[source_index];
-
-                int stride_s = source_index_rowsize >> 2;
-                int stride_s_2 = stride_s + stride_s;
-                int stride_s_3 = stride_s_2 + stride_s;
-                int stride_s_4 = stride_s_3 + stride_s;
-
-                int i = 0;
-                float2 f2_1, f2_2, f2_3, f2_4;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    f2_1.x = s[0];
-                    f2_1.y = s[1];
-
-                    f2_2.x = s[stride_s];
-                    f2_2.y = s[stride_s + 1];
-
-                    f2_3.x = s[stride_s_2];
-                    f2_3.y = s[stride_s_2 + 1];
-
-                    f2_4.x = s[stride_s_3];
-                    f2_4.y = s[stride_s_3 + 1];
-
-                    ((float2*)(void*)&((float*)destination_indexbuffer[i + 0])[destination_index])[0] = f2_1;
-                    ((float2*)(void*)&((float*)destination_indexbuffer[i + 1])[destination_index])[0] = f2_2;
-                    ((float2*)(void*)&((float*)destination_indexbuffer[i + 2])[destination_index])[0] = f2_3;
-                    ((float2*)(void*)&((float*)destination_indexbuffer[i + 3])[destination_index])[0] = f2_4;
-
-                    s += stride_s_4;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    f2_1.x = s[0];
-                    f2_1.y = s[1];
-                    ((float2*)(void*)&((float*)destination_indexbuffer[i + 0])[destination_index])[0] = f2_1;
-                    s += stride_s;
-                    i++;
-                }
-
-                return;
-            }
-
-            for (int i = 0; i < ssmd_datacount; i++)
-            {
-                ((float2*)(void*)&((float*)destination_indexbuffer[i])[destination_index])[0] = ((float2*)(void*)&((float*)source_indexbuffer[i])[source_index])[0];
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal void move_indexed_f3([NoAlias] void** destination_indexbuffer, int destination_index_rowsize, bool destination_is_aligned, int destination_index, [NoAlias] void** source_indexbuffer, int source_index_rowsize, bool source_is_aligned, int source_index, int ssmd_datacount)
-        {
-            if (destination_is_aligned && source_is_aligned)
-            {
-                float* s = &((float*)source_indexbuffer[0])[source_index];
-                float* p = &((float*)destination_indexbuffer[0])[destination_index];
-
-                int stride_s = source_index_rowsize >> 2;
-                int stride_d = destination_index_rowsize >> 2;
-
-
-                int i = 0;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    s += stride_s;
-                    p += stride_d;
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    s += stride_s;
-                    p += stride_d;
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    s += stride_s;
-                    p += stride_d;
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    s += stride_s;
-                    p += stride_d;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    s += stride_s;
-                    p += stride_d;
-                    i++;
-                }
-                return;
-            }
-            if(destination_is_aligned)
-            {
-                float* p = &((float*)destination_indexbuffer[0])[destination_index];
-
-                int stride_d = destination_index_rowsize >> 2;
-
-                int i = 0;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    float3 f3 = ((float3*)(void*)&((float*)source_indexbuffer[i + 0])[source_index])[0];
-                    p[0] = f3[0];
-                    p[1] = f3[1];
-                    p[2] = f3[2];
-                    f3 = ((float3*)(void*)&((float*)source_indexbuffer[i + 1])[source_index])[0];
-                    p += stride_d;
-                    p[0] = f3[0];
-                    p[1] = f3[1];
-                    p[2] = f3[2];
-                    f3 = ((float3*)(void*)&((float*)source_indexbuffer[i + 2])[source_index])[0];
-                    p += stride_d;
-                    p[0] = f3[0];
-                    p[1] = f3[1];
-                    p[2] = f3[2];
-                    f3 = ((float3*)(void*)&((float*)source_indexbuffer[i + 3])[source_index])[0];
-                    p += stride_d;
-                    p[0] = f3[0];
-                    p[1] = f3[1];
-                    p[2] = f3[2];
-                    p += stride_d;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    float3 f3 = ((float3*)(void*)&((float*)source_indexbuffer[i + 0])[source_index])[0];
-                    p[0] = f3[0];
-                    p[1] = f3[1];
-                    p[2] = f3[2];
-                    p += stride_d;
-                    i++;
-                }
-                return;
-            }
-            if(source_is_aligned)
-            {
-                float* s = &((float*)source_indexbuffer[0])[source_index];
-
-                int stride_s = source_index_rowsize >> 2;
-                int i = 0;
-                float3 f3 = 0;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    f3[0] = s[0];
-                    f3[1] = s[1];
-                    f3[2] = s[2];
-                    ((float3*)(void*)&((float*)destination_indexbuffer[i + 0])[destination_index])[0] = f3;
-                    s += stride_s;
-                    f3[0] = s[0];
-                    f3[1] = s[1];
-                    f3[2] = s[2];
-                    s += stride_s;
-                    ((float3*)(void*)&((float*)destination_indexbuffer[i + 1])[destination_index])[0] = f3;
-                    f3[0] = s[0];
-                    f3[1] = s[1];
-                    f3[2] = s[2];
-                    s += stride_s;
-                    ((float3*)(void*)&((float*)destination_indexbuffer[i + 2])[destination_index])[0] = f3;
-                    f3[0] = s[0];
-                    f3[1] = s[1];
-                    f3[2] = s[2];
-                    s += stride_s;
-                    ((float3*)(void*)&((float*)destination_indexbuffer[i + 3])[destination_index])[0] = f3;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    f3[0] = s[0];
-                    f3[1] = s[1];
-                    f3[2] = s[2];
-                    ((float3*)(void*)&((float*)destination_indexbuffer[i])[destination_index])[0] = f3;
-                    s += stride_s;
-                    i++;
-                }
-
-                return;
-            }
-            for (int i = 0; i < ssmd_datacount; i++)
-            {
-                ((float3*)(void*)&((float*)destination_indexbuffer[i])[destination_index])[0] = ((float3*)(void*)&((float*)source_indexbuffer[i])[source_index])[0];
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal void move_indexed_f4([NoAlias] void** destination_indexbuffer, int destination_index_rowsize, bool destination_is_aligned, int destination_index, [NoAlias] void** source_indexbuffer, int source_index_rowsize, bool source_is_aligned, int source_index, int ssmd_datacount)
-        {
-            if (destination_is_aligned && source_is_aligned)
-            {
-                float* s = &((float*)source_indexbuffer[0])[source_index];
-                float* p = &((float*)destination_indexbuffer[0])[destination_index];
-
-                int stride_s = source_index_rowsize >> 2;
-                int stride_d = destination_index_rowsize >> 2;
-
-
-                int i = 0;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    p[3] = s[3];
-                    s += stride_s;
-                    p += stride_d;
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    p[3] = s[3];
-                    s += stride_s;
-                    p += stride_d;
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    p[3] = s[3];
-                    s += stride_s;
-                    p += stride_d;
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    p[3] = s[3];
-                    s += stride_s;
-                    p += stride_d;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    p[3] = s[3];
-                    s += stride_s;
-                    p += stride_d;
-                    i++;
-                }
-
-                return;
-            }
-            if (source_is_aligned)
-            {
-                float* s = &((float*)source_indexbuffer[0])[source_index];
-
-                int stride_s = source_index_rowsize >> 2;
-                int i = 0;
-                float4 f4 = 0;
-                while (i < (ssmd_datacount & ~3))
-                {
-                    f4[0] = s[0];
-                    f4[1] = s[1];
-                    f4[2] = s[2];
-                    f4[3] = s[3];
-                    ((float4*)(void*)&((float*)destination_indexbuffer[i + 0])[destination_index])[0] = f4;
-                    s += stride_s;
-                    f4[0] = s[0];
-                    f4[1] = s[1];
-                    f4[2] = s[2];
-                    f4[3] = s[3];
-                    s += stride_s;
-                    ((float4*)(void*)&((float*)destination_indexbuffer[i + 1])[destination_index])[0] = f4;
-                    f4[0] = s[0];
-                    f4[1] = s[1];
-                    f4[2] = s[2];
-                    f4[3] = s[3];
-                    s += stride_s;
-                    ((float4*)(void*)&((float*)destination_indexbuffer[i + 2])[destination_index])[0] = f4;
-                    f4[0] = s[0];
-                    f4[1] = s[1];
-                    f4[2] = s[2];
-                    f4[3] = s[3];
-                    s += stride_s;
-                    ((float4*)(void*)&((float*)destination_indexbuffer[i + 3])[destination_index])[0] = f4;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    f4[0] = s[0];
-                    f4[1] = s[1];
-                    f4[2] = s[2];
-                    f4[3] = s[3];
-                    ((float4*)(void*)&((float*)destination_indexbuffer[i])[destination_index])[0] = f4;
-                    s += stride_s;
-                    i++;
-                }
-
-                return;
-            }
-            if (destination_is_aligned)
-            {
-                float* p = &((float*)destination_indexbuffer[0])[destination_index];
-                int stride_d = destination_index_rowsize >> 2;
-                int i = 0;
-                float4 f4; 
-                while (i < (ssmd_datacount & ~3))
-                {
-                    f4 = ((float4*)(void*)&((float*)source_indexbuffer[i + 0])[source_index])[0];
-                    p[0] = f4[0];
-                    p[1] = f4[1];
-                    p[2] = f4[2];
-                    p[3] = f4[3];
-                    f4 = ((float4*)(void*)&((float*)source_indexbuffer[i + 1])[source_index])[0];
-                    p += stride_d;
-                    p[0] = f4[0];
-                    p[1] = f4[1];
-                    p[2] = f4[2];
-                    p[3] = f4[3];
-                    f4 = ((float4*)(void*)&((float*)source_indexbuffer[i + 2])[source_index])[0];
-                    p += stride_d;
-                    p[0] = f4[0];
-                    p[1] = f4[1];
-                    p[2] = f4[2];
-                    p[3] = f4[3];
-                    f4 = ((float4*)(void*)&((float*)source_indexbuffer[i + 3])[source_index])[0];
-                    p += stride_d;
-                    p[0] = f4[0];
-                    p[1] = f4[1];
-                    p[2] = f4[2];
-                    p[3] = f4[3];
-                    p += stride_d;
-                    i += 4;
-                }
-                while (i < ssmd_datacount)
-                {
-                    f4 = ((float4*)(void*)&((float*)source_indexbuffer[i + 0])[source_index])[0];
-                    p[0] = f4[0];
-                    p[1] = f4[1];
-                    p[2] = f4[2];
-                    p[3] = f4[3];
-                    p += stride_d;
-                    i++;
-                }
-
-                return;
-            }
-            for (int i = 0; i < ssmd_datacount; i++)
-            {
-                ((float4*)(void*)&((float*)destination_indexbuffer[i])[destination_index])[0] = ((float4*)(void*)&((float*)source_indexbuffer[i])[source_index])[0];
-            }
-        }
-
-
-        /// <summary>
-        /// f1[] = data[][].x
-        /// </summary>
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void move_indexed_data_as_f1_to_f1([NoAlias]float* f1, [NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, int ssmd_datacount)
-        {
-            if (is_aligned)
-            {
-                float* s = &((float*)indexbuffer[0])[index];
-                float* p = f1;
-
-                int stride_s = index_rowsize >> 2;
-
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    p[0] = s[0];
-                    s += stride_s;
-                    p += 1;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    f1[i] = ((float*)indexbuffer[i])[index]; 
-                }
-            }
-        }
-
-        /// <summary>
-        /// f2[] = data[][].xy
-        /// </summary>
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void move_indexed_data_as_f1_to_f2([NoAlias] float2* f2, [NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, int ssmd_datacount)
-        {
-            if (is_aligned)
-            {
-                float* s = &((float*)indexbuffer[0])[index];
-                float* p = (float*)(void*) f2;
-
-                int stride_s = index_rowsize >> 2;
-
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    s += stride_s;
-                    p += 2;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    f2[i] = ((float2*)(void*)&((float*)indexbuffer[i])[index])[0];
-                }
-            }
-        }
-
-        /// <summary>
-        /// f3[] = data[][].xyz
-        /// </summary>
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void move_indexed_data_as_f1_to_f3([NoAlias] float3* f3, [NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, int ssmd_datacount)
-        {
-            if (is_aligned)
-            {
-                float* s = &((float*)indexbuffer[0])[index];
-                float* p = (float*)(void*)f3;
-
-                int stride_s = index_rowsize >> 2;
-
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    s += stride_s;
-                    p += 3;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    f3[i] = ((float3*)(void*)&((float*)indexbuffer[i])[index])[0];
-                }
-            }
-        }
-
-        /// <summary>
-        /// f4[] = data[][].xyzw
-        /// </summary>
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void move_indexed_data_as_f1_to_f4([NoAlias] float4* f4, [NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, int ssmd_datacount)
-        {
-            if (is_aligned)
-            {
-                float* s = &((float*)indexbuffer[0])[index];
-                float* p = (float*)(void*)f4;
-
-                int stride_s = index_rowsize >> 2;
-
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    p[0] = s[0];
-                    p[1] = s[1];
-                    p[2] = s[2];
-                    p[3] = s[3];
-                    s += stride_s;
-                    p += 4;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    f4[i] = ((float4*)(void*)&((float*)indexbuffer[i])[index])[0];
-                }
-            }
-        }
 
 
 
@@ -4047,11 +3355,24 @@ namespace NSS.Blast.SSMD
 
                 int stride_p = index_rowsize >> 2;
 
-                for (int i = 0; i < ssmd_datacount; i++)
+                int i = 0; 
+                while(i < (ssmd_datacount & ~3))
                 {
-                    p[0] = s[0];
-                    p += stride_p;
-                    s += 4;
+                    p[0]         = s[0];
+                    p[stride_p]  = s[4];
+                    p           += stride_p + stride_p;
+                    p[0]         = s[8];
+                    p[stride_p]  = s[12];
+                    p           += stride_p + stride_p;
+                    s           += 16;
+                    i           += 4;
+                }
+                while(i < ssmd_datacount)
+                {
+                    p[0]   = s[0];
+                    p     += stride_p;
+                    s     += 4;
+                    i++; 
                 }
             }
             else
@@ -4073,11 +3394,24 @@ namespace NSS.Blast.SSMD
 
                 int stride_p = index_rowsize >> 2;
 
-                for (int i = 0; i < ssmd_datacount; i++)
+                int i = 0;
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = -s[0];
+                    p[stride_p] = -s[4];
+                    p += stride_p + stride_p;
+                    p[0] = -s[8];
+                    p[stride_p] = -s[12];
+                    p += stride_p + stride_p;
+                    s += 16;
+                    i += 4;
+                }
+                while (i < ssmd_datacount)
                 {
                     p[0] = -s[0];
                     p += stride_p;
                     s += 4;
+                    i++;
                 }
             }
             else
@@ -4098,13 +3432,34 @@ namespace NSS.Blast.SSMD
                 float* s = (float*)(void*)f4;
 
                 int stride_p = index_rowsize >> 2;
+                int stride_p1 = stride_p + 1;
 
-                for (int i = 0; i < ssmd_datacount; i++)
+                int i = 0; 
+                while(i < (ssmd_datacount & ~3))
+                {
+                    p[0] = s[0];
+                    p[1] = s[1];
+                    p[stride_p] = s[4];
+                    p[stride_p1] = s[5];
+
+                    p += stride_p + stride_p;
+
+                    p[0] = s[8];
+                    p[1] = s[9];
+                    p[stride_p] = s[12];
+                    p[stride_p1] = s[13];
+
+                    p += stride_p + stride_p;
+                    s += 16;
+                    i += 4; 
+                }
+                while(i < (ssmd_datacount & ~3))
                 {
                     p[0] = s[0];
                     p[1] = s[1];
                     p += stride_p;
                     s += 4;
+                    i += 1;
                 }
             }
             else
@@ -4125,13 +3480,35 @@ namespace NSS.Blast.SSMD
                 float* s = (float*)(void*)f4;
 
                 int stride_p = index_rowsize >> 2;
+                int stride_p1 = stride_p + 1; 
 
-                for (int i = 0; i < ssmd_datacount; i++)
+
+                int i = 0;
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = -s[0];
+                    p[1] = -s[1];
+                    p[stride_p] = -s[4];
+                    p[stride_p1] = -s[5];
+
+                    p += stride_p + stride_p;
+
+                    p[0] = -s[8];
+                    p[1] = -s[9];
+                    p[stride_p] = -s[12];
+                    p[stride_p1] = -s[13];
+
+                    p += stride_p + stride_p;
+                    s += 16;
+                    i += 4;
+                }
+                while (i < (ssmd_datacount & ~3))
                 {
                     p[0] = -s[0];
                     p[1] = -s[1];
                     p += stride_p;
                     s += 4;
+                    i += 1;
                 }
             }
             else
@@ -4152,14 +3529,37 @@ namespace NSS.Blast.SSMD
                 float* s = (float*)(void*)f4;
 
                 int stride_p = index_rowsize >> 2;
+                int i = 0; 
 
-                for (int i = 0; i < ssmd_datacount; i++)
+                while(i < (ssmd_datacount & ~3))
+                {
+                    p[0] = s[0];
+                    p[1] = s[1];
+                    p[2] = s[2];
+                    p += stride_p;
+                    p[0] = s[4];
+                    p[1] = s[5];
+                    p[2] = s[6];
+                    p += stride_p;
+                    p[0] = s[8];
+                    p[1] = s[9];
+                    p[2] = s[10];
+                    p += stride_p;
+                    p[0] = s[12];
+                    p[1] = s[13];
+                    p[2] = s[14];
+                    p += stride_p;
+                    s += 16;
+                    i += 4;
+                }
+                while(i < ssmd_datacount)
                 {
                     p[0] = s[0];
                     p[1] = s[1];
                     p[2] = s[2];
                     p += stride_p;
                     s += 4;
+                    i++;
                 }
             }
             else
@@ -4180,14 +3580,37 @@ namespace NSS.Blast.SSMD
                 float* s = (float*)(void*)f4;
 
                 int stride_p = index_rowsize >> 2;
+                int i = 0;
 
-                for (int i = 0; i < ssmd_datacount; i++)
+                while (i < (ssmd_datacount & ~3))
                 {
                     p[0] = -s[0];
                     p[1] = -s[1];
                     p[2] = -s[2];
                     p += stride_p;
+                    p[0] = -s[4];
+                    p[1] = -s[5];
+                    p[2] = -s[6];
+                    p += stride_p;
+                    p[0] = -s[8];
+                    p[1] = -s[9];
+                    p[2] = -s[10];
+                    p += stride_p;
+                    p[0] = -s[12];
+                    p[1] = -s[13];
+                    p[2] = -s[14];
+                    p += stride_p;
+                    i += 4;
+                    s += 16;
+                }
+                while (i < ssmd_datacount)
+                {
+                    p[0] = s[0];
+                    p[1] = s[1];
+                    p[2] = s[2];
+                    p += stride_p;
                     s += 4;
+                    i++;
                 }
             }
             else
@@ -4208,8 +3631,34 @@ namespace NSS.Blast.SSMD
                 float* s = (float*)(void*)f4;
 
                 int stride_p = index_rowsize >> 2;
+                int i = 0;
 
-                for (int i = 0; i < ssmd_datacount; i++)
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = s[0];
+                    p[1] = s[1];
+                    p[2] = s[2];
+                    p[3] = s[3];
+                    p += stride_p;
+                    p[0] = s[4];
+                    p[1] = s[5];
+                    p[2] = s[6];
+                    p[3] = s[7];
+                    p += stride_p;
+                    p[0] = s[8];
+                    p[1] = s[9];
+                    p[2] = s[10];
+                    p[3] = s[11];
+                    p += stride_p;
+                    p[0] = s[12];
+                    p[1] = s[13];
+                    p[2] = s[14];
+                    p[3] = s[15];
+                    p += stride_p;
+                    s += 16;
+                    i += 4;
+                }
+                while (i < ssmd_datacount)
                 {
                     p[0] = s[0];
                     p[1] = s[1];
@@ -4217,6 +3666,7 @@ namespace NSS.Blast.SSMD
                     p[3] = s[3];
                     p += stride_p;
                     s += 4;
+                    i++;
                 }
             }
             else
@@ -4237,8 +3687,34 @@ namespace NSS.Blast.SSMD
                 float* s = (float*)(void*)f4;
 
                 int stride_p = index_rowsize >> 2;
+                int i = 0;
 
-                for (int i = 0; i < ssmd_datacount; i++)
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = -s[0];
+                    p[1] = -s[1];
+                    p[2] = -s[2];
+                    p[3] = -s[3];
+                    p += stride_p;
+                    p[0] = -s[4];
+                    p[1] = -s[5];
+                    p[2] = -s[6];
+                    p[3] = -s[7];
+                    p += stride_p;
+                    p[0] = -s[8];
+                    p[1] = -s[9];
+                    p[2] = -s[10];
+                    p[3] = -s[11];
+                    p += stride_p;
+                    p[0] = -s[12];
+                    p[1] = -s[13];
+                    p[2] = -s[14];
+                    p[3] = -s[15];
+                    p += stride_p;
+                    s += 16;
+                    i += 4;
+                }
+                while (i < ssmd_datacount)
                 {
                     p[0] = -s[0];
                     p[1] = -s[1];
@@ -4246,6 +3722,7 @@ namespace NSS.Blast.SSMD
                     p[3] = -s[3];
                     p += stride_p;
                     s += 4;
+                    i++;
                 }
             }
             else
@@ -4396,8 +3873,9 @@ namespace NSS.Blast.SSMD
 
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
-                    p[0] = -s[0];
-                    p[1] = -s[0];
+                    float f = -s[0];
+                    p[0] = f;
+                    p[1] = f;
                     s += stride_s;
                     p += 4;
                 }
@@ -4460,10 +3938,11 @@ namespace NSS.Blast.SSMD
 
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
-                    p[0] = -s[0];
-                    p[1] = -s[0];
-                    p[2] = -s[0];
-                    p[3] = -s[0];
+                    float f = -s[0];
+                    p[0] = f;
+                    p[1] = f;
+                    p[2] = f;
+                    p[3] = f;
                     s += stride_s;
                     p += 4;
                 }
@@ -4560,8 +4039,9 @@ namespace NSS.Blast.SSMD
 
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
-                    p[0] = -s[0];
-                    p[1] = -s[1];
+                    float f = -s[0];
+                    p[0] = f;
+                    p[1] = f;
                     s += stride_s;
                     p += 4;
                 }
@@ -4623,9 +4103,10 @@ namespace NSS.Blast.SSMD
 
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
-                    p[0] = -s[0];
-                    p[1] = -s[1];
-                    p[2] = -s[2];
+                    float f = -s[0];
+                    p[0] = f;
+                    p[1] = f;
+                    p[2] = f;
                     s += stride_s;
                     p += 4;
                 }
@@ -4688,10 +4169,11 @@ namespace NSS.Blast.SSMD
 
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
-                    p[0] = -s[0];
-                    p[1] = -s[1];
-                    p[2] = -s[2];
-                    p[3] = -s[3];
+                    float f = -s[0];
+                    p[0] = f;
+                    p[1] = f;
+                    p[2] = f;
+                    p[3] = f;
                     s += stride_s;
                     p += 4;
                 }
@@ -4706,14 +4188,54 @@ namespace NSS.Blast.SSMD
         }
 
 
+        /// <summary>
+        /// f4[].x = constant
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void set_f1_from_constant([NoAlias] float4* destination, in float constant, in int ssmd_datacount)
         {
             float* p = (float*)(void*)destination;
-            for (int i = 0; i < ssmd_datacount; i++)
+            int i = 0;
+            while (i < (ssmd_datacount & ~3))
+            {
+                p[0] = constant;
+                p[4] = constant;
+                p[8] = constant;
+                p[12] = constant;
+                p += 16;
+                i += 4;
+            }
+            while (i < ssmd_datacount)
             {
                 p[0] = constant;
                 p += 4;
+                i += 1;
+            }
+
+        }
+
+        /// <summary>
+        /// f1[] = constant
+        /// </summary>
+        void set_f1_from_constant([NoAlias] float* destination, in float constant, in int ssmd_datacount)
+        {
+            // somehow, in .net core, memset is a lot slower
+            float* p = (float*)(void*)destination;
+            int i = 0;
+            while (i < (ssmd_datacount & ~3))
+            {
+                p[0] = constant;
+                p[1] = constant;
+                p[2] = constant;
+                p[3] = constant;
+                p += 4;
+                i += 4;
+            }
+            while (i < ssmd_datacount)
+            {
+                p[0] = constant;
+                p += 1;
+                i += 1;
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -5171,620 +4693,7 @@ namespace NSS.Blast.SSMD
 
 
         #endregion
-
-
-        #region add_array_fxfx
-        /// <summary>
-        /// a.xyzw = a.xyzw + b.x
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f4f1([NoAlias] float4* a, [NoAlias] float4* b, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            float* fb = (float*)(void*)b;
-
-            if (ssmd_is_div4)
-            {
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[0];
-                    fa[2] = fa[2] + fb[0];
-                    fa[3] = fa[3] + fb[0];
-
-                    fa[4] = fa[4] + fb[4];
-                    fa[5] = fa[5] + fb[4];
-                    fa[6] = fa[6] + fb[4];
-                    fa[7] = fa[7] + fb[4];
-
-                    fa[8] = fa[8] + fb[8];
-                    fa[9] = fa[9] + fb[8];
-                    fa[10] = fa[10] + fb[8];
-                    fa[11] = fa[11] + fb[8];
-
-                    fa[12] = fa[12] + fb[12];
-                    fa[13] = fa[13] + fb[12];
-                    fa[14] = fa[14] + fb[12];
-                    fa[15] = fa[15] + fb[12];
-
-                    fa += 16;
-                    fb += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[0];
-                    fa[2] = fa[2] + fb[0];
-                    fa[3] = fa[3] + fb[0];
-                    fa += 4;
-                    fb += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.xyzw = a.xyzw + constant
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f4f1([NoAlias] float4* a, in float constant, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            if (ssmd_is_div4)
-            {
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + constant;
-                    fa[1] = fa[1] + constant;
-                    fa[2] = fa[2] + constant;
-                    fa[3] = fa[3] + constant;
-
-                    fa[4] = fa[4] + constant;
-                    fa[5] = fa[5] + constant;
-                    fa[6] = fa[6] + constant;
-                    fa[7] = fa[7] + constant;
-
-                    fa[8] = fa[8] + constant;
-                    fa[9] = fa[9] + constant;
-                    fa[10] = fa[10] + constant;
-                    fa[11] = fa[11] + constant;
-
-                    fa[12] = fa[12] + constant;
-                    fa[13] = fa[13] + constant;
-                    fa[14] = fa[14] + constant;
-                    fa[15] = fa[15] + constant;
-
-                    fa += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + constant;
-                    fa[1] = fa[1] + constant;
-                    fa[2] = fa[2] + constant;
-                    fa[3] = fa[3] + constant;
-                    fa += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.xyzw = a.xyzw + b.xyzw
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f4f4([NoAlias] float4* a, [NoAlias] float4* b, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            float* fb = (float*)(void*)b;
-
-            if (ssmd_is_div4)
-            {
-                // not all targets unroll loops, so in some cases this optimizes more nicely 
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[1];
-                    fa[2] = fa[2] + fb[2];
-                    fa[3] = fa[3] + fb[3];
-
-                    fa[4] = fa[4] + fb[4];
-                    fa[5] = fa[5] + fb[5];
-                    fa[6] = fa[6] + fb[6];
-                    fa[7] = fa[7] + fb[7];
-
-                    fa[8] = fa[8] + fb[8];
-                    fa[9] = fa[9] + fb[9];
-                    fa[10] = fa[10] + fb[10];
-                    fa[11] = fa[11] + fb[11];
-
-                    fa[12] = fa[12] + fb[12];
-                    fa[13] = fa[13] + fb[13];
-                    fa[14] = fa[14] + fb[14];
-                    fa[15] = fa[15] + fb[15];
-
-                    fa += 16;
-                    fb += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[0];
-                    fa[2] = fa[2] + fb[0];
-                    fa[3] = fa[3] + fb[0];
-                    fa += 4;
-                    fb += 4;
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// a.xyzw = a.xyzw + b.x
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f3f1([NoAlias] float4* a, [NoAlias] float4* b, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            float* fb = (float*)(void*)b;
-
-            if (ssmd_is_div4)
-            {
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[0];
-                    fa[2] = fa[2] + fb[0];
-
-                    fa[4] = fa[4] + fb[4];
-                    fa[5] = fa[5] + fb[4];
-                    fa[6] = fa[6] + fb[4];
-
-                    fa[8] = fa[8] + fb[8];
-                    fa[9] = fa[9] + fb[8];
-                    fa[10] = fa[10] + fb[8];
-
-                    fa[12] = fa[12] + fb[12];
-                    fa[13] = fa[13] + fb[12];
-                    fa[14] = fa[14] + fb[12];
-
-                    fa += 16;
-                    fb += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[0];
-                    fa[2] = fa[2] + fb[0];
-                    fa += 4;
-                    fb += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.xyzw = a.xyzw + constant
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f3f1([NoAlias] float4* a, in float constant, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            if (ssmd_is_div4)
-            {
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + constant;
-                    fa[1] = fa[1] + constant;
-                    fa[2] = fa[2] + constant;
-
-                    fa[4] = fa[4] + constant;
-                    fa[5] = fa[5] + constant;
-                    fa[6] = fa[6] + constant;
-
-                    fa[8] = fa[8] + constant;
-                    fa[9] = fa[9] + constant;
-                    fa[10] = fa[10] + constant;
-
-                    fa[12] = fa[12] + constant;
-                    fa[13] = fa[13] + constant;
-                    fa[14] = fa[14] + constant;
-
-                    fa += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + constant;
-                    fa[1] = fa[1] + constant;
-                    fa[2] = fa[2] + constant;
-                    fa += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.xyz = a.xyz + b.xyz (in float4 arrays)
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f3f3([NoAlias] float4* a, [NoAlias] float4* b, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            float* fb = (float*)(void*)b;
-
-            if (ssmd_is_div4)
-            {
-                // not all targets unroll loops, so in some cases this optimizes more nicely 
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[1];
-                    fa[2] = fa[2] + fb[2];
-
-                    fa[4] = fa[4] + fb[4];
-                    fa[5] = fa[5] + fb[5];
-                    fa[6] = fa[6] + fb[6];
-
-                    fa[8] = fa[8] + fb[8];
-                    fa[9] = fa[9] + fb[9];
-                    fa[10] = fa[10] + fb[10];
-
-                    fa[12] = fa[12] + fb[12];
-                    fa[13] = fa[13] + fb[13];
-                    fa[14] = fa[14] + fb[14];
-
-                    fa += 16;
-                    fb += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[1];
-                    fa[2] = fa[2] + fb[2];
-                    fa += 4;
-                    fb += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.xy = a.xy + b.x (in float4 arrays) 
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f2f1([NoAlias] float4* a, [NoAlias] float4* b, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            float* fb = (float*)(void*)b;
-
-            if (ssmd_is_div4)
-            {
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[0];
-
-                    fa[4] = fa[4] + fb[4];
-                    fa[5] = fa[5] + fb[4];
-
-                    fa[8] = fa[8] + fb[8];
-                    fa[9] = fa[9] + fb[8];
-
-                    fa[12] = fa[12] + fb[12];
-                    fa[13] = fa[13] + fb[12];
-
-                    fa += 16;
-                    fb += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[0];
-                    fa += 4;
-                    fb += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.xy = a.xy + constant (in float4)
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f2f1([NoAlias] float4* a, in float constant, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            if (ssmd_is_div4)
-            {
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + constant;
-                    fa[1] = fa[1] + constant;
-
-                    fa[4] = fa[4] + constant;
-                    fa[5] = fa[5] + constant;
-
-                    fa[8] = fa[8] + constant;
-                    fa[9] = fa[9] + constant;
-
-                    fa[12] = fa[12] + constant;
-                    fa[13] = fa[13] + constant;
-
-                    fa += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + constant;
-                    fa[1] = fa[1] + constant;
-                    fa += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.xy = a.xy + b.xy (in float4 arrays)
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f2f2([NoAlias] float4* a, [NoAlias] float4* b, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            float* fb = (float*)(void*)b;
-
-            if (ssmd_is_div4)
-            {
-                // not all targets unroll loops, so in some cases this optimizes more nicely 
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[1];
-
-                    fa[4] = fa[4] + fb[4];
-                    fa[5] = fa[5] + fb[5];
-
-                    fa[8] = fa[8] + fb[8];
-                    fa[9] = fa[9] + fb[9];
-
-                    fa[12] = fa[12] + fb[12];
-                    fa[13] = fa[13] + fb[13];
-
-                    fa += 16;
-                    fb += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[1] + fb[1];
-                    fa += 4;
-                    fb += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.xy = a.x + b.xy (in float4 arrays)
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f1f2([NoAlias] float4* a, [NoAlias] float4* b, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            float* fb = (float*)(void*)b;
-
-            if (ssmd_is_div4)
-            {
-                // not all targets unroll loops, so in some cases this optimizes more nicely 
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[0] + fb[1];
-
-                    fa[4] = fa[4] + fb[4];
-                    fa[5] = fa[4] + fb[5];
-
-                    fa[8] = fa[8] + fb[8];
-                    fa[9] = fa[8] + fb[9];
-
-                    fa[12] = fa[12] + fb[12];
-                    fa[13] = fa[12] + fb[13];
-
-                    fa += 16;
-                    fb += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[0] + fb[1];
-                    fa += 4;
-                    fb += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.xyz = a.x + b.xyz (in float4 arrays)
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f1f3([NoAlias] float4* a, [NoAlias] float4* b, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            float* fb = (float*)(void*)b;
-
-            if (ssmd_is_div4)
-            {
-                // not all targets unroll loops, so in some cases this optimizes more nicely 
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[0] + fb[1];
-                    fa[2] = fa[0] + fb[2];
-
-                    fa[4] = fa[4] + fb[4];
-                    fa[5] = fa[4] + fb[5];
-                    fa[6] = fa[4] + fb[6];
-
-                    fa[8] = fa[8] + fb[8];
-                    fa[9] = fa[8] + fb[9];
-                    fa[10] = fa[8] + fb[10];
-
-                    fa[12] = fa[12] + fb[12];
-                    fa[13] = fa[12] + fb[13];
-                    fa[14] = fa[12] + fb[14];
-
-                    fa += 16;
-                    fb += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[0] + fb[1];
-                    fa[2] = fa[0] + fb[2];
-                    fa += 4;
-                    fb += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.xyz = a.x + b.xyz (in float4 arrays)
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f1f4([NoAlias] float4* a, [NoAlias] float4* b, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            float* fb = (float*)(void*)b;
-
-            if (ssmd_is_div4)
-            {
-                // not all targets unroll loops, so in some cases this optimizes more nicely 
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[0] + fb[1];
-                    fa[2] = fa[0] + fb[2];
-                    fa[3] = fa[0] + fb[3];
-
-                    fa[4] = fa[4] + fb[4];
-                    fa[5] = fa[4] + fb[5];
-                    fa[6] = fa[4] + fb[6];
-                    fa[7] = fa[4] + fb[7];
-
-                    fa[8] = fa[8] + fb[8];
-                    fa[9] = fa[8] + fb[9];
-                    fa[10] = fa[8] + fb[10];
-                    fa[11] = fa[8] + fb[11];
-
-                    fa[12] = fa[12] + fb[12];
-                    fa[13] = fa[12] + fb[13];
-                    fa[14] = fa[12] + fb[14];
-                    fa[15] = fa[12] + fb[15];
-
-                    fa += 16;
-                    fb += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[1] = fa[0] + fb[1];
-                    fa[2] = fa[0] + fb[2];
-                    fa[3] = fa[0] + fb[3];
-                    fa += 4;
-                    fb += 4;
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// a.x = a.x + b.x (in float4 arrays) 
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f1f1([NoAlias] float4* a, [NoAlias] float4* b, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            float* fb = (float*)(void*)b;
-
-            if (ssmd_is_div4)
-            {
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa[4] = fa[4] + fb[4];
-                    fa[8] = fa[8] + fb[8];
-                    fa[12] = fa[12] + fb[12];
-
-                    fa += 16;
-                    fb += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + fb[0];
-                    fa += 4;
-                    fb += 4;
-                }
-            }
-        }
-
-        /// <summary>
-        /// a.x = a.x + constant (in float4)
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void add_array_f1f1([NoAlias] float4* a, in float constant, in int ssmd_datacount)
-        {
-            float* fa = (float*)(void*)a;
-            if (ssmd_is_div4)
-            {
-                for (int i = 0; i < (ssmd_datacount >> 2); i++)
-                {
-                    fa[0] = fa[0] + constant;
-                    fa[4] = fa[4] + constant;
-                    fa[8] = fa[8] + constant;
-                    fa[12] = fa[12] + constant;
-
-                    fa += 16;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    fa[0] = fa[0] + constant;
-                    fa += 4;
-                }
-            }
-        }
-        #endregion 
-
+ 
 
         #endregion
 
@@ -5806,10 +4715,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.nop: move_f1_array_into_f4_array_as_f1(a, b, ssmd_datacount); break;
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i].x = math.select(1f, 0f, b[i].x != 0); break;
 
-                case blast_operation.add: add_array_f1f1(a, b, ssmd_datacount); return;
-                case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i].x = a[i].x - b[i].x; return;
-                case blast_operation.multiply: mul_array_f1f1(a, b, ssmd_datacount); return;
-                case blast_operation.divide: for (int i = 0; i < ssmd_datacount; i++) a[i].x = a[i].x / b[i].x; return;
+                case blast_operation.add: simd.add_array_f1f1(a, b, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f1f1(a, b, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f1f1(a, b, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f1f1(a, b, ssmd_datacount); return;
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i].x = math.select(0, 1, a[i].x != 0 && b[i].x != 0); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i].x = math.select(0, 1, a[i].x != 0 || b[i].x != 0); return;
@@ -5837,10 +4746,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.nop: move_f1_constant_into_f4_array_as_f1(a, constant, ssmd_datacount); break;
                 case blast_operation.not: move_f1_constant_into_f4_array_as_f1(a, math.select(0f, 1f, constant == 0), ssmd_datacount); break;
 
-                case blast_operation.add: add_array_f1f1(a, constant, ssmd_datacount); return;
-                case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i].x = a[i].x - constant; return;
-                case blast_operation.multiply: mul_array_f1f1(a, constant, ssmd_datacount); return;
-                case blast_operation.divide: for (int i = 0; i < ssmd_datacount; i++) a[i].x = a[i].x / constant; return;
+                case blast_operation.add: simd.add_array_f1f1(a, constant, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f1f1(a, constant, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f1f1(a, constant, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f1f1(a, constant, ssmd_datacount); return;
 
                 case blast_operation.and: { bool bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) a[i].x = math.select(0, 1, a[i].x != 0 && bconstant); return; }
                 case blast_operation.or: { bool bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) a[i].x = math.select(0, 1, a[i].x != 0 || bconstant); return; }
@@ -5855,8 +4764,6 @@ namespace NSS.Blast.SSMD
             }
         }
 
-
-
         void handle_op_f1_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
         {
             vector_size = 2;
@@ -5870,10 +4777,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.nop: move_f2_array_into_f4_array_as_f2(a, b, ssmd_datacount); break; // for (int i = 0; i < ssmd_datacount; i++) a[i].xy = b[i].xy; break;
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select((float2)1, (float2)0, b[i].xy != 0); break;
 
-                case blast_operation.add: add_array_f1f2(a, b, ssmd_datacount); return;
-                case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = a[i].x - b[i].xy; return;
-                case blast_operation.multiply: mul_array_f1f2(a, b, ssmd_datacount); return;
-                case blast_operation.divide: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = a[i].x / b[i].xy; return;
+                case blast_operation.add: simd.add_array_f1f2(a, b, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f1f2(a, b, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f1f2(a, b, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f1f2(a, b, ssmd_datacount); return;
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0, 1, a[i].x != 0 && math.any(b[i].xy)); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0, 1, a[i].x != 0 || math.any(b[i].xy)); return;
@@ -5900,10 +4807,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.nop: move_f1_array_into_f4_array_as_f3(a, b, ssmd_datacount); break;
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select((float3)1, (float3)0, b[i].xyz != 0); break;
 
-                case blast_operation.add: add_array_f1f3(a, b, ssmd_datacount); return;
-                case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = a[i].x - b[i].xyz; return;
-                case blast_operation.multiply: mul_array_f1f3(a, b, ssmd_datacount); return;
-                case blast_operation.divide: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = a[i].x / b[i].xyz; return;
+                case blast_operation.add: simd.add_array_f1f3(a, b, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f1f3(a, b, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f1f3(a, b, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f1f3(a, b, ssmd_datacount); return;
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0, 1, a[i].x != 0 && math.any(b[i].xyz)); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0, 1, a[i].x != 0 || math.any(b[i].xyz)); return;
@@ -5930,10 +4837,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.nop: move_f1_array_into_f4_array_as_f4(a, b, ssmd_datacount); break; // for (int i = 0; i < ssmd_datacount; i++) a[i] = b[i]; break;
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select((float4)1, (float4)0, b[i] != 0); break;
 
-                case blast_operation.add: add_array_f1f4(a, b, ssmd_datacount); return;
-                case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i] = a[i].x - b[i]; return;
-                case blast_operation.multiply: mul_array_f1f4(a, b, ssmd_datacount); return;
-                case blast_operation.divide: for (int i = 0; i < ssmd_datacount; i++) a[i] = a[i].x / b[i]; return;
+                case blast_operation.add: simd.add_array_f1f4(a, b, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f1f4(a, b, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f1f4(a, b, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f1f4(a, b, ssmd_datacount); return;
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0, 1, a[i].x != 0 && math.any(b[i])); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0, 1, a[i].x != 0 || math.any(b[i])); return;
@@ -5964,10 +4871,10 @@ namespace NSS.Blast.SSMD
 
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select((float2)1, (float2)0, b[i].x != 0); break;
 
-                case blast_operation.add: add_array_f2f1(a, b, ssmd_datacount); return;
-                case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = a[i].xy - b[i].x; return;
-                case blast_operation.multiply: mul_array_f2f1(a, b, ssmd_datacount); return;
-                case blast_operation.divide: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = a[i].xy / b[i].x; return;
+                case blast_operation.add: simd.add_array_f2f1(a, b, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f2f1(a, b, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f2f1(a, b, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f2f1(a, b, ssmd_datacount); return;
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0, 1, math.any(a[i].xy) && b[i].x != 0); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0, 1, math.any(a[i].xy) || b[i].x != 0); return;
@@ -6006,37 +4913,11 @@ namespace NSS.Blast.SSMD
                     }
                     break;
 
-                case blast_operation.add:  // in win32 release builds this pointer walk is more then 2x faster 
-                    add_array_f2f1(a, constant, ssmd_datacount);
-                    break;
+                case blast_operation.add: simd.add_array_f2f1(a, constant, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f2f1(a, constant, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f2f1(a, constant, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f2f1(a, constant, ssmd_datacount); return;
 
-                case blast_operation.substract:
-                    {
-                        float* fa = (float*)(void*)a;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            fa[0] = fa[0] - constant; // x
-                            fa[1] = fa[1] - constant; // y
-                            fa += 4;
-                        }
-                        //for (int i = 0; i < ssmd_datacount; i++) a[i].xy = a[i].xy - constant; return;
-                    }
-                    break;
-
-                case blast_operation.multiply: mul_array_f2f1(a, constant, ssmd_datacount); break;
-
-                case blast_operation.divide:
-                    {
-                        float* fa = (float*)(void*)a;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            fa[0] = fa[0] / constant; // x
-                            fa[1] = fa[1] / constant; // y
-                            fa += 4;
-                        }
-                        //for (int i = 0; i < ssmd_datacount; i++) a[i].xy = a[i].xy / constant; return;
-                    }
-                    break;
 
                 case blast_operation.and: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0, 1, math.any(a[i].xy) && bconstant); return;
                 case blast_operation.or: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0, 1, math.any(a[i].xy) || bconstant); return;
@@ -6085,44 +4966,11 @@ namespace NSS.Blast.SSMD
                         for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select((float2)1, (float2)0, b[i].xy != 0); break;
                     }
 
-                case blast_operation.add:
-                    add_array_f2f2(a, b, ssmd_datacount);
-                    break;
 
-                case blast_operation.substract:
-                    {
-                        // in win32 release builds this pointer walk is more then 2x faster 
-                        float* fa = (float*)(void*)a;
-                        float* fb = (float*)(void*)b;
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            fa[0] = fa[0] - fb[0]; // x
-                            fa[1] = fa[1] - fb[1]; // y
-                            fa += 4;
-                            fb += 4;
-                        }
-                        // for (int i = 0; i < ssmd_datacount; i++) a[i].xy = a[i].xy - b[i].xy; return;
-                    }
-                    break;
-
-                case blast_operation.multiply: mul_array_f2f2(a, b, ssmd_datacount); break;
-
-                case blast_operation.divide:
-                    {
-                        float* fa = (float*)(void*)a;
-                        float* fb = (float*)(void*)b;
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            fa[0] = fa[0] / fb[0]; // x
-                            fa[1] = fa[1] / fb[1]; // y
-                            fa += 4;
-                            fb += 4;
-                        }
-                        // for (int i = 0; i < ssmd_datacount; i++) a[i].xy = a[i].xy / b[i].xy; return;
-                    }
-                    break;
+                case blast_operation.add: simd.add_array_f2f2(a, b, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f2f2(a, b, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f2f2(a, b, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f2f2(a, b, ssmd_datacount); return;
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0, 1, math.any(a[i].xy) && math.any(b[i].xy)); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0, 1, math.any(a[i].xy) || math.any(b[i].xy)); return;
@@ -6149,10 +4997,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.nop: move_f1_array_into_f4_array_as_f3(a, b, ssmd_datacount); break;
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select((float3)1, (float3)0, b[i].x != 0); break;
 
-                case blast_operation.add: add_array_f3f1(a, b, ssmd_datacount); return;
-                case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = a[i].xyz - b[i].x; return;
-                case blast_operation.multiply: mul_array_f3f1(a, b, ssmd_datacount); break;
-                case blast_operation.divide: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = a[i].xyz / b[i].x; return;
+                case blast_operation.add:       simd.add_array_f3f1(a, b, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f3f1(a, b, ssmd_datacount); return;
+                case blast_operation.multiply:  simd.mul_array_f3f1(a, b, ssmd_datacount); return;
+                case blast_operation.divide:    simd.div_array_f3f1(a, b, ssmd_datacount); return;
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0, 1, math.any(a[i].xyz) && b[i].x != 0); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0, 1, math.any(a[i].xyz) || b[i].x != 0); return;
@@ -6178,52 +5026,16 @@ namespace NSS.Blast.SSMD
                     Debug.LogError($"blast.ssmd.handle_op_fx_fy: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, constant = {constant}");
 #endif
                     return;
-                case blast_operation.nop:
-                    {
-                        move_f1_constant_into_f4_array_as_f3(a, constant, ssmd_datacount);
-                        break;
-                    }
-
-                case blast_operation.not:
-                    {
-                        move_f1_constant_into_f4_array_as_f3(a, math.select(1f, 0f, constant != 0), ssmd_datacount);
-                        break;
-                    }
+                case blast_operation.nop: move_f1_constant_into_f4_array_as_f3(a, constant, ssmd_datacount); break;
+                case blast_operation.not: move_f1_constant_into_f4_array_as_f3(a, math.select(1f, 0f, constant != 0), ssmd_datacount); break;
 
                 //case blast_operation.nop: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = constant; break;
                 //case blast_operation.not: constant = math.select(1, 0, constant != 0); for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = constant; break;
 
-                case blast_operation.add: add_array_f3f1(a, constant, ssmd_datacount); break;
-
-                case blast_operation.substract:
-                    {
-                        float* fa = (float*)(void*)a;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            fa[0] = fa[0] - constant; // x
-                            fa[1] = fa[1] - constant; // y
-                            fa[2] = fa[2] - constant; // z
-                            fa += 4;
-                        }
-                        // for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = a[i].xyz - constant; return;
-                    }
-                    break;
-
-                case blast_operation.multiply: mul_array_f3f1(a, constant, ssmd_datacount); break;
-
-                case blast_operation.divide:
-                    {
-                        float* fa = (float*)(void*)a;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            fa[0] = fa[0] / constant; // x
-                            fa[1] = fa[1] / constant; // y
-                            fa[2] = fa[2] / constant; // z
-                            fa += 4;
-                        }
-                        // for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = a[i].xyz / constant; return;
-                    }
-                    break;
+                case blast_operation.add: simd.add_array_f3f1(a, constant, ssmd_datacount); break;
+                case blast_operation.substract: simd.sub_array_f3f1(a, constant, ssmd_datacount); break;
+                case blast_operation.multiply: simd.mul_array_f3f1(a, constant, ssmd_datacount); break;
+                case blast_operation.divide: simd.div_array_f3f1(a, constant, ssmd_datacount); break;
 
                 case blast_operation.and: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0, 1, math.any(a[i].xyz) && bconstant); return;
                 case blast_operation.or: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0, 1, math.any(a[i].xyz) || bconstant); return;
@@ -6265,41 +5077,10 @@ namespace NSS.Blast.SSMD
                     }
                     break;
 
-                case blast_operation.add:
-                    add_array_f3f3(a, b, ssmd_datacount);
-                    break;
-
-                case blast_operation.substract:
-                    {
-                        float* fa = (float*)(void*)a;
-                        float* fb = (float*)(void*)b;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            fa[0] = fa[0] - fb[0]; // x
-                            fa[1] = fa[1] - fb[1]; // y
-                            fa[2] = fa[2] - fb[2]; // z
-                            fa += 4;
-                        }
-                        // for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = a[i].xyz - b[i].xyz; return;
-                    }
-                    break;
-
-                case blast_operation.multiply: mul_array_f3f3(a, b, ssmd_datacount); break;
-
-                case blast_operation.divide:
-                    {
-                        float* fa = (float*)(void*)a;
-                        float* fb = (float*)(void*)b;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            fa[0] = fa[0] / fb[0]; // x
-                            fa[1] = fa[1] / fb[1]; // y
-                            fa[2] = fa[2] / fb[2]; // z
-                            fa += 4;
-                        }
-                        // for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = a[i].xyz / b[i].xyz; return;
-                    }
-                    break;
+                case blast_operation.add:       simd.add_array_f3f3(a, b, ssmd_datacount); break;
+                case blast_operation.substract: simd.sub_array_f3f3(a, b, ssmd_datacount); break;
+                case blast_operation.multiply:  simd.mul_array_f3f3(a, b, ssmd_datacount); break;
+                case blast_operation.divide:    simd.div_array_f3f3(a, b, ssmd_datacount); break; 
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0, 1, math.any(a[i].xyz) && math.any(b[i].xyz)); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0, 1, math.any(a[i].xyz) || math.any(b[i].xyz)); return;
@@ -6326,10 +5107,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.nop: move_f1_array_into_f4_array_as_f4(a, b, ssmd_datacount); break;
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(1, 0, b[i].x != 0); break;
 
-                case blast_operation.add: add_array_f4f1(a, b, ssmd_datacount); return;
-                case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i] = a[i] - b[i].x; return;
-                case blast_operation.multiply: mul_array_f4f1(a, b, ssmd_datacount); return;
-                case blast_operation.divide: for (int i = 0; i < ssmd_datacount; i++) a[i] = a[i] / b[i].x; return;
+                case blast_operation.add:       simd.add_array_f4f1(a, b, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f4f1(a, b, ssmd_datacount); return;
+                case blast_operation.multiply:  simd.mul_array_f4f1(a, b, ssmd_datacount); return;
+                case blast_operation.divide:    simd.div_array_f4f1(a, b, ssmd_datacount); return;
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0, 1, math.any(a[i]) && b[i].x != 0); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0, 1, math.any(a[i]) || b[i].x != 0); return;
@@ -6359,10 +5140,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not: move_f1_constant_into_f4_array_as_f4(a, math.select(1f, 0f, constant != 0), ssmd_datacount); break;
                 // case blast_operation.not: constant = math.select(1, 0, constant != 0); for (int i = 0; i < ssmd_datacount; i++) a[i] = constant; break;
 
-                case blast_operation.add: add_array_f4f1(a, constant, ssmd_datacount); return;
-                case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i] = a[i] - constant; return;
-                case blast_operation.multiply: mul_array_f4f1(a, constant, ssmd_datacount); return;
-                case blast_operation.divide: for (int i = 0; i < ssmd_datacount; i++) a[i] = a[i] / constant; return;
+                case blast_operation.add: simd.add_array_f4f1(a, constant, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f4f1(a, constant, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f4f1(a, constant, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f4f1(a, constant, ssmd_datacount); return;
 
                 case blast_operation.and: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0, 1, math.any(a[i]) && bconstant); return;
                 case blast_operation.or: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0, 1, math.any(a[i]) || bconstant); return;
@@ -6389,10 +5170,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.nop: move_f4_array_into_f4_array_as_f4(a, b, ssmd_datacount); break;
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select((float4)1f, (float4)0f, b[i] != 0); break;
 
-                case blast_operation.add: add_array_f4f4(a, b, ssmd_datacount); return;
-                case blast_operation.substract: for (int i = 0; i < ssmd_datacount; i++) a[i] = a[i] - b[i]; return;
-                case blast_operation.multiply: mul_array_f4f4(a, b, ssmd_datacount); return;
-                case blast_operation.divide: for (int i = 0; i < ssmd_datacount; i++) a[i] = a[i] / b[i]; return;
+                case blast_operation.add: simd.add_array_f4f1(a, b, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f4f1(a, b, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f4f1(a, b, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f4f1(a, b, ssmd_datacount); return;
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0, 1, math.any(a[i]) && math.any(b[i])); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0, 1, math.any(a[i]) || math.any(b[i])); return;
@@ -6424,6 +5205,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.index_w:
                     vector_size = 1;
                     break;
+
+                case blast_operation.expand_v2: vector_size = 2; break;
+                case blast_operation.expand_v3: vector_size = 3; break;
+                case blast_operation.expand_v4: vector_size = 4; break;
 
                 case blast_operation.nop: break;
                 case blast_operation.not: constant = math.select(0, 1, constant == 0); break;
@@ -11778,14 +10563,8 @@ namespace NSS.Blast.SSMD
 
                             switch ((BlastVectorSizes)vector_size)
                             {
-#if USE_F4_FOR_F3
-                                // it is actually faster to just handle the whole f4, by expanding first from f1 to f4 we ensure we dont get div/zeros
-                                case BlastVectorSizes.float1: handle_op_f4_f1(current_op, f4_result, f4, ref vector_size); vector_size = 3; break;
-                                case BlastVectorSizes.float3: handle_op_f4_f4(current_op, f4_result, f4, ref vector_size); vector_size = 3; break;
-#else
                                 case BlastVectorSizes.float1: handle_op_f3_f1(current_op, f4_result, f4, ref vector_size); break;
                                 case BlastVectorSizes.float3: handle_op_f3_f3(current_op, f4_result, f4, ref vector_size); break;
-#endif
 
 #if DEVELOPMENT_BUILD || TRACE
                                 default:
@@ -12748,8 +11527,6 @@ namespace NSS.Blast.SSMD
                 stack_is_aligned = (package.StackSize % 4) == 0;
             }
 
-            ssmd_is_div4 = (ssmd_datacount % 4) == 0;
-
 
 #if DEVELOPMENT_BUILD || TRACE
             if (ssmd_datacount > 1 && !data_is_aligned)
@@ -12760,11 +11537,6 @@ namespace NSS.Blast.SSMD
             if (ssmd_datacount > 1 && !stack_is_aligned)
             {
                 ShowWarningOnce(WARN_SSMD_STACKSEGMENTS_NOT_EVENLY_SPACED);
-            }
-
-            if (ssmd_datacount > 1 && !ssmd_is_div4)
-            {
-                ShowWarningOnce(WARN_SSMD_RECORD_COUNT_NOT_DIV4);
             }
 #endif
 

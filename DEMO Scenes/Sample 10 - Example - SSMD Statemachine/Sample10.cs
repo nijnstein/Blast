@@ -12,8 +12,11 @@ using Unity.Burst.CompilerServices;
 
 public class Sample10 : MonoBehaviour
 {
-    public int ObjectCount = 1024; 
+    public int ObjectCount = 1024 * 16; 
     public GameObject Prefab;
+    public TMPro.TMP_Text FPS;
+    private float DeltaTime;
+
 
     // state 0 -> initial state 
     // - move around object around in squares with each state moving the object in a different direction
@@ -66,6 +69,7 @@ state = select(3, 0, position.y < 0);
     BlastScript[] scripts = null;
 
     NativeArray<IntPtr> ssmd_data = default;
+
 
 
     // Start is called before the first frame update
@@ -121,6 +125,14 @@ state = select(3, 0, position.y < 0);
     }
 
 
+    void UpdateFPS()
+    {
+        DeltaTime += (Time.deltaTime - DeltaTime) * 0.1f;
+        float fps = 1.0f / DeltaTime;
+        FPS.text = $"{Mathf.Ceil(fps).ToString()}\ncubes: {ObjectCount}"; 
+    }
+
+
     void OnDestroy()
     {
         if (data.IsCreated) data.Dispose();
@@ -133,6 +145,13 @@ state = select(3, 0, position.y < 0);
 
     unsafe void Update()
     {
+        if(Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit(); 
+        }
+
+        UpdateFPS();
+
         if (Prefab == null || prefabs.Count <= 0 || !data.IsCreated) return;
         if(StateScripts[0] != State0 || StateScripts[1] != State1 || StateScripts[2] != State2 || StateScripts[3] != State3)
         {
