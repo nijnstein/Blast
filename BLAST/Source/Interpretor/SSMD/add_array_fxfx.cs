@@ -780,11 +780,15 @@ namespace NSS.Blast.SSMD
             float* p_in = (float*)(void*)f2_in;
 
             int out_stride = sizeof(T) >> 2; // this should compile as constant, giving constant stride for eacht T -> better vectorization by native compilers
+            int out_stride2 = out_stride + out_stride;
+            int out_stride3 = out_stride + out_stride2;
 
             if (is_aligned)
             {
                 float* p_data = &indexed_data[0][data_offset];
                 int data_stride = data_rowsize >> 2;
+                int data_stride2 = data_stride + data_stride;
+                int data_stride3 = data_stride + data_stride2; 
 
                 if (IsUnrolled)
                 {
@@ -794,18 +798,18 @@ namespace NSS.Blast.SSMD
                         p_out[0] = p_in[0] + p_data[0];
                         p_out[1] = p_in[1] + p_data[1];
 
-                        p_out[out_stride + 0] = p_in[3] + p_data[data_stride + 0];
-                        p_out[out_stride + 1] = p_in[4] + p_data[data_stride + 1];
+                        p_out[out_stride + 0] = p_in[2] + p_data[data_stride + 0];
+                        p_out[out_stride + 1] = p_in[3] + p_data[data_stride + 1];
 
-                        p_out[out_stride + 2] = p_in[3] + p_data[data_stride + 2];
-                        p_out[out_stride + 3] = p_in[4] + p_data[data_stride + 3];
+                        p_out[out_stride2 + 0] = p_in[4] + p_data[data_stride2 + 0];
+                        p_out[out_stride2 + 1] = p_in[5] + p_data[data_stride2 + 1];
 
-                        p_out[out_stride + 4] = p_in[3] + p_data[data_stride + 4];
-                        p_out[out_stride + 5] = p_in[4] + p_data[data_stride + 5];
+                        p_out[out_stride3 + 0] = p_in[6] + p_data[data_stride3 + 0];
+                        p_out[out_stride3 + 1] = p_in[7] + p_data[data_stride3 + 1];
 
-                        p_out += out_stride << 2;
+                        p_out += out_stride * 4;
                         p_in += 8;
-                        p_data += data_stride << 2;
+                        p_data += data_stride * 4;
                         i += 4;
                     }
                     while (i < ssmd_datacount)

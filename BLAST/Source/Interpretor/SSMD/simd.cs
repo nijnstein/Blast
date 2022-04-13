@@ -80,5 +80,9 @@ namespace NSS.Blast.SSMD
         public static bool FMA = IsFmaSupported;
         public static bool F16C = IsF16CSupported;
 #endif
+
+
+
+
     }
 }
