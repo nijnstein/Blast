@@ -99,23 +99,24 @@ namespace NSS.Blast.Compiler.Stage
             bool starts_with_minus_op = node.children[from].token == BlastScriptToken.Substract;
             node first_child_to_add = null;
 
-            // if replacing with suba, best is to add 0 as first parameter as: 0 - a = -a
-            if (starts_with_minus_op)
-            {
-                if (replacement_function == blast_operation.suba)
-                {
-                    node param0 = node.CreateConstantParameter(blast_operation.value_0);
-                    parameters.Insert(from, param0);
-                }
-                else
-                {
-                    //  we cant just compound it and negate result?
-                    //  -(1 op 2) 
-                    // i think we can in this case so add back the first - (the first child) 
-                    first_child_to_add = node.children[from];
-                }
-            }
+            // if its the first operation:
 
+                // if replacing with suba, best is to add 0 as first parameter as: 0 - a = -a
+                if (starts_with_minus_op)
+                {
+                    if (from == 0 && replacement_function == blast_operation.suba)
+                    {
+                        node param0 = node.CreateConstantParameter(blast_operation.value_0);
+                        parameters.Insert(from, param0);
+                    }
+                    else
+                    {
+                        //  we cant just compound it and negate result?
+                        //  -(1 op 2) 
+                        // i think we can in this case so add back the first - (the first child) 
+                        first_child_to_add = node.children[from];
+                    }
+                }
 
             // clear node children in 'partial' sequence, add back a new function using the parameters taken from the sequence 
             foreach (node n in parameters) node.children.Remove(n);

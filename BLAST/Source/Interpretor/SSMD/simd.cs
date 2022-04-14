@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 
 #if STANDALONE_VSBUILD
 
+
 #else
 using static Unity.Burst.Intrinsics.X86;
 using static Unity.Burst.Intrinsics.X86.Sse;
@@ -41,7 +42,25 @@ namespace NSS.Blast.SSMD
         void Execute(); 
     }
 
+#endif
+
+#if !STANDALONE_VSBUILD
+    [BurstCompile]
 #endif 
+    unsafe public struct DATAREC
+    {
+        public void** data;
+        public int row_size;
+        public int index;
+
+        public bool is_aligned;
+        public bool is_constant;
+
+        public byte vectorsize;
+        public BlastVariableDataType datatype;
+        public bool is_set => data != null;
+        public float* index00 => &((float**)data)[0][index]; 
+    }
 
 
 #if !STANDALONE_VSBUILD
@@ -84,5 +103,8 @@ namespace NSS.Blast.SSMD
 
 
 
-    }
+    }     
+
+
+
 }

@@ -172,6 +172,39 @@ namespace NSS.Blast.SSMD
 
         #endregion
 
+        #region DATAREC index record  
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal DATAREC IndexData(int index, byte vectorsize)
+        {
+            return new DATAREC()
+            {
+                data = data,
+                row_size = data_rowsize,
+                index = index,
+                is_aligned = data_is_aligned,
+                is_constant = false,
+                vectorsize = vectorsize,
+                datatype = BlastVariableDataType.Numeric
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal DATAREC IndexStack(int index, byte vectorsize)
+        {
+            return new DATAREC()
+            {
+                data = stack,
+                row_size = stack_rowsize,
+                index = index,
+                is_aligned = stack_is_aligned,
+                is_constant = false,
+                vectorsize = vectorsize,
+                datatype = BlastVariableDataType.Numeric
+            };
+        }
+        #endregion 
+
         #region Warnings
         /// <summary>
         /// reset any warning counters, blast wil sent most warnings only once
@@ -759,6 +792,310 @@ namespace NSS.Blast.SSMD
 
         #endregion
 
+        #region Debug/Validation handlers 
+        /// <summary>
+        /// 
+        /// </summary>
+        void RunDebugStack()
+        {
+#if DEVELOPMENT_BUILD || TRACE
+            if (ValidateOnce) return;
+
+            int i = 0, ssmdi = 0;
+
+            if (package.O3 > 0)
+            {
+                Debug.Log($"\nDATA Segment   ({package.O3} bytes) ");
+                for (; i < package.O3 >> 2;)
+                {
+                    i = DebugDisplayVector(i, ssmdi, data, metadata);
+                }
+            }
+
+            if (package.StackSize > 0)
+            {
+                Debug.Log($"\nSTACK Segment   ({(package.O4 - package.O3)} bytes)");
+                for (i = 0; i < (package.O4 - package.O3 - 1) >> 2;)
+                {
+                    i = DebugDisplayVector(i, ssmdi, stack, metadata);
+                }
+            }
+#endif
+        }
+
+        /// <summary>
+        /// get 2 parameters from the code and raise an error if they are not equal 
+        /// !! no error is raised if not in debug !!
+        /// </summary>
+        void RunValidate(ref int code_pointer, [NoAlias] void* temp, [NoAlias] void* temp2)
+        {
+            // read the 2 parameters, we can use temp and register
+            BlastVariableDataType type1, type2;
+            byte size1, size2;
+
+            int indexer = pop_op_meta_cp(code_pointer, out type1, out size1);
+            bool is_indexed = indexer >= 0;
+
+            size1 = (byte)math.select(size1, 4, size1 == 0);
+
+            if (is_indexed)
+            {
+                float* f1 = (float*)temp;
+
+                // we know its indexed in advance, datasize is allocated accordingly
+                // -todo this will currently give vectorsize errors
+                pop_fx_into_ref<float>(ref code_pointer, f1);
+
+                // it has to be size 1 or indexed to size 1                            
+                int indexer2 = pop_op_meta_cp(code_pointer, out type2, out size2);
+
+                float* f2 = &f1[ssmd_datacount];
+                pop_fx_into_ref<float>(ref code_pointer, f2);
+#if DEVELOPMENT_BUILD || TRACE
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    if (f1[i] != f2[i]) Debug.LogError($"blast.ssmd.validate: validation error at ssmd index: {i}, {f1[i]} != {f2[i]}");
+                }
+#endif
+            }
+            else
+            {
+                switch (size1)
+                {
+                    // on size 1 all should be 1 and no indexers 
+                    case 1:
+                        {
+                            float* f1 = (float*)temp;
+                            float* f2 = &f1[ssmd_datacount];
+
+                            pop_fx_into_ref<float>(ref code_pointer, f1);
+#if DEVELOPMENT_BUILD || TRACE
+                            pop_op_meta_cp(code_pointer, out type2, out size2);
+                            if (type1 != type2 || size1 != size2)
+                            {
+                                Debug.LogError($"blast.ssmd.validate: datatype mismatch, type1 = {type1}, size1 = {size1}, type2 = {type2}, size2 = {size2}");
+                            }
+#endif
+                            // in debug raise error in runtime just read value and crash or whatever
+                            pop_fx_into_ref<float>(ref code_pointer, f2);
+
+#if DEVELOPMENT_BUILD || TRACE
+                            for (int i = 0; i < ssmd_datacount; i++)
+                            {
+                                if (f1[i] != f2[i]) Debug.LogError($"blast.ssmd.validate: validation error at ssmd index: {i}, {f1[i]} != {f2[i]}");
+                            }
+#endif
+                        }
+                        break;
+
+                    case 2:
+                        {
+                            float2* f21 = (float2*)temp;
+                            pop_fx_into_ref<float2>(ref code_pointer, f21);
+
+                            // first is size 2, next also must be size 2
+                            int indexer2 = pop_op_meta_cp(code_pointer, out type2, out size2);
+
+                            float2* f22 = &f21[ssmd_datacount];
+                            pop_fx_into_ref<float2>(ref code_pointer, f22);
+#if DEVELOPMENT_BUILD || TRACE
+                            for (int i = 0; i < ssmd_datacount; i++)
+                            {
+                                if (math.any(f21[i] != f22[i])) Debug.LogError($"blast.ssmd.validate: validation error at ssmd index: {i}, {f21[i]} != {f22[i]}");
+                            }
+#endif
+                        }
+                        break;
+
+                    case 3:
+                        {
+                            float3* f31 = (float3*)temp;
+                            pop_fx_into_ref<float3>(ref code_pointer, f31);
+
+                            int indexer2 = pop_op_meta_cp(code_pointer, out type2, out size2);
+
+                            float3* f32 = (float3*)temp2;
+                            pop_fx_into_ref<float3>(ref code_pointer, f32);
+
+#if DEVELOPMENT_BUILD || TRACE
+                            for (int i = 0; i < ssmd_datacount; i++)
+                            {
+                                if (math.any(f31[i] != f32[i])) Debug.LogError($"blast.ssmd.validate: validation error at ssmd index: {i}, {f31[i]} != {f32[i]}");
+                            }
+#endif
+                        }
+                        break;
+
+                    case 0:
+                    case 4:
+                        {
+                            float4* f41 = (float4*)temp;
+                            pop_fx_into_ref<float4>(ref code_pointer, f41);
+
+                            int indexer2 = pop_op_meta_cp(code_pointer, out type2, out size2);
+
+                            float4* f42 = &f41[ssmd_datacount];
+                            pop_fx_into_ref<float4>(ref code_pointer, f42);
+#if DEVELOPMENT_BUILD || TRACE
+                            for (int i = 0; i < ssmd_datacount; i++)
+                            {
+                                if (math.any(f41[i] != f42[i])) Debug.LogError($"blast.ssmd.validate: validation error at ssmd index: {i}, {f41[i]} != {f42[i]}");
+                            }
+#endif
+                        }
+                        break;
+                }
+            }
+        }
+
+        void RunDebug(int offset)
+        {
+#if DEVELOPMENT_BUILD || TRACE
+            if (ValidateOnce) return;
+
+            if (offset < 0 || offset > (package.O3 >> 2))
+            {
+                Debug.LogError($"DATA_SEGMENT[{offset}] = offset out of range");
+            }
+            else
+            {
+                BlastVariableDataType dt;
+                byte size;
+                BlastInterpretor.GetMetaData(metadata, (byte)offset, out size, out dt);
+
+
+
+
+#if STANDALONE_VSBUILD
+                switch (dt)
+                {
+                    case BlastVariableDataType.Numeric:
+                        switch (size)
+                        {
+                            case 1:
+                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")}, {dt}[{size}]");
+                                break;
+
+                            case 2:
+                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")}, {dt}[{size}]");
+                                break;
+
+                            case 3:
+                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")} {((float*)data[0])[offset + 2].ToString("0.000")}, {dt}[{size}]");
+                                break;
+
+                            case 0:
+                            case 4:
+                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")} {((float*)data[0])[offset + 2].ToString("0.000")} {((float*)data[0])[offset + 3].ToString("0.000")}, {dt}[{size}]");
+                                break;
+                        }
+                        break;
+
+                    case BlastVariableDataType.Bool32:
+                        Debug.Log($"DATA_SEGMENT[{offset}] = {CodeUtils.FormatBool32(((uint*)data[0])[offset])}, BOOL32");
+                        break;
+                }
+            }
+#else
+                // reduced string magic for burstable code path
+                switch (size)
+                {
+                    case 1:
+                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]}, {dt}[{size}]");
+                        break;
+
+                    case 2:
+                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]} {((float*)data[0])[offset + 1]}, {dt}[{size}]");
+                        break;
+
+                    case 3:
+                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]} {((float*)data[0])[offset + 1]} {((float*)data[0])[offset + 2]}, {dt}[{size}]");
+                        break;
+
+                    case 0:
+                    case 4:
+                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]} {((float*)data[0])[offset + 1]} {((float*)data[0])[offset + 2]} {((float*)data[0])[offset + 3]}, {dt}[{size}]");
+                        break;
+                }
+            }
+#endif
+#endif
+        }
+
+        static internal int DebugDisplayVector(int idata, int ssmdi, void** data, byte* metadata)
+        {
+#if DEVELOPMENT_BUILD || TRACE
+
+            BlastVariableDataType dt = BlastInterpretor.GetMetaDataType(metadata, (byte)idata);
+            int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)idata);
+
+            switch (dt)
+            {
+                case BlastVariableDataType.Numeric:
+                    {
+#if STANDALONE_VSBUILD
+                        switch (size)
+                        {
+                            case 1:
+                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(40)} {dt}[{size}]");
+                                return idata + 1;
+
+                            case 0:
+                            case 4:
+                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 1]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 2]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 3]).ToString("0.0000").PadRight(10)} {dt}[{size}]");
+                                return idata + 4;
+
+                            case 2:
+                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 1]).ToString("0.0000").PadRight(30)} {dt}[{size}]");
+                                return idata + 2;
+
+                            case 3:
+                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 1]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 2]).ToString("0.0000").PadRight(20)} {dt}[{size}]");
+                                return idata + 3;
+                        }
+#else
+                        // less string magic for burstable code 
+                        switch (size)
+                        {
+                            case 1:
+                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])} {dt}[{size}]");
+                                return idata + 1;
+
+                            case 0:
+                            case 4:
+                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])}{(((float*)data[ssmdi])[idata + 3])} {dt}[{size}]");
+                                return idata + 4;
+
+                            case 2:
+                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])} {dt}[{size}]");
+                                return idata + 2;
+
+                            case 3:
+                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])} {dt}[{size}]");
+                                return idata + 3;
+                        }
+#endif
+                    }
+                    break;
+
+
+                case BlastVariableDataType.Bool32:
+                    {
+                        // vectorsize must be 1 
+                        uint b32 = ((uint*)data[ssmdi])[idata];
+#if STANDALONE_VSBUILD
+                        Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {CodeUtils.FormatBool32(b32)} BOOL32[1]");
+#else
+                        Debug.Log($"Element: {idata} = {b32} BOOL32[1]");
+#endif
+                    }
+                    break;
+            }
+#endif
+            return idata + 1;
+        }
+        #endregion
+
         #region Expand fx 
 
         /// <summary>
@@ -1127,6 +1464,62 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// pop value from stack, codepointer should be on the pop 
         /// </summary>
+        void stackpop_fn_info(int code_pointer, in DATAREC target, bool is_negated, int indexed, out byte vector_size)
+        {
+#if DEVELOPMENT_BUILD || TRACE
+            Assert.IsTrue(target.is_set, $"blast.ssmd.interpretor.stack_pop_fn_into: target not set or invalid");
+            Assert.IsTrue(code[code_pointer] == (byte)blast_operation.pop);
+#endif
+
+            BlastVariableDataType type;
+            GetStackMetaData(metadata, (byte)stack_offset, out vector_size, out type);
+            if (type != BlastVariableDataType.Numeric)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.stack, stack_pop_fn_into -> stackdata mismatch, expecting numeric of size 1, found {type} of size {vector_size} at stack offset {stack_offset}");
+#endif
+                vector_size = 0;
+                return;
+            }
+
+            vector_size = (byte)math.select(vector_size, 4, vector_size == 0);
+            stack_offset = stack_offset - vector_size;
+            int indexed_stack_offset = stack_offset + math.select(0, indexed, indexed >= 0);
+
+            // stack pop 
+            switch (vector_size)
+            {
+                case 1:
+                    if (!is_negated) simd.move_indexed_f1(target.data, target.row_size, target.is_aligned, target.index, stack, stack_rowsize, stack_is_aligned, indexed_stack_offset, ssmd_datacount);
+                    else simd.move_indexed_f1_n(target.data, target.row_size, target.is_aligned, target.index, stack, stack_rowsize, stack_is_aligned, indexed_stack_offset, ssmd_datacount);
+                    return;
+
+                case 2:
+                    if (!is_negated) simd.move_indexed_f2(target.data, target.row_size, target.is_aligned, target.index, stack, stack_rowsize, stack_is_aligned, indexed_stack_offset, ssmd_datacount);
+                    else simd.move_indexed_f2_n(target.data, target.row_size, target.is_aligned, target.index, stack, stack_rowsize, stack_is_aligned, indexed_stack_offset, ssmd_datacount);
+                    return;
+
+                case 3:
+                    if (!is_negated) simd.move_indexed_f3(target.data, target.row_size, target.is_aligned, target.index, stack, stack_rowsize, stack_is_aligned, indexed_stack_offset, ssmd_datacount);
+                    else simd.move_indexed_f3_n(target.data, target.row_size, target.is_aligned, target.index, stack, stack_rowsize, stack_is_aligned, indexed_stack_offset, ssmd_datacount);
+                    return;
+
+                case 4:
+                    if (!is_negated) simd.move_indexed_f4(target.data, target.row_size, target.is_aligned, target.index, stack, stack_rowsize, stack_is_aligned, indexed_stack_offset, ssmd_datacount);
+                    else simd.move_indexed_f4_n(target.data, target.row_size, target.is_aligned, target.index, stack, stack_rowsize, stack_is_aligned, indexed_stack_offset, ssmd_datacount);
+                    return;
+            }
+
+#if DEVELOPMENT_BUILD || TRACE
+            Debug.LogError($"blast.ssmd.stack, stack_pop_fn_into -> unsupported vectorsize {vector_size} at stack offset {stack_offset}");
+#endif
+            vector_size = 0;
+        }
+
+
+        /// <summary>
+        /// pop a stack location into the destination register 
+        /// </summary>
         void stackpop_fn_info(int code_pointer, [NoAlias] float4* destination, bool is_negated, int indexed, out byte vector_size)
         {
 #if DEVELOPMENT_BUILD || TRACE
@@ -1178,6 +1571,7 @@ namespace NSS.Blast.SSMD
 #endif
             vector_size = 0;
         }
+
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3298,13 +3692,13 @@ namespace NSS.Blast.SSMD
 
 
         #endregion
- 
 
- 
+
+
         #region Operations Handlers 
 
-        /// <summary>
-        /// handle operation a.x and b.x
+        /// <summary>                    
+        /// perform operation: a.x = a.x [op] [sub|not] b.x
         /// </summary>
         void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
         {
@@ -3337,6 +3731,11 @@ namespace NSS.Blast.SSMD
             }
         }
 
+
+
+        /// <summary>
+        /// perform:  a.x = a.x [op] constant
+        /// </summary>
         void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size)
         {
             vector_size = 1;
@@ -3368,6 +3767,52 @@ namespace NSS.Blast.SSMD
             }
         }
 
+        /// <summary>
+        /// perform:  target.x = a.x [op] constant
+        /// </summary>
+        void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, in DATAREC target)
+        {
+            if (!target.is_set)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.handle_op_fx_fy [constant b]: target not set");
+#endif
+                return;
+            }
+                               
+            vector_size = 1;
+            switch (op)
+            {
+                default:
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"blast.ssmd.handle_op_fx_fy: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, constant = {constant}");
+#endif
+                    break; 
+
+                case blast_operation.nop:               simd.move_f1_constant_to_indexed_data_as_f1(target.data, target.row_size, target.is_aligned, target.index, constant, ssmd_datacount); break;
+                case blast_operation.not:               simd.move_f1_constant_to_indexed_data_as_f1(target.data, target.row_size, target.is_aligned, target.index, math.select(0f, 1f, constant == 0), ssmd_datacount); break;
+
+                case blast_operation.add:               simd.add_array_f1f1(a, constant, target, ssmd_datacount); return;
+                case blast_operation.substract:         simd.sub_array_f1f1(a, constant, target, ssmd_datacount); return;
+                case blast_operation.multiply:          simd.mul_array_f1f1(a, constant, target, ssmd_datacount); return;
+                case blast_operation.divide:            simd.div_array_f1f1(a, constant, target, ssmd_datacount); return;
+
+                case blast_operation.and:               { bool bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0, 1, a[i].x != 0 && bconstant); } break;
+                case blast_operation.or:                { bool bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0, 1, a[i].x != 0 || bconstant);  } break; 
+                case blast_operation.xor:               { bool bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0, 1, a[i].x != 0 ^ bconstant); } break; 
+
+                case blast_operation.greater:           for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x > constant); break;
+                case blast_operation.smaller:           for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x < constant); break;
+                case blast_operation.smaller_equals:    for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x <= constant); break;
+                case blast_operation.greater_equals:    for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x >= constant); break;
+                case blast_operation.equals:            for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x == constant); break;
+                case blast_operation.not_equals:        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x != constant); break;
+            }
+        }
+
+        /// <summary>
+        /// perform:  target.xy = a.x [op] [sub|not] b.xy
+        /// </summary>
         void handle_op_f1_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
         {
             vector_size = 2;
@@ -3398,6 +3843,671 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0f, 1f, a[i].x != b[i].xy); return;
             }
         }
+
+        /// <summary>
+        /// perform:  target.x = a.x [op] [sub|not] b.x
+        /// </summary>
+        void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        {
+            if(!target.is_set)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.handle_op_fx_fy: target not set");
+#endif
+                return; 
+            }
+
+            vector_size = 1;
+            switch (op)
+            {
+                default:
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"blast.ssmd.handle_op_fx_fy: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, b[0] = {b[0]} target index = {target.index}");
+#endif
+                    return;
+
+                case blast_operation.nop:
+                    if(minus)   simd.move_f4_array_to_indexed_data_as_f1            (target.data, target.row_size, target.is_aligned, target.index, b, ssmd_datacount); 
+                    else        simd.move_f4_array_to_indexed_data_as_f1_negated    (target.data, target.row_size, target.is_aligned, target.index, b, ssmd_datacount);
+                    break;
+
+                case blast_operation.add: 
+                    if(minus)   simd.sub_array_f1f1(a, b, target, ssmd_datacount); 
+                    else        simd.add_array_f1f1(a, b, target, ssmd_datacount); 
+                    break;
+
+                case blast_operation.multiply:
+                    if (minus)  simd.mul_array_f1f1_negated(a, b, target, ssmd_datacount);
+                    else        simd.mul_array_f1f1(a, b, target, ssmd_datacount);
+                    break; 
+
+                case blast_operation.divide: 
+                    if (minus)  simd.div_array_f1f1_negated(a, b, target, ssmd_datacount);
+                    else        simd.div_array_f1f1(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.substract:
+                    if (minus)  simd.add_array_f1f1(a, b, target, ssmd_datacount);
+                    else        simd.sub_array_f1f1(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.not:
+                    if (!not)
+                    {
+                        // only set if not a double not 
+                        for (int i = 0; i < ssmd_datacount; i++)  ((float**)target.data)[i][target.index] = math.select(1f, 0f, b[i].x != 0);
+                    }
+                    break;
+
+                case blast_operation.and:
+                    if (not)
+                    {
+                        // the not applies to b[]
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0, 1, a[i].x != 0 && b[i].x == 0); 
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0, 1, a[i].x != 0 && b[i].x != 0);
+                    }
+                    break; 
+
+                case blast_operation.or:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0, 1, a[i].x != 0 || b[i].x == 0); 
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0, 1, a[i].x != 0 || b[i].x != 0); 
+                    }
+                    break;
+
+                case blast_operation.xor:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0, 1, a[i].x != 0 ^ b[i].x == 0); 
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0, 1, a[i].x != 0 ^ b[i].x != 0);
+                    }
+                    break; 
+
+                case blast_operation.greater:           
+                    if(minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x > -b[i].x);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x > b[i].x);
+                    }
+                    break; 
+
+                case blast_operation.smaller:           
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x < -b[i].x); 
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x < b[i].x);
+                    }
+                    break;
+
+                case blast_operation.smaller_equals:    
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x <= -b[i].x);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x <= b[i].x);
+                    }
+                    break;
+
+                case blast_operation.greater_equals:    
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x >= -b[i].x);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x >= b[i].x);
+                    }
+                    break;
+
+                case blast_operation.equals:            
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x == math.select(0, 1, b[i].x == 0)); 
+                    }
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x == -b[i].x);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x == b[i].x); 
+                    }
+                    break;
+
+                case blast_operation.not_equals:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x != math.select(0, 1, b[i].x == 0));
+                    }
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x != -b[i].x);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = math.select(0f, 1f, a[i].x != b[i].x);
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// perform:  target.xyz = a.x [op] [minus|not] b.xyz
+        /// </summary>
+        void handle_op_f1_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        {
+            if (!target.is_set)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.handle_op_f1_f2: target not set");
+#endif
+                return;
+            }
+
+            vector_size = 2;
+            switch (op)
+            {
+                default:
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"blast.ssmd.handle_op_f1_f2: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, b[0] = {b[0]}");
+#endif
+                    return;
+                case blast_operation.nop:
+                    if(minus)   simd.move_f4_array_to_indexed_data_as_f2            (target.data, target.row_size, target.is_aligned, target.index, b, ssmd_datacount); 
+                    else        simd.move_f4_array_to_indexed_data_as_f2_negated    (target.data, target.row_size, target.is_aligned, target.index, b, ssmd_datacount);
+                    break;
+
+                case blast_operation.add: 
+                    if(minus)   simd.sub_array_f1f2(a, b, target, ssmd_datacount); 
+                    else        simd.add_array_f1f2(a, b, target, ssmd_datacount); 
+                    break;
+
+                case blast_operation.multiply:
+                    if (minus)  simd.mul_array_f1f2_negated(a, b, target, ssmd_datacount);
+                    else        simd.mul_array_f1f2(a, b, target, ssmd_datacount);
+                    break; 
+
+                case blast_operation.divide: 
+                    if (minus)  simd.div_array_f1f2_negated(a, b, target, ssmd_datacount);
+                    else        simd.div_array_f1f2(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.substract:
+                    if (minus)  simd.add_array_f1f2(a, b, target, ssmd_datacount);
+                    else        simd.sub_array_f1f2(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.not:
+                    if (!not)
+                    {
+                        // only set if not a double not 
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(1f, 0f, b[i].xy != 0);
+                    }
+                    break;
+
+                case blast_operation.and:
+                    if (not)
+                    {
+                        // the not applies to b[]
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 && b[i].x == 0 && b[i].y == 0);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 && b[i].x != 0 && b[i].y != 0);
+                    }
+                    break;
+
+                case blast_operation.or:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 || b[i].x == 0 || b[i].y == 0);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 || b[i].x != 0 || b[i].y != 0);
+                    }
+                    break;
+
+                case blast_operation.xor:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 ^ b[i].xy == 0);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 ^ b[i].xy != 0);
+                    }
+                    break;
+
+                case blast_operation.greater:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x > -b[i].xy);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x > b[i].xy);
+                    }
+                    break;
+
+                case blast_operation.smaller:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x < -b[i].xy);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x < b[i].xy);
+                    }
+                    break;
+
+                case blast_operation.smaller_equals:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x <= -b[i].xy);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x <= b[i].xy);
+                    }
+                    break;
+
+                case blast_operation.greater_equals:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x >= -b[i].xy);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x >= b[i].xy);
+                    }
+                    break;
+
+                case blast_operation.equals:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x == math.select(0f, 1f, b[i].xy == 0));
+                    }
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x == -b[i].xy);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x == b[i].xy);
+                    }
+                    break;
+
+                case blast_operation.not_equals:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != math.select(0f, 1f, b[i].xy == 0));
+                    }
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != -b[i].xy);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != b[i].xy);
+                    }
+                    break;
+            }
+        }
+
+
+        /// <summary>
+        /// perform:  target.xyz = a.x [op] [minus|not] b.xyz
+        /// </summary>
+        void handle_op_f1_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        {
+            if (!target.is_set)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.handle_op_f1_f3: target not set");
+#endif
+                return;
+            }
+
+            vector_size = 3;
+            switch (op)
+            {
+                default:
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"blast.ssmd.handle_op_f1_f3: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, b[0] = {b[0]}");
+#endif
+                    return;
+                case blast_operation.nop:
+                    if (minus) simd.move_f4_array_to_indexed_data_as_f3(target.data, target.row_size, target.is_aligned, target.index, b, ssmd_datacount);
+                    else simd.move_f4_array_to_indexed_data_as_f3_negated(target.data, target.row_size, target.is_aligned, target.index, b, ssmd_datacount);
+                    break;
+
+                case blast_operation.add:
+                    if (minus) simd.sub_array_f1f3(a, b, target, ssmd_datacount);
+                    else simd.add_array_f1f3(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.multiply:
+                    if (minus) simd.mul_array_f1f3_negated(a, b, target, ssmd_datacount);
+                    else simd.mul_array_f1f3(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.divide:
+                    if (minus) simd.div_array_f1f3_negated(a, b, target, ssmd_datacount);
+                    else simd.div_array_f1f3(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.substract:
+                    if (minus) simd.add_array_f1f3(a, b, target, ssmd_datacount);
+                    else simd.sub_array_f1f3(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.not:
+                    if (!not)
+                    {
+                        // only set if not a double not 
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(1f, 0f, b[i].xyz != 0);
+                    }
+                    break;
+
+                case blast_operation.and:
+                    if (not)
+                    {
+                        // the not applies to b[]
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 && b[i].x == 0 && b[i].y == 0 && b[i].z == 0);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 && b[i].x != 0 && b[i].y != 0 && b[i].z != 0);
+                    }
+                    break;
+
+                case blast_operation.or:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 || b[i].x == 0 || b[i].y == 0 || b[i].z == 0);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 || b[i].x != 0 || b[i].y != 0 || b[i].z != 0);
+                    }
+                    break;
+
+                case blast_operation.xor:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 ^ (b[i].xyz == 0));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 ^ (b[i].xyz != 0));
+                    }
+                    break;
+
+                case blast_operation.greater:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x > -b[i].xyz);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x > b[i].xyz);
+                    }
+                    break;
+
+                case blast_operation.smaller:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x < -b[i].xyz);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x < b[i].xyz);
+                    }
+                    break;
+
+                case blast_operation.smaller_equals:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x <= -b[i].xyz);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x <= b[i].xyz);
+                    }
+                    break;
+
+                case blast_operation.greater_equals:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x >= -b[i].xyz);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x >= b[i].xyz);
+                    }
+                    break;
+
+                case blast_operation.equals:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x == math.select(0f, 1f, b[i].xyz == 0));
+                    }
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x == -b[i].xyz);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x == b[i].xyz);
+                    }
+                    break;
+
+                case blast_operation.not_equals:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != math.select(0f, 1f, b[i].xyz == 0));
+                    }
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != -b[i].xyz);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != b[i].xyz);
+                    }
+                    break;
+            }
+        }
+
+
+        /// <summary>
+        /// perform:  target.xyzw = a.x [op] [minus|not] b.xyzw
+        /// </summary>
+        void handle_op_f1_f4(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        {
+            if (!target.is_set)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.handle_op_f1_f4: target not set");
+#endif
+                return;
+            }
+
+            vector_size = 4;
+            switch (op)
+            {
+                default:
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"blast.ssmd.handle_op_f1_f4: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, b[0] = {b[0]}");
+#endif
+                    return;
+                case blast_operation.nop:
+                    if (minus) simd.move_f4_array_to_indexed_data_as_f4(target.data, target.row_size, target.is_aligned, target.index, b, ssmd_datacount);
+                    else simd.move_f4_array_to_indexed_data_as_f4_negated(target.data, target.row_size, target.is_aligned, target.index, b, ssmd_datacount);
+                    break;
+
+                case blast_operation.add:
+                    if (minus) simd.sub_array_f1f4(a, b, target, ssmd_datacount);
+                    else simd.add_array_f1f4(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.multiply:
+                    if (minus) simd.mul_array_f1f4_negated(a, b, target, ssmd_datacount);
+                    else simd.mul_array_f1f4(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.divide:
+                    if (minus) simd.div_array_f1f4_negated(a, b, target, ssmd_datacount);
+                    else simd.div_array_f1f4(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.substract:
+                    if (minus) simd.add_array_f1f4(a, b, target, ssmd_datacount);
+                    else simd.sub_array_f1f4(a, b, target, ssmd_datacount);
+                    break;
+
+                case blast_operation.not:
+                    if (!not)
+                    {
+                        // only set if not a double not 
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(1f, 0f, b[i].xyzw != 0);
+                    }
+                    break;
+
+                case blast_operation.and:
+                    if (not)
+                    {
+                        // the not applies to b[]
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 && !math.any(b[i]));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 && math.any(b[i]));
+                    }
+                    break;
+
+                case blast_operation.or:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 || !math.any(b[i]));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 || math.any(b[i]));
+                    }
+                    break;
+
+                case blast_operation.xor:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 ^ (b[i] == 0));
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != 0 ^ (b[i] != 0));
+                    }
+                    break;
+
+                case blast_operation.greater:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x > -b[i]);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x > b[i]);
+                    }
+                    break;
+
+                case blast_operation.smaller:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x < -b[i]);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x < b[i]);
+                    }
+                    break;
+
+                case blast_operation.smaller_equals:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x <= -b[i]);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x <= b[i]);
+                    }
+                    break;
+
+                case blast_operation.greater_equals:
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x >= -b[i]);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x >= b[i]);
+                    }
+                    break;
+
+                case blast_operation.equals:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x == math.select(0f, 1f, b[i] == 0));
+                    }
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x == -b[i]);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x == b[i]);
+                    }
+                    break;
+
+                case blast_operation.not_equals:
+                    if (not)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != math.select(0f, 1f, b[i] == 0));
+                    }
+                    if (minus)
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != -b[i]);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].x != b[i]);
+                    }
+                    break;
+            }
+        }
+
+
+
+        /// <summary>
+        /// perform:  target.xyz = a.x [op] b.xyz
+        /// </summary>
         void handle_op_f1_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
         {
             vector_size = 3;
@@ -3535,6 +4645,50 @@ namespace NSS.Blast.SSMD
             }
         }
 
+        /// <summary>
+        /// perform:  target.xy = a.xy [op] constant
+        /// </summary>
+        void handle_op_f2_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, in DATAREC target)
+        {
+            if (!target.is_set)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.handle_op_f2_f1 [constant b]: target not set");
+#endif
+                return;
+            }
+
+            vector_size = 2;
+            switch (op)
+            {
+                default:
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"blast.ssmd.handle_op_f2_f1: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, constant = {constant}");
+#endif
+                    break;
+
+                case blast_operation.nop:               simd.move_f1_constant_to_indexed_data_as_f2(target.data, target.row_size, target.is_aligned, target.index, constant, ssmd_datacount); break;
+                case blast_operation.not:               simd.move_f1_constant_to_indexed_data_as_f2(target.data, target.row_size, target.is_aligned, target.index, math.select(0f, 1f, constant == 0), ssmd_datacount); break;
+
+                case blast_operation.add:               simd.add_array_f2f1(a, constant, target, ssmd_datacount); break;
+                case blast_operation.substract:         simd.sub_array_f2f1(a, constant, target, ssmd_datacount); break;
+                case blast_operation.multiply:          simd.mul_array_f2f1(a, constant, target, ssmd_datacount); break;
+                case blast_operation.divide:            simd.div_array_f2f1(a, constant, target, ssmd_datacount); break;
+
+                case blast_operation.and:               { bool bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0, 1, math.any(a[i].xy) && bconstant); } break; 
+                case blast_operation.or:                { bool bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0, 1, math.any(a[i].xy) || bconstant); } break; 
+                case blast_operation.xor:               { bool bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0, 1, math.any(a[i].xy) ^ bconstant); }break;
+
+                case blast_operation.greater:           for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xy > constant);  break;
+                case blast_operation.smaller:           for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xy < constant);  break;
+                case blast_operation.smaller_equals:    for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xy <= constant); break;
+                case blast_operation.greater_equals:    for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xy >= constant); break;
+                case blast_operation.equals:            for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xy == constant); break;
+                case blast_operation.not_equals:        for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xy != constant); break;
+            }
+        }
+
+
 
         void handle_op_f2_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
         {
@@ -3556,16 +4710,6 @@ namespace NSS.Blast.SSMD
                     break;
                 case blast_operation.not:
                     {
-                        float* fa = (float*)(void*)a;
-                        float* fb = (float*)(void*)b;
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            fa[0] = math.select(1f, 0f, fb[0] != 0); // x
-                            fa[1] = math.select(1f, 0f, fb[1] != 0); // y
-                            fa += 4;
-                            fb += 4;
-                        }
                         for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select((float2)1, (float2)0, b[i].xy != 0); break;
                     }
 
@@ -3652,6 +4796,50 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0f, 1f, a[i].xyz != constant); return;
             }
         }
+
+        void handle_op_f3_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, in DATAREC target)
+        {
+            if (!target.is_set)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.handle_op_f3_f1 [constant b]: target not set");
+#endif
+                return;
+            }
+
+            vector_size = 3;
+            bool bconstant;
+            switch (op)
+            {
+                default:
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"blast.ssmd.handle_op_fx_fy: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, constant = {constant}");
+#endif
+                    return;
+                case blast_operation.nop: simd.move_f1_constant_to_indexed_data_as_f3(target.data, target.row_size, target.is_aligned, target.index, constant, ssmd_datacount); break;
+                case blast_operation.not: simd.move_f1_constant_to_indexed_data_as_f3(target.data, target.row_size, target.is_aligned, target.index, math.select(1f, 0f, constant != 0), ssmd_datacount); break;
+
+                //case blast_operation.nop: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = constant; break;
+                //case blast_operation.not: constant = math.select(1, 0, constant != 0); for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = constant; break;
+
+                case blast_operation.add: simd.add_array_f3f1(a, constant, target, ssmd_datacount); break;
+                case blast_operation.substract: simd.sub_array_f3f1(a, constant, target, ssmd_datacount); break;
+                case blast_operation.multiply: simd.mul_array_f3f1(a, constant, target, ssmd_datacount); break;
+                case blast_operation.divide: simd.div_array_f3f1(a, constant, target, ssmd_datacount); break;
+
+                case blast_operation.and: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0, 1, math.any(a[i].xyz) && bconstant); return;
+                case blast_operation.or: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0, 1, math.any(a[i].xyz) || bconstant); return;
+                case blast_operation.xor: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0, 1, math.any(a[i].xyz) ^ bconstant); return;
+
+                case blast_operation.greater: for (int i = 0; i < ssmd_datacount; i++)          ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xyz > constant); return;
+                case blast_operation.smaller: for (int i = 0; i < ssmd_datacount; i++)          ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xyz < constant); return;
+                case blast_operation.smaller_equals: for (int i = 0; i < ssmd_datacount; i++)   ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xyz <= constant); return;
+                case blast_operation.greater_equals: for (int i = 0; i < ssmd_datacount; i++)   ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xyz >= constant); return;
+                case blast_operation.equals: for (int i = 0; i < ssmd_datacount; i++)           ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xyz == constant); return;
+                case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++)       ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i].xyz != constant); return;
+            }
+        }
+
 
         void handle_op_f3_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
         {
@@ -3760,6 +4948,50 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0f, 1f, a[i] != constant); return;
             }
         }
+
+
+        void handle_op_f4_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, in DATAREC target)
+        {
+            if (!target.is_set)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.handle_op_f4_f1 [constant b]: target not set");
+#endif
+                return;
+            }
+
+            vector_size = 4;
+            bool bconstant;
+            switch (op)
+            {
+                default:
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"blast.ssmd.handle_op_f4_f1: operation {op} not handled, vectorsize = {vector_size}, a[0] = {a[0]}, constant = {constant}");
+#endif
+                    return;
+                case blast_operation.nop: simd.move_f1_constant_to_indexed_data_as_f4(target.data, target.row_size, target.is_aligned, target.index, constant, ssmd_datacount); break;
+                case blast_operation.not: simd.move_f1_constant_to_indexed_data_as_f4(target.data, target.row_size, target.is_aligned, target.index, math.select(1f, 0f, constant != 0), ssmd_datacount); break;
+
+                case blast_operation.add: simd.add_array_f4f1(a, constant, target, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f4f1(a, constant, target, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f4f1(a, constant, target, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f4f1(a, constant, target, ssmd_datacount); return;
+
+                case blast_operation.and: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0, 1, math.any(a[i]) && bconstant); return;
+                case blast_operation.or: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0, 1, math.any(a[i]) || bconstant); return;
+                case blast_operation.xor: bconstant = constant != 0; for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0, 1, math.any(a[i]) ^ bconstant); return;
+
+                case blast_operation.greater: for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i] > constant); return;
+                case blast_operation.smaller: for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i] < constant); return;
+                case blast_operation.smaller_equals: for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i] <= constant); return;
+                case blast_operation.greater_equals: for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i] >= constant); return;
+                case blast_operation.equals: for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i] == constant); return;
+                case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = math.select(0f, 1f, a[i] != constant); return;
+            }
+        }
+
+
+
         void handle_op_f4_f4(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
         {
             vector_size = 4;
@@ -3797,6 +5029,28 @@ namespace NSS.Blast.SSMD
         #region Single Input functions (abs, sin etc) 
 
         private void handle_single_op_constant([NoAlias] float4* register, ref byte vector_size, float constant, in blast_operation op, in extended_blast_operation ex_op, in bool is_negated = false, in bool not = false, bool is_sequenced = false)
+        {
+            handle_constant_value_operation(ref vector_size, ref constant, in op, in ex_op, in is_negated, in not, ref is_sequenced);
+            handle_single_op_constant_to_register(register, ref vector_size, constant, op, is_sequenced); 
+        }
+
+        void handle_single_op_constant([NoAlias] float4* register, ref byte vector_size, float constant, in blast_operation op, in extended_blast_operation ex_op, bool is_negated, bool not, bool is_sequenced, in DATAREC target_rec)
+        {
+            handle_constant_value_operation(ref vector_size, ref constant, in op, in ex_op, in is_negated, in not, ref is_sequenced);
+
+            if (target_rec.is_set)
+            {
+                // output to indexed records 
+                handle_single_op_constant_to_target(register, ref vector_size, constant, op, is_sequenced, target_rec);
+            }
+            else
+            {
+                // output to register 
+                handle_single_op_constant_to_register(register, ref vector_size, constant, op, is_sequenced);
+            }
+        }
+
+        private void handle_constant_value_operation(ref byte vector_size, ref float constant, in blast_operation op, in extended_blast_operation ex_op, in bool is_negated, in bool not, ref bool is_sequenced)
         {
             // perform op on value
             switch (op)
@@ -3891,17 +5145,13 @@ namespace NSS.Blast.SSMD
                 }
                 else
                 {
-                    if (constant == 0)
-                    {
-                        constant = 1;
-                    }
-                    else
-                    {
-                        constant = 0;
-                    }
+                    constant = math.select(0, 1, constant == 0);
                 }
             }
+        }
 
+        private void handle_single_op_constant_to_register(float4* register, ref byte vector_size, float constant, blast_operation op, bool is_sequenced)
+        {
             if (is_sequenced)
             {
                 switch (vector_size)
@@ -3932,11 +5182,51 @@ namespace NSS.Blast.SSMD
 
                 }
             }
-
-#if DEVELOPMENT_BUILD || TRACE
-            Debug.LogError($"blast.ssmd.handle_single_op_constant -> unhandled exit on vectorsize: {vector_size}");
-#endif
         }
+
+        private void handle_single_op_constant_to_target(float4* register, ref byte vector_size, float constant, blast_operation op, bool is_sequenced, in DATAREC target_rec)
+        {
+            if (!target_rec.is_set)
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                Debug.LogError($"blast.ssmd.handle_single_op_constant_to_target -> target not set");
+#endif
+                return;
+            }
+
+            if (is_sequenced)
+            {
+                // op is used in a sequenced operation (mul / add etc. ) 
+                switch (vector_size)
+                {
+                    case 0:
+                    case 4: handle_op_f4_f1(op, register, constant, ref vector_size, target_rec); break;
+                    case 3: handle_op_f3_f1(op, register, constant, ref vector_size, target_rec); break;
+                    case 2: handle_op_f2_f1(op, register, constant, ref vector_size, target_rec); break;
+                    case 1: handle_op_f1_f1(op, register, constant, ref vector_size, target_rec); break;
+                    default:
+#if DEVELOPMENT_BUILD || TRACE
+                        Debug.LogError($"blast.ssmd.handle_single_op_constant -> sequence operation {op} not supported");
+#endif
+                        return;
+
+                }
+            }
+            else
+            {
+                // set all registers to the constant
+                switch (vector_size)
+                {
+                    case 0:
+                    case 4: simd.move_f1_constant_to_indexed_data_as_f4(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break; 
+                    case 1: simd.move_f1_constant_to_indexed_data_as_f1(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break; 
+                    case 2: simd.move_f1_constant_to_indexed_data_as_f2(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break;
+                    case 3: simd.move_f1_constant_to_indexed_data_as_f3(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break;
+
+                }
+            }
+        }
+
 
         private void handle_single_op_fn([NoAlias] float4* register, ref byte vector_size, [NoAlias] void** data, int source_index, in blast_operation op, in extended_blast_operation ex_op, in bool is_negated, in int indexed, in bool is_aligned, int stride)
         {
@@ -8082,306 +9372,43 @@ namespace NSS.Blast.SSMD
             return (int)BlastError.success;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        void RunDebugStack()
-        {
-#if DEVELOPMENT_BUILD || TRACE
-            if (ValidateOnce) return;
-
-            int i = 0, ssmdi = 0;
-
-            if (package.O3 > 0)
-            {
-                Debug.Log($"\nDATA Segment   ({package.O3} bytes) ");
-                for (; i < package.O3 >> 2;)
-                {
-                    i = DebugDisplayVector(i, ssmdi, data, metadata);
-                }
-            }
-
-            if (package.StackSize > 0)
-            {
-                Debug.Log($"\nSTACK Segment   ({(package.O4 - package.O3)} bytes)");
-                for (i = 0; i < (package.O4 - package.O3 - 1) >> 2;)
-                {
-                    i = DebugDisplayVector(i, ssmdi, stack, metadata);
-                }
-            }
-#endif
-        }
 
         /// <summary>
-        /// get 2 parameters from the code and raise an error if they are not equal 
-        /// !! no error is raised if not in debug !!
+        /// this DOES NOT TRACK FUNCTIONS and will be inaccurate when used if current code_pointer is on a function 
         /// </summary>
-        void RunValidate(ref int code_pointer, [NoAlias] void* temp, [NoAlias] void* temp2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool is_last_in_sequence(int i)
         {
-            // read the 2 parameters, we can use temp and register
-            BlastVariableDataType type1, type2;
-            byte size1, size2;
+            bool is_last_token_in_sequence = 
+                (i >= package.CodeSize - 1)
+                ||
+                (code[i + 1] == (byte)blast_operation.nop || code[i + 1] == (byte)blast_operation.end);
 
-            int indexer = pop_op_meta_cp(code_pointer, out type1, out size1);
-            bool is_indexed = indexer >= 0;
-
-            size1 = (byte)math.select(size1, 4, size1 == 0);
-
-            if (is_indexed)
+            if(!is_last_token_in_sequence)
             {
-                float* f1 = (float*)temp;
-
-                // we know its indexed in advance, datasize is allocated accordingly
-                // -todo this will currently give vectorsize errors
-                pop_fx_into_ref<float>(ref code_pointer, f1);
-
-                // it has to be size 1 or indexed to size 1                            
-                int indexer2 = pop_op_meta_cp(code_pointer, out type2, out size2);
-
-                float* f2 = &f1[ssmd_datacount];
-                pop_fx_into_ref<float>(ref code_pointer, f2);
-#if DEVELOPMENT_BUILD || TRACE
-                for (int i = 0; i < ssmd_datacount; i++)
+                // check multibyte signatures 
+                blast_operation op = (blast_operation)code[i]; 
+                switch(op)
                 {
-                    if (f1[i] != f2[i]) Debug.LogError($"blast.ssmd.validate: validation error at ssmd index: {i}, {f1[i]} != {f2[i]}");
+                    case blast_operation.constant_f1: i += 5; break;  
+                    case blast_operation.constant_f1_h: i += 3; break;
+                    case blast_operation.constant_long_ref: i += 3; break;
+                    case blast_operation.constant_short_ref: i += 1; break;
+
+                    case blast_operation.cdata:
+                        Debug.LogError("handle me cdata");
+                        break;
+
+                    // for now if next is anything else 
+                    case blast_operation.ex_op: return false; 
                 }
-#endif
+
+               is_last_token_in_sequence = (i >= package.CodeSize - 1)
+                    ||
+                    (code[i] == (byte)blast_operation.nop || code[i] == (byte)blast_operation.end);
             }
-            else
-            {
-                switch (size1)
-                {
-                    // on size 1 all should be 1 and no indexers 
-                    case 1:
-                        {
-                            float* f1 = (float*)temp;
-                            float* f2 = &f1[ssmd_datacount];
 
-                            pop_fx_into_ref<float>(ref code_pointer, f1);
-#if DEVELOPMENT_BUILD || TRACE
-                            pop_op_meta_cp(code_pointer, out type2, out size2);
-                            if (type1 != type2 || size1 != size2)
-                            {
-                                Debug.LogError($"blast.ssmd.validate: datatype mismatch, type1 = {type1}, size1 = {size1}, type2 = {type2}, size2 = {size2}");
-                            }
-#endif
-                            // in debug raise error in runtime just read value and crash or whatever
-                            pop_fx_into_ref<float>(ref code_pointer, f2);
-
-#if DEVELOPMENT_BUILD || TRACE
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                if (f1[i] != f2[i]) Debug.LogError($"blast.ssmd.validate: validation error at ssmd index: {i}, {f1[i]} != {f2[i]}");
-                            }
-#endif
-                        }
-                        break;
-
-                    case 2:
-                        {
-                            float2* f21 = (float2*)temp;
-                            pop_fx_into_ref<float2>(ref code_pointer, f21);
-
-                            // first is size 2, next also must be size 2
-                            int indexer2 = pop_op_meta_cp(code_pointer, out type2, out size2);
-
-                            float2* f22 = &f21[ssmd_datacount];
-                            pop_fx_into_ref<float2>(ref code_pointer, f22);
-#if DEVELOPMENT_BUILD || TRACE
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                if (math.any(f21[i] != f22[i])) Debug.LogError($"blast.ssmd.validate: validation error at ssmd index: {i}, {f21[i]} != {f22[i]}");
-                            }
-#endif
-                        }
-                        break;
-
-                    case 3:
-                        {
-                            float3* f31 = (float3*)temp;
-                            pop_fx_into_ref<float3>(ref code_pointer, f31);
-
-                            int indexer2 = pop_op_meta_cp(code_pointer, out type2, out size2);
-
-                            float3* f32 = (float3*)temp2;
-                            pop_fx_into_ref<float3>(ref code_pointer, f32);
-
-#if DEVELOPMENT_BUILD || TRACE
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                if (math.any(f31[i] != f32[i])) Debug.LogError($"blast.ssmd.validate: validation error at ssmd index: {i}, {f31[i]} != {f32[i]}");
-                            }
-#endif
-                        }
-                        break;
-
-                    case 0:
-                    case 4:
-                        {
-                            float4* f41 = (float4*)temp;
-                            pop_fx_into_ref<float4>(ref code_pointer, f41);
-
-                            int indexer2 = pop_op_meta_cp(code_pointer, out type2, out size2);
-
-                            float4* f42 = &f41[ssmd_datacount];
-                            pop_fx_into_ref<float4>(ref code_pointer, f42);
-#if DEVELOPMENT_BUILD || TRACE
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                if (math.any(f41[i] != f42[i])) Debug.LogError($"blast.ssmd.validate: validation error at ssmd index: {i}, {f41[i]} != {f42[i]}");
-                            }
-#endif
-                        }
-                        break;
-                }
-            }
-        }
-
-        void RunDebug(int offset)
-        {
-#if DEVELOPMENT_BUILD || TRACE
-            if (ValidateOnce) return;
-
-            if (offset < 0 || offset > (package.O3 >> 2))
-            {
-                Debug.LogError($"DATA_SEGMENT[{offset}] = offset out of range");
-            }
-            else
-            {
-                BlastVariableDataType dt;
-                byte size;
-                BlastInterpretor.GetMetaData(metadata, (byte)offset, out size, out dt);
-
-
-
-
-#if STANDALONE_VSBUILD
-                switch (dt)
-                {
-                    case BlastVariableDataType.Numeric:
-                        switch (size)
-                        {
-                            case 1:
-                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")}, {dt}[{size}]");
-                                break;
-
-                            case 2:
-                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")}, {dt}[{size}]");
-                                break;
-
-                            case 3:
-                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")} {((float*)data[0])[offset + 2].ToString("0.000")}, {dt}[{size}]");
-                                break;
-
-                            case 0:
-                            case 4:
-                                Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset].ToString("0.000")} {((float*)data[0])[offset + 1].ToString("0.000")} {((float*)data[0])[offset + 2].ToString("0.000")} {((float*)data[0])[offset + 3].ToString("0.000")}, {dt}[{size}]");
-                                break;
-                        }
-                        break;
-
-                    case BlastVariableDataType.Bool32:
-                        Debug.Log($"DATA_SEGMENT[{offset}] = {CodeUtils.FormatBool32(((uint*)data[0])[offset])}, BOOL32");
-                        break;
-                }
-            }
-#else
-                // reduced string magic for burstable code path
-                switch (size)
-                {
-                    case 1:
-                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]}, {dt}[{size}]");
-                        break;
-
-                    case 2:
-                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]} {((float*)data[0])[offset + 1]}, {dt}[{size}]");
-                        break;
-
-                    case 3:
-                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]} {((float*)data[0])[offset + 1]} {((float*)data[0])[offset + 2]}, {dt}[{size}]");
-                        break;
-
-                    case 0:
-                    case 4:
-                        Debug.Log($"DATA_SEGMENT[{offset}] = {((float*)data[0])[offset]} {((float*)data[0])[offset + 1]} {((float*)data[0])[offset + 2]} {((float*)data[0])[offset + 3]}, {dt}[{size}]");
-                        break;
-                }
-            }
-#endif
-#endif
-        }
-
-        static internal int DebugDisplayVector(int idata, int ssmdi, void** data, byte* metadata)
-        {
-#if DEVELOPMENT_BUILD || TRACE
-
-            BlastVariableDataType dt = BlastInterpretor.GetMetaDataType(metadata, (byte)idata);
-            int size = BlastInterpretor.GetMetaDataSize(metadata, (byte)idata);
-
-            switch (dt)
-            {
-                case BlastVariableDataType.Numeric:
-                    {
-#if STANDALONE_VSBUILD
-                        switch (size)
-                        {
-                            case 1:
-                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(40)} {dt}[{size}]");
-                                return idata + 1;
-
-                            case 0:
-                            case 4:
-                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 1]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 2]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 3]).ToString("0.0000").PadRight(10)} {dt}[{size}]");
-                                return idata + 4;
-
-                            case 2:
-                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 1]).ToString("0.0000").PadRight(30)} {dt}[{size}]");
-                                return idata + 2;
-
-                            case 3:
-                                Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {(((float*)data[ssmdi])[idata]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 1]).ToString("0.0000").PadRight(10)}{(((float*)data[ssmdi])[idata + 2]).ToString("0.0000").PadRight(20)} {dt}[{size}]");
-                                return idata + 3;
-                        }
-#else
-                        // less string magic for burstable code 
-                        switch (size)
-                        {
-                            case 1:
-                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])} {dt}[{size}]");
-                                return idata + 1;
-
-                            case 0:
-                            case 4:
-                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])}{(((float*)data[ssmdi])[idata + 3])} {dt}[{size}]");
-                                return idata + 4;
-
-                            case 2:
-                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])} {dt}[{size}]");
-                                return idata + 2;
-
-                            case 3:
-                                Debug.Log($"Element: {idata} = {(((float*)data[ssmdi])[idata])}{(((float*)data[ssmdi])[idata + 1])}{(((float*)data[ssmdi])[idata + 2])} {dt}[{size}]");
-                                return idata + 3;
-                        }
-#endif
-                    }
-                    break;
-
-
-                case BlastVariableDataType.Bool32:
-                    {
-                        // vectorsize must be 1 
-                        uint b32 = ((uint*)data[ssmdi])[idata];
-#if STANDALONE_VSBUILD
-                        Debug.Log($"Element: {idata.ToString().PadLeft(2)} = {CodeUtils.FormatBool32(b32)} BOOL32[1]");
-#else
-                        Debug.Log($"Element: {idata} = {b32} BOOL32[1]");
-#endif
-                    }
-                    break;
-            }
-#endif
-            return idata + 1;
+            return is_last_token_in_sequence; 
         }
 
         /// <summary>
@@ -8390,7 +9417,7 @@ namespace NSS.Blast.SSMD
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
 #endif
-        int GetSequenceResult([NoAlias] void* temp, ref int code_pointer, ref byte vector_size)
+        int GetSequenceResult([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, in DATAREC target_rec = default)
         {
             byte op = 0, prev_op;
 
@@ -8417,6 +9444,8 @@ namespace NSS.Blast.SSMD
 
                 prev_op = op;
                 op = code[code_pointer];
+
+                bool is_last_token_in_sequence = nesting_level <= 0 && is_last_in_sequence(code_pointer); 
 
                 // process operation, put any value in f4, set current_op if something else
                 switch ((blast_operation)op)
@@ -8459,7 +9488,9 @@ namespace NSS.Blast.SSMD
                                     }
                                 }
                             }
-                            return (int)BlastError.success;
+                            // check, if target record is set reaching here is an error
+                            return math.select((int)BlastError.success, (int)BlastError.error_target_not_set_in_sequence, target_rec.is_set);
+
                         }
 
                     case blast_operation.nop:
@@ -8469,13 +9500,18 @@ namespace NSS.Blast.SSMD
                             // at this point vector_size is decisive for the returned value
                             //
                             code_pointer++;
-                            return (int)BlastError.success;
+
+                            // check, if target record is set (set to be filled) reaching here is an error
+                            return math.select((int)BlastError.success, (int)BlastError.error_target_not_set_in_sequence, target_rec.is_set);
                         }
 
                     case blast_operation.ret:
                         // termination of interpretation
                         code_pointer = package.CodeSize + 1;
-                        return (int)BlastError.success;
+
+                        // check, if target record is set reaching here is an error
+                        return math.select((int)BlastError.success, (int)BlastError.error_target_not_set_in_sequence, target_rec.is_set);
+
 
                     /*  case blast_operation.index_n:
                       case blast_operation.index_x:
@@ -8627,7 +9663,22 @@ namespace NSS.Blast.SSMD
                                 p[3] = code[code_pointer + 4];
                             }
                             code_pointer += 5;
-                            handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                            
+                            if (!is_last_token_in_sequence || !target_rec.is_set)
+                            {
+                                // put result into register
+                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                            }
+                            else
+                            {
+                                // == last in sequence 
+                                // == target is set
+                                // output directly to target and skip end logics 
+                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
+                                code_pointer++;
+                                return (int)BlastError.success; 
+                            }
+
                             minus = false;
                             not = false;
                             indexer = -1;
@@ -8647,7 +9698,20 @@ namespace NSS.Blast.SSMD
                                 p[3] = code[code_pointer + 2];
                             }
                             code_pointer += 3;
-                            handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+
+                            if (!is_last_token_in_sequence || !target_rec.is_set)
+                            {
+                                // put result into register
+                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                            }
+                            else
+                            {
+                                // output directly to target and skip end logics 
+                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
+                                code_pointer++;
+                                return (int)BlastError.success;
+                            }
+
                             minus = false;
                             not = false;
                             indexer = -1;
@@ -8686,7 +9750,19 @@ namespace NSS.Blast.SSMD
                                 p[3] = code[c_index + 2];
                             }
 
-                            handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                            if (!is_last_token_in_sequence || !target_rec.is_set)
+                            {
+                                // put result into register
+                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                            }
+                            else
+                            {
+                                // output directly to target and skip end logics 
+                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
+                                code_pointer++;
+                                return (int)BlastError.success;
+                            }
+
                             minus = false;
                             not = false;
                             indexer = -1;
@@ -8725,7 +9801,19 @@ namespace NSS.Blast.SSMD
                                 p[3] = code[c_index + 2];
                             }
 
-                            handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                            if (!is_last_token_in_sequence || !target_rec.is_set)
+                            {
+                                // put result into register
+                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                            }
+                            else
+                            {
+                                // output directly to target and skip end logics 
+                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
+                                code_pointer++;
+                                return (int)BlastError.success;
+                            }
+
                             minus = false;
                             not = false;
                             indexer = -1;
@@ -8740,8 +9828,25 @@ namespace NSS.Blast.SSMD
                             // -> pop into result if first op and continue
                             // -> pop into f4 temp buffer if another operation
                             // ! this saves 2 copies ! when prev_op == 0
+                            //
 
-                            stackpop_fn_info(code_pointer, current_op == 0 ? f4_result : f4, minus, indexer, out vector_size);
+                            // the pop instruction is ALWAYS 1 byte long, so we could check the next byte to see if this is the last operation in sequence 
+                            // - only allow for this if not running in a nested operation 
+                            // - no operation may be pending 
+                            if (!is_last_token_in_sequence || current_op != blast_operation.nop || !target_rec.is_set)
+                            {
+                                // pop into buffer|register 
+                                stackpop_fn_info(code_pointer, current_op == 0 ? f4_result : f4, minus, indexer, out vector_size);
+                            }
+                            else
+                            {
+                                // - no nesting
+                                // - end of sequence
+                                // - target is valid     => pop directly into targetlocation and skip endlogic
+                                stackpop_fn_info(code_pointer, target_rec, minus, indexer, out vector_size);
+                                code_pointer += 2;
+                                return (int)BlastError.success;
+                            }
 
                             minus = false;
                             indexer = -1;
@@ -8795,8 +9900,11 @@ namespace NSS.Blast.SSMD
                     case blast_operation.zero:
                     case blast_operation.size:
                     case blast_operation.ex_op:
-
+                        //
                         // on no operation pending
+                        //
+                        //  - we need a walker to walk the code bytes to determine if this is the last get_function so we can directly set target location 
+                        //
                         if (current_op == 0)
                         {
                             // move directly to result
@@ -8896,9 +10004,6 @@ namespace NSS.Blast.SSMD
                     case blast_operation.fixeddeltatime:
                     case blast_operation.deltatime:
                         {
-                            // assign directly to result if this is the first operation (save a copy)                            
-                            float4* f4_value = current_op != 0 ? f4 : f4_result;
-
                             // set constant, if a minus is present apply it 
                             float constant = engine_ptr->constants[op];
                             if (not || minus)
@@ -8919,30 +10024,68 @@ namespace NSS.Blast.SSMD
                                 if (vector_size == 1) indexer = 0;
                             }
 
-                            switch ((BlastVectorSizes)vector_size)
+                            // detect if this is the last operation in sequence, were not pulling data for some pending operation and we may not be running nested 
+                            blast_operation next_op = (blast_operation)code[code_pointer + 1];
+                            if (target_rec.is_set && current_op == blast_operation.nop && (next_op == blast_operation.end || next_op == blast_operation.nop) && nesting_level <= 0)
                             {
-                                case BlastVectorSizes.float1:
-                                    {
-                                        // offset f4 destination by indexer count of words (1 word = 32 bit) 
-                                        float4* p = ((float4*)(void*)&((float*)((void*)f4_value))[indexer]);
-                                        // after that we can execute as if we index f4[0] 
-                                        simd.move_f1_constant_into_f4_array_as_f1(f4_value, constant, ssmd_datacount);
-                                        // for (int i = 0; i < ssmd_datacount; i++) f4_value[i][indexer] = constant; break;
-                                    }
-                                    break;
+                                // no current operation and at end of sequence => direct move of a value into target location 
+                                switch(vector_size)
+                                {
+                                    case 0:
+                                    case 4: simd.move_f1_constant_to_indexed_data_as_f4(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break;
+                                    case 3: simd.move_f1_constant_to_indexed_data_as_f3(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break;
+                                    case 2: simd.move_f1_constant_to_indexed_data_as_f2(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break;
+                                    case 1:
+                                        {
+                                            // if there is an indexer we can just add it to the target index 
+                                            simd.move_f1_constant_to_indexed_data_as_f1(target_rec.data, target_rec.row_size, target_rec.is_aligned, math.select(target_rec.index, target_rec.index + indexer, indexer > 0), constant, ssmd_datacount); break;
+                                        }
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor, set constantvalue, codepointer: {code_pointer} => {code[code_pointer]}, error: vectorsize {vector_size} not supported");
+                                    return (int)BlastError.ssmd_error_unsupported_vector_size;
+#endif
+                                }
+                                // skip endlogic of sequence and return directly after setting the target 
+                                code_pointer++;
+                                return (int)BlastError.success; 
+                            }
+                            else
+                            {
+                                // 
+                                // there are multiple values AND an operation AND possibly a datatarget 
+                                // - we set b here 
+                                // - the op is handled later with handl_op 
+                                //
 
-                                case BlastVectorSizes.float2: simd.move_f1_constant_into_f4_array_as_f2(f4_value, constant, ssmd_datacount); break;
-                                case BlastVectorSizes.float3: simd.move_f1_constant_into_f4_array_as_f3(f4_value, constant, ssmd_datacount); break;
-                                case BlastVectorSizes.float4: simd.move_f1_constant_into_f4_array_as_f4(f4_value, constant, ssmd_datacount); break;
 
+                                // assign directly to result if this is the first operation (save a copy)                            
+                                float4* f4_value = current_op != 0 ? f4 : f4_result;
+
+                                switch ((BlastVectorSizes)vector_size)
+                                {
+                                    case BlastVectorSizes.float1:
+                                        {
+                                            // offset f4 destination by indexer count of words (1 word = 32 bit) 
+                                            float4* p = ((float4*)(void*)&((float*)((void*)f4_value))[indexer]);
+                                            // after that we can execute as if we index f4[0] 
+                                            simd.move_f1_constant_into_f4_array_as_f1(p, constant, ssmd_datacount);
+                                            // for (int i = 0; i < ssmd_datacount; i++) f4_value[i][indexer] = constant; break;
+                                        }
+                                        break;
+
+                                    case BlastVectorSizes.float2: simd.move_f1_constant_into_f4_array_as_f2(f4_value, constant, ssmd_datacount); break;
+                                    case BlastVectorSizes.float3: simd.move_f1_constant_into_f4_array_as_f3(f4_value, constant, ssmd_datacount); break;
+                                    case 0:
+                                    case BlastVectorSizes.float4: simd.move_f1_constant_into_f4_array_as_f4(f4_value, constant, ssmd_datacount); break;
 #if DEVELOPMENT_BUILD || TRACE
                                 default:
                                     Debug.LogError($"SSMD Interpretor, set constantvalue, codepointer: {code_pointer} => {code[code_pointer]}, error: vectorsize {vector_size} not supported");
                                     return (int)BlastError.ssmd_error_unsupported_vector_size;
 #endif
 
+                               }
                             }
-
                             indexer = -1;
                         }
                         // if setting the first value, just start the loop again 
@@ -8963,9 +10106,6 @@ namespace NSS.Blast.SSMD
                                 byte id = (byte)(op - BlastInterpretor.opt_id);
                                 byte this_vector_size = BlastInterpretor.GetMetaDataSize(metadata, id);
 
-                                // if no operation is active
-                                float4* f4_value = current_op == blast_operation.nop ? f4_result : f4;
-
                                 if (indexer >= 0)
                                 {
                                     // offset id according to indexer and target vectorsize 1
@@ -8973,32 +10113,73 @@ namespace NSS.Blast.SSMD
                                     id = (byte)(id + indexer);
                                 }
 
-                                // these should not possibly both be active 
-                                if (not || minus)
+                                // if we have a target record: check end-of-sequence conditions: no nesting, no pending op, nextop == end|nop 
+                                if (is_last_token_in_sequence && current_op == blast_operation.nop && nesting_level <= 0 && target_rec.is_set)
                                 {
-                                    switch ((BlastVectorSizes)this_vector_size)
+                                    // no operation => directly put value in target location 
+                                    if (!(not || minus))
                                     {
-                                        case BlastVectorSizes.float1: simd.set_from_data_f1(f4_value, data, id, minus, not, data_is_aligned, data_rowsize, ssmd_datacount); vector_size = 1; break;
-                                        case BlastVectorSizes.float2: simd.set_from_data_f2(f4_value, data, id, minus, not, data_is_aligned, data_rowsize, ssmd_datacount); vector_size = 2; break;
-                                        case BlastVectorSizes.float3: simd.set_from_data_f3(f4_value, data, id, minus, not, data_is_aligned, data_rowsize, ssmd_datacount); vector_size = 3; break;
-                                        case 0:
-                                        case BlastVectorSizes.float4: simd.set_from_data_f4(f4_value, data, id, minus, not, data_is_aligned, data_rowsize, ssmd_datacount); vector_size = 4; break;
+                                        switch (this_vector_size)
+                                        {
+                                            case 0:
+                                            case 4: simd.move_indexed_f4(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 4; break;
+                                            case 3: simd.move_indexed_f3(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 3; break;
+                                            case 2: simd.move_indexed_f2(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 2; break;
+                                            case 1: simd.move_indexed_f1(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 1; break;
+                                        }
                                     }
-                                    minus = false;
-                                    not = false;
+                                    else
+                                    {
+                                        switch (this_vector_size)
+                                        {
+                                            case 0:
+                                            case 4: simd.move_indexed_f4_n(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 4; break;
+                                            case 3: simd.move_indexed_f3_n(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 3; break;
+                                            case 2: simd.move_indexed_f2_n(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 2; break;
+                                            case 1: simd.move_indexed_f1_n(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 1; break;
+                                        }
+                                        minus = false;
+                                        not = false;
+                                    }
+                                    // last in sequence, skip end logic and return
+                                    code_pointer++;
+                                    return (int)BlastError.success;
                                 }
                                 else
                                 {
-                                    // and put it in f4 
-                                    switch ((BlastVectorSizes)this_vector_size)
+                                    // put value in a register  
+
+                                    // if no operation is active
+                                    float4* f4_value = current_op == blast_operation.nop ? f4_result : f4;
+
+                                    // these should not possibly both be active 
+                                    if (not || minus)
                                     {
-                                        case BlastVectorSizes.float1: simd.move_indexed_data_as_f1_to_f1f4(f4_value, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 1; break;
-                                        case BlastVectorSizes.float2: simd.move_indexed_data_as_f2_to_f2(f4_value, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 2; break;
-                                        case BlastVectorSizes.float3: simd.move_indexed_data_as_f3_to_f3(f4_value, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 3; break;
-                                        case 0:
-                                        case BlastVectorSizes.float4: simd.move_indexed_data_as_f4_to_f4(f4_value, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 4; break;
+                                        switch ((BlastVectorSizes)this_vector_size)
+                                        {
+                                            case BlastVectorSizes.float1: simd.set_from_data_f1(f4_value, data, id, minus, not, data_is_aligned, data_rowsize, ssmd_datacount); vector_size = 1; break;
+                                            case BlastVectorSizes.float2: simd.set_from_data_f2(f4_value, data, id, minus, not, data_is_aligned, data_rowsize, ssmd_datacount); vector_size = 2; break;
+                                            case BlastVectorSizes.float3: simd.set_from_data_f3(f4_value, data, id, minus, not, data_is_aligned, data_rowsize, ssmd_datacount); vector_size = 3; break;
+                                            case 0:
+                                            case BlastVectorSizes.float4: simd.set_from_data_f4(f4_value, data, id, minus, not, data_is_aligned, data_rowsize, ssmd_datacount); vector_size = 4; break;
+                                        }
+                                        minus = false;
+                                        not = false;
+                                    }
+                                    else
+                                    {
+                                        // and put it in f4 
+                                        switch ((BlastVectorSizes)this_vector_size)
+                                        {
+                                            case BlastVectorSizes.float1: simd.move_indexed_data_as_f1_to_f1f4(f4_value, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 1; break;
+                                            case BlastVectorSizes.float2: simd.move_indexed_data_as_f2_to_f2(f4_value, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 2; break;
+                                            case BlastVectorSizes.float3: simd.move_indexed_data_as_f3_to_f3(f4_value, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 3; break;
+                                            case 0:
+                                            case BlastVectorSizes.float4: simd.move_indexed_data_as_f4_to_f4(f4_value, data, data_rowsize, data_is_aligned, id, ssmd_datacount); vector_size = 4; break;
+                                        }
                                     }
                                 }
+
                                 if (current_op == blast_operation.nop)
                                 {
                                     code_pointer++;
@@ -9030,72 +10211,17 @@ namespace NSS.Blast.SSMD
                 if (current_op == 0 && !(minus && prev_op == 0))
                 {
                     // just set according to vector size
-                    if (minus)
+
+                    // -> if target_rec is set, and this is the last operation in sequence 
+                    //  - then we can skip this operation completely 
+                    if (nesting_level <= 0 && target_rec.is_set && is_last_token_in_sequence)
                     {
-                        switch ((BlastVectorSizes)vector_size)
-                        {
-                            case BlastVectorSizes.float1: simd.move_f1_array_into_f4_array_as_f1_n(f4_result, f4, ssmd_datacount); break;
-                            case BlastVectorSizes.float2: simd.move_f2_array_into_f4_array_as_f2_n(f4_result, f4, ssmd_datacount); break;
-                            case BlastVectorSizes.float3: simd.move_f3_array_into_f4_array_as_f3_n(f4_result, f4, ssmd_datacount); break;
-                            case 0:
-                            case BlastVectorSizes.float4: simd.move_f4_array_into_f4_array_as_f4_n(f4_result, f4, ssmd_datacount); break;
-                        }
-                        minus = false;
+                        // should not reach into this conditional path
                     }
                     else
                     {
-                        if (not && prev_op != 0)
-                        {
-                            switch ((BlastVectorSizes)vector_size)
-                            {
-                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = math.select(0, 1, f4[i].x == 0f); break;
-                                case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = math.select((float2)0f, (float2)1f, f4[i].xy == (float2)0f); break;
-                                case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = math.select((float3)0f, (float3)1f, f4[i].xyz == (float3)0f); break;
-                                case 0:
-                                case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = math.select((float4)0f, (float4)1f, f4[i] == (float4)0f); break;
-                            }
-                            not = false;
-                        }
-                        else
-                        {
-                            switch ((BlastVectorSizes)vector_size)
-                            {
-                                case BlastVectorSizes.float1: simd.move_f1_array_into_f4_array_as_f1(f4_result, f4, ssmd_datacount); break;
-                                case BlastVectorSizes.float2: simd.move_f2_array_into_f4_array_as_f2(f4_result, f4, ssmd_datacount); break;
-                                case BlastVectorSizes.float3: simd.move_f3_array_into_f4_array_as_f3(f4_result, f4, ssmd_datacount); break;
-                                case 0:
-                                case BlastVectorSizes.float4: simd.move_f4_array_into_f4_array_as_f4(f4_result, f4, ssmd_datacount); break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    if ((minus || not))
-                    {
-#if DEVELOPMENT_BUILD || TRACE
-                        if (minus && not)
-                        {
-                            Debug.LogError("minus and not together active: error");
-                        }
-#endif
-                        if (not)
-                        {
-                            // this could be put in handle_op.. saving a loop
-                            switch ((BlastVectorSizes)vector_size)
-                            {
-                                case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.select(0, 1, f4[i].x == 0f); break;
-                                case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4[i].xy = math.select((float2)0f, (float2)1f, f4[i].xy == (float2)0f); break;
-                                case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4[i].xyz = math.select((float3)0f, (float3)1f, f4[i].xyz == (float3)0f); break;
-                                case 0:
-                                case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4[i] = math.select((float4)0f, (float4)1f, f4[i] == (float4)0f); break;
-                            }
-                            not = false;
-                        }
-
                         if (minus)
                         {
-                            // this could be put in handle_op.. saving a loop
                             switch ((BlastVectorSizes)vector_size)
                             {
                                 case BlastVectorSizes.float1: simd.move_f1_array_into_f4_array_as_f1_n(f4_result, f4, ssmd_datacount); break;
@@ -9106,80 +10232,55 @@ namespace NSS.Blast.SSMD
                             }
                             minus = false;
                         }
+                        else
+                        {
+                            if (not && prev_op != 0)
+                            {
+                                switch ((BlastVectorSizes)vector_size)
+                                {
+                                    case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].x = math.select(0, 1, f4[i].x == 0f); break;
+                                    case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xy = math.select((float2)0f, (float2)1f, f4[i].xy == (float2)0f); break;
+                                    case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4_result[i].xyz = math.select((float3)0f, (float3)1f, f4[i].xyz == (float3)0f); break;
+                                    case 0:
+                                    case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4_result[i] = math.select((float4)0f, (float4)1f, f4[i] == (float4)0f); break;
+                                }
+                                not = false;
+                            }
+                            else
+                            {
+                                switch ((BlastVectorSizes)vector_size)
+                                {
+                                    case BlastVectorSizes.float1: simd.move_f1_array_into_f4_array_as_f1(f4_result, f4, ssmd_datacount); break;
+                                    case BlastVectorSizes.float2: simd.move_f2_array_into_f4_array_as_f2(f4_result, f4, ssmd_datacount); break;
+                                    case BlastVectorSizes.float3: simd.move_f3_array_into_f4_array_as_f3(f4_result, f4, ssmd_datacount); break;
+                                    case 0:
+                                    case BlastVectorSizes.float4: simd.move_f4_array_into_f4_array_as_f4(f4_result, f4, ssmd_datacount); break;
+                                }
+                            }
+                        }
+
                     }
+                }
+                else
+                {
+                    if (nesting_level <= 0 && target_rec.is_set && is_last_token_in_sequence
 
-                    switch ((BlastVectorSizes)prev_vector_size)
+                        &&
+                        //
+                        // limit to size 1 vectors for shortly 
+                        //
+                        vector_size == 1 && prev_vector_size == 1
+                        )
                     {
-                        case BlastVectorSizes.float1:
-
-                            switch ((BlastVectorSizes)vector_size)
-                            {
-                                case BlastVectorSizes.float1: handle_op_f1_f1(current_op, f4_result, f4, ref vector_size); break;
-                                case BlastVectorSizes.float2: handle_op_f1_f2(current_op, f4_result, f4, ref vector_size); break;
-                                case BlastVectorSizes.float3: handle_op_f1_f3(current_op, f4_result, f4, ref vector_size); break;
-                                case BlastVectorSizes.float4: handle_op_f1_f4(current_op, f4_result, f4, ref vector_size); break;
-#if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
-                                    break;
-#endif
-                            }
-                            break;
-
-
-                        case BlastVectorSizes.float2:
-
-                            switch ((BlastVectorSizes)vector_size)
-                            {
-                                case BlastVectorSizes.float1: handle_op_f2_f1(current_op, f4_result, f4, ref vector_size); break;
-                                case BlastVectorSizes.float2: handle_op_f2_f2(current_op, f4_result, f4, ref vector_size); break;
-#if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
-                                    break;
-#endif
-                            }
-                            break;
-
-                        case BlastVectorSizes.float3:
-
-                            switch ((BlastVectorSizes)vector_size)
-                            {
-                                case BlastVectorSizes.float1: handle_op_f3_f1(current_op, f4_result, f4, ref vector_size); break;
-                                case BlastVectorSizes.float3: handle_op_f3_f3(current_op, f4_result, f4, ref vector_size); break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
-                                    break;
-#endif
-                            }
-                            break;
-
-
-                        case 0:
-                        case BlastVectorSizes.float4:
-
-                            switch ((BlastVectorSizes)vector_size)
-                            {
-                                case BlastVectorSizes.float1: handle_op_f4_f1(current_op, f4_result, f4, ref vector_size); break;
-                                case BlastVectorSizes.float4: handle_op_f4_f4(current_op, f4_result, f4, ref vector_size); break;
-#if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
-                                    break;
-#endif
-                            }
-                            break;
-
-
-#if DEVELOPMENT_BUILD || TRACE
-                        default:
-                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
-                            break;
-#endif
-
-
+                        // directly put result into target-rec 
+                        handle_in_getsequence_operation_to_target(ref vector_size, current_op, ref not, ref minus, f4, f4_result, prev_vector_size, target_rec);
+                        code_pointer++;
+                        return (int)BlastError.success; 
+                    }
+                    else
+                    {
+                        // put result into register 
+                        handle_in_getsequence_operation_to_register(ref vector_size, current_op, ref not, ref minus, f4, f4_result, prev_vector_size);
                     }
                 }
 
@@ -9190,8 +10291,225 @@ namespace NSS.Blast.SSMD
                 code_pointer++;
             }
 
-            // return OK 
-            return (int)BlastError.success;
+            // check, if target record is set reaching here is an error
+            return math.select((int)BlastError.success, (int)BlastError.error_target_not_set_in_sequence, target_rec.is_set); 
+        }
+
+        /// <summary>
+        /// pulled out of getsequence for refactoring : handle op and put result back into target record location 
+        /// </summary>
+        void handle_in_getsequence_operation_to_target(ref byte vector_size, blast_operation current_op, ref bool not, ref bool minus, float4* f4, float4* f4_result, byte prev_vector_size, in DATAREC target)
+        {
+#if DEVELOPMENT_BUILD || TRACE
+            if (!target.is_set) 
+            {
+                 Debug.LogError($"blast.ssmd.interpretor.handle-in-sequence-operation: target not set, codepointer = {code_pointer}");
+                 return;
+            }
+#else
+            if (!target.is_set) return;
+#endif
+
+
+            switch ((BlastVectorSizes)prev_vector_size)
+            {
+                case BlastVectorSizes.float1:
+
+                    switch ((BlastVectorSizes)vector_size)
+                    {
+                        case BlastVectorSizes.float1: handle_op_f1_f1(current_op, f4_result, f4, ref vector_size, minus, not, in target); break;
+                        case BlastVectorSizes.float2: handle_op_f1_f2(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+               //         case BlastVectorSizes.float3: handle_op_f1_f3(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+               //         case BlastVectorSizes.float4: handle_op_f1_f4(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
+                                    break;
+#endif
+                    }
+                    minus = false;
+                    not = false; 
+                    break;
+
+
+                case BlastVectorSizes.float2:
+
+                    switch ((BlastVectorSizes)vector_size)
+                    {
+               //         case BlastVectorSizes.float1: handle_op_f2_f1(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+               //         case BlastVectorSizes.float2: handle_op_f2_f2(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                                    break;
+#endif
+                    }
+                    minus = false;
+                    not = false;
+                    break;
+
+                case BlastVectorSizes.float3:
+
+                    switch ((BlastVectorSizes)vector_size)
+                    {
+               //         case BlastVectorSizes.float1: handle_op_f3_f1(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+               //         case BlastVectorSizes.float3: handle_op_f3_f3(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                                    break;
+#endif
+                    }
+                    minus = false;
+                    not = false;
+                    break;
+
+
+                case 0:
+                case BlastVectorSizes.float4:
+
+                    switch ((BlastVectorSizes)vector_size)
+                    {
+               //         case BlastVectorSizes.float1: handle_op_f4_f1(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+              //         case BlastVectorSizes.float4: handle_op_f4_f4(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                                    break;
+#endif
+                    }
+                    minus = false;
+                    not = false;
+                    break;
+
+
+#if DEVELOPMENT_BUILD || TRACE
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
+                            break;
+#endif
+
+
+            }
+        }
+
+
+        /// <summary>
+        /// pulled out of getsequence for refactoring : handle op and put result back into register 
+        /// </summary>
+        void handle_in_getsequence_operation_to_register(ref byte vector_size, blast_operation current_op, ref bool not, ref bool minus, float4* f4, float4* f4_result, byte prev_vector_size)
+        {
+            if ((minus || not))
+            {
+#if DEVELOPMENT_BUILD || TRACE
+                            if (minus && not)
+                            {
+                                Debug.LogError("minus and not together active: error");
+                            }
+#endif
+                if (not)
+                {
+                    // this could be put in handle_op.. saving a loop
+                    switch ((BlastVectorSizes)vector_size)
+                    {
+                        case BlastVectorSizes.float1: for (int i = 0; i < ssmd_datacount; i++) f4[i].x = math.select(0, 1, f4[i].x == 0f); break;
+                        case BlastVectorSizes.float2: for (int i = 0; i < ssmd_datacount; i++) f4[i].xy = math.select((float2)0f, (float2)1f, f4[i].xy == (float2)0f); break;
+                        case BlastVectorSizes.float3: for (int i = 0; i < ssmd_datacount; i++) f4[i].xyz = math.select((float3)0f, (float3)1f, f4[i].xyz == (float3)0f); break;
+                        case 0:
+                        case BlastVectorSizes.float4: for (int i = 0; i < ssmd_datacount; i++) f4[i] = math.select((float4)0f, (float4)1f, f4[i] == (float4)0f); break;
+                    }
+                    not = false;
+                }
+
+                if (minus)
+                {
+                    // this could be put in handle_op.. saving a loop
+                    switch ((BlastVectorSizes)vector_size)
+                    {
+                        case BlastVectorSizes.float1: simd.move_f1_array_into_f4_array_as_f1_n(f4, f4, ssmd_datacount); break;
+                        case BlastVectorSizes.float2: simd.move_f2_array_into_f4_array_as_f2_n(f4, f4, ssmd_datacount); break;
+                        case BlastVectorSizes.float3: simd.move_f3_array_into_f4_array_as_f3_n(f4, f4, ssmd_datacount); break;
+                        case 0:
+                        case BlastVectorSizes.float4: simd.move_f4_array_into_f4_array_as_f4_n(f4, f4, ssmd_datacount); break;
+                    }
+                    minus = false;
+                }
+            }
+
+            switch ((BlastVectorSizes)prev_vector_size)
+            {
+                case BlastVectorSizes.float1:
+
+                    switch ((BlastVectorSizes)vector_size)
+                    {
+                        case BlastVectorSizes.float1: handle_op_f1_f1(current_op, f4_result, f4, ref vector_size); break;
+                        case BlastVectorSizes.float2: handle_op_f1_f2(current_op, f4_result, f4, ref vector_size); break;
+                        case BlastVectorSizes.float3: handle_op_f1_f3(current_op, f4_result, f4, ref vector_size); break;
+                        case BlastVectorSizes.float4: handle_op_f1_f4(current_op, f4_result, f4, ref vector_size); break;
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
+                                    break;
+#endif
+                    }
+                    break;
+
+
+                case BlastVectorSizes.float2:
+
+                    switch ((BlastVectorSizes)vector_size)
+                    {
+                        case BlastVectorSizes.float1: handle_op_f2_f1(current_op, f4_result, f4, ref vector_size); break;
+                        case BlastVectorSizes.float2: handle_op_f2_f2(current_op, f4_result, f4, ref vector_size); break;
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                                    break;
+#endif
+                    }
+                    break;
+
+                case BlastVectorSizes.float3:
+
+                    switch ((BlastVectorSizes)vector_size)
+                    {
+                        case BlastVectorSizes.float1: handle_op_f3_f1(current_op, f4_result, f4, ref vector_size); break;
+                        case BlastVectorSizes.float3: handle_op_f3_f3(current_op, f4_result, f4, ref vector_size); break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                                    break;
+#endif
+                    }
+                    break;
+
+
+                case 0:
+                case BlastVectorSizes.float4:
+
+                    switch ((BlastVectorSizes)vector_size)
+                    {
+                        case BlastVectorSizes.float1: handle_op_f4_f1(current_op, f4_result, f4, ref vector_size); break;
+                        case BlastVectorSizes.float4: handle_op_f4_f4(current_op, f4_result, f4, ref vector_size); break;
+#if DEVELOPMENT_BUILD || TRACE
+                                default:
+                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                                    break;
+#endif
+                    }
+                    break;
+
+
+#if DEVELOPMENT_BUILD || TRACE
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
+                            break;
+#endif
+
+
+            }
         }
 
 
@@ -9458,7 +10776,9 @@ namespace NSS.Blast.SSMD
 
             return BlastError.success;
         }
-                 
+
+
+        const bool ASSIGN_TO_TARGET = true; 
 
         /// <summary>
         /// assign result of a sequence 
@@ -9488,79 +10808,105 @@ namespace NSS.Blast.SSMD
             // vectorsize assigned MUST match 
             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
-            // correct vectorsize 4 => it is 0 after compressing into 2 bits
-            BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size);
-            if (res != BlastError.success)
+
+            if (ASSIGN_TO_TARGET)
             {
+                // index data target 
+                // - correct vectorsize 4 => it is 0 after compressing into 2 bits
+                DATAREC data_target = IndexData(
+                    get_offset_from_indexed(in assignee, in indexer, in is_indexed), 
+                    (byte)math.select(s_assignee, 4, s_assignee == 0));
+
+                // run sequencer, putting the last step into the data-target             
+                BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size, in data_target);
+                if (res != BlastError.success)
+                {
 #if DEVELOPMENT_BUILD || TRACE
-                Debug.LogError($"blast.ssmd.assign: failed to read compound data for assign operation at codepointer {code_pointer}");
+                    Debug.LogError($"blast.ssmd.assign: failed to read compound data and directly assign it to target at codepointer {code_pointer}");
 #endif
-                return res;
+                    return res;
+                }
+
+                // successfully set assignment target
+                return BlastError.success;
             }
-
-#if DEVELOPMENT_BUILD || TRACE
-            // compiler should have cought this 
-            if (vector_size != 1 && is_indexed)
+            else
             {
-                Debug.LogError($"blast.ssmd.assign: cannot set component from vector at #{code_pointer}, component: {indexer}");
-                return BlastError.error_assign_component_from_vector;
-            }
-#endif
-
-            // set assigned data fields in stack 
-            switch ((byte)vector_size)
-            {
-                case (byte)BlastVectorSizes.float1:
-                    //if(Unity.Burst.CompilerServices.Hint.Unlikely(s_assignee != 1))
-                    if (s_assignee != 1 && !is_indexed)
-                    {
+                // run sequence result into a register 
+                BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size);
+                if (res != BlastError.success)
+                {
 #if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
+                    Debug.LogError($"blast.ssmd.assign: failed to read compound|sequence data for assign operation at codepointer {code_pointer}");
 #endif
-                        return BlastError.error_assign_vector_size_mismatch;
-                    }
-                    set_data_from_register_f1(get_offset_from_indexed(in assignee, in indexer, in is_indexed));
-                    break;
+                    return res;
+                }
 
-                case (byte)BlastVectorSizes.float2:
-                    if (s_assignee != 2)
-                    {
+
 #if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
+                // compiler should have cought this 
+                if (vector_size != 1 && is_indexed)
+                {
+                    Debug.LogError($"blast.ssmd.assign: cannot set component from vector at #{code_pointer}, component: {indexer}");
+                    return BlastError.error_assign_component_from_vector;
+                }
 #endif
-                        return BlastError.error_assign_vector_size_mismatch;
-                    }
-                    set_data_from_register_f2(assignee);
-                    break;
 
-                case (byte)BlastVectorSizes.float3:
-                    if (s_assignee != 3)
-                    {
+                // set assigned data fields in stack 
+                switch ((byte)vector_size)
+                {
+                    case (byte)BlastVectorSizes.float1:
+                        //if(Unity.Burst.CompilerServices.Hint.Unlikely(s_assignee != 1))
+                        if (s_assignee != 1 && !is_indexed)
+                        {
+#if DEVELOPMENT_BUILD || TRACE
+                            Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '1', data id = {assignee}");
+#endif
+                            return BlastError.error_assign_vector_size_mismatch;
+                        }
+                        set_data_from_register_f1(get_offset_from_indexed(in assignee, in indexer, in is_indexed));
+                        break;
+
+                    case (byte)BlastVectorSizes.float2:
+                        if (s_assignee != 2)
+                        {
+#if DEVELOPMENT_BUILD || TRACE
+                            Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '2'");
+#endif
+                            return BlastError.error_assign_vector_size_mismatch;
+                        }
+                        set_data_from_register_f2(assignee);
+                        break;
+
+                    case (byte)BlastVectorSizes.float3:
+                        if (s_assignee != 3)
+                        {
 #if DEVELOPMENT_BUILD || TRACE || TRACE
-                        Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
+                            Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '3'");
 #endif
-                        return BlastError.error_assign_vector_size_mismatch;
-                    }
-                    set_data_from_register_f3(assignee);
-                    break;
+                            return BlastError.error_assign_vector_size_mismatch;
+                        }
+                        set_data_from_register_f3(assignee);
+                        break;
 
-                case 0: // artifact from cutting 4 off at 2 bits 
-                case (byte)BlastVectorSizes.float4:
-                    if (s_assignee != 4)
-                    {
+                    case 0: // artifact from cutting 4 off at 2 bits 
+                    case (byte)BlastVectorSizes.float4:
+                        if (s_assignee != 4)
+                        {
 #if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
+                            Debug.LogError($"blast.ssmd.assign: assigned vector size mismatch at #{code_pointer}, should be size '{s_assignee}', evaluated '4'");
 #endif
-                        return BlastError.error_assign_vector_size_mismatch;
-                    }
-                    set_data_from_register_f4(assignee);
-                    break;
+                            return BlastError.error_assign_vector_size_mismatch;
+                        }
+                        set_data_from_register_f4(assignee);
+                        break;
 
-                default:
+                    default:
 #if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError($"blast.ssmd.assign: vector size {vector_size} not allowed at codepointer {code_pointer}");
+                        Debug.LogError($"blast.ssmd.assign: vector size {vector_size} not allowed at codepointer {code_pointer}");
 #endif
-                    return BlastError.error_unsupported_operation_in_root;
+                        return BlastError.error_unsupported_operation_in_root;
+                }
             }
 
             return BlastError.success;
@@ -9773,7 +11119,6 @@ namespace NSS.Blast.SSMD
             //   if we reach here however WE know it is executed for this data stream
             //   and as blast gives no guarantee which record is executed when ...
             //
-            BlastError res;
             BlastVariableDataType assigned_datatype; 
 
             switch ((blast_operation)code[code_pointer])
@@ -10082,12 +11427,31 @@ namespace NSS.Blast.SSMD
                 //   although it does make up for it when using float2 and float3 vectors: upto 3x faster in .net core builds 
                 // 
                 data_rowsize = (int)(((ulong*)data)[1] - ((ulong*)data)[0]);
-                data_is_aligned = (data_rowsize % 4) == 0;
+                data_is_aligned = (data_rowsize % 4) == 0; // would be wierd if not 
 
-                for (int i = 1; data_is_aligned && i < ssmd_datacount - 1; i++)
+                int i = 0;
+                while (data_is_aligned && i < ssmd_datacount - 4)
+                {
+                    // on the very small runs this can slow down 
+                    data_is_aligned =
+                        data_rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i])
+                        &&
+                        data_rowsize == (int)(((ulong*)data)[i + 2] - ((ulong*)data)[i + 1])
+                        &&
+                        data_rowsize == (int)(((ulong*)data)[i + 3] - ((ulong*)data)[i + 2])
+                        &&
+                        data_rowsize == (int)(((ulong*)data)[i + 4] - ((ulong*)data)[i + 3]);
+                    i += 4;
+                }
+                while (data_is_aligned && i < ssmd_datacount - 1)
                 {
                     data_is_aligned = data_rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i]);
+                    i++;
                 }
+                // for (int i = 1; data_is_aligned && i < ssmd_datacount - 1; i++)
+                // {
+                //     data_is_aligned = data_rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i]);
+                // }
             }
             else
             {

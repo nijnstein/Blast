@@ -1232,6 +1232,459 @@ namespace NSS.Blast.SSMD
 
         #endregion
 
+        #region sub_array_f1f1 target 
+
+        /// <summary>
+        /// [][] = a.x - b.x (in float4 arrays) 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void sub_array_f1f1([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            if (IsUnrolled)
+            {
+                float* fa = (float*)(void*)a;
+                float* fb = (float*)(void*)b;
+                int i = 0;
+
+                float* p = target.index00;
+                int p_stride = target.row_size >> 2;
+                int p_stride2 = p_stride + p_stride;
+
+                while (i < (ssmd_datacount & ~7))
+                {
+                    p[0] = fa[0] - fb[0];
+                    p[p_stride] = fa[4] - fb[4];
+                    p += p_stride2;
+
+                    p[0] = fa[8] - fb[8];
+                    p[p_stride] = fa[12] - fb[12];
+                    p += p_stride2;
+
+                    p[0] = fa[16] - fb[16];
+                    p[p_stride] = fa[20] - fb[20];
+                    p += p_stride2;
+
+                    p[0] = fa[24] - fb[24];
+                    p[p_stride] = fa[28] - fb[28];
+                    p += p_stride2;
+
+                    fa += 32;
+                    fb += 32;
+                    i += 8;
+                }
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = fa[0] - fb[0];
+                    p[p_stride] = fa[4] - fb[4];
+                    p += p_stride2;
+
+                    p[0] = fa[8] - fb[8];
+                    p[p_stride] = fa[12] - fb[12];
+                    p += p_stride2;
+
+                    fa += 16;
+                    fb += 16;
+                    i += 4;
+                }
+                while (i < ssmd_datacount)
+                {
+                    p[0] = fa[0] - fb[0];
+                    p += p_stride;
+                    fa += 4;
+                    fb += 4;
+                    i++;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = a[i].x - b[i].x;
+            }
+        }
+
+        /// <summary>
+        /// [][] = a.x - constant  
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void sub_array_f1f1([NoAlias] float4* a, float constant, in DATAREC target, in int ssmd_datacount)
+        {
+            if (IsUnrolled)
+            {
+                float* fa = (float*)(void*)a;
+                int i = 0;
+
+                float* p = target.index00;
+                int p_stride = target.row_size >> 2;
+                int p_stride2 = p_stride + p_stride;
+
+                while (i < (ssmd_datacount & ~7))
+                {
+                    p[0] = fa[0] - constant;
+                    p[p_stride] = fa[4] - constant;
+                    p += p_stride2;
+
+                    p[0] = fa[8] - constant;
+                    p[p_stride] = fa[12] - constant;
+                    p += p_stride2;
+
+                    p[0] = fa[16] - constant;
+                    p[p_stride] = fa[20] - constant;
+                    p += p_stride2;
+
+                    p[0] = fa[24] - constant;
+                    p[p_stride] = fa[28] - constant;
+                    p += p_stride2;
+
+                    fa += 32;
+                    i += 8;
+                }
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = fa[0] - constant;
+                    p[p_stride] = fa[4] - constant;
+                    p += p_stride2;
+
+                    p[0] = fa[8] - constant;
+                    p[p_stride] = fa[12] - constant;
+                    p += p_stride2;
+
+                    fa += 16;
+                    i += 4;
+                }
+                while (i < ssmd_datacount)
+                {
+                    p[0] = fa[0] - constant;
+                    p += p_stride;
+                    fa += 4;
+                    i++;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++) ((float**)target.data)[i][target.index] = a[i].x - constant;
+            }
+        }
+
+
+
+        /// <summary>
+        /// [][] = a.x - b.x (in float4 arrays)  -> add_array_f1f1 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void sub_array_f1f1_negated([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            add_array_f1f1(a, b, target, ssmd_datacount);
+        }
+
+        /// <summary>
+        /// [][]xy = a.xy - constant.x (in float4 arrays) 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void sub_array_f2f1([NoAlias] float4* a, float constant, in DATAREC target, in int ssmd_datacount)
+        {
+            add_array_f2f1(a, -constant, in target, in ssmd_datacount);
+        }
+
+        /// <summary>
+        /// [][]xyz = a.xyz - constant.x (in float4 arrays) 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void sub_array_f3f1([NoAlias] float4* a, float constant, in DATAREC target, in int ssmd_datacount)
+        {
+            add_array_f3f1(a, -constant, in target, in ssmd_datacount);
+        }
+
+        /// <summary>
+        /// [][]xyzw = a.xyzw - constant.x (in float4 arrays) 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void sub_array_f4f1([NoAlias] float4* a, float constant, in DATAREC target, in int ssmd_datacount)
+        {
+            add_array_f4f1(a, -constant, in target, in ssmd_datacount);
+        }
+
+        /// <summary>
+        /// [][]xy = a.x - b.xy (in float4 arrays)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void sub_array_f1f2([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            if (IsUnrolled)
+            {
+                float* fa = (float*)(void*)a;
+                float* fb = (float*)(void*)b;
+                int i = 0;
+
+                float* p = target.index00;
+                int p_stride = target.row_size >> 2;
+                int p_stride2 = p_stride + p_stride;
+
+                while (i < (ssmd_datacount & ~7))
+                {
+                    p[0]                = fa[0] - fb[0];
+                    p[1]                = fa[0] - fb[1];
+                    p[p_stride]         = fa[4] - fb[4];
+                    p[p_stride + 1]     = fa[4] - fb[5];
+                    p += p_stride2;
+
+                    p[0]                = fa[8] - fb[8];
+                    p[1]                = fa[8] - fb[9];
+                    p[p_stride]         = fa[12] - fb[12];
+                    p[p_stride + 1]     = fa[12] - fb[13];
+                    p += p_stride2;
+
+                    p[0]                = fa[16] - fb[16];
+                    p[1]                = fa[16] - fb[17];
+                    p[p_stride]         = fa[20] - fb[20];
+                    p[p_stride + 1]     = fa[20] - fb[21];
+                    p += p_stride2;              
+
+                    p[0]                = fa[24] - fb[24];
+                    p[1]                = fa[24] - fb[25];
+                    p[p_stride]         = fa[28] - fb[28];
+                    p[p_stride + 1]     = fa[28] - fb[29];
+                    p += p_stride2;
+
+                    fa += 32;
+                    fb += 32;
+                    i += 8;
+                }
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0]                = fa[0] - fb[0];
+                    p[1]                = fa[0] - fb[1];
+                    p[p_stride]         = fa[4] - fb[4];
+                    p[p_stride + 1]     = fa[4] - fb[5];
+                    p += p_stride2;
+
+                    p[0]                = fa[8] - fb[8];
+                    p[1]                = fa[8] - fb[9];
+                    p[p_stride]         = fa[12] - fb[12];
+                    p[p_stride + 1]     = fa[12] - fb[13];
+                    p += p_stride2;
+
+                    fa += 16;
+                    fb += 16;
+                    i += 4;
+                }
+                while (i < ssmd_datacount)
+                {
+                    p[0] = fa[0] - fb[0];
+                    p[1] = fa[0] - fb[1];
+                    p += p_stride;
+                    fa += 4;
+                    fb += 4;
+                    i++;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = a[i].x - b[i].xy;            
+            }
+        }
+
+        /// <summary>
+        /// [][]xyz = a.x - b.xyz (in float4 arrays)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void sub_array_f1f3([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            if (IsUnrolled)
+            {
+                float* fa = (float*)(void*)a;
+                float* fb = (float*)(void*)b;
+                int i = 0;
+
+                float* p = target.index00;
+                int p_stride = target.row_size >> 2;
+                int p_stride2 = p_stride + p_stride;
+
+                while (i < (ssmd_datacount & ~7))
+                {
+                    p[0] = fa[0] - fb[0];
+                    p[1] = fa[0] - fb[1];
+                    p[2] = fa[0] - fb[2];
+                    p[p_stride] = fa[4] - fb[4];
+                    p[p_stride + 1] = fa[4] - fb[5];
+                    p[p_stride + 2] = fa[4] - fb[6];
+                    p += p_stride2;
+
+                    p[0] = fa[8] - fb[8];
+                    p[1] = fa[8] - fb[9];
+                    p[2] = fa[8] - fb[10];
+                    p[p_stride] = fa[12] - fb[12];
+                    p[p_stride + 1] = fa[12] - fb[13];
+                    p[p_stride + 2] = fa[12] - fb[14];
+                    p += p_stride2;
+
+                    p[0] = fa[16] - fb[16];
+                    p[1] = fa[16] - fb[17];
+                    p[2] = fa[16] - fb[18];
+                    p[p_stride] = fa[20] - fb[20];
+                    p[p_stride + 1] = fa[20] - fb[21];
+                    p[p_stride + 2] = fa[20] - fb[22];
+                    p += p_stride2;
+
+                    p[0] = fa[24] - fb[24];
+                    p[1] = fa[24] - fb[25];
+                    p[2] = fa[24] - fb[26];
+                    p[p_stride] = fa[28] - fb[28];
+                    p[p_stride + 1] = fa[28] - fb[29];
+                    p[p_stride + 2] = fa[28] - fb[30];
+                    p += p_stride2;
+
+                    fa += 32;
+                    fb += 32;
+                    i += 8;
+                }
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = fa[0] - fb[0];
+                    p[1] = fa[0] - fb[1];
+                    p[2] = fa[0] - fb[2];
+                    p[p_stride] = fa[4] - fb[4];
+                    p[p_stride + 1] = fa[4] - fb[5];
+                    p[p_stride + 2] = fa[4] - fb[6];
+                    p += p_stride2;
+
+                    p[0] = fa[8] - fb[8];
+                    p[1] = fa[8] - fb[9];
+                    p[2] = fa[8] - fb[10];
+                    p[p_stride] = fa[12] - fb[12];
+                    p[p_stride + 1] = fa[12] - fb[13];
+                    p[p_stride + 2] = fa[12] - fb[14];
+                    p += p_stride2;
+
+                    fa += 16;
+                    fb += 16;
+                    i += 4;
+                }
+                while (i < ssmd_datacount)
+                {
+                    p[0] = fa[0] - fb[0];
+                    p[1] = fa[0] - fb[1];
+                    p[2] = fa[0] - fb[2];
+                    p += p_stride;
+                    fa += 4;
+                    fb += 4;
+                    i++;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = a[i].x - b[i].xyz;
+            }
+        }
+
+
+        /// <summary>
+        /// [][]xyzw = a.x - b.xyzw (in float4 arrays)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void sub_array_f1f4([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            if (IsUnrolled)
+            {
+                float* fa = (float*)(void*)a;
+                float* fb = (float*)(void*)b;
+                int i = 0;
+
+                float* p = target.index00;
+                int p_stride = target.row_size >> 2;
+                int p_stride2 = p_stride + p_stride;
+
+                while (i < (ssmd_datacount & ~7))
+                {
+                    p[0] = fa[0] - fb[0];
+                    p[1] = fa[0] - fb[1];
+                    p[2] = fa[0] - fb[2];
+                    p[3] = fa[0] - fb[3];
+                    p[p_stride] = fa[4] - fb[4];
+                    p[p_stride + 1] = fa[4] - fb[5];
+                    p[p_stride + 2] = fa[4] - fb[6];
+                    p[p_stride + 3] = fa[4] - fb[7];
+                    p += p_stride2;
+
+                    p[0] = fa[8] - fb[8];
+                    p[1] = fa[8] - fb[9];
+                    p[2] = fa[8] - fb[10];
+                    p[3] = fa[8] - fb[11];
+                    p[p_stride] = fa[12] - fb[12];
+                    p[p_stride + 1] = fa[12] - fb[13];
+                    p[p_stride + 2] = fa[12] - fb[14];
+                    p[p_stride + 3] = fa[12] - fb[15];
+                    p += p_stride2;
+
+                    p[0] = fa[16] - fb[16];
+                    p[1] = fa[16] - fb[17];
+                    p[2] = fa[16] - fb[18];
+                    p[3] = fa[16] - fb[19];
+                    p[p_stride] = fa[20] - fb[20];
+                    p[p_stride + 1] = fa[20] - fb[21];
+                    p[p_stride + 2] = fa[20] - fb[22];
+                    p[p_stride + 3] = fa[20] - fb[23];
+                    p += p_stride2;
+
+                    p[0] = fa[24] - fb[24];
+                    p[1] = fa[24] - fb[25];
+                    p[2] = fa[24] - fb[26];
+                    p[3] = fa[24] - fb[27];
+                    p[p_stride] = fa[28] - fb[28];
+                    p[p_stride + 1] = fa[28] - fb[29];
+                    p[p_stride + 2] = fa[28] - fb[30];
+                    p[p_stride + 3] = fa[28] - fb[31];
+                    p += p_stride2;
+
+                    fa += 32;
+                    fb += 32;
+                    i += 8;
+                }
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = fa[0] - fb[0];
+                    p[1] = fa[0] - fb[1];
+                    p[2] = fa[0] - fb[2];
+                    p[3] = fa[0] - fb[3];
+                    p[p_stride] = fa[4] - fb[4];
+                    p[p_stride + 1] = fa[4] - fb[5];
+                    p[p_stride + 2] = fa[4] - fb[6];
+                    p[p_stride + 3] = fa[4] - fb[7];
+                    p += p_stride2;
+
+                    p[0] = fa[8] - fb[8];
+                    p[1] = fa[8] - fb[9];
+                    p[2] = fa[8] - fb[10];
+                    p[3] = fa[8] - fb[11];
+                    p[p_stride] = fa[12] - fb[12];
+                    p[p_stride + 1] = fa[12] - fb[13];
+                    p[p_stride + 2] = fa[12] - fb[14];
+                    p[p_stride + 3] = fa[12] - fb[15];
+                    p += p_stride2;
+
+                    fa += 16;
+                    fb += 16;
+                    i += 4;
+                }
+                while (i < ssmd_datacount)
+                {
+                    p[0] = fa[0] - fb[0];
+                    p[1] = fa[0] - fb[1];
+                    p[2] = fa[0] - fb[2];
+                    p[3] = fa[0] - fb[3];
+                    p += p_stride;
+                    fa += 4;
+                    fb += 4;
+                    i++;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++) ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = a[i].x - b[i];
+            }
+        }
+
+
+        #endregion
+
     }
 
 }

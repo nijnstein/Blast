@@ -1944,7 +1944,11 @@ namespace NSS.Blast
         /// <summary>
         /// attempting to index cdata with an out of range indexer. 
         /// </summary>
-        error_cdata_indexer_out_of_bounds = -93
+        error_cdata_indexer_out_of_bounds = -93,
+        /// <summary>
+        /// if the sequence is executed with a target and it returns without setting that target then this error is called. something is wrong with the sequencer  
+        /// </summary>
+        error_target_not_set_in_sequence = -94
     }
 
 }

@@ -39,6 +39,9 @@ namespace NSS.Blast.SSMD
         }
 
 
+        /// <summary>
+        /// f[][] = f4.x
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_f4_array_to_indexed_data_as_f1([NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, [NoAlias] float4* f4, int ssmd_datacount)
         {
@@ -78,6 +81,10 @@ namespace NSS.Blast.SSMD
             }
         }
 
+
+        /// <summary>
+        /// f[][] = - f4.x
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_f4_array_to_indexed_data_as_f1_negated([NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, [NoAlias] float4* f4, int ssmd_datacount)
         {
@@ -455,7 +462,7 @@ namespace NSS.Blast.SSMD
         }
 
         /// <summary>
-        /// move a constant float value as array into an indexed segment 
+        /// move a constant float value as array into an indexed segment : [][] = xy
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_f1_constant_to_indexed_data_as_f2([NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, float constant, int ssmd_datacount)
@@ -483,7 +490,7 @@ namespace NSS.Blast.SSMD
 
 
         /// <summary>
-        /// move a constant float value as array into an indexed segment 
+        /// move a constant float value as array into an indexed segment : [][] = xyz
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_f1_constant_to_indexed_data_as_f3([NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, float constant, int ssmd_datacount)
@@ -511,7 +518,7 @@ namespace NSS.Blast.SSMD
         }
 
         /// <summary>
-        /// move a constant float value as array into an indexed segment 
+        /// move a constant float value as array into an indexed segment [][] = xyzw
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_f1_constant_to_indexed_data_as_f4([NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, float constant, int ssmd_datacount)
