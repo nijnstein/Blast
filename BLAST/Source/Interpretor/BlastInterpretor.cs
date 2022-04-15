@@ -159,6 +159,22 @@ namespace NSS.Blast.Interpretor
         #region Reset & Set Package
 
         /// <summary>
+        /// get a copy of the current package data
+        /// </summary>
+        public BlastPackageData CurrentPackage => package;
+
+        /// <summary>
+        /// datasize in currently set package 
+        /// </summary>
+        public int CurrentDataSize => package.DataSize; 
+
+        /// <summary>
+        /// codesize in currently set package
+        /// </summary>
+        public int CurrentCodeSize => package.CodeSize;
+
+
+        /// <summary>
         /// reset code_pointer and stack_offset to their initial states 
         /// </summary>
         /// <param name="blast">pointer to blast engine data</param>

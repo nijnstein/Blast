@@ -446,7 +446,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b821e1c713592864fa0a898563438b17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ObjectCount: 32348
+  ObjectCount: 8096
   Prefab: {fileID: 576204711304380618, guid: 1033241512c145d479b859511b3ebee2, type: 3}
   FPS: {fileID: 1288659540}
   State0: "#input state    float  0\r\n#input position float3 0 0 0\r\n\r\nposition.x

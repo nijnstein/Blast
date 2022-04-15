@@ -275,6 +275,12 @@ namespace NSS.Blast.SSMD
 
         #region Public SetPackage & Execute 
 
+        public BlastPackageData CurrentPackage => package;
+
+        public int CurrentSSMDDataSize => package.SSMDDataSize;
+
+        public int CurrentCodeSize => package.CodeSize; 
+
         /// <summary>
         /// set ssmd package data 
         /// </summary>
@@ -8044,36 +8050,88 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         bool is_last_in_sequence(int i)
         {
-            bool is_last_token_in_sequence = 
-                (i >= package.CodeSize - 1)
-                ||
-                (code[i + 1] == (byte)blast_operation.nop || code[i + 1] == (byte)blast_operation.end);
-
-            if(!is_last_token_in_sequence)
+            // check multibyte signatures 
+            blast_operation op = (blast_operation)code[i];
+            switch (op)
             {
-                // check multibyte signatures 
-                blast_operation op = (blast_operation)code[i]; 
-                switch(op)
-                {
-                    case blast_operation.constant_f1: i += 5; break;  
-                    case blast_operation.constant_f1_h: i += 3; break;
-                    case blast_operation.constant_long_ref: i += 3; break;
-                    case blast_operation.constant_short_ref: i += 1; break;
+                case blast_operation.constant_f1: i += 4; break;
+                case blast_operation.constant_f1_h: i += 3; break;
+                case blast_operation.constant_long_ref: i += 3; break;
+                case blast_operation.constant_short_ref: i += 1; break;
 
-                    case blast_operation.cdata:
-                        Debug.LogError("handle me cdata");
-                        break;
+                case blast_operation.cdata:
+                    Debug.LogError("handle me cdata");
+                    break;
 
-                    // for now if next is anything else 
-                    case blast_operation.ex_op: return false; 
-                }
+                case blast_operation.pi:
+                case blast_operation.inv_pi:
+                case blast_operation.epsilon:
+                case blast_operation.infinity:
+                case blast_operation.negative_infinity:
+                case blast_operation.nan:
+                case blast_operation.min_value:
+                case blast_operation.value_0:
+                case blast_operation.value_1:
+                case blast_operation.value_2:
+                case blast_operation.value_3:
+                case blast_operation.value_4:
+                case blast_operation.value_8:
+                case blast_operation.value_10:
+                case blast_operation.value_16:
+                case blast_operation.value_24:
+                case blast_operation.value_32:
+                case blast_operation.value_64:
+                case blast_operation.value_100:
+                case blast_operation.value_128:
+                case blast_operation.value_256:
+                case blast_operation.value_512:
+                case blast_operation.value_1000:
+                case blast_operation.value_1024:
+                case blast_operation.value_30:
+                case blast_operation.value_45:
+                case blast_operation.value_90:
+                case blast_operation.value_180:
+                case blast_operation.value_270:
+                case blast_operation.value_360:
+                case blast_operation.inv_value_2:
+                case blast_operation.inv_value_3:
+                case blast_operation.inv_value_4:
+                case blast_operation.inv_value_8:
+                case blast_operation.inv_value_10:
+                case blast_operation.inv_value_16:
+                case blast_operation.inv_value_24:
+                case blast_operation.inv_value_32:
+                case blast_operation.inv_value_64:
+                case blast_operation.inv_value_100:
+                case blast_operation.inv_value_128:
+                case blast_operation.inv_value_256:
+                case blast_operation.inv_value_512:
+                case blast_operation.inv_value_1000:
+                case blast_operation.inv_value_1024:
+                case blast_operation.inv_value_30:
+                case blast_operation.framecount:
+                case blast_operation.fixedtime:
+                case blast_operation.time:
+                case blast_operation.fixeddeltatime:
+                case blast_operation.deltatime:
+                    break; 
 
-               is_last_token_in_sequence = (i >= package.CodeSize - 1)
-                    ||
-                    (code[i] == (byte)blast_operation.nop || code[i] == (byte)blast_operation.end);
+                default: // assume single byte op if  
+                    {
+                        return  (i >= package.CodeSize - 1)
+                                ||
+                                (op >= blast_operation.id)
+                                &&
+                                (code[i + 1] == (byte)blast_operation.nop || code[i + 1] == (byte)blast_operation.end);
+                    }
+
+                // for now if next is anything else 
+                case blast_operation.ex_op: return false;
             }
 
-            return is_last_token_in_sequence; 
+            return (i >= package.CodeSize - 1)
+                ||
+                (code[i] == (byte)blast_operation.nop || code[i] == (byte)blast_operation.end);
         }
 
         /// <summary>
@@ -8153,9 +8211,8 @@ namespace NSS.Blast.SSMD
                                     }
                                 }
                             }
-                            // check, if target record is set reaching here is an error
-                            return math.select((int)BlastError.success, (int)BlastError.error_target_not_set_in_sequence, target_rec.is_set);
-
+                            // handle end of sequence, might need to copy register to buffer 
+                            goto end_seq;
                         }
 
                     case blast_operation.nop:
@@ -8165,17 +8222,13 @@ namespace NSS.Blast.SSMD
                             // at this point vector_size is decisive for the returned value
                             //
                             code_pointer++;
-
-                            // check, if target record is set (set to be filled) reaching here is an error
-                            return math.select((int)BlastError.success, (int)BlastError.error_target_not_set_in_sequence, target_rec.is_set);
+                            goto end_seq; 
                         }
 
                     case blast_operation.ret:
                         // termination of interpretation
                         code_pointer = package.CodeSize + 1;
-
-                        // check, if target record is set reaching here is an error
-                        return math.select((int)BlastError.success, (int)BlastError.error_target_not_set_in_sequence, target_rec.is_set);
+                        goto end_seq; 
 
 
                     /*  case blast_operation.index_n:
@@ -8500,6 +8553,10 @@ namespace NSS.Blast.SSMD
                             // - no operation may be pending 
                             if (!is_last_token_in_sequence || current_op != blast_operation.nop || !target_rec.is_set)
                             {
+                                // 
+                                // - should pop with op into target if possible  - many scripts end on the sequence   [operation] pop
+                                // 
+
                                 // pop into buffer|register 
                                 stackpop_fn_info(code_pointer, current_op == 0 ? f4_result : f4, minus, indexer, out vector_size);
                             }
@@ -8928,14 +8985,7 @@ namespace NSS.Blast.SSMD
                 }
                 else
                 {
-                    if (nesting_level <= 0 && target_rec.is_set && is_last_token_in_sequence
-
-                        &&
-                        //
-                        // limit to size 1 vectors for shortly 
-                        //
-                        vector_size == 1 && prev_vector_size == 1
-                        )
+                    if (nesting_level <= 0 && target_rec.is_set && is_last_token_in_sequence)
                     {
                         // directly put result into target-rec 
                         handle_in_getsequence_operation_to_target(ref vector_size, current_op, ref not, ref minus, f4, f4_result, prev_vector_size, target_rec);
@@ -8956,8 +9006,26 @@ namespace NSS.Blast.SSMD
                 code_pointer++;
             }
 
+end_seq:
+            // if we reach here with a set target then it wasnt filled with data: the operation did not support output to data[][] directly 
+            // - we need to copy the register to the target 
+            if(target_rec.is_set)
+            {
+                switch (vector_size)
+                {
+                    case 0:
+                    case 4: simd.move_f4_array_to_indexed_data_as_f4(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, f4_result, ssmd_datacount); break;
+                    case 3: simd.move_f4_array_to_indexed_data_as_f3(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, f4_result, ssmd_datacount); break;
+                    case 2: simd.move_f4_array_to_indexed_data_as_f2(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, f4_result, ssmd_datacount); break;
+                    case 1: simd.move_f4_array_to_indexed_data_as_f1(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, f4_result, ssmd_datacount); break;
+                    default: return (int)BlastError.success; 
+                }
+                return (int)BlastError.success;
+            }
+
             // check, if target record is set reaching here is an error
-            return math.select((int)BlastError.success, (int)BlastError.error_target_not_set_in_sequence, target_rec.is_set); 
+            // return math.select((int)BlastError.success, (int)BlastError.error_target_not_set_in_sequence, target_rec.is_set); 
+            return (int) BlastError.success; 
         }
 
         /// <summary>

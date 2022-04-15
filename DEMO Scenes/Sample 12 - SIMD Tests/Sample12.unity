@@ -931,7 +931,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000046684236}
+  m_AnchoredPosition: {x: 0, y: 0.00049784203}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1570031847
@@ -1248,8 +1248,8 @@ MonoBehaviour:
   m_text: 'BLAST v1.0.4b
 
 
-    Press [Space] to benchmark, [C] for cubes, [ESC] to
-    exit'
+    Press [Space] to benchmark, [B] to 10x longer [C]
+    for cubes, [ESC] to exit'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: eef2233ab73041f47865f31ad076f3c6, type: 2}
   m_sharedMaterial: {fileID: -3724742562411533765, guid: eef2233ab73041f47865f31ad076f3c6, type: 2}
@@ -1294,7 +1294,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 4
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
@@ -1372,6 +1372,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   View: {fileID: 1967576588}
   DataCount: 64
-  RepeatCount: 1000000
+  RepeatCount: 100000
   DataView: 
   Once: 0

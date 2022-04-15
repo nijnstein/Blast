@@ -14,6 +14,7 @@ using UnityEngine.Assertions;
 #else
     using UnityEngine;
     using UnityEngine.Assertions;
+    using Unity.Collections.LowLevel.Unsafe;
 #endif
 
 
@@ -260,8 +261,11 @@ namespace NSS.Blast
         /// <summary>
         /// pointer to engine data 
         /// </summary>
+#if !STANDALONE_VSBUILD
+        [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
+#endif 
         public IntPtr ptr;
-
         /// <summary>
         /// unsafe casted BlastEngineData pointer
         /// </summary>
