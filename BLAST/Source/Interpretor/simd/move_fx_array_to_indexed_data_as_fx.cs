@@ -217,6 +217,10 @@ namespace NSS.Blast.SSMD
             }
         }
 
+        /// <summary>
+        /// [][].xyz = a[].xyz
+        /// </summary>
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void move_f4_array_to_indexed_data_as_f3([NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, [NoAlias] float4* f4, int ssmd_datacount)
         {
@@ -268,6 +272,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
+        /// <summary>
+        /// [][].xyz = -a[].xyz
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_f4_array_to_indexed_data_as_f3_negated([NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, [NoAlias] float4* f4, int ssmd_datacount)
         {

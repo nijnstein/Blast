@@ -1457,6 +1457,33 @@ namespace NSS.Blast.SSMD
         }
 
         /// <summary>
+        /// [][]xy = a.xy + b.x (in float4 arrays)  (just calls f1f2)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void add_array_f2f1([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            add_array_f1f2(b, a, target, in ssmd_datacount); 
+        }
+
+        /// <summary>
+        /// [][]xyz = a.xyz + b.x (in float4 arrays)  (just calls f1f3)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void add_array_f3f1([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            add_array_f1f3(b, a, target, in ssmd_datacount);
+        }
+
+        /// <summary>
+        /// [][]xyzw = a.xyzw + b.x (in float4 arrays)  (just calls f1f4)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void add_array_f4f1([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            add_array_f1f4(b, a, target, in ssmd_datacount);
+        }
+
+        /// <summary>
         /// [][]xyz = a.x + b.xyz (in float4 arrays)
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1548,6 +1575,252 @@ namespace NSS.Blast.SSMD
                 for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = a[i].x + b[i].xyz;
             }
         }
+
+        /// <summary>
+        /// [][]xy = a.xy + b.xy (in float4 arrays)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void add_array_f2f2([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            if (IsUnrolled)
+            {
+                float* fa = (float*)(void*)a;
+                float* fb = (float*)(void*)b;
+                int i = 0;
+
+                float* p = target.index00;
+                int p_stride = target.row_size >> 2;
+                int p_stride2 = p_stride + p_stride;
+
+                while (i < (ssmd_datacount & ~7))
+                {
+                    p[0] = fa[0] + fb[0];
+                    p[1] = fa[1] + fb[1];
+                    p[p_stride] = fa[4] + fb[4];
+                    p[p_stride + 1] = fa[5] + fb[5];
+                    p += p_stride2;
+
+                    p[0] = fa[8] + fb[8];
+                    p[1] = fa[9] + fb[9];
+                    p[p_stride] = fa[12] + fb[12];
+                    p[p_stride + 1] = fa[13] + fb[13];
+                    p += p_stride2;
+
+                    p[0] = fa[16] + fb[16];
+                    p[1] = fa[17] + fb[17];
+                    p[p_stride] = fa[20] + fb[20];
+                    p[p_stride + 1] = fa[21] + fb[21];
+                    p += p_stride2;
+
+                    p[0] = fa[24] + fb[24];
+                    p[1] = fa[25] + fb[25];
+                    p[p_stride] = fa[28] + fb[28];
+                    p[p_stride + 1] = fa[29] + fb[29];
+                    p += p_stride2;
+
+                    fa += 32;
+                    fb += 32;
+                    i += 8;
+                }
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = fa[0] + fb[0];
+                    p[1] = fa[1] + fb[1];
+                    p[p_stride] = fa[4] + fb[4];
+                    p[p_stride + 1] = fa[5] + fb[5];
+                    p += p_stride2;
+
+                    p[0] = fa[8] + fb[8];
+                    p[1] = fa[9] + fb[9];
+                    p[p_stride] = fa[12] + fb[12];
+                    p[p_stride + 1] = fa[13] + fb[13];
+                    p += p_stride2;
+
+                    fa += 16;
+                    fb += 16;
+                    i += 4;
+                }
+                while (i < ssmd_datacount)
+                {
+                    p[0] = fa[0] + fb[0];
+                    p[1] = fa[1] + fb[1];
+                    p += p_stride;
+                    fa += 4;
+                    fb += 4;
+                    i++;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++) ((float2*)(void*)&((float**)target.data)[i][target.index])[0] = a[i].xy + b[i].xy;
+            }
+        }
+
+
+        /// <summary>
+        /// [][]xyz = a.xyz + b.xyz (in float4 arrays)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void add_array_f3f3([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            if (IsUnrolled)
+            {
+                float* fa = (float*)(void*)a;
+                float* fb = (float*)(void*)b;
+                int i = 0;
+
+                float* p = target.index00;
+                int p_stride = target.row_size >> 2;
+                int p_stride2 = p_stride + p_stride;
+
+                while (i < (ssmd_datacount & ~7))
+                {
+                    p[0] = fa[0] + fb[0];
+                    p[1] = fa[1] + fb[1];
+                    p[2] = fa[2] + fb[2];
+                    p[p_stride] = fa[4] + fb[4];
+                    p[p_stride + 1] = fa[5] + fb[5];
+                    p[p_stride + 2] = fa[6] + fb[6];
+                    p += p_stride2;
+
+                    p[0] = fa[8] + fb[8];
+                    p[1] = fa[9] + fb[9];
+                    p[2] = fa[10] + fb[10];
+                    p[p_stride] = fa[12] + fb[12];
+                    p[p_stride + 1] = fa[13] + fb[13];
+                    p[p_stride + 2] = fa[14] + fb[14];
+                    p += p_stride2;
+
+                    p[0] = fa[16] + fb[16];
+                    p[1] = fa[17] + fb[17];
+                    p[2] = fa[18] + fb[18];
+                    p[p_stride] = fa[20] + fb[20];
+                    p[p_stride + 1] = fa[21] + fb[21];
+                    p[p_stride + 2] = fa[22] + fb[22];
+                    p += p_stride2;
+
+                    p[0] = fa[24] + fb[24];
+                    p[1] = fa[25] + fb[25];
+                    p[2] = fa[26] + fb[26];
+                    p[p_stride] = fa[28] + fb[28];
+                    p[p_stride + 1] = fa[29] + fb[29];
+                    p[p_stride + 2] = fa[30] + fb[30];
+                    p += p_stride2;
+
+                    fa += 32;
+                    fb += 32;
+                    i += 8;
+                }
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = fa[0] + fb[0];
+                    p[1] = fa[1] + fb[1];
+                    p[2] = fa[2] + fb[2];
+                    p[p_stride] = fa[4] + fb[4];
+                    p[p_stride + 1] = fa[5] + fb[5];
+                    p[p_stride + 2] = fa[6] + fb[6];
+                    p += p_stride2;
+
+                    p[0] = fa[8] + fb[8];
+                    p[1] = fa[9] + fb[9];
+                    p[2] = fa[10] + fb[10];
+                    p[p_stride] = fa[12] + fb[12];
+                    p[p_stride + 1] = fa[13] + fb[13];
+                    p[p_stride + 2] = fa[14] + fb[14];
+                    p += p_stride2;
+
+                    fa += 16;
+                    fb += 16;
+                    i += 4;
+                }
+                while (i < ssmd_datacount)
+                {
+                    p[0] = fa[0] + fb[0];
+                    p[1] = fa[1] + fb[1];
+                    p[2] = fa[2] + fb[2];
+                    p += p_stride;
+                    fa += 4;
+                    fb += 4;
+                    i++;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++) ((float3*)(void*)&((float**)target.data)[i][target.index])[0] = a[i].xyz + b[i].xyz;
+            }
+        }
+
+        /// <summary>
+        /// [][].xyzw = a.xyzw + b.xyzw
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void add_array_f4f4([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
+        {
+            float* p = target.index00;
+            int p_stride = target.row_size >> 2;
+
+            if (IsUnrolled)
+            {
+                float* fa = (float*)(void*)a;
+                float* fb = (float*)(void*)b;
+                int i = 0;
+
+                while (i < (ssmd_datacount & ~3))
+                {
+                    p[0] = fa[0] + fb[0];
+                    p[1] = fa[1] + fb[1];
+                    p[2] = fa[2] + fb[2];
+                    p[3] = fa[3] + fb[3];
+                    p += p_stride;
+
+                    p[0] = fa[4] + fb[4];
+                    p[1] = fa[5] + fb[5];
+                    p[2] = fa[6] + fb[6];
+                    p[3] = fa[7] + fb[7];
+                    p += p_stride;
+
+                    p[0] = fa[8] + fb[8];
+                    p[1] = fa[9] + fb[9];
+                    p[2] = fa[10] + fb[10];
+                    p[3] = fa[11] + fb[11];
+                    p += p_stride;
+
+                    p[0] = fa[12] + fb[12];
+                    p[1] = fa[13] + fb[13];
+                    p[2] = fa[14] + fb[14];
+                    p[3] = fa[15] + fb[15];
+                    p += p_stride;
+
+                    fa += 16;
+                    fb += 16;
+                    i += 4;
+                }
+
+                while (i < ssmd_datacount)
+                {
+                    p[0] = fa[0] + fb[0];
+                    p[1] = fa[1] + fb[1];
+                    p[2] = fa[2] + fb[2];
+                    p[3] = fa[3] + fb[3];
+                    p += p_stride;
+                    fa += 4;
+                    fb += 4;
+                    i++;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    p[0] = a[i].x + b[i].x;
+                    p[1] = a[i].y + b[i].y;
+                    p[2] = a[i].z + b[i].z;
+                    p[3] = a[i].w + b[i].w;
+                    p   += p_stride;
+                }
+            }
+        }
+
 
         /// <summary>
         /// [][]xyzw = a.x + b.xyzw (in float4 arrays)

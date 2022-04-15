@@ -253,7 +253,7 @@ namespace NSS.Blast.SSMD
             {
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
-                    f4[i].xy = -f4[i].xy;
+                    f4[i].x = -f4[i].x;
                 }
             }
         }
