@@ -1,8 +1,10 @@
-﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
-// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
-// Proprietary and confidential                                                                       (__) #
-//##########################################################################################################
+﻿//############################################################################################################################
+// BLAST v1.0.4c                                                                                                             #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31 gmail com> All Rights Reserved                   ^__^\ #
+// Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
+//                                                                                                                     (__)  #
+//############################################################################################################################
+
 
 #if STANDALONE_VSBUILD
 using NSS.Blast.Standalone;
@@ -159,6 +161,7 @@ namespace NSS.Blast.SSMD
         /// - external calls just return 0's
         /// </summary>
         public bool ValidateOnce;
+        public int MaxStackSizeReachedDuringValidation;
 
         // 
         // gather alignment information of stack and data 
@@ -206,6 +209,7 @@ namespace NSS.Blast.SSMD
         #endregion 
 
         #region Warnings
+                                     
         /// <summary>
         /// reset any warning counters, blast wil sent most warnings only once
         /// </summary>
@@ -415,9 +419,12 @@ namespace NSS.Blast.SSMD
 
                 // although we allocate everything in 1 block, we will index a pointer to every block,
                 // this will allow us to accept non-block aligned lists of memory pointers 
+
+
+                byte* ptr = (byte*)ssmddata; 
                 for (int i = 0; i < ssmd_data_count; i++)
                 {
-                    datastack[i] = ((byte*)ssmddata) + (datastack_stride * i);
+                    datastack[i] = &ptr[datastack_stride * i]; // ((byte*)ssmddata) + (datastack_stride * i);
                 }
 
                 // execute 
@@ -733,9 +740,11 @@ namespace NSS.Blast.SSMD
                     case blast_operation.constant_long_ref:
                     case blast_operation.constant_short_ref:
                     case blast_operation.constant_f1:
+                    case blast_operation.cdataref:
                         datatype = BlastVariableDataType.Numeric;
                         vector_size = 1;
                         return indexer;
+
 
                     default:
                         {
@@ -817,6 +826,10 @@ namespace NSS.Blast.SSMD
                     i = DebugDisplayVector(i, ssmdi, data, metadata);
                 }
             }
+            else
+            {
+                Debug.Log($"\nDATA Segment   (0 bytes) - no data from the datasegment is used by this package");
+            }
 
             if (package.StackSize > 0)
             {
@@ -825,6 +838,10 @@ namespace NSS.Blast.SSMD
                 {
                     i = DebugDisplayVector(i, ssmdi, stack, metadata);
                 }
+            }
+            else
+            {
+                Debug.Log($"\nSTACK Segment   (0 bytes) - no stack memory is used by this package");
             }
 #endif
         }
@@ -1109,10 +1126,9 @@ namespace NSS.Blast.SSMD
         /// - only grows codepointer on operations
         /// pop|data data[1] and expand into a vector of size n [2,3,4]
         /// </summary>
-        void expand_f1_into_fn(in int expand_into_n, ref int code_pointer, ref byte vector_size, [NoAlias] float4* destination)
+        BlastError ExpandF1IntoFn(in int expand_into_n, ref int code_pointer, ref byte vector_size, [NoAlias] float4* destination, in DATAREC target)
         {
             // we get either a pop instruction or an instruction to get a value 
-
 
             // 
             //  allow expand( - a.x ) ?? -> expand(substract(idx(id)))
@@ -1147,8 +1163,8 @@ namespace NSS.Blast.SSMD
                                 // if the value is not indexed, it should be of size 1 
                                 if (size != 1 || type != BlastVariableDataType.Numeric)
                                 {
-                                    Debug.LogError($"blast.ssmd.stack.expand_f1_into_fn -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
-                                    return;
+                                    Debug.LogError($"blast.ssmd.expand_f1_into_fn -> stackdata mismatch, expecting numeric of size 1, found {type} of size {size} at stack offset {stack_offset}");
+                                    return BlastError.error;
                                 }
                             }
                             else
@@ -1156,10 +1172,9 @@ namespace NSS.Blast.SSMD
                                 // indexed vector, index must be smaller then vectorsize 
                                 if (indexer > size)
                                 {
-                                    Debug.LogError($"blast.ssmd.stack.expand_f1_into_fn -> index {indexer} is out of bounds for vector of size {size} at stack offset {stack_offset}");
-                                    return;
+                                    Debug.LogError($"blast.ssmd.expand_f1_into_fn -> index {indexer} is out of bounds for vector of size {size} at stack offset {stack_offset}");
+                                    return BlastError.error;
                                 }
-
                             }
 #endif
                             // stack pop 
@@ -1168,11 +1183,18 @@ namespace NSS.Blast.SSMD
                             // if indexed, the source data has a different cardinality
                             int offset = stack_offset + math.select(0, indexer, indexer >= 0);
 
-                            expand_indexed_into_n(expand_into_n, destination, substract, c, offset, stack, stack_is_aligned, stack_rowsize);
+                            if (target.is_set)
+                            {
+                                expand_indexed_into_n(expand_into_n, target, substract, c, offset, stack, stack_is_aligned, stack_rowsize);
+                            }
+                            else
+                            {
+                                expand_indexed_into_n(expand_into_n, destination, substract, c, offset, stack, stack_is_aligned, stack_rowsize);
+                            }
 
                             // output vectorsize equals what we expanded into 
                             vector_size = (byte)expand_into_n;
-                            return;
+                            return BlastError.success; 
                         }
 
 
@@ -1190,9 +1212,16 @@ namespace NSS.Blast.SSMD
                             code_pointer += 4; // function ends on this and should leave pointer at last processed token
 
                             constant = math.select(constant, -constant, substract);
-                            expand_constant_into_n(expand_into_n, destination, constant);
+                            if (target.is_set)
+                            {
+                                expand_constant_into_n(expand_into_n, target, constant);
+                            }
+                            else
+                            {
+                                expand_constant_into_n(expand_into_n, destination, constant);
+                            }
                         }
-                        return;
+                        return BlastError.success;
 
                     case blast_operation.constant_f1_h:
                         {
@@ -1208,9 +1237,16 @@ namespace NSS.Blast.SSMD
                             code_pointer += 2;  // function ends on this and should leave pointer at last processed token
 
                             constant = math.select(constant, -constant, substract);
-                            expand_constant_into_n(expand_into_n, destination, constant);
+                            if (target.is_set)
+                            {
+                                expand_constant_into_n(expand_into_n, target, constant);
+                            }
+                            else
+                            {
+                                expand_constant_into_n(expand_into_n, destination, constant);
+                            }
                         }
-                        return;
+                        return BlastError.success;
 
                     case blast_operation.constant_short_ref:
                         {
@@ -1234,6 +1270,7 @@ namespace NSS.Blast.SSMD
                                 if (code[c_index] != (byte)blast_operation.constant_f1_h)
                                 {
                                     Debug.LogError($"blast.ssmd.expand_f1_into_fn: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                    return BlastError.error;
                                 }
 #endif
 
@@ -1245,9 +1282,16 @@ namespace NSS.Blast.SSMD
                             }
 
                             constant = math.select(constant, -constant, substract);
-                            expand_constant_into_n(expand_into_n, destination, constant);
+                            if (target.is_set)
+                            {
+                                expand_constant_into_n(expand_into_n, target, constant);
+                            }
+                            else
+                            {
+                                expand_constant_into_n(expand_into_n, destination, constant);
+                            }
                         }
-                        return;
+                        return BlastError.success;
 
                     case blast_operation.constant_long_ref:
                         {
@@ -1281,9 +1325,16 @@ namespace NSS.Blast.SSMD
                             }
 
                             constant = math.select(constant, -constant, substract);
-                            expand_constant_into_n(expand_into_n, destination, constant);
+                            if (target.is_set)
+                            {
+                                expand_constant_into_n(expand_into_n, target, constant);
+                            }
+                            else
+                            {
+                                expand_constant_into_n(expand_into_n, destination, constant);
+                            }
                         }
-                        return;
+                        return BlastError.success;
 
 
 
@@ -1344,9 +1395,17 @@ namespace NSS.Blast.SSMD
                         {
                             float constant = engine_ptr->constants[c];
                             constant = math.select(constant, -constant, substract);
-                            expand_constant_into_n(expand_into_n, destination, constant);
+
+                            if (target.is_set)
+                            {
+                                expand_constant_into_n(expand_into_n, target, constant);
+                            }
+                            else
+                            {
+                                expand_constant_into_n(expand_into_n, destination, constant);
+                            }
                         }
-                        return;
+                        return BlastError.success;
 
 
                     default:
@@ -1359,7 +1418,7 @@ namespace NSS.Blast.SSMD
                             if (c < (byte)blast_operation.id || c == 255)
                             {
                                 Debug.LogError($"blast.ssmd.stack.expand_f1_into_fn -> operation {c} not supported at codepointer {code_pointer}");
-                                return;
+                                return BlastError.error;
                             }
 
 
@@ -1371,7 +1430,7 @@ namespace NSS.Blast.SSMD
                                 if (size < indexer)
                                 {
                                     Debug.LogError($"blast.ssmd.stack.expand_f1_into_fn -> indexer beyond vectorsize at codepointer {code_pointer}");
-                                    return;
+                                    return BlastError.error;
                                 }
                             }
                             else
@@ -1379,18 +1438,26 @@ namespace NSS.Blast.SSMD
                                 if (size != 1 || type != BlastVariableDataType.Numeric)
                                 {
                                     Debug.LogError($"blast.ssmd.stack.expand_f1_into_fn -> data mismatch, expecting numeric of size 1, found {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
-                                    return;
+                                    return BlastError.error;
                                 }
                             }
 #endif
 
                             offset = (byte)math.select(offset, offset + indexer, indexer >= 0);
 
-                            expand_indexed_into_n(expand_into_n, destination, substract, c, offset, data, data_is_aligned, data_rowsize);
+                            if (target.is_set)
+                            {
+                                expand_indexed_into_n(expand_into_n, target, substract, c, offset, data, data_is_aligned, data_rowsize);
+                            }
+                            else
+                            {
+                                expand_indexed_into_n(expand_into_n, destination, substract, c, offset, data, data_is_aligned, data_rowsize);
+                            }
                         }
-                        return;
+                        return BlastError.success;
                 }
             }
+            return BlastError.success;
         }
 
 
@@ -1401,33 +1468,77 @@ namespace NSS.Blast.SSMD
                 case 2:
                     if (!substract)
                     {
-                        simd.move_indexed_data_as_f1_to_f2(destination, data, data_rowsize, data_is_aligned, offset, ssmd_datacount);
+                        simd.move_indexed_data_as_f1_to_f2(destination, data, stride, is_aligned, offset, ssmd_datacount);
                     }
                     else
                     {
-                        simd.move_indexed_data_as_f1_to_f2_negated(destination, data, data_rowsize, data_is_aligned, offset, ssmd_datacount);
-                    }
+                        simd.move_indexed_data_as_f1_to_f2_negated(destination, data, stride, is_aligned, offset, ssmd_datacount);
+                    }                                                                                   
                     break;
 
                 case 3:
                     if (!substract)
                     {
-                        simd.move_indexed_data_as_f1_to_f3(destination, data, data_rowsize, data_is_aligned, offset, ssmd_datacount);
+                        simd.move_indexed_data_as_f1_to_f3(destination, data, stride, is_aligned, offset, ssmd_datacount);
                     }
                     else
                     {
-                        simd.move_indexed_data_as_f1_to_f3_negated(destination, data, data_rowsize, data_is_aligned, offset, ssmd_datacount);
+                        simd.move_indexed_data_as_f1_to_f3_negated(destination, data, stride, is_aligned, offset, ssmd_datacount);
                     }
                     break;
 
                 case 4:
                     if (!substract)
                     {
-                        simd.move_indexed_data_as_f1_to_f4(destination, data, data_rowsize, data_is_aligned, offset, ssmd_datacount);
+                        simd.move_indexed_data_as_f1_to_f4(destination, data, stride, is_aligned, offset, ssmd_datacount);
                     }
                     else
                     {
-                        simd.move_indexed_data_as_f1_to_f4_negated(destination, data, data_rowsize, data_is_aligned, offset, ssmd_datacount);
+                        simd.move_indexed_data_as_f1_to_f4_negated(destination, data, stride, is_aligned, offset, ssmd_datacount);
+                    }
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.stack.expand_f1_into_fn -> expanding into unsupported vectorsize {expand_into_n} at data offset {c - BlastInterpretor.opt_id}");
+                    break;
+#endif
+            }
+        }
+        void expand_indexed_into_n(int expand_into_n, in DATAREC destination, bool substract, byte c, int offset, void** data, bool is_aligned, int stride)
+        {
+            switch (expand_into_n)
+            {
+                case 2:
+                    if (!substract)
+                    {
+                        simd.move_indexed_f1f2(destination, data, stride, is_aligned, offset, ssmd_datacount); 
+                    }
+                    else
+                    {
+                        simd.move_indexed_f1f2_negated(destination, data, stride, is_aligned, offset, ssmd_datacount);
+                    }
+                    break;
+
+                case 3:
+                    if (!substract)
+                    {
+                        simd.move_indexed_f1f3(destination, data, stride, is_aligned, offset, ssmd_datacount);
+                    }
+                    else
+                    {
+                        simd.move_indexed_f1f3_negated(destination, data, stride, is_aligned, offset, ssmd_datacount);
+                    }
+                    break;
+
+                case 4:
+                    if (!substract)
+                    {
+                        simd.move_indexed_f1f4(destination, data, stride, is_aligned, offset, ssmd_datacount);
+                    }
+                    else
+                    {
+                        simd.move_indexed_f1f4_negated(destination, data, stride, is_aligned, offset, ssmd_datacount);
                     }
                     break;
 
@@ -1454,6 +1565,31 @@ namespace NSS.Blast.SSMD
 
                 case 4:
                     simd.set_f4_from_constant(destination, constant, ssmd_datacount);
+                    break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                default:
+                    Debug.LogError($"blast.ssmd.stack.expand_constant_into_fn -> expanding into unsupported vectorsize {expand_into_n}");
+                    break;
+#endif
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void expand_constant_into_n(int expand_into_n, in DATAREC destination, float constant)
+        {
+            switch (expand_into_n)
+            {
+                case 2:
+                    simd.move_f1_constant_to_indexed_data_as_f2(destination, constant, ssmd_datacount); 
+                    break;
+
+                case 3:
+                    simd.move_f1_constant_to_indexed_data_as_f3(destination, constant, ssmd_datacount);
+                    break;
+
+                case 4:
+                    simd.move_f1_constant_to_indexed_data_as_f4(destination, constant, ssmd_datacount);
                     break;
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -7477,29 +7613,77 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// get size of given data element 
         /// </summary>
-        void get_size_result(ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4_result)
+        BlastError GetSizeResult(ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4_result, in DATAREC target = default)
         {
+            // in release this sets NaN on errors 
+            float fsize = float.NaN;
+            BlastError res = BlastError.success; 
+
             // index would be the same for each ssmd record
             byte c = code[code_pointer];
-            int dataindex = c - BlastInterpretor.opt_id;
+
+            if (c == (byte)blast_operation.cdataref)
+            {
+                // get offset to the cdata from current location
+                int offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
+                int index = code_pointer - offset + 1;
+
+                // validate we end up at cdata
+                if (code[index] != (byte)blast_operation.cdata)  // at some point we probably replace cdata with a datatype cdata_float etc.. 
+                {
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"Blast.SSMD.Interpretor.size: error in cdata reference at {code_pointer} referencing code[index] {index} ");
+#endif
+                    vector_size = 0;
+                    res = BlastError.error_failed_to_read_cdata_reference; 
+                }
+                else
+                {
+                    // TODO when supporting integers, this should return integer data 
+                    fsize = ((code[index + 1] << 8) + code[index + 2]) >> 2; // size is in bytes we want size in elements and 1 element = single = 32bit
+                    vector_size = 1;
+                    code_pointer = code_pointer + 2;
+                }
+            }
+            else
+            {
+                int dataindex = c - BlastInterpretor.opt_id;
+
+                // dataindex must point to a valid id 
+                if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+                {
 
 #if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.size: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
+                    Debug.LogError($"Blast.SSMD.Interpretor.Size: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
 #endif
-            // get size 
-            int size = BlastInterpretor.GetMetaDataSize(in metadata, (byte)dataindex);
-            size = math.select(size, 4, size == 0);
+                    res = BlastError.error_failed_to_read_cdata_reference;
+                    vector_size = 0;
+                }
+                else
+                {
+                    // get size from variable data 
+                    int size = BlastInterpretor.GetMetaDataSize(in metadata, (byte)dataindex);
+                    size = math.select(size, 4, size == 0);
 
-            // copy size into result variable 
-            vector_size = 1;
-            float fsize = (float)size;
+                    // copy size into result variable 
+                    vector_size = 1;
+                    fsize = (float)size;
+                }
+            }
 
-            simd.move_f1_constant_into_f4_array_as_f1(f4_result, fsize, ssmd_datacount);
+            // move sizedata to target location 
+            if (target.is_set)
+            {
+                // direct to target from sequence assignment
+                simd.move_f1_constant_to_indexed_data_as_f1(target.data, target.row_size, target.is_aligned, target.index, fsize, ssmd_datacount); 
+            }
+            else
+            {
+                // into intermediate buffer 
+                simd.move_f1_constant_into_f4_array_as_f1(f4_result, fsize, ssmd_datacount);
+            }
+
+            return res; 
         }
 
         #endregion
@@ -7905,9 +8089,9 @@ namespace NSS.Blast.SSMD
                 case blast_operation.index_z: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_z, extended_blast_operation.nop); break;
                 case blast_operation.index_w: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_w, extended_blast_operation.nop); break;
 
-                case blast_operation.expand_v2: expand_f1_into_fn(2, ref code_pointer, ref vector_size, f4_result); break;
-                case blast_operation.expand_v3: expand_f1_into_fn(3, ref code_pointer, ref vector_size, f4_result); break;
-                case blast_operation.expand_v4: expand_f1_into_fn(4, ref code_pointer, ref vector_size, f4_result); break;
+                case blast_operation.expand_v2: ExpandF1IntoFn(2, ref code_pointer, ref vector_size, f4_result, default); break;
+                case blast_operation.expand_v3: ExpandF1IntoFn(3, ref code_pointer, ref vector_size, f4_result, default); break;
+                case blast_operation.expand_v4: ExpandF1IntoFn(4, ref code_pointer, ref vector_size, f4_result, default); break;
 
                 case blast_operation.get_bit: get_getbit_result(temp, ref code_pointer, ref vector_size, f4_result); break;
                 case blast_operation.get_bits: get_getbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
@@ -7916,7 +8100,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.set_bits: get_setbits_result(temp, ref code_pointer, ref vector_size); break;
 
                 case blast_operation.zero: get_zero_result(temp, ref code_pointer, ref vector_size); break;
-                case blast_operation.size: get_size_result(ref code_pointer, ref vector_size, f4_result); break;
+                case blast_operation.size: GetSizeResult(ref code_pointer, ref vector_size, f4_result); break;
 
                 case blast_operation.ex_op:
                     {
@@ -8057,11 +8241,41 @@ namespace NSS.Blast.SSMD
                 case blast_operation.constant_f1: i += 4; break;
                 case blast_operation.constant_f1_h: i += 3; break;
                 case blast_operation.constant_long_ref: i += 3; break;
-                case blast_operation.constant_short_ref: i += 1; break;
+                case blast_operation.constant_short_ref: i += 2; break;
 
                 case blast_operation.cdata:
                     Debug.LogError("handle me cdata");
                     break;
+
+
+                // these all expect a single parameter 
+                case blast_operation.size:
+                case blast_operation.expand_v2:
+                case blast_operation.expand_v3:
+                case blast_operation.expand_v4:
+                    // if next is an id >= id < 255 then + 1, 
+                    // if next is constant ->
+                    op = (blast_operation)code[i + 1];
+                    switch(op)
+                    {
+                        case blast_operation.constant_f1: i += 5; break;
+                        case blast_operation.constant_f1_h: i += 4; break;
+                        case blast_operation.constant_long_ref: i += 4; break;
+                        case blast_operation.constant_short_ref: i += 2; break;
+                        case blast_operation.cdataref: i += 4; break;
+                        // assume compiler did its job
+                        default:
+                            if ((int)op < 255 && op >= blast_operation.value_0)
+                            {
+                                i += 2;
+                            }
+                            else
+                            {
+                                return false;
+                            }
+                            break;
+                    }
+                    break; 
 
                 case blast_operation.pi:
                 case blast_operation.inv_pi:
@@ -8589,9 +8803,81 @@ namespace NSS.Blast.SSMD
                             }
                         }
                         break;
+                    
+                    // direct handling of some often used function save an array copy in simple ops
+                    case blast_operation.size:
+                        {
+                            // a lot more could be saved if we allow popwith op to run on it when we have an operation and its the last in sequence
+                            code_pointer++;
+                            if (!is_last_token_in_sequence || current_op != blast_operation.nop || !target_rec.is_set)
+                            {
+                                if (current_op == blast_operation.nop)
+                                {
+                                    GetSizeResult(ref code_pointer, ref vector_size, f4_result);
+                                }
+                                else
+                                {
+                                    GetSizeResult(ref code_pointer, ref vector_size, f4);
+                                }
+                            }
+                            else
+                            {
+                                // not sure if it ends right.. 
+                                GetSizeResult(ref code_pointer, ref vector_size, null, target_rec);
+                                return (int)BlastError.success;
+                            }
+                        }
+                        break;
+
+                    case blast_operation.expand_v2:
+                        {
+                            code_pointer++;
+                            if (!is_last_token_in_sequence || current_op != blast_operation.nop || !target_rec.is_set)
+                            {
+                                // expand into accumulator or buffer 
+                                ExpandF1IntoFn(2, ref code_pointer, ref vector_size, (current_op == blast_operation.nop ? f4_result : f4), default);
+                            }
+                            else
+                            {
+                                // directly expand into target  [normally this would end up in assignf, compiler probably will never output this situation]
+                                ExpandF1IntoFn(2, ref code_pointer, ref vector_size, null, target_rec);
+                            }
+                        }
+                        break; 
+                    case blast_operation.expand_v3:
+                        {
+                            code_pointer++;
+                            if (!is_last_token_in_sequence || current_op != blast_operation.nop || !target_rec.is_set)
+                            {
+                                // expand into accumulator or buffer 
+                                ExpandF1IntoFn(3, ref code_pointer, ref vector_size, (current_op == blast_operation.nop ? f4_result : f4), default);
+                            }
+                            else
+                            {
+                                // directly expand into target  [normally this would end up in assignf, compiler probably will never output this situation]
+                                ExpandF1IntoFn(3, ref code_pointer, ref vector_size, null, target_rec);
+                            }
+                        }
+                        break;
+
+                    case blast_operation.expand_v4:
+                        {
+                            code_pointer++;
+                            if (!is_last_token_in_sequence || current_op != blast_operation.nop || !target_rec.is_set)
+                            {
+                                // expand into accumulator or buffer 
+                                ExpandF1IntoFn(4, ref code_pointer, ref vector_size, (current_op == blast_operation.nop ? f4_result : f4), default);
+                            }
+                            else
+                            {
+                                // directly expand into target  [normally this would end up in assignf, compiler probably will never output this situation]
+                                ExpandF1IntoFn(4, ref code_pointer, ref vector_size, null, target_rec);
+                            }
+                        }
+                        break;
 
                     //
-                    // CoreAPI functions mapping to opcodes 
+                    // CoreAPI functions mapping to opcodes not directly handled in sequencer 
                     // 
                     case blast_operation.abs:
                     case blast_operation.maxa:
@@ -8612,15 +8898,11 @@ namespace NSS.Blast.SSMD
                     case blast_operation.index_y:
                     case blast_operation.index_z:
                     case blast_operation.index_w:
-                    case blast_operation.expand_v2:
-                    case blast_operation.expand_v3:
-                    case blast_operation.expand_v4:
                     case blast_operation.get_bit:
                     case blast_operation.get_bits:
                     case blast_operation.set_bit:
                     case blast_operation.set_bits:
                     case blast_operation.zero:
-                    case blast_operation.size:
                     case blast_operation.ex_op:
                         //
                         // on no operation pending
@@ -9656,6 +9938,7 @@ end_seq:
 
             // determine indexer 
             bool is_indexed;
+            bool need_copy_to_register = true;
             blast_operation indexer;
             determine_assigned_indexer(ref code_pointer, ref assignee_op, out is_indexed, out indexer);
 
@@ -9667,34 +9950,83 @@ end_seq:
             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
 
+            // process functions that can directly output to target first 
             code_pointer++;
-            int res = GetFunctionResult(temp, ref code_pointer, ref vector_size, ref register);
+            BlastError res; 
+
+            switch((blast_operation)code[code_pointer])
+            {
+               /* 
+                * 
+                * WHY DOES THIS CRASH LATER WITH INVALID MEMORY ACCESS..???
+                * 
+                */ 
+                 case blast_operation.size:
+                    // if minus active -> use getfunction and negate with register to data move
+                    if(minus) goto default; 
+                 
+                    // directly output to data skipping a register operation
+                    code_pointer++;
+                    res = GetSizeResult(ref code_pointer, ref vector_size, null,
+                        IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 1));
+
+                    need_copy_to_register = false; 
+                    break;
+
+                case blast_operation.expand_v2:
+                    code_pointer++;
+                    res = ExpandF1IntoFn(2, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 2));
+                    need_copy_to_register = false;
+                    break; 
+
+                case blast_operation.expand_v3:
+                    code_pointer++;
+                    res = ExpandF1IntoFn(3, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 2));
+                    need_copy_to_register = false;
+                    break;
+
+                case blast_operation.expand_v4:
+                    code_pointer++;
+                    res  = ExpandF1IntoFn(4, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 2));
+                    need_copy_to_register = false;
+                    break;
+
+                default:
+                    res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, ref register);
+                    break; 
+            }
             code_pointer++;
 
+
 #if DEVELOPMENT_BUILD || TRACE
-            // compiler should have cought this 
-            if (vector_size != 1 && is_indexed)
+            if (res == (int)BlastError.success)
             {
-                Debug.LogError($"blast.ssmd.assignf: cannot set component from vector at #{code_pointer}, component: {indexer}");
-                return BlastError.error_assign_component_from_vector;
+                // compiler should have cought this 
+                if (vector_size != 1 && is_indexed)
+                {
+                    Debug.LogError($"blast.ssmd.assignf: cannot set component from vector at #{code_pointer}, component: {indexer}");
+                    return BlastError.error_assign_component_from_vector;
+                }
+
+                // 4 == 0 depending on decoding 
+                s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
+                if (!is_indexed && s_assignee != vector_size)
+                {
+                    Debug.LogError($"SSMD Interpretor: assign function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
+                    return BlastError.error_assign_vector_size_mismatch;
+                }
             }
 #endif
 
-#if DEVELOPMENT_BUILD || TRACE
-            // 4 == 0 depending on decoding 
-            s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
-            if (!is_indexed && s_assignee != vector_size)
-            {
-                Debug.LogError($"SSMD Interpretor: assign function, vector size mismatch at #{code_pointer}, should be size '{s_assignee}', function returned '{vector_size}', data id = {assignee}");
-                return BlastError.error_assign_vector_size_mismatch;
-            }
-#endif
-            set_data_from_register(
-                vector_size,
-                get_offset_from_indexed(in assignee, in indexer, in is_indexed),
-                minus);
 
-            return BlastError.success;
+            if (need_copy_to_register)
+            {
+                set_data_from_register(
+                    vector_size,
+                    get_offset_from_indexed(in assignee, in indexer, in is_indexed),
+                    minus);
+            }
+            return res; 
         }
 
         BlastError assignfe(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp, bool minus)
@@ -10114,6 +10446,8 @@ end_seq:
             // pre-fill stack with infs for validation/stack estimation
             if (ValidateOnce)
             {
+                MaxStackSizeReachedDuringValidation = 0;
+
                 if (!package.HasStackPackaged)
                 {
                     // there is no way to check the result
@@ -10264,28 +10598,36 @@ end_seq:
                     // push value or compound result 
                     //
                     case blast_operation.push:
-                        if ((ires = (int)push(ref code_pointer, ref vector_size, temp)) < 0) return ires;
+                        ires = (int)push(ref code_pointer, ref vector_size, temp);
+                        MaxStackSizeReachedDuringValidation = math.max(MaxStackSizeReachedDuringValidation, stack_offset);
+                        if(ires < 0) return ires;
                         break;
 
                     //
                     // pushv knows more about what it is pushing up the stack, it can do it without running the compound 
                     //
                     case blast_operation.pushv:
-                        if ((ires = (int)pushv(ref code_pointer, ref vector_size, temp)) < 0) return ires;
+                        ires = (int)pushv(ref code_pointer, ref vector_size, temp);
+                        MaxStackSizeReachedDuringValidation = math.max(MaxStackSizeReachedDuringValidation, stack_offset);
+                        if (ires < 0) return ires;
                         break;
 
                     //
                     // push the result from a function directly onto the stack, saving a call to getcompound 
                     //
                     case blast_operation.pushf:
-                        if ((ires = (int)pushf(ref code_pointer, ref vector_size, temp)) < 0) return ires;
+                        ires = (int)pushf(ref code_pointer, ref vector_size, temp);
+                        MaxStackSizeReachedDuringValidation = math.max(MaxStackSizeReachedDuringValidation, stack_offset);
+                        if (ires < 0) return ires;
                         break;
 
                     //
                     // push the result from a compound directly onto the stack 
                     //
                     case blast_operation.pushc:
-                        if ((ires = (int)pushc(ref code_pointer, ref vector_size, temp)) < 0) return ires;
+                        ires = (int)pushc(ref code_pointer, ref vector_size, temp);
+                        MaxStackSizeReachedDuringValidation = math.max(MaxStackSizeReachedDuringValidation, stack_offset);
+                        if (ires < 0) return ires;
                         break;
 
                     case blast_operation.assigns:

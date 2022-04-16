@@ -1,8 +1,10 @@
-﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
-// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
-// Proprietary and confidential                                                                       (__) #
-//##########################################################################################################
+﻿//############################################################################################################################
+// BLAST v1.0.4c                                                                                                             #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31 gmail com> All Rights Reserved                   ^__^\ #
+// Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
+//                                                                                                                     (__)  #
+//############################################################################################################################
+
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #if STANDALONE_VSBUILD
 

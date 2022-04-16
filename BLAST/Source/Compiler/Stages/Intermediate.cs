@@ -1,8 +1,10 @@
-﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
-// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
-// Proprietary and confidential                                                                       (__) #
-//##########################################################################################################
+﻿//############################################################################################################################
+// BLAST v1.0.4c                                                                                                             #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31 gmail com> All Rights Reserved                   ^__^\ #
+// Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
+//                                                                                                                     (__)  #
+//############################################################################################################################
+
 using NSS.Blast.Interpretor;
 using System;
 using System.Collections.Generic;
@@ -604,12 +606,12 @@ namespace NSS.Blast.Compiler
         {
             // setup a package to run 
             BlastPackageData package = default;
-            
+
             package.PackageMode = BlastPackageMode.Compiler;
             package.LanguageVersion = is_ssmd_packaged ? BlastLanguageVersion.BSSMD1 : BlastLanguageVersion.BS1;
             package.Flags = BlastPackageFlags.None;
-            package.Allocator = (byte)Allocator.None; 
-            
+            package.Allocator = (byte)Allocator.None;
+
             package.O1 = (ushort)code_size;
             package.O2 = (ushort)data_capacity; // 1 byte of metadata for each capacity 
             package.O3 = (ushort)(data_count * 4);  // 4 bytes / dataelement 
@@ -621,17 +623,16 @@ namespace NSS.Blast.Compiler
             fixed (float* pdata = data)
             fixed (byte* pmetadata = metadata)
             {
-                // estimate stack size while at it: set stack memory too all INF's, 
-                // this assumes the intermediate has more then enough stack
-                float* stack = &pdata[initial_stack_offset];
-                for (int i = 0; i < package.StackCapacity; i++)
-                {
-                    stack[i] = math.INFINITY;
-                }
-
                 if (!is_ssmd_packaged)
                 {
-                    // Normal Packaging mode: run the interpretation 
+                    // estimate stack size:  set stack memory too all INF's then check which are still set
+                    // this assumes the intermediate has more then enough stack
+                    float* stack = &pdata[initial_stack_offset];
+                    for (int i = 0; i < package.StackCapacity; i++)
+                    {
+                        stack[i] = math.INFINITY;
+                    }
+
 
                     // set package 
                     Blast.blaster.SetPackage(package, pcode, pdata, pmetadata, initial_stack_offset);
@@ -640,6 +641,11 @@ namespace NSS.Blast.Compiler
                     // run it 
                     int exitcode = Blast.blaster.Execute(blast);
                     if (exitcode != (int)BlastError.success) return exitcode;
+
+                    // determine used stack size from nr of stack slots not INF anymore 
+                    max_stack_size = 0;
+                    while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
+
                 }
                 else
                 {
@@ -652,19 +658,18 @@ namespace NSS.Blast.Compiler
                     BlastSSMDDataStack* p_ssmd_data = (BlastSSMDDataStack*)(void*)pdata;
 
                     int exitcode = Blast.ssmd_blaster.Execute(blast, IntPtr.Zero, p_ssmd_data, 1, false);
-
                     if (exitcode != (int)BlastError.success) return exitcode;
+
+                    // in ssmd we have a counter holding max reached
+                    max_stack_size = (byte)math.min(255, Blast.ssmd_blaster.MaxStackSizeReachedDuringValidation);
                 }
 
-                // determine used stack size from nr of stack slots not INF anymore 
-                max_stack_size = 0;
-                while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
-
-                // if we ran out of stack we should return that error 
-                if (max_stack_size >= package.StackCapacity)
-                {
-                    return (int)BlastError.validate_error_stack_too_small;
-                }
+            }
+            
+            // if we ran out of stack we should return that error 
+            if (max_stack_size >= package.StackCapacity)
+            {
+                return (int)BlastError.validate_error_stack_too_small;
             }
             return (int)BlastError.success;
         }

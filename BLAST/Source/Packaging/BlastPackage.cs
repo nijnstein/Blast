@@ -1,10 +1,12 @@
-﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
-// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
-// Proprietary and confidential                                                                       (__) #
-//##########################################################################################################
+﻿//############################################################################################################################
+// BLAST v1.0.4c                                                                                                             #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31 gmail com> All Rights Reserved                   ^__^\ #
+// Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
+//                                                                                                                     (__)  #
+//############################################################################################################################
+
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone;
+using NSS.Blast.Standalone;
 #else
 #define USE_BURST_JOBS
 using UnityEngine;
@@ -697,8 +699,8 @@ namespace NSS.Blast
                 case BlastPackageMode.SSMD:
 
                     // copy 1st meta data & data/stack
-                    UnsafeUtils.MemCpy(data, Metadata, MetadataSize);
-                    UnsafeUtils.MemCpy(data, Data, DataSize);
+                    // - UnsafeUtils.MemCpy(data, Metadata, MetadataSize);
+                    UnsafeUtils.MemCpy(data, Data, byte_size);
 
                     // replicate from there 
                     if (n > 1)

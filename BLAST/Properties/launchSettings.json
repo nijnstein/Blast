@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BLAST": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}

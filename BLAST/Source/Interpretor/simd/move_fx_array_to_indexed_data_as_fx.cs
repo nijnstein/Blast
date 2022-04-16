@@ -1,4 +1,11 @@
-﻿using System.Runtime.CompilerServices;
+﻿//############################################################################################################################
+// BLAST v1.0.4c                                                                                                             #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31 gmail com> All Rights Reserved                   ^__^\ #
+// Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
+//                                                                                                                     (__)  #
+//############################################################################################################################
+
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Mathematics;
 
@@ -453,10 +460,83 @@ namespace NSS.Blast.SSMD
                 float* p = &((float*)indexbuffer[0])[index];
                 int stride_p = index_rowsize >> 2;
 
-                for (int i = 0; i < ssmd_datacount; i++)
+                /*if (stride_p == 4 && IsUnity)
                 {
-                    p[0] = constant;
-                    p += stride_p;
+                    UnsafeUtils.MemSet(p, constant, ssmd_datacount);
+                }
+                else*/ 
+                {
+                    // while in il2cpp/burst 1.5+ this unrolls and vectorizes nicely but the unrolling increases performance by a lot in .net builds (did not check assembly in .net)
+                    int i = 0;
+                    while (i < (ssmd_datacount & ~15))
+                    {
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+
+                        i += 16;
+                    }
+                    while (i < (ssmd_datacount & ~8))
+                    {
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+                        p[0] = constant;
+                        p += stride_p;
+
+                        i += 8;
+                    }
+
+                    while (i < ssmd_datacount)
+                    {
+                        p[0] = constant;
+                        p += stride_p;
+                        i++;
+                    }
                 }
             }
             else
@@ -467,6 +547,17 @@ namespace NSS.Blast.SSMD
                 }
             }
         }
+
+
+        /// <summary>
+        /// move a constant float value as array into an indexed segment : [][] = xy
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_f1_constant_to_indexed_data_as_f2(in DATAREC target, float constant, int ssmd_datacount)
+        {
+            move_f1_constant_to_indexed_data_as_f2(target.data, target.row_size, target.is_aligned, target.index, constant, ssmd_datacount); 
+        }
+
 
         /// <summary>
         /// move a constant float value as array into an indexed segment : [][] = xy
@@ -500,6 +591,16 @@ namespace NSS.Blast.SSMD
         /// move a constant float value as array into an indexed segment : [][] = xyz
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_f1_constant_to_indexed_data_as_f3(in DATAREC target, float constant, int ssmd_datacount)
+        {
+            move_f1_constant_to_indexed_data_as_f3(target.data, target.row_size, target.is_aligned, target.index, constant, ssmd_datacount);
+        }
+
+
+        /// <summary>
+        /// move a constant float value as array into an indexed segment : [][] = xyz
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_f1_constant_to_indexed_data_as_f3([NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, float constant, int ssmd_datacount)
         {
             if (is_aligned)
@@ -522,6 +623,15 @@ namespace NSS.Blast.SSMD
                     ((float3*)(void*)&((float*)indexbuffer[i])[index])[0] = constant;
                 }
             }
+        }
+
+        /// <summary>
+        /// move a constant float value as array into an indexed segment : [][] = xyzw
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_f1_constant_to_indexed_data_as_f4(in DATAREC target, float constant, int ssmd_datacount)
+        {
+            move_f1_constant_to_indexed_data_as_f4(target.data, target.row_size, target.is_aligned, target.index, constant, ssmd_datacount);
         }
 
         /// <summary>

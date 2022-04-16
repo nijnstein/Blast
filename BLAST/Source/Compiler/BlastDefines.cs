@@ -1,8 +1,10 @@
-﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
-// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
-// Proprietary and confidential                                                                       (__) #
-//##########################################################################################################
+﻿//############################################################################################################################
+// BLAST v1.0.4c                                                                                                             #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31 gmail com> All Rights Reserved                   ^__^\ #
+// Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
+//                                                                                                                     (__)  #
+//############################################################################################################################
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -1948,7 +1950,11 @@ namespace NSS.Blast
         /// <summary>
         /// if the sequence is executed with a target and it returns without setting that target then this error is called. something is wrong with the sequencer  
         /// </summary>
-        error_target_not_set_in_sequence = -94
+        error_target_not_set_in_sequence = -94,
+        /// <summary>
+        /// the interpretor failed to follow a cdatareference 
+        /// </summary>
+        error_failed_to_read_cdata_reference = -95
     }
 
 }

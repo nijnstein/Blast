@@ -1,4 +1,11 @@
-﻿using System.Runtime.CompilerServices;
+﻿//############################################################################################################################
+// BLAST v1.0.4c                                                                                                             #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31 gmail com> All Rights Reserved                   ^__^\ #
+// Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
+//                                                                                                                     (__)  #
+//############################################################################################################################
+
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Mathematics;
 

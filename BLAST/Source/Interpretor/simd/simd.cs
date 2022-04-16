@@ -1,4 +1,11 @@
-﻿#if STANDALONE_VSBUILD
+﻿//############################################################################################################################
+// BLAST v1.0.4c                                                                                                             #
+// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31 gmail com> All Rights Reserved                   ^__^\ #
+// Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
+//                                                                                                                     (__)  #
+//############################################################################################################################
+
+#if STANDALONE_VSBUILD
 #define UNROLL
 #else
 // even though not always we get packed instructions, overal its much faster. see sample 12
@@ -73,6 +80,33 @@ namespace NSS.Blast.SSMD
 #else
         public const bool IsUnrolled = false;
 #endif
+
+#if STANDALONE_VSBUILD 
+        public const bool IsStandalone = true;
+        public const bool IsUnity = false;
+#else
+        public const bool IsStandalone = false;
+        public const bool IsUnity = true;
+#endif
+
+#if ENABLE_MONO 
+        public const bool IsMono = true;
+#else
+        public const bool IsMono = false;
+#endif
+
+#if ENABLE_IL2CPP
+        public const bool IsIL2CPP = true;
+#else
+        public const bool IsIL2CPP = false;
+#endif
+
+#if DEVELOPMENT_BUILD || DEBUG
+        public const bool IsDebugBuild = true;
+#else
+        public const bool IsDebugBuild = false;
+#endif
+
 
 #if STANDALONE_VSBUILD
         public static bool DOTNET = true;
