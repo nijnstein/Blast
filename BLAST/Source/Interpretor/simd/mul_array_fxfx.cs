@@ -5,8 +5,10 @@
 //                                                                                                                     (__)  #
 //############################################################################################################################
 
+#pragma warning disable CS0162   // disable warnings for paths not taken dueue to compiler defines 
+
 #if !STANDALONE_VSBUILD
-    using Unity.Jobs;
+using Unity.Jobs;
 #endif
 
 using System.Runtime.CompilerServices;

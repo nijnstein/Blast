@@ -5,6 +5,8 @@
 //                                                                                                                     (__)  #
 //############################################################################################################################
 
+#pragma warning disable CS0162   // disable warnings for paths not taken dueue to compiler defines 
+
 
 #if STANDALONE_VSBUILD
 using NSS.Blast.Standalone;
@@ -866,7 +868,6 @@ namespace NSS.Blast.SSMD
                 float* f1 = (float*)temp;
 
                 // we know its indexed in advance, datasize is allocated accordingly
-                // -todo this will currently give vectorsize errors
                 pop_fx_into_ref<float>(ref code_pointer, f1);
 
                 // it has to be size 1 or indexed to size 1                            
@@ -8829,52 +8830,6 @@ namespace NSS.Blast.SSMD
                         }
                         break;
 
-                    case blast_operation.expand_v2:
-                        {
-                            code_pointer++;
-                            if (!is_last_token_in_sequence || current_op != blast_operation.nop || !target_rec.is_set)
-                            {
-                                // expand into accumulator or buffer 
-                                ExpandF1IntoFn(2, ref code_pointer, ref vector_size, (current_op == blast_operation.nop ? f4_result : f4), default);
-                            }
-                            else
-                            {
-                                // directly expand into target  [normally this would end up in assignf, compiler probably will never output this situation]
-                                ExpandF1IntoFn(2, ref code_pointer, ref vector_size, null, target_rec);
-                            }
-                        }
-                        break; 
-                    case blast_operation.expand_v3:
-                        {
-                            code_pointer++;
-                            if (!is_last_token_in_sequence || current_op != blast_operation.nop || !target_rec.is_set)
-                            {
-                                // expand into accumulator or buffer 
-                                ExpandF1IntoFn(3, ref code_pointer, ref vector_size, (current_op == blast_operation.nop ? f4_result : f4), default);
-                            }
-                            else
-                            {
-                                // directly expand into target  [normally this would end up in assignf, compiler probably will never output this situation]
-                                ExpandF1IntoFn(3, ref code_pointer, ref vector_size, null, target_rec);
-                            }
-                        }
-                        break;
-
-                    case blast_operation.expand_v4:
-                        {
-                            code_pointer++;
-                            if (!is_last_token_in_sequence || current_op != blast_operation.nop || !target_rec.is_set)
-                            {
-                                // expand into accumulator or buffer 
-                                ExpandF1IntoFn(4, ref code_pointer, ref vector_size, (current_op == blast_operation.nop ? f4_result : f4), default);
-                            }
-                            else
-                            {
-                                // directly expand into target  [normally this would end up in assignf, compiler probably will never output this situation]
-                                ExpandF1IntoFn(4, ref code_pointer, ref vector_size, null, target_rec);
-                            }
-                        }
-                        break;
 
                     //
                     // CoreAPI functions mapping to opcodes not directly handled in sequencer 
@@ -8904,6 +8859,13 @@ namespace NSS.Blast.SSMD
                     case blast_operation.set_bits:
                     case blast_operation.zero:
                     case blast_operation.ex_op:
+                    // although we could handle there here the path is mosly the same and complicates stuff even more
+                    // even if these are used in sequence, they will never output directly to target as that is only
+                    // possible with no op pending and the last. it would always compile to assignf where expand is
+                    // directly outputted to target if possible 
+                    case blast_operation.expand_v2:
+                    case blast_operation.expand_v3:
+                    case blast_operation.expand_v4:
                         //
                         // on no operation pending
                         //
@@ -9793,7 +9755,7 @@ end_seq:
         }
 
 
-        const bool ASSIGN_TO_TARGET = true; 
+        const bool ASSIGN_TO_TARGET = false; 
 
         /// <summary>
         /// assign result of a sequence 
@@ -9972,7 +9934,7 @@ end_seq:
 
                     need_copy_to_register = false; 
                     break;
-
+ 
                 case blast_operation.expand_v2:
                     code_pointer++;
                     res = ExpandF1IntoFn(2, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 2));
@@ -9989,7 +9951,7 @@ end_seq:
                     code_pointer++;
                     res  = ExpandF1IntoFn(4, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 2));
                     need_copy_to_register = false;
-                    break;
+                    break;  
 
                 default:
                     res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, ref register);

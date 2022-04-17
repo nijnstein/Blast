@@ -5,6 +5,8 @@
 //                                                                                                                     (__)  #
 //############################################################################################################################
 
+#pragma warning disable CS0162   // disable warnings for paths not taken dueue to compiler defines 
+
 using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Mathematics;

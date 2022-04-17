@@ -16,6 +16,7 @@ using UnityEngine.Assertions;
 
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace NSS.Blast.Register
 {
@@ -268,7 +269,21 @@ namespace NSS.Blast.Register
             return false;
         }
 
-#endregion
+        /// <summary>
+        /// returns a copy of scripts in registry 
+        /// </summary>
+        /// <returns></returns>
+        static public  List<BlastScript> ListScripts()
+        {
+            List<BlastScript> l = new List<BlastScript>();
+            foreach (var kvp in scripts)
+            {
+                l.Add(kvp.Value);
+            }
+            return l;
+        }
+
+        #endregion
     }
 
 }

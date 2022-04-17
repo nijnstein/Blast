@@ -1565,7 +1565,7 @@ namespace NSS.Blast
         [BurstDiscard]
         static public void CompileRegistry(Blast blast, string target)
         {
-            List<BlastScript> scripts = NSS.Blast.Register.BlastScriptRegistry.All().ToList();
+            List<BlastScript> scripts = NSS.Blast.Register.BlastScriptRegistry.ListScripts();
             if (scripts.Count > 0)
             {
                 BlastCompilerOptions options = new BlastCompilerOptions()
