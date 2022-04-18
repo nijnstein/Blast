@@ -4790,6 +4790,17 @@ namespace NSS.Blast.SSMD
                     case blast_operation.index_z: indexed = 2; code_pointer++; code_byte = code[code_pointer]; continue;
                     case blast_operation.index_w: indexed = 3; code_pointer++; code_byte = code[code_pointer]; continue;
 
+                    case blast_operation.index_n:
+                        {
+                            // somewhat special indexer: every index for each record CAN be different
+                            // - should handle as a 2 parameter function thats handled in sequence 
+
+                            Debug.Log("Handle MEEEEEEE"); 
+                        }
+                        return; 
+
+
+
                     case blast_operation.constant_f1:
                         {
                             // handle operation with inlined constant data 
@@ -8101,6 +8112,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.index_y: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_y, extended_blast_operation.nop); break;
                 case blast_operation.index_z: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_z, extended_blast_operation.nop); break;
                 case blast_operation.index_w: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_w, extended_blast_operation.nop); break;
+                case blast_operation.index_n: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_n, extended_blast_operation.nop); break;
 
                 case blast_operation.expand_v2: ExpandF1IntoFn(2, ref code_pointer, ref vector_size, f4_result, default); break;
                 case blast_operation.expand_v3: ExpandF1IntoFn(3, ref code_pointer, ref vector_size, f4_result, default); break;

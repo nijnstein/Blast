@@ -142,6 +142,7 @@ public class Sample12 : MonoBehaviour
            s.Append(FormatScore("V3 SSMD 1024", "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 1024), 1024));
            s.Append(FormatScore("V3 SSMD 2048", "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 2048), 2048));
            s.Append(FormatScore("V3 SSMD 4096", "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 4096), 4096));
+           s.Append(FormatScore("V3 SSMD 8192", "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 8192), 8192));
           
            s.Append(FormatScore("V4 NORMAL",    "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);"), 1));
            s.Append(FormatScore("V4 SSMD 1",    "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 1), 1));
@@ -154,8 +155,9 @@ public class Sample12 : MonoBehaviour
            s.Append(FormatScore("V4 SSMD 1024", "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 1024), 1024));
            s.Append(FormatScore("V4 SSMD 2048", "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 2048), 2048));
            s.Append(FormatScore("V4 SSMD 4096", "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 4096), 4096));
+           s.Append(FormatScore("V4 SSMD 8192", "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 8192), 8192));
 
-           DataView = StringBuilderCache.GetStringAndRelease(ref s);
+                DataView = StringBuilderCache.GetStringAndRelease(ref s);
            if (View != null) View.text = DataView;
            if (Input.GetKeyDown(KeyCode.B)) RepeatCount /= 10;
         }

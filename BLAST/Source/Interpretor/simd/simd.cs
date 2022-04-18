@@ -8,9 +8,11 @@
 #pragma warning disable CS0162   // disable warnings for paths not taken dueue to compiler defines 
 
 #if STANDALONE_VSBUILD
+// in .net builds this easily results in 10x performance on larger array operations when indexed, less on normal arrays 
 #define UNROLL
 #else
-// even though not always we get packed instructions, overal its much faster. see sample 12
+// in unity we cant know for sure if burst is enable, for build paths with default .net/mono compilers this still saves a lot
+// while in burst the gain is minimal and we should benchmark this someday
 #define UNROLL
 #endif
 
@@ -78,7 +80,7 @@ namespace NSS.Blast.SSMD
     unsafe public partial struct simd
     {
 #if UNROLL
-        public const bool IsUnrolled = false;
+        public const bool IsUnrolled = true;
 #else
         public const bool IsUnrolled = false;
 #endif
