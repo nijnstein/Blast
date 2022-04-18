@@ -42,7 +42,7 @@ namespace ScriptTestJobs
            /* byte** datastack = stackalloc byte*[datacount];
 
             // although we allocate everything in 1 block, we will index a pointer to every block,
-            // this will allow us to accept non-block aligned lists of memory pointers 
+            // this will allow us to accept non-block aligned lists of memory pointers  (set referenced to true on execute)_
             for (int i = 0; i < datacount; i++)
             {
                 datastack[i] = ((byte*)ssmddata) + (ssmddatasize * i);

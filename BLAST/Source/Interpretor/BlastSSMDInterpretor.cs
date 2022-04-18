@@ -1121,6 +1121,30 @@ namespace NSS.Blast.SSMD
         }
         #endregion
 
+        #region IndexF1 
+
+
+
+        /// <summary>
+        /// get the result of index-n[consant|variable] for all ssmd records 
+        /// </summary>
+
+        void IndexF1IntoFn([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* register, in DATAREC target = default, int indexed = -1, bool is_negated = false)
+        {
+
+
+
+
+
+
+
+
+
+        }
+
+
+        #endregion
+
         #region Expand fx 
 
         /// <summary>
@@ -4088,6 +4112,19 @@ namespace NSS.Blast.SSMD
                             vector_size = 1;
                             return;
 
+                         
+                        case blast_operation.index_n:
+                            {
+                                // somewhat special indexer: every index for each record CAN be different
+                                // - should handle as a 2 parameter function thats handled in sequence 
+
+                                Debug.Log("Handle MEEEEEEE");
+                            }
+                      
+
+
+                            return;
+
                         case blast_operation.abs:
                             for (int i = 0; i < ssmd_datacount; i++) register[i] = math.abs(f4(data, source_index, i));
                             return;
@@ -4790,16 +4827,6 @@ namespace NSS.Blast.SSMD
                     case blast_operation.index_z: indexed = 2; code_pointer++; code_byte = code[code_pointer]; continue;
                     case blast_operation.index_w: indexed = 3; code_pointer++; code_byte = code[code_pointer]; continue;
 
-                    case blast_operation.index_n:
-                        {
-                            // somewhat special indexer: every index for each record CAN be different
-                            // - should handle as a 2 parameter function thats handled in sequence 
-
-                            Debug.Log("Handle MEEEEEEE"); 
-                        }
-                        return; 
-
-
 
                     case blast_operation.constant_f1:
                         {
@@ -4994,9 +5021,9 @@ namespace NSS.Blast.SSMD
         //
 
 
-#endregion
+        #endregion
 
-#region Dual input functions: math.pow fmod cross etc. 
+        #region Dual input functions: math.pow fmod cross etc. 
 
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
@@ -8112,7 +8139,8 @@ namespace NSS.Blast.SSMD
                 case blast_operation.index_y: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_y, extended_blast_operation.nop); break;
                 case blast_operation.index_z: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_z, extended_blast_operation.nop); break;
                 case blast_operation.index_w: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_w, extended_blast_operation.nop); break;
-                case blast_operation.index_n: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_n, extended_blast_operation.nop); break;
+
+                case blast_operation.index_n: IndexF1IntoFn(temp, ref code_pointer, ref vector_size, f4_result, default); break;
 
                 case blast_operation.expand_v2: ExpandF1IntoFn(2, ref code_pointer, ref vector_size, f4_result, default); break;
                 case blast_operation.expand_v3: ExpandF1IntoFn(3, ref code_pointer, ref vector_size, f4_result, default); break;
@@ -9940,11 +9968,6 @@ end_seq:
 
             switch((blast_operation)code[code_pointer])
             {
-               /* 
-                * 
-                * WHY DOES THIS CRASH LATER WITH INVALID MEMORY ACCESS..???
-                * 
-                */ 
                  case blast_operation.size:
                     // if minus active -> use getfunction and negate with register to data move
                     if(minus) goto default; 
@@ -9974,7 +9997,7 @@ end_seq:
                     res  = ExpandF1IntoFn(4, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 4));
                     need_copy_to_register = false;
                     break;  
-
+                                
                 default:
                     res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, ref register);
                     break; 
@@ -10658,6 +10681,11 @@ end_seq:
                     case blast_operation.assign:
                         if ((ires = (int)assign(ref code_pointer, ref vector_size, temp)) < 0) return ires;
                         break;
+
+                    // variably indexed assignment 
+                    case blast_operation.index_n:
+                       //  setf b idx_N #075 #000 idx_W [ cf1h #016 #065 ]
+                        break; 
 
                     // assing something to a cdata 
                     case blast_operation.cdataref:

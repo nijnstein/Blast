@@ -1,9 +1,8 @@
+**v1.0.4c**
 
-
-- Interpretors now allow to nest negations reducing stack operations  
-
-SSMD:
-
+- ssmd: unrolled most hot loops in the ssmd interpretor to ensure fast execution without burst or il2cpp
+- bugfix: issue compiling webgl builds
+- Interpretors now allow to nest negations and simple functions reducing stack operations  
 
 
 **V1.0.4** 2022-04-06
