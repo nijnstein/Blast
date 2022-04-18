@@ -1,4 +1,5 @@
 using NSS.Blast;
+using NSS.Blast.Compiler;
 using NSS.Blast.SSMD;
 using ScriptTestJobs;
 using System;
@@ -54,7 +55,7 @@ public class Sample12 : MonoBehaviour
             SceneManager.LoadScene("Sample10");
         }
         if (Once || (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.B)))
-        {
+        try{
             Once = false;
             if(Input.GetKeyDown(KeyCode.B)) RepeatCount *= 10;
             var s = StringBuilderCache.Acquire();
@@ -81,25 +82,29 @@ public class Sample12 : MonoBehaviour
             s.Append(FormatScore("V1 SSMD f1 64",   "a = 1;", bench("a = 1;", 64), 64));
             s.Append(FormatScore("V1 SSMD f1 512",  "a = 1;", bench("a = 1;", 512), 512));
             s.Append(FormatScore("V1 SSMD f1 4096", "a = 1;", bench("a = 1;", 4096), 4096));
-
+            s.Append(FormatScore("V1 SSMD f1 8192", "a = 1;", bench("a = 1;", 8192), 8192));
+           
             s.Append(FormatScore("V2 NORMAL f2",    "a = (1 1);", bench("a = (1 1);"), 1));
             s.Append(FormatScore("V2 SSMD f2 1",    "a = (1 1);", bench("a = (1 1);", 1), 1));
             s.Append(FormatScore("V2 SSMD f2 64",   "a = (1 1);", bench("a = (1 1);", 64), 64));
             s.Append(FormatScore("V2 SSMD f2 512",  "a = (1 1);", bench("a = (1 1);", 512), 512));
             s.Append(FormatScore("V2 SSMD f2 4096", "a = (1 1);", bench("a = (1 1);", 4096), 4096));
-
+            s.Append(FormatScore("V2 SSMD f2 8192", "a = (1 1);", bench("a = (1 1);", 8192), 8192));
+           
             s.Append(FormatScore("V3 NORMAL f3",    "a = (1 1 1);", bench("a = (1 1 1);"), 1));
             s.Append(FormatScore("V3 SSMD f3 1",    "a = (1 1 1);", bench("a = (1 1 1);", 1), 1));
             s.Append(FormatScore("V3 SSMD f3 64",   "a = (1 1 1);", bench("a = (1 1 1);", 64), 64));
             s.Append(FormatScore("V3 SSMD f3 512",  "a = (1 1 1);", bench("a = (1 1 1);", 512), 512));
             s.Append(FormatScore("V3 SSMD f3 4096", "a = (1 1 1);", bench("a = (1 1 1);", 4096), 4096));
-                                             
+            s.Append(FormatScore("V3 SSMD f3 8192", "a = (1 1 1);", bench("a = (1 1 1);", 8192), 8192));
+           
             s.Append(FormatScore("V4 NORMAL f4",    "a = (1 1 1 1);", bench("a = (1 1 1 1);"), 1));
             s.Append(FormatScore("V4 SSMD f4 1",    "a = (1 1 1 1);", bench("a = (1 1 1 1);", 1), 1));
             s.Append(FormatScore("V4 SSMD f4 64",   "a = (1 1 1 1);", bench("a = (1 1 1 1);", 64), 64));
             s.Append(FormatScore("V4 SSMD f4 512",  "a = (1 1 1 1);", bench("a = (1 1 1 1);", 512), 512));
             s.Append(FormatScore("V4 SSMD f4 4096", "a = (1 1 1 1);", bench("a = (1 1 1 1);", 4096), 4096));
-
+            s.Append(FormatScore("V4 SSMD f4 8192", "a = (1 1 1 1);", bench("a = (1 1 1 1);", 8192), 8192));
+           
             s.Append(FormatScore("V1 NORMAL",    "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;"), 1));
             s.Append(FormatScore("V1 SSMD 1",    "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;", 1), 1));
             s.Append(FormatScore("V1 SSMD 16",   "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;", 16), 16));
@@ -111,43 +116,52 @@ public class Sample12 : MonoBehaviour
             s.Append(FormatScore("V1 SSMD 1024", "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;", 1024), 1024));
             s.Append(FormatScore("V1 SSMD 2048", "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;", 2048), 2048));
             s.Append(FormatScore("V1 SSMD 4096", "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;", 4096), 4096));
-             
-                s.Append(FormatScore("V2 NORMAL",    "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);"), 1));
-                 s.Append(FormatScore("V2 SSMD 1",    "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 1), 1));
-                 s.Append(FormatScore("V2 SSMD 16",   "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 16), 16));
-                s.Append(FormatScore("V2 SSMD 32",   "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 32), 32));
-                s.Append(FormatScore("V2 SSMD 64",   "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 64), 64));
-                s.Append(FormatScore("V2 SSMD 128",  "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 128), 128));
-                s.Append(FormatScore("V2 SSMD 256",  "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 256), 256));
-                s.Append(FormatScore("V2 SSMD 512",  "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 512), 512));
-                s.Append(FormatScore("V2 SSMD 1024", "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 1024), 1024));
-                s.Append(FormatScore("V2 SSMD 2048", "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 2048), 2048));
-            // 
-            //  s.Append(FormatScore("V3 NORMAL",    "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);"), 1));
-            //    s.Append(FormatScore("V3 SSMD 1",    "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 1), 1));
-            //    s.Append(FormatScore("V3 SSMD 16",   "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 16), 16));
-            //    s.Append(FormatScore("V3 SSMD 32",   "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 32), 32));
-            //    s.Append(FormatScore("V3 SSMD 64",   "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 64), 64));
-            //    s.Append(FormatScore("V3 SSMD 128",  "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 128), 128));
-            //    s.Append(FormatScore("V3 SSMD 256",  "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 256), 256));
-            //    s.Append(FormatScore("V3 SSMD 512",  "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 512), 512));
-            //    s.Append(FormatScore("V3 SSMD 1024", "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 1024), 1024));
-            //    //s.Append(FormatScore("V3 SSMD 2048", "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 2048), 2048));
-            //
-            //   s.Append(FormatScore("V4 NORMAL",    "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);"), 1));
-            //    s.Append(FormatScore("V4 SSMD 1",    "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 1), 1));
-            //    s.Append(FormatScore("V4 SSMD 16",   "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 16), 16));
-            //    s.Append(FormatScore("V4 SSMD 32",   "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 32), 32));
-            //    s.Append(FormatScore("V4 SSMD 64",   "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 64), 64));
-            //    s.Append(FormatScore("V4 SSMD 128",  "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 128), 128));
-            //    s.Append(FormatScore("V4 SSMD 256",  "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 256), 256));
-            //    s.Append(FormatScore("V4 SSMD 512",  "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 512), 512));
-            //    s.Append(FormatScore("V4 SSMD 1024", "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 1024), 1024));
-            //   // s.Append(FormatScore("V4 SSMD 2048", "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 2048), 2048));
+            s.Append(FormatScore("V1 SSMD 8192", "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;", 8192), 8192));
+           
+           s.Append(FormatScore("V2 NORMAL",    "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);"), 1));
+           s.Append(FormatScore("V2 SSMD 1",    "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 1), 1));
+           s.Append(FormatScore("V2 SSMD 16",   "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 16), 16));
+           s.Append(FormatScore("V2 SSMD 32",   "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 32), 32));
+           s.Append(FormatScore("V2 SSMD 64",   "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 64), 64));
+           s.Append(FormatScore("V2 SSMD 128",  "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 128), 128));
+           s.Append(FormatScore("V2 SSMD 256",  "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 256), 256));
+           s.Append(FormatScore("V2 SSMD 512",  "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 512), 512));
+           s.Append(FormatScore("V2 SSMD 1024", "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 1024), 1024));
+           s.Append(FormatScore("V2 SSMD 2048", "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 2048), 2048));
+           s.Append(FormatScore("V2 SSMD 4096", "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 4096), 4096));
+           s.Append(FormatScore("V2 SSMD 8192", "a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", bench("a = (3.4 5.5) * (2 2) * (3 3) * (8 8);", 8192), 8192));
+         
+           s.Append(FormatScore("V3 NORMAL",    "a = (3.4 5.5 1) * (2 4 2) * (5 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (5 3 3) * (7 8 8);"), 1));
+           s.Append(FormatScore("V3 SSMD 1",    "a = (3.4 5.5 1) * (2 4 2) * (5 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (5 3 3) * (7 8 8);", 1), 1));
+           s.Append(FormatScore("V3 SSMD 16",   "a = (3.4 5.5 1) * (2 4 2) * (5 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (5 3 3) * (7 8 8);", 16), 16));
+           s.Append(FormatScore("V3 SSMD 32",   "a = (3.4 5.5 1) * (2 4 2) * (5 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (5 3 3) * (7 8 8);", 32), 32));
+           s.Append(FormatScore("V3 SSMD 64",   "a = (3.4 5.5 1) * (2 4 2) * (5 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (5 3 3) * (7 8 8);", 64), 64));
+           s.Append(FormatScore("V3 SSMD 128",  "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 128), 128));
+           s.Append(FormatScore("V3 SSMD 256",  "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 256), 256));
+           s.Append(FormatScore("V3 SSMD 512",  "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 512), 512));
+           s.Append(FormatScore("V3 SSMD 1024", "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 1024), 1024));
+           s.Append(FormatScore("V3 SSMD 2048", "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 2048), 2048));
+           s.Append(FormatScore("V3 SSMD 4096", "a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", bench("a = (3.4 5.5 1) * (2 4 2) * (3 3 3) * (7 8 8);", 4096), 4096));
+          
+           s.Append(FormatScore("V4 NORMAL",    "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);"), 1));
+           s.Append(FormatScore("V4 SSMD 1",    "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 1), 1));
+           s.Append(FormatScore("V4 SSMD 16",   "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 16), 16));
+           s.Append(FormatScore("V4 SSMD 32",   "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 32), 32));
+           s.Append(FormatScore("V4 SSMD 64",   "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 64), 64));
+           s.Append(FormatScore("V4 SSMD 128",  "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 128), 128));
+           s.Append(FormatScore("V4 SSMD 256",  "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 256), 256));
+           s.Append(FormatScore("V4 SSMD 512",  "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 512), 512));
+           s.Append(FormatScore("V4 SSMD 1024", "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 1024), 1024));
+           s.Append(FormatScore("V4 SSMD 2048", "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 2048), 2048));
+           s.Append(FormatScore("V4 SSMD 4096", "a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", bench("a = (3.4 6 5.5 1) * (2 2 4 2) * (3 3 3 3) * (7 7 8 8);", 4096), 4096));
 
-            DataView = StringBuilderCache.GetStringAndRelease(ref s);
-            if (View != null) View.text = DataView;
-            if (Input.GetKeyDown(KeyCode.B)) RepeatCount /= 10;
+           DataView = StringBuilderCache.GetStringAndRelease(ref s);
+           if (View != null) View.text = DataView;
+           if (Input.GetKeyDown(KeyCode.B)) RepeatCount /= 10;
+        }
+        catch(Exception ex)
+        {
+                View.text = "Error: " + ex.Message; 
         }
     }
 
@@ -181,6 +195,9 @@ public class Sample12 : MonoBehaviour
     unsafe double bench(string script, int ssmd_count)
     {
         test_script_ssmd job = default;
+
+
+        BlastCompilerOptions options = BlastCompilerOptions.SSMD.PackageWithoutStack();//'//'.SetStackSize(128);
 
 
         using (BlastScript bs = BlastScript.FromText(script))

@@ -143,6 +143,47 @@ namespace NSS.Blast
         }
 
 
+        public BlastError Prepare(BlastCompilerOptions options, bool prepare_variable_info = true)
+        {
+            Assert.IsNotNull(options);
+            if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized;
+            return Prepare(Blast.Instance.Engine, options, prepare_variable_info); 
+        }
+
+        /// <summary>
+        /// Prepare the script for execution
+        /// </summary>
+        /// <returns>success if all is ok </returns>
+        public BlastError Prepare(IntPtr blast, BlastCompilerOptions options, bool prepare_variable_info = true)
+        {
+            if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized;
+
+            if (prepare_variable_info)
+            {
+                BlastError res = BlastCompiler.CompilePackage(blast, this, options);
+                return res;
+            }
+            else
+            {
+                this.Package = new BlastScriptPackage();
+
+                IBlastCompilationData data = BlastCompiler.Compile(blast, this, options);
+                if (!data.IsOK) return BlastError.error_compilation_failure;
+
+                this.Package.Package = BlastCompiler.Package(data, options);
+                if (!data.IsOK) return BlastError.compile_packaging_error;
+
+                //if (!this.Package.HasInputs && this.Package.HasVariables)
+                //{
+                //    this.Package.DefineInputsFromVariables(); 
+                //}
+
+                return BlastError.success;
+            }
+        }
+
+
+
 
         /// <summary>
         /// Prepare the script for execution

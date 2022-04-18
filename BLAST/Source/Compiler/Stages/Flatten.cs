@@ -449,64 +449,72 @@ namespace NSS.Blast.Compiler.Stage
                 while (n.HasSingleCompoundAsChild()) n = n.FirstChild;
 
                 int total_vector_size = 0;
+                if (n.ChildCount == 1 && n.FirstChild.HasVariable)
+                {
+                    // variable has to match vectorsize ; 
+                    total_vector_size = n.FirstChild.variable.VectorSize; 
+                }
+                else
+                { 
 
-                if (n.HasChild(nodetype.operation) && n.IsOperationList())
-                {
-                    // the assignment node has at least 1 child with an operation 
-                    total_vector_size = n.DetermineSequenceVectorSize();
-                }
-                else
-                if(n.HasOneChild && n.FirstChild.IsFunction)
-                {
-                    total_vector_size = n.FirstChild.GetFunctionResultVectorSize(); 
-                }
-                else
-                {
-                    // this node should be n
-                    if (n.ChildCount == assignment.vector_size)
+                    if (n.HasChild(nodetype.operation) && n.IsOperationList())
                     {
-                        // verify assignee variable is a vector
-
-                        // every child should be a negation, value or function 
-                        for (int i = 0; i < n.ChildCount; i++)
+                        // the assignment node has at least 1 child with an operation 
+                        total_vector_size = n.DetermineSequenceVectorSize();
+                    }
+                    else
+                    if (n.HasOneChild && n.FirstChild.IsFunction)
+                    {
+                        total_vector_size = n.FirstChild.GetFunctionResultVectorSize();
+                    }
+                    else
+                    {
+                        // this node should be n
+                        if (n.ChildCount == assignment.vector_size)
                         {
-                            node c = n.children[i];
-                            if (c.IsCompoundWithSingleNegationOfValue())
+                            // verify assignee variable is a vector
+
+                            // every child should be a negation, value or function 
+                            for (int i = 0; i < n.ChildCount; i++)
                             {
-                                total_vector_size += c.GetNegatedCompoundVectorSize();
-                            }
-                            else
-                            if (c.type == nodetype.parameter)
-                            {
-                                if (c.HasVariable)
+                                node c = n.children[i];
+                                if (c.IsCompoundWithSingleNegationOfValue())
                                 {
-                                    total_vector_size += c.variable.VectorSize;
+                                    total_vector_size += c.GetNegatedCompoundVectorSize();
                                 }
                                 else
-                                if (c.IsConstantValue)
+                                if (c.type == nodetype.parameter)
                                 {
-                                    // constant value
-                                    total_vector_size += 1;
+                                    if (c.HasVariable)
+                                    {
+                                        total_vector_size += c.variable.VectorSize;
+                                    }
+                                    else
+                                    if (c.IsConstantValue)
+                                    {
+                                        // constant value
+                                        total_vector_size += 1;
+                                    }
+                                    else
+                                    if (c.type == nodetype.function)
+                                    {
+                                        total_vector_size += c.GetFunctionResultVectorSize();
+                                    }
                                 }
                                 else
                                 if (c.type == nodetype.function)
                                 {
                                     total_vector_size += c.GetFunctionResultVectorSize();
                                 }
+                                else
+                                {
+                                    // vector define error  -> THIS MUST BE CORRECT AFTER MAPIDENTIFIERS 
+                                    data.LogError($"Blast.Compiler.FlattenAssignment: failed to check vectorsize of assignment node: <{assignment}>");
+                                    return BlastError.error_assign_vector_size_mismatch;
+                                }
                             }
-                            else
-                            if (c.type == nodetype.function)
-                            {
-                                total_vector_size += c.GetFunctionResultVectorSize();
-                            }
-                            else
-                            {
-                                // vector define error  -> THIS MUST BE CORRECT AFTER MAPIDENTIFIERS 
-                                data.LogError($"Blast.Compiler.FlattenAssignment: failed to check vectorsize of assignment node: <{assignment}>");
-                                return BlastError.error_assign_vector_size_mismatch;
-                            }
-                        }
 
+                        }
                     }
                 }
 

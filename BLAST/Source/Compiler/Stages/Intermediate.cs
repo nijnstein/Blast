@@ -623,15 +623,15 @@ namespace NSS.Blast.Compiler
             fixed (float* pdata = data)
             fixed (byte* pmetadata = metadata)
             {
+                // estimate stack size:  set stack memory too all INF's then check which are still set
+                // this assumes the intermediate has more then enough stack
+                float* stack = &pdata[initial_stack_offset];
+                for (int i = 0; i < package.StackCapacity; i++)
+                {
+                    stack[i] = math.INFINITY;
+                }
                 if (!is_ssmd_packaged)
                 {
-                    // estimate stack size:  set stack memory too all INF's then check which are still set
-                    // this assumes the intermediate has more then enough stack
-                    float* stack = &pdata[initial_stack_offset];
-                    for (int i = 0; i < package.StackCapacity; i++)
-                    {
-                        stack[i] = math.INFINITY;
-                    }
 
 
                     // set package 
@@ -641,10 +641,6 @@ namespace NSS.Blast.Compiler
                     // run it 
                     int exitcode = Blast.blaster.Execute(blast);
                     if (exitcode != (int)BlastError.success) return exitcode;
-
-                    // determine used stack size from nr of stack slots not INF anymore 
-                    max_stack_size = 0;
-                    while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
 
                 }
                 else
@@ -661,11 +657,19 @@ namespace NSS.Blast.Compiler
                     if (exitcode != (int)BlastError.success) return exitcode;
 
                     // in ssmd we have a counter holding max reached
-                    max_stack_size = (byte)math.min(255, Blast.ssmd_blaster.MaxStackSizeReachedDuringValidation);
+                //    max_stack_size = (byte)math.min(255, Blast.ssmd_blaster.MaxStackSizeReachedDuringValidation);
+
+                 //   max_stack_size = 0;
+                //    while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
+
                 }
 
+
+                // determine used stack size from nr of stack slots not INF anymore 
+                max_stack_size = 0;
+                while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
             }
-            
+
             // if we ran out of stack we should return that error 
             if (max_stack_size >= package.StackCapacity)
             {

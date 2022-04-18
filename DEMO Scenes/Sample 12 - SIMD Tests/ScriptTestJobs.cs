@@ -34,27 +34,28 @@ namespace ScriptTestJobs
         {
             // our block of data 
             int ssmddatasize = blaster.CurrentSSMDDataSize;
-            byte* ssmddata = stackalloc byte[ssmddatasize * datacount];
+            byte* ssmddata = //stackalloc byte[ssmddatasize * datacount];
+
+            (byte*)UnsafeUtility.Malloc(ssmddatasize * datacount, 16, Unity.Collections.Allocator.Temp);
 
             // generate a list of datasegment pointers on the stack:
-            byte** datastack = stackalloc byte*[datacount];
+           /* byte** datastack = stackalloc byte*[datacount];
 
             // although we allocate everything in 1 block, we will index a pointer to every block,
             // this will allow us to accept non-block aligned lists of memory pointers 
             for (int i = 0; i < datacount; i++)
             {
                 datastack[i] = ((byte*)ssmddata) + (ssmddatasize * i);
-            }
-
-            // allocate a register to use 
-            float4* register = stackalloc float4[datacount];
+            }*/ 
 
             // execute 
             for (int i = 0; i < repeatcount; i++)
             {
-                blaster.Execute(engine, IntPtr.Zero, (BlastSSMDDataStack*)datastack, datacount, true);
+                blaster.Execute(engine, IntPtr.Zero, (BlastSSMDDataStack*)ssmddata, datacount, false);
             }
-        }        
+
+            UnsafeUtility.Free(ssmddata, Unity.Collections.Allocator.Temp); 
+        }
     }
 
  

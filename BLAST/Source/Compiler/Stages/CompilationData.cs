@@ -356,12 +356,12 @@ namespace NSS.Blast.Compiler
         /// <param name="member">optional caller member name</param>
         public void LogToDo(string msg, [CallerLineNumber] int linenr = 0, [CallerMemberName] string member = "")
         {
-#if !STANDALONE_VSBUILD && DEVELOPMENT_BUILD 
-            if (CompilerOptions.Trace || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Type = Message.MessageType.ToDo, Content = msg, LineNumber = linenr, CallerMember = member });
-            if (CompilerOptions.Verbose || CompilerOptions.Trace)
-            {
-                Debug.LogWarning("TODO: " + msg);
-            }
+#if STANDALONE_VSBUILD && TRACE
+            //if (CompilerOptions.Trace || CompilerOptions.Trace) CompilerMessages.Add(new Message() { Type = Message.MessageType.ToDo, Content = msg, LineNumber = linenr, CallerMember = member });
+            //if (CompilerOptions.Verbose || CompilerOptions.Trace)
+            //{
+               //Debug.LogWarning("TODO: " + msg);
+            //}
 #endif
         }
 

@@ -78,7 +78,7 @@ namespace NSS.Blast.SSMD
     unsafe public partial struct simd
     {
 #if UNROLL
-        public const bool IsUnrolled = true;
+        public const bool IsUnrolled = false;
 #else
         public const bool IsUnrolled = false;
 #endif

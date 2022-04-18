@@ -7,6 +7,7 @@
 
 #pragma warning disable CS0162   // disable warnings for paths not taken dueue to compiler defines 
 
+#define TRACE
 
 #if STANDALONE_VSBUILD
 using NSS.Blast.Standalone;
@@ -1186,6 +1187,10 @@ namespace NSS.Blast.SSMD
 
                             if (target.is_set)
                             {
+                                if (target.data == stack)
+                                {
+                                    Debug.LogError("target self");
+                                }
                                 expand_indexed_into_n(expand_into_n, target, substract, c, offset, stack, stack_is_aligned, stack_rowsize);
                             }
                             else
@@ -1579,6 +1584,13 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void expand_constant_into_n(int expand_into_n, in DATAREC destination, float constant)
         {
+#if DEVELOPMENT_BUILD || TRACE
+            if (destination.vectorsize != expand_into_n)
+            {
+                Debug.LogError($"expand_constant_into_n: vectorsize mismatch, expanding into {expand_into_n} but datarecord points to vectorsize  {destination.vectorsize}");
+            }
+#endif
+
             switch (expand_into_n)
             {
                 case 2:
@@ -1601,9 +1613,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
-        #endregion 
+#endregion
 
-        #region pop_f[1|2|3|4]_into 
+#region pop_f[1|2|3|4]_into 
         /// <summary>
         /// pop value from stack, codepointer should be on the pop 
         /// </summary>
@@ -3645,14 +3657,14 @@ namespace NSS.Blast.SSMD
 
                         if (c1 || c2 || c3 || c4)
                         {
-                            if (c1) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1[0], ssmd_datacount);
-                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1, ssmd_datacount);
-                            if (c2) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2[0], ssmd_datacount);
-                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2, ssmd_datacount);
-                            if (c3) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3[0], ssmd_datacount);
-                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3, ssmd_datacount);
-                            if (c4) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4[0], ssmd_datacount);
-                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4, ssmd_datacount);
+                            if (c1)     simd.move_f1_constant_to_indexed_data_as_f1 (stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1[0], ssmd_datacount);
+                            else        simd.move_f1_array_to_indexed_data_as_f1    (stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1, ssmd_datacount);
+                            if (c2)     simd.move_f1_constant_to_indexed_data_as_f1 (stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2[0], ssmd_datacount);
+                            else        simd.move_f1_array_to_indexed_data_as_f1    (stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2, ssmd_datacount);
+                            if (c3)     simd.move_f1_constant_to_indexed_data_as_f1 (stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3[0], ssmd_datacount);
+                            else        simd.move_f1_array_to_indexed_data_as_f1    (stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3, ssmd_datacount);
+                            if (c4)     simd.move_f1_constant_to_indexed_data_as_f1 (stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4[0], ssmd_datacount);
+                            else        simd.move_f1_array_to_indexed_data_as_f1    (stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4, ssmd_datacount);
                         }
                         else
                         {
@@ -3725,9 +3737,9 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion                       
+#endregion
 
-        #region set_data_from_register_fx
+#region set_data_from_register_fx
 
         /// <summary>
         /// set a float1 data location from register location  
@@ -3832,9 +3844,9 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
 
-        #region Single Input functions (abs, sin etc) 
+#region Single Input functions (abs, sin etc) 
 
         private void handle_single_op_constant([NoAlias] float4* register, ref byte vector_size, float constant, in blast_operation op, in extended_blast_operation ex_op, in bool is_negated = false, in bool not = false, bool is_sequenced = false)
         {
@@ -4971,9 +4983,9 @@ namespace NSS.Blast.SSMD
         //
 
 
-        #endregion
+#endregion
 
-        #region Dual input functions: math.pow fmod cross etc. 
+#region Dual input functions: math.pow fmod cross etc. 
 
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
@@ -5398,9 +5410,9 @@ namespace NSS.Blast.SSMD
 
 
 
-        #endregion
+#endregion
 
-        #region Tripple inputs: select, clamp, lerp etc
+#region Tripple inputs: select, clamp, lerp etc
 
         /// <summary>
         /// select first input on a false condition, select the second on a true condition that is put in parameter 3
@@ -6263,9 +6275,9 @@ namespace NSS.Blast.SSMD
 
 
 
-        #endregion
+#endregion
 
-        #region op-a  
+#region op-a  
 
         /// <summary>
         /// 
@@ -6525,9 +6537,9 @@ namespace NSS.Blast.SSMD
 
 
 
-        #endregion
+#endregion
 
-        #region fused substract multiply actions
+#region fused substract multiply actions
 
         /// <summary>
         /// fused multiply add 
@@ -6599,9 +6611,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
-        #endregion
+#endregion
 
-        #region Bitwise operations
+#region Bitwise operations
 
         /// <summary>
         /// Note: sets bit in place, first parameter must be a direct data index (compiler should force this)
@@ -7687,9 +7699,9 @@ namespace NSS.Blast.SSMD
             return res; 
         }
 
-        #endregion
+#endregion
 
-        #region Reinterpret XXXX [DataIndex]
+#region Reinterpret XXXX [DataIndex]
 
         /// <summary>
         /// reinterpret the value at index as a boolean value (set metadata type to bool32)
@@ -7752,9 +7764,9 @@ namespace NSS.Blast.SSMD
             BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Numeric, 1, (byte)dataindex);
         }
 
-        #endregion
+#endregion
 
-        #region External Function Handler 
+#region External Function Handler 
 
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
@@ -8043,9 +8055,9 @@ namespace NSS.Blast.SSMD
 #endif
         }
 
-        #endregion
+#endregion
 
-        #region GetFunction|Sequence and Execute (privates)
+#region GetFunction|Sequence and Execute (privates)
 
         /// <summary>
         /// 
@@ -9492,7 +9504,7 @@ end_seq:
 
 
 
-        #region Stack Operation Handlers 
+#region Stack Operation Handlers 
 
         BlastError push(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp)
         {
@@ -9587,7 +9599,6 @@ end_seq:
                         break;
                     case 2:
                         push_f2_pop_11(temp, ref code_pointer);
-
                         break;
                     case 3:
                         push_f3_pop_111(temp, ref code_pointer);
@@ -9666,10 +9677,10 @@ end_seq:
             return BlastError.success;
         }
 
-        #endregion
+#endregion
 
 
-        #region Assign[s|f] operation handlers
+#region Assign[s|f] operation handlers
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void determine_assigned_indexer(ref int code_pointer, ref byte assignee_op, out bool is_indexed, out blast_operation indexer)
@@ -9735,27 +9746,25 @@ end_seq:
                     break;
 
                 case 2:
-                    pop_fx_into_ref<float>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
+                    pop_fx_into_ref<float2>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
                     vector_size = 2;
                     break;
 
                 case 3:
-                    pop_fx_into_ref<float>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
+                    pop_fx_into_ref<float3>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
                     vector_size = 3;
                     break;
 
                 case 0:
                 case 4:
-                    pop_fx_into_ref<float>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
-                    vector_size = 4;
+                    pop_fx_into_ref<float4>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
+                    vector_size = 4;     
                     break;
             }
 
             return BlastError.success;
         }
 
-
-        const bool ASSIGN_TO_TARGET = false; 
 
         /// <summary>
         /// assign result of a sequence 
@@ -9868,6 +9877,7 @@ end_seq:
 
                     case 0: // artifact from cutting 4 off at 2 bits 
                     case (byte)BlastVectorSizes.float4:
+                        vector_size = 4; 
                         if (s_assignee != 4)
                         {
 #if DEVELOPMENT_BUILD || TRACE
@@ -9943,13 +9953,13 @@ end_seq:
 
                 case blast_operation.expand_v3:
                     code_pointer++;
-                    res = ExpandF1IntoFn(3, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 2));
+                    res = ExpandF1IntoFn(3, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 3));
                     need_copy_to_register = false;
                     break;
 
                 case blast_operation.expand_v4:
                     code_pointer++;
-                    res  = ExpandF1IntoFn(4, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 2));
+                    res  = ExpandF1IntoFn(4, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 4));
                     need_copy_to_register = false;
                     break;  
 
@@ -10077,7 +10087,7 @@ end_seq:
             return BlastError.success;
         }
 
-        #region CDATA Assignments
+#region CDATA Assignments
         BlastError assign_cdata(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp)
         {
             int cdata_offset, cdata_length;
@@ -10328,9 +10338,22 @@ end_seq:
             return false;
         }
 
-        #endregion 
-        #endregion
+#endregion
+#endregion
 
+
+
+
+
+
+
+
+
+
+
+
+
+        const bool ASSIGN_TO_TARGET = true;
 
 
         /// <summary>
@@ -10384,14 +10407,17 @@ end_seq:
                 // so that we can use the same indexing methods regardless the origin of the stack pointer 
 
                 // allocate local stack 
-                byte* p = stackalloc byte[package.StackSize * ssmd_datacount];
+
+
+                
+                byte* p = stackalloc byte[package.StackSize * ssmd_datacount]; 
 
                 // generate a list of stacksegment pointers on the stack:
                 byte** stack_indices = stackalloc byte*[ssmd_datacount];
 
                 for (int i = 0; i < ssmd_data_count; i++)
                 {
-                    //ulong u64 = (ulong)(p + (package.StackSize * i));
+                    //ulong u64 = (ulong)(p + (package.StackSize * i));   
 
                     // offset the index to match the stackoffset
                     //u64 -= package.DataSegmentStackOffset;
@@ -10732,6 +10758,6 @@ end_seq:
         }
 
 
-        #endregion
+#endregion
     }
 }

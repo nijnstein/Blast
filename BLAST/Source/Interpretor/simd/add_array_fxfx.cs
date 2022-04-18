@@ -1251,7 +1251,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void add_array_f1f1([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
         {
-            if (IsUnrolled)
+            if (target.is_aligned)
             {
                 float* fa = (float*)(void*)a;
                 float* fb = (float*)(void*)b;
@@ -1328,7 +1328,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void add_array_f1f1([NoAlias] float4* a, float constant, in DATAREC target, in int ssmd_datacount)
         {
-            if (IsUnrolled)
+            if (target.is_aligned)
             {
                 float* fa = (float*)(void*)a;
                 int i = 0;
@@ -1391,7 +1391,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void add_array_f1f2([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
         {
-            if (IsUnrolled)
+            if (target.is_aligned)
             {
                 float* fa = (float*)(void*)a;
                 float* fb = (float*)(void*)b;
@@ -1498,7 +1498,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void add_array_f1f3([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
         {
-            if (IsUnrolled)
+            if (target.is_aligned)
             {
                 float* fa = (float*)(void*)a;
                 float* fb = (float*)(void*)b;
@@ -1591,7 +1591,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void add_array_f2f2([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
         {
-            if (IsUnrolled)
+            if (target.is_aligned)
             {
                 float* fa = (float*)(void*)a;
                 float* fb = (float*)(void*)b;
@@ -1672,7 +1672,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void add_array_f3f3([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
         {
-            if (IsUnrolled)
+            if (target.is_aligned)
             {
                 float* fa = (float*)(void*)a;
                 float* fb = (float*)(void*)b;
@@ -1768,7 +1768,7 @@ namespace NSS.Blast.SSMD
             float* p = target.index00;
             int p_stride = target.row_size >> 2;
 
-            if (IsUnrolled)
+            if (target.is_aligned)
             {
                 float* fa = (float*)(void*)a;
                 float* fb = (float*)(void*)b;
@@ -1821,11 +1821,7 @@ namespace NSS.Blast.SSMD
             {
                 for (int i = 0; i < ssmd_datacount; i++)
                 {
-                    p[0] = a[i].x + b[i].x;
-                    p[1] = a[i].y + b[i].y;
-                    p[2] = a[i].z + b[i].z;
-                    p[3] = a[i].w + b[i].w;
-                    p   += p_stride;
+                    ((float4*)(void*)&((float**)target.data)[i][target.index])[0] = a[i] + b[i];
                 }
             }
         }
@@ -1837,7 +1833,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void add_array_f1f4([NoAlias] float4* a, [NoAlias] float4* b, in DATAREC target, in int ssmd_datacount)
         {
-            if (IsUnrolled)
+            if (target.is_aligned)
             {
                 float* fa = (float*)(void*)a;
                 float* fb = (float*)(void*)b;
@@ -1943,7 +1939,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void add_array_f2f1([NoAlias] float4* a, float constant, in DATAREC target, in int ssmd_datacount)
         {
-            if (IsUnrolled)   
+            if (target.is_aligned)   
             {
                 float* fa = (float*)(void*)a;
                 int i = 0;
@@ -2022,7 +2018,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void add_array_f3f1([NoAlias] float4* a, float constant, in DATAREC target, in int ssmd_datacount)
         {
-            if (IsUnrolled)
+            if (target.is_aligned)
             {
                 float* fa = (float*)(void*)a;
                 int i = 0;
@@ -2114,7 +2110,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void add_array_f4f1([NoAlias] float4* a, float constant, in DATAREC target, in int ssmd_datacount)
         {
-            if (IsUnrolled)
+            if (target.is_aligned)
             {
                 float* fa = (float*)(void*)a;
                 int i = 0;
