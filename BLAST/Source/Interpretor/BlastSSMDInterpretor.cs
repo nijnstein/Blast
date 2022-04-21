@@ -115,6 +115,13 @@ namespace NSS.Blast.SSMD
         internal unsafe void** data;
         internal int ssmd_datacount;
 
+        /// <summary>
+        /// temp buffer for indices (ssmd_count * 4byte)
+        /// </summary>
+        [NoAlias]
+        [NativeDisableUnsafePtrRestriction]
+        internal unsafe float* indices;    // TODO change to ushorts
+
         [NoAlias]
         [NativeDisableUnsafePtrRestriction]
         internal unsafe void** stack;
@@ -183,8 +190,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal DATAREC IndexData(int index, byte vectorsize)
         {
-            return new DATAREC()
-            {
+            return new DATAREC() {
                 data = data,
                 row_size = data_rowsize,
                 index = index,
@@ -198,8 +204,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal DATAREC IndexStack(int index, byte vectorsize)
         {
-            return new DATAREC()
-            {
+            return new DATAREC() {
                 data = stack,
                 row_size = stack_rowsize,
                 index = index,
@@ -209,10 +214,36 @@ namespace NSS.Blast.SSMD
                 datatype = BlastVariableDataType.Numeric
             };
         }
-        #endregion 
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float f1([NoAlias] void** data, in int source_index, in int i)
+        {
+            return ((float*)data[i])[source_index];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float2 f2([NoAlias] void** data, in int source_index, in int i)
+        {
+            return ((float2*)(void*)&((float*)data[i])[source_index])[0];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 f3([NoAlias] void** data, in int source_index, in int i)
+        {
+            return ((float3*)(void*)&((float*)data[i])[source_index])[0];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float4 f4([NoAlias] void** data, in int source_index, in int i)
+        {
+            return ((float4*)(void*)&((float*)data[i])[source_index])[0];
+        }
+
+        #endregion
 
         #region Warnings
-                                     
+
         /// <summary>
         /// reset any warning counters, blast wil sent most warnings only once
         /// </summary>
@@ -286,7 +317,7 @@ namespace NSS.Blast.SSMD
 
         public int CurrentSSMDDataSize => package.SSMDDataSize;
 
-        public int CurrentCodeSize => package.CodeSize; 
+        public int CurrentCodeSize => package.CodeSize;
 
         /// <summary>
         /// set ssmd package data 
@@ -374,7 +405,7 @@ namespace NSS.Blast.SSMD
         {
             if (!blast.IsCreated) return (int)BlastError.error_blast_not_initialized;
 
-            if (ssmddata == null)
+            if (ssmddata == null && package.SSMDDataSize > 0)
             {
 #if DEVELOPMENT_BUILD || TRACE
                 Debug.LogError("blast.ssmd.interpretor: data error, ssmd data == null");
@@ -424,7 +455,7 @@ namespace NSS.Blast.SSMD
                 // this will allow us to accept non-block aligned lists of memory pointers 
 
 
-                byte* ptr = (byte*)ssmddata; 
+                byte* ptr = (byte*)ssmddata;
                 for (int i = 0; i < ssmd_data_count; i++)
                 {
                     datastack[i] = &ptr[datastack_stride * i]; // ((byte*)ssmddata) + (datastack_stride * i);
@@ -1129,17 +1160,160 @@ namespace NSS.Blast.SSMD
         /// get the result of index-n[consant|variable] for all ssmd records 
         /// </summary>
 
-        void IndexF1IntoFn([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* register, in DATAREC target = default, int indexed = -1, bool is_negated = false)
+        BlastError IndexF1IntoFn([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, int ssmd_datacount, [NoAlias] float4* register, in DATAREC target = default, int indexed = -1, bool is_negated = false)
         {
+            // next is a cdata or a vector that we index
+            // any constant vector index of 0..3 would have been translated into index_x..w
+
+            blast_operation op = (blast_operation)code[code_pointer];
+
+            int offset = 0;
+            int length = 0;
+            bool is_cdata = op == blast_operation.cdataref;
+            CDATAEncodingType encoding = CDATAEncodingType.None; 
+
+
+            // op may be: cdatref OR id of variable 
+            if (is_cdata)
+            {
+                // follow the cdata ref 
+                if (!BlastInterpretor.follow_cdataref(code, code_pointer, out offset, out length, out encoding))
+                {
+                    if (IsTrace)
+                    {
+                        Debug.LogError($"Blast.ssmd.IndexF1IntoFn: failed to read cdata reference at codepointer {code_pointer}");
+                    }
+                    return BlastError.error_failed_to_read_cdata_reference;
+                }
+
+                // advance to index parameter
+                code_pointer += 3;
+            }
+            else
+            if (op >= blast_operation.id && op < blast_operation.ex_op)
+            {
+                // data is in datasegment at given id 
+                offset = op - blast_operation.id;
+                BlastInterpretor.GetMetaData(metadata, (byte)offset, out vector_size, out BlastVariableDataType datatype);
+                length = vector_size;
+
+                // advance to index 
+                code_pointer++;
+            }
+            else
+            {
+                // invalid data 
+                if (IsTrace)
+                {
+                    Debug.LogError($"Blast.ssmd.IndexF1IntoFn: invalid indexing target, expecting a cdataref or vector in datasegment. codepointer = {code_pointer}");
+                }
+                return BlastError.invalid_index_n_target;
+            }
 
 
 
+            // source is in op, next is the actual index
+            float* f1 = (float*)temp;
+            bool constant_index = pop_fx_into_ref<float>(ref code_pointer, f1, ssmd_datacount, true);
 
+            // move back 1 codepoint, pop leaves pointer at next value
+            code_pointer--;
 
+            // if the index was not constant by type, it very probably is constant data 
+            if (!constant_index)
+            {
+                constant_index = simd.all_equal(f1, ssmd_datacount);
+            }
 
+            // less work if index is constant AND we reference constant data 
+            if (constant_index)
+            {
+                int index = (int)f1[0];
 
+                // get once, set many 
+                if (is_cdata)
+                {
+                    float f1data = BlastInterpretor.index_cdata_f1(code, offset, index, length);
+                    if (target.is_set)
+                    {
+                        // direct set on target
+                        simd.move_f1_constant_to_indexed_data_as_f1(target, f1data, ssmd_datacount);
+                    }
+                    else
+                    {
+                        simd.move_f1_constant_into_f4_array_as_f1(register, f1data, ssmd_datacount);
+                    }
+                }
+                else
+                {
+                    // set result in datasegment from other value in segment at offset[index]
+                    DATAREC source = IndexData(offset + index, 1);
 
+                    if (target.is_set)
+                    {
+                        // directly set target  (end of sequence, direct assign)
+                        simd.move_indexed_f1(target, source, ssmd_datacount);
+                    }
+                    else
+                    {
+                        simd.move_indexed_data_as_f1_to_f1f4(register, source, ssmd_datacount);
+                    }
+                }
+            }
+            else
+            {
+                // move indexed data to target 
+                if (target.is_set)
+                {
+                    // get many, set many, each index is unique
+                    float* f2 = &f1[ssmd_datacount];
 
+                    // fetch data for each index 
+                    if (is_cdata)
+                    {
+                        // this is far from efficient.. 
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            f2[i] = BlastInterpretor.index_cdata_f1(code, offset, (int)f1[i], length);
+                        }
+                    }
+                    else
+                    {
+                        // index each element seperately
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            f2[i] = ((float**)data)[i][offset + (int)f1[i]];
+                        }
+                    }
+
+                    // direct set of assignment target
+                    simd.move_f1_array_to_indexed_data_as_f1(target, f2, ssmd_datacount);
+                }
+                else
+                {
+                    // write data[index] to intermediate register as f4[].x
+                    if (is_cdata)
+                    {
+                        // this is far from efficient.. 
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = BlastInterpretor.index_cdata_f1(code, offset, (int)f1[i], length);
+                        }
+                    }
+                    else
+                    {
+                        // index each element seperately
+                        for (int i = 0; i < ssmd_datacount; i++)
+                        {
+                            register[i].x = ((float**)data)[i][offset + (int)f1[i]];
+                        }
+                    }
+                }
+            }
+
+            // the value set after indexing something is always of vectorsize 1 
+            vector_size = 1;
+            return BlastError.success;
         }
 
 
@@ -1152,7 +1326,7 @@ namespace NSS.Blast.SSMD
         /// - only grows codepointer on operations
         /// pop|data data[1] and expand into a vector of size n [2,3,4]
         /// </summary>
-        BlastError ExpandF1IntoFn(in int expand_into_n, ref int code_pointer, ref byte vector_size, [NoAlias] float4* destination, in DATAREC target)
+        BlastError ExpandF1IntoFn(in int expand_into_n, ref int code_pointer, ref byte vector_size, int ssmd_datacount, [NoAlias] float4* destination, in DATAREC target)
         {
             // we get either a pop instruction or an instruction to get a value 
 
@@ -1215,16 +1389,16 @@ namespace NSS.Blast.SSMD
                                 {
                                     Debug.LogError("target self");
                                 }
-                                expand_indexed_into_n(expand_into_n, target, substract, c, offset, stack, stack_is_aligned, stack_rowsize);
+                                expand_indexed_into_n(expand_into_n, ssmd_datacount, target, substract, c, offset, stack, stack_is_aligned, stack_rowsize);
                             }
                             else
                             {
-                                expand_indexed_into_n(expand_into_n, destination, substract, c, offset, stack, stack_is_aligned, stack_rowsize);
+                                expand_indexed_into_n(expand_into_n, ssmd_datacount, destination, substract, c, offset, stack, stack_is_aligned, stack_rowsize);
                             }
 
                             // output vectorsize equals what we expanded into 
                             vector_size = (byte)expand_into_n;
-                            return BlastError.success; 
+                            return BlastError.success;
                         }
 
 
@@ -1244,11 +1418,11 @@ namespace NSS.Blast.SSMD
                             constant = math.select(constant, -constant, substract);
                             if (target.is_set)
                             {
-                                expand_constant_into_n(expand_into_n, target, constant);
+                                expand_constant_into_n(expand_into_n, ssmd_datacount, target, constant);
                             }
                             else
                             {
-                                expand_constant_into_n(expand_into_n, destination, constant);
+                                expand_constant_into_n(expand_into_n, ssmd_datacount, destination, constant);
                             }
                         }
                         return BlastError.success;
@@ -1269,11 +1443,11 @@ namespace NSS.Blast.SSMD
                             constant = math.select(constant, -constant, substract);
                             if (target.is_set)
                             {
-                                expand_constant_into_n(expand_into_n, target, constant);
+                                expand_constant_into_n(expand_into_n, ssmd_datacount, target, constant);
                             }
                             else
                             {
-                                expand_constant_into_n(expand_into_n, destination, constant);
+                                expand_constant_into_n(expand_into_n, ssmd_datacount, destination, constant);
                             }
                         }
                         return BlastError.success;
@@ -1314,11 +1488,11 @@ namespace NSS.Blast.SSMD
                             constant = math.select(constant, -constant, substract);
                             if (target.is_set)
                             {
-                                expand_constant_into_n(expand_into_n, target, constant);
+                                expand_constant_into_n(expand_into_n, ssmd_datacount, target, constant);
                             }
                             else
                             {
-                                expand_constant_into_n(expand_into_n, destination, constant);
+                                expand_constant_into_n(expand_into_n, ssmd_datacount, destination, constant);
                             }
                         }
                         return BlastError.success;
@@ -1357,11 +1531,11 @@ namespace NSS.Blast.SSMD
                             constant = math.select(constant, -constant, substract);
                             if (target.is_set)
                             {
-                                expand_constant_into_n(expand_into_n, target, constant);
+                                expand_constant_into_n(expand_into_n, ssmd_datacount, target, constant);
                             }
                             else
                             {
-                                expand_constant_into_n(expand_into_n, destination, constant);
+                                expand_constant_into_n(expand_into_n, ssmd_datacount, destination, constant);
                             }
                         }
                         return BlastError.success;
@@ -1428,11 +1602,11 @@ namespace NSS.Blast.SSMD
 
                             if (target.is_set)
                             {
-                                expand_constant_into_n(expand_into_n, target, constant);
+                                expand_constant_into_n(expand_into_n, ssmd_datacount, target, constant);
                             }
                             else
                             {
-                                expand_constant_into_n(expand_into_n, destination, constant);
+                                expand_constant_into_n(expand_into_n, ssmd_datacount, destination, constant);
                             }
                         }
                         return BlastError.success;
@@ -1477,11 +1651,11 @@ namespace NSS.Blast.SSMD
 
                             if (target.is_set)
                             {
-                                expand_indexed_into_n(expand_into_n, target, substract, c, offset, data, data_is_aligned, data_rowsize);
+                                expand_indexed_into_n(expand_into_n, ssmd_datacount, target, substract, c, offset, data, data_is_aligned, data_rowsize);
                             }
                             else
                             {
-                                expand_indexed_into_n(expand_into_n, destination, substract, c, offset, data, data_is_aligned, data_rowsize);
+                                expand_indexed_into_n(expand_into_n, ssmd_datacount, destination, substract, c, offset, data, data_is_aligned, data_rowsize);
                             }
                         }
                         return BlastError.success;
@@ -1491,7 +1665,7 @@ namespace NSS.Blast.SSMD
         }
 
 
-        void expand_indexed_into_n(int expand_into_n, [NoAlias] float4* destination, bool substract, byte c, int offset, void** data, bool is_aligned, int stride)
+        static void expand_indexed_into_n(int expand_into_n, int ssmd_datacount, [NoAlias] float4* destination, bool substract, byte c, int offset, void** data, bool is_aligned, int stride)
         {
             switch (expand_into_n)
             {
@@ -1503,7 +1677,7 @@ namespace NSS.Blast.SSMD
                     else
                     {
                         simd.move_indexed_data_as_f1_to_f2_negated(destination, data, stride, is_aligned, offset, ssmd_datacount);
-                    }                                                                                   
+                    }
                     break;
 
                 case 3:
@@ -1535,14 +1709,14 @@ namespace NSS.Blast.SSMD
 #endif
             }
         }
-        void expand_indexed_into_n(int expand_into_n, in DATAREC destination, bool substract, byte c, int offset, void** data, bool is_aligned, int stride)
+        static void expand_indexed_into_n(int expand_into_n, int ssmd_datacount, in DATAREC destination, bool substract, byte c, int offset, void** data, bool is_aligned, int stride)
         {
             switch (expand_into_n)
             {
                 case 2:
                     if (!substract)
                     {
-                        simd.move_indexed_f1f2(destination, data, stride, is_aligned, offset, ssmd_datacount); 
+                        simd.move_indexed_f1f2(destination, data, stride, is_aligned, offset, ssmd_datacount);
                     }
                     else
                     {
@@ -1581,7 +1755,7 @@ namespace NSS.Blast.SSMD
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void expand_constant_into_n(int expand_into_n, [NoAlias] float4* destination, float constant)
+        static void expand_constant_into_n(int expand_into_n, int ssmd_datacount, [NoAlias] float4* destination, float constant)
         {
             switch (expand_into_n)
             {
@@ -1606,7 +1780,7 @@ namespace NSS.Blast.SSMD
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void expand_constant_into_n(int expand_into_n, in DATAREC destination, float constant)
+        static void expand_constant_into_n(int expand_into_n, int ssmd_datacount, in DATAREC destination, float constant)
         {
 #if DEVELOPMENT_BUILD || TRACE
             if (destination.vectorsize != expand_into_n)
@@ -1618,7 +1792,7 @@ namespace NSS.Blast.SSMD
             switch (expand_into_n)
             {
                 case 2:
-                    simd.move_f1_constant_to_indexed_data_as_f2(destination, constant, ssmd_datacount); 
+                    simd.move_f1_constant_to_indexed_data_as_f2(destination, constant, ssmd_datacount);
                     break;
 
                 case 3:
@@ -1637,9 +1811,89 @@ namespace NSS.Blast.SSMD
             }
         }
 
-#endregion
+        #endregion
 
-#region pop_f[1|2|3|4]_into 
+        #region GetSizeResult
+
+
+        /// <summary>
+        /// get size of given data element 
+        /// </summary>
+        BlastError GetSizeResult(ref int code_pointer, ref byte vector_size, int ssmd_datacount, [NoAlias] float4* f4_result, in DATAREC target = default)
+        {
+            // in release this sets NaN on errors 
+            float fsize = float.NaN;
+            BlastError res = BlastError.success;
+
+            // index would be the same for each ssmd record
+            byte c = code[code_pointer];
+
+            if (c == (byte)blast_operation.cdataref)
+            {
+                // get offset to the cdata from current location
+                int offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
+                int index = code_pointer - offset + 1;
+
+                // validate we end up at cdata
+                if (!BlastInterpretor.IsValidCDATAStart(code[index]))
+                {
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"Blast.SSMD.Interpretor.size: error in cdata reference at {code_pointer} referencing code[index] {index} ");
+#endif
+                    vector_size = 0;
+                    res = BlastError.error_failed_to_read_cdata_reference;
+                }
+                else
+                {
+                    fsize = BlastInterpretor.GetCDATAElementCount(code, index);
+                    vector_size = 1;
+                    code_pointer = code_pointer + 2;
+                }
+            }
+            else
+            {
+                int dataindex = c - BlastInterpretor.opt_id;
+
+                // dataindex must point to a valid id 
+                if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+                {
+
+#if DEVELOPMENT_BUILD || TRACE
+                    Debug.LogError($"Blast.SSMD.Interpretor.Size: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+#endif
+                    res = BlastError.error_failed_to_read_cdata_reference;
+                    vector_size = 0;
+                }
+                else
+                {
+                    // get size from variable data 
+                    int size = BlastInterpretor.GetMetaDataSize(in metadata, (byte)dataindex);
+                    size = math.select(size, 4, size == 0);
+
+                    // copy size into result variable 
+                    vector_size = 1;
+                    fsize = (float)size;
+                }
+            }
+
+            // move sizedata to target location 
+            if (target.is_set)
+            {
+                // direct to target from sequence assignment
+                simd.move_f1_constant_to_indexed_data_as_f1(target.data, target.row_size, target.is_aligned, target.index, fsize, ssmd_datacount);
+            }
+            else
+            {
+                // into intermediate buffer 
+                simd.move_f1_constant_into_f4_array_as_f1(f4_result, fsize, ssmd_datacount);
+            }
+
+            return res;
+        }
+
+        #endregion
+
+        #region pop_f[1|2|3|4]_into 
         /// <summary>
         /// pop value from stack, codepointer should be on the pop 
         /// </summary>
@@ -1756,7 +2010,7 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         bool pop_fx_into_ref<T>(ref int code_pointer, [NoAlias] T* destination, int ssmd_datacount, bool copy_only_the_first_if_constant = false) where T : unmanaged
         {
-            return pop_fx_into_ref<T>(ref code_pointer, destination, null, -1, false, 0, ssmd_datacount, copy_only_the_first_if_constant); 
+            return pop_fx_into_ref<T>(ref code_pointer, destination, null, -1, false, 0, ssmd_datacount, copy_only_the_first_if_constant);
         }
 
         /// <summary>
@@ -1795,10 +2049,11 @@ namespace NSS.Blast.SSMD
 
             bool is_negated = false;
             int indexed = -1;
+            bool constant_index = false;
 
-            input_ssmd_datacount = math.select(input_ssmd_datacount, ssmd_datacount, input_ssmd_datacount == -1); 
+            input_ssmd_datacount = math.select(input_ssmd_datacount, ssmd_datacount, input_ssmd_datacount == -1);
 
- 
+
             while (true)
             {
                 byte c = code[code_pointer];
@@ -1806,10 +2061,23 @@ namespace NSS.Blast.SSMD
                 switch ((blast_operation)c)
                 {
                     case blast_operation.substract: is_negated = true; code_pointer++; continue;
-                    case blast_operation.index_x: indexed = 0; code_pointer++; continue;
-                    case blast_operation.index_y: indexed = 1; code_pointer++; continue;
-                    case blast_operation.index_z: indexed = 2; code_pointer++; continue;
-                    case blast_operation.index_w: indexed = 3; code_pointer++; continue;
+                    case blast_operation.index_x: indexed = 0; constant_index = true; code_pointer++; continue;
+                    case blast_operation.index_y: indexed = 1; constant_index = true; code_pointer++; continue;
+                    case blast_operation.index_z: indexed = 2; constant_index = true; code_pointer++; continue;
+                    case blast_operation.index_w: indexed = 3; constant_index = true; code_pointer++; continue;
+
+                    case blast_operation.index_n:
+                        {
+                            indexed = 4;
+                            code_pointer++;
+                            constant_index = pop_fx_into_ref<float>(ref code_pointer, indices, input_ssmd_datacount, true);
+                            if (constant_index)
+                            {
+                                indexed = (int)indices[0];
+                            }
+                            continue;
+                        }
+
 
                     //
                     // stack pop 
@@ -1836,17 +2104,17 @@ namespace NSS.Blast.SSMD
 
                             if (!is_negated)
                             {
-                                switch(vector_size)
+                                switch (vector_size)
                                 {
-                                    case 1: simd.move_indexed_data_as_f1_to_f1((float*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break; 
+                                    case 1: simd.move_indexed_data_as_f1_to_f1((float*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                     case 2: simd.move_indexed_data_as_f2_to_f2((float2*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                     case 3: simd.move_indexed_data_as_f3_to_f3((float3*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                     case 0:
                                     case 4: simd.move_indexed_data_as_f4_to_f4((float4*)(void*)destination, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                 }
-                                
 
-                               // for (int i = 0; i < input_ssmd_datacount; i++) destination[i] = ((T*)(void*)&((float*)stack[i])[indexed])[0];
+
+                                // for (int i = 0; i < input_ssmd_datacount; i++) destination[i] = ((T*)(void*)&((float*)stack[i])[indexed])[0];
                             }
                             else
                                 switch (vector_size)
@@ -1867,8 +2135,8 @@ namespace NSS.Blast.SSMD
                                 switch (vector_size)
                                 {
                                     case 1: simd.move_indexed_f1(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
-                                    case 2: simd.move_indexed_f2(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break; 
-                                    case 3: simd.move_indexed_f3(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break; 
+                                    case 2: simd.move_indexed_f2(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
+                                    case 3: simd.move_indexed_f3(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                     case 0:
                                     case 4: simd.move_indexed_f4(destination_data, stride, is_aligned, destination_offset, stack, stack_rowsize, stack_is_aligned, indexed, input_ssmd_datacount); break;
                                 }
@@ -2018,6 +2286,96 @@ namespace NSS.Blast.SSMD
                             }
                         }
                         return true;
+
+                    case blast_operation.cdataref:
+                        {
+                            CDATAEncodingType encoding = CDATAEncodingType.None;
+                            if (BlastInterpretor.follow_cdataref(code, code_pointer, out int offset, out int length, out encoding))
+                            {
+                                if (!BlastInterpretor.IsValidCDATAStart(code[offset]))  // at some point we probably replace cdata with a datatype cdata_float etc.. 
+                                {
+                                    if (IsTrace) Debug.LogError($"Blast.SSMD.Interpretor.pop_fx_into_ref: error in cdata reference at {code_pointer} in encoding {encoding}");
+                                    vector_size = 0;
+                                    //return BlastError.error_failed_to_read_cdata_reference;
+                                    return false;
+                                }
+                                else
+                                {
+                                    // advance past the cdata 
+                                    code_pointer = code_pointer + 3;
+                                    constant_index = constant_index || (indexed >= 0 && indexed < 4);
+
+                                    // indexer at location ? 
+                                    if (!constant_index)
+                                    {
+                                        constant_index = simd.all_equal(indices, ssmd_datacount);
+                                    }
+
+                                    // index from variable 
+                                    if (indexed > 3)
+                                    {
+                                        if (constant_index)
+                                        {
+                                            indexed = (int)indices[0];
+                                        }
+                                        else
+                                        {
+                                            // handle each index seperately
+                                            for (int i = 0; i < ssmd_datacount; i++)
+                                            {
+
+
+                                                Debug.Log("BIG TODO (see pop) generalize this first "); 
+
+
+
+                                             //
+                                             //
+                                             //
+                                             //
+                                             //   register[i] = BlastInterpretor.index_cdata_f1(code, offset, indexed, length);
+                                             //
+                                             //
+                                             //
+
+
+
+
+                                            }
+                                            vector_size = 1;
+
+                                            // value set was not constant across all
+                                            return false;
+                                        }
+                                    }
+                                    // unsported access as of this moment, no indexer 
+                                    if (indexed == -1)
+                                    {
+                                        if (IsTrace) Debug.LogError($"Blast.SSMD.Interpretor.get_single_op_result: error in cdata reference at {code_pointer} referencing code[index] {indexed}, cdata must be indexed");
+                                    }
+                                    else
+                                    {
+                                        // single index returning a constant value 
+                                        constant = BlastInterpretor.index_cdata_f1(code, offset, indexed, length);
+
+                                        // set the constant to destination
+                                        if (destination_offset >= 0)
+                                        {
+                                            pop_fx_into_constant_handler<T>(destination_data, destination_offset, constant, is_aligned, stride);
+                                        }
+                                        else
+                                        {
+                                            pop_fx_into_constant_handler<T>(destination, constant, copy_only_the_first_if_constant);
+                                        }
+
+                                        // returns constant value
+                                        vector_size = 1;
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                        return false;
 
                     case blast_operation.pi:
                     case blast_operation.inv_pi:
@@ -2280,7 +2638,7 @@ namespace NSS.Blast.SSMD
             switch ((byte)math.select(vsize, vsize + 100, copy_only_the_first))
             {
                 case 1:
-                    simd.set_f1_from_constant((float*)buffer, constant, ssmd_datacount); 
+                    simd.set_f1_from_constant((float*)buffer, constant, ssmd_datacount);
                     return;
 
                 case 101:
@@ -2289,7 +2647,7 @@ namespace NSS.Blast.SSMD
 
                 case 2:
                     // by filling 2x as much we effectively fill the same float2 array 
-                    simd.set_f1_from_constant((float*)buffer, constant, ssmd_datacount * 2); 
+                    simd.set_f1_from_constant((float*)buffer, constant, ssmd_datacount * 2);
                     return;
 
                 case 102:
@@ -2349,15 +2707,15 @@ namespace NSS.Blast.SSMD
                                                 return;
 
                                             case blast_operation.add:
-                                                simd.add_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount); 
+                                                simd.add_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.substract:
-                                                simd.sub_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount); 
+                                                simd.sub_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.divide:
-                                                simd.div_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount); 
+                                                simd.div_array_f1f1_constant(f1_out, f1_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.and:
@@ -2415,7 +2773,7 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                simd.mul_array_f14f1_constant(f4_out, f1_in, constant, ssmd_datacount); 
+                                                simd.mul_array_f14f1_constant(f4_out, f1_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.add:
@@ -2493,7 +2851,7 @@ namespace NSS.Blast.SSMD
                                             case blast_operation.mina:
                                             case blast_operation.csum:
                                             case blast_operation.maxa:
-                                                simd.set_f1_from_constant(f1_out, constant, ssmd_datacount); 
+                                                simd.set_f1_from_constant(f1_out, constant, ssmd_datacount);
                                                 // for (int i = 0; i < ssmd_datacount; i++) f1_out[i] = constant;
                                                 return;
                                         }
@@ -2825,7 +3183,7 @@ namespace NSS.Blast.SSMD
                                         switch (op)
                                         {
                                             case blast_operation.multiply:
-                                                simd.mul_array_f4f4_constant(f4_out, f4_in, constant, ssmd_datacount); 
+                                                simd.mul_array_f4f4_constant(f4_out, f4_in, constant, ssmd_datacount);
                                                 return;
 
                                             case blast_operation.add:
@@ -3681,14 +4039,14 @@ namespace NSS.Blast.SSMD
 
                         if (c1 || c2 || c3 || c4)
                         {
-                            if (c1)     simd.move_f1_constant_to_indexed_data_as_f1 (stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1[0], ssmd_datacount);
-                            else        simd.move_f1_array_to_indexed_data_as_f1    (stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1, ssmd_datacount);
-                            if (c2)     simd.move_f1_constant_to_indexed_data_as_f1 (stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2[0], ssmd_datacount);
-                            else        simd.move_f1_array_to_indexed_data_as_f1    (stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2, ssmd_datacount);
-                            if (c3)     simd.move_f1_constant_to_indexed_data_as_f1 (stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3[0], ssmd_datacount);
-                            else        simd.move_f1_array_to_indexed_data_as_f1    (stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3, ssmd_datacount);
-                            if (c4)     simd.move_f1_constant_to_indexed_data_as_f1 (stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4[0], ssmd_datacount);
-                            else        simd.move_f1_array_to_indexed_data_as_f1    (stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4, ssmd_datacount);
+                            if (c1) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1[0], ssmd_datacount);
+                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1, ssmd_datacount);
+                            if (c2) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2[0], ssmd_datacount);
+                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2, ssmd_datacount);
+                            if (c3) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3[0], ssmd_datacount);
+                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3, ssmd_datacount);
+                            if (c4) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4[0], ssmd_datacount);
+                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4, ssmd_datacount);
                         }
                         else
                         {
@@ -3719,7 +4077,7 @@ namespace NSS.Blast.SSMD
 
                 case 2:
                     {
-                        c1 = pop_fx_into_ref<float>(ref code_pointer, t1, null, -1, false, 0, ssmd_datacount, true); 
+                        c1 = pop_fx_into_ref<float>(ref code_pointer, t1, null, -1, false, 0, ssmd_datacount, true);
                         c2 = pop_fx_into_ref<float>(ref code_pointer, t2, null, -1, false, 0, ssmd_datacount, true);
 
                         SetStackMetaData(BlastVariableDataType.Numeric, 2, (byte)stack_offset);
@@ -3761,9 +4119,9 @@ namespace NSS.Blast.SSMD
         }
 
 
-#endregion
+        #endregion
 
-#region set_data_from_register_fx
+        #region set_data_from_register_fx
 
         /// <summary>
         /// set a float1 data location from register location  
@@ -3868,936 +4226,11 @@ namespace NSS.Blast.SSMD
         }
 
 
-#endregion
+        #endregion
 
-#region Single Input functions (abs, sin etc) 
+        #region op_a | op_a_component | get_sigle_op
 
-        private void handle_single_op_constant([NoAlias] float4* register, ref byte vector_size, float constant, in blast_operation op, in extended_blast_operation ex_op, in bool is_negated = false, in bool not = false, bool is_sequenced = false)
-        {
-            handle_constant_value_operation(ref vector_size, ref constant, in op, in ex_op, in is_negated, in not, ref is_sequenced);
-            handle_single_op_constant_to_register(register, ref vector_size, constant, op, is_sequenced); 
-        }
 
-        void handle_single_op_constant([NoAlias] float4* register, ref byte vector_size, float constant, in blast_operation op, in extended_blast_operation ex_op, bool is_negated, bool not, bool is_sequenced, in DATAREC target_rec)
-        {
-            handle_constant_value_operation(ref vector_size, ref constant, in op, in ex_op, in is_negated, in not, ref is_sequenced);
-
-            if (target_rec.is_set)
-            {
-                // output to indexed records 
-                handle_single_op_constant_to_target(register, ref vector_size, constant, op, is_sequenced, target_rec);
-            }
-            else
-            {
-                // output to register 
-                handle_single_op_constant_to_register(register, ref vector_size, constant, op, is_sequenced);
-            }
-        }
-
-        private void handle_constant_value_operation(ref byte vector_size, ref float constant, in blast_operation op, in extended_blast_operation ex_op, in bool is_negated, in bool not, ref bool is_sequenced)
-        {
-            // perform op on value
-            switch (op)
-            {
-                // for completeness.. as long as constants are 1 element all return the same data and are pointless
-                case blast_operation.index_x:
-                case blast_operation.index_y:
-                case blast_operation.index_z:
-                case blast_operation.index_w:
-                    vector_size = 1;
-                    break;
-
-                case blast_operation.expand_v2: vector_size = 2; break;
-                case blast_operation.expand_v3: vector_size = 3; break;
-                case blast_operation.expand_v4: vector_size = 4; break;
-
-                case blast_operation.nop: break;
-                case blast_operation.not: constant = math.select(0, 1, constant == 0); break;
-                case blast_operation.abs: constant = math.abs(constant); break;
-                case blast_operation.trunc: constant = math.trunc(constant); break;
-
-                // in-sequence operations: handle sequenced operation on register
-                case blast_operation.add:
-                case blast_operation.multiply:
-                case blast_operation.divide:
-                case blast_operation.and:
-                case blast_operation.or:
-                case blast_operation.xor:
-                case blast_operation.greater:
-                case blast_operation.smaller:
-                case blast_operation.smaller_equals:
-                case blast_operation.greater_equals:
-                case blast_operation.equals:
-                case blast_operation.not_equals:
-                // if handling a sequence this would be handled in getsequence
-                case blast_operation.substract:
-                    {
-                        is_sequenced = true;
-                    }
-                    break;
-
-                // extended operations 
-                case blast_operation.ex_op:
-                    switch (ex_op)
-                    {
-                        case extended_blast_operation.sqrt: constant = math.sqrt(constant); break;
-                        case extended_blast_operation.rsqrt: constant = math.rsqrt(constant); break;
-                        case extended_blast_operation.sin: constant = math.sin(constant); break;
-                        case extended_blast_operation.cos: constant = math.cos(constant); break;
-                        case extended_blast_operation.tan: constant = math.tan(constant); break;
-                        case extended_blast_operation.sinh: constant = math.sinh(constant); break;
-                        case extended_blast_operation.cosh: constant = math.cosh(constant); break;
-                        case extended_blast_operation.atan: constant = math.atan(constant); break;
-                        case extended_blast_operation.degrees: constant = math.degrees(constant); break;
-                        case extended_blast_operation.radians: constant = math.radians(constant); break;
-                        case extended_blast_operation.ceil: constant = math.ceil(constant); break;
-                        case extended_blast_operation.floor: constant = math.floor(constant); break;
-                        case extended_blast_operation.frac: constant = math.frac(constant); break;
-                        case extended_blast_operation.normalize: break; // constant = constant; break; // not defined on size 1
-                        case extended_blast_operation.saturate: constant = math.saturate(constant); break;
-                        case extended_blast_operation.logn: constant = math.log(constant); break;
-                        case extended_blast_operation.log10: constant = math.log10(constant); break;
-                        case extended_blast_operation.log2: constant = math.log2(constant); break;
-                        case extended_blast_operation.exp10: constant = math.exp10(constant); break;
-                        case extended_blast_operation.exp: constant = math.exp(constant); break;
-                        case extended_blast_operation.ceillog2: constant = math.ceillog2((int)constant); break;
-                        case extended_blast_operation.ceilpow2: constant = math.ceilpow2((int)constant); break;
-                        case extended_blast_operation.floorlog2: constant = math.floorlog2((int)constant); break;
-
-                        default:
-#if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"blast.ssmd.handle_single_op_constant -> operation {ex_op} not supported");
-#endif
-                            return;
-                    }
-                    break;
-
-                default:
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError($"blast.ssmd.handle_single_op_constant -> operation {op} not supported");
-#endif
-                    return;
-
-            }
-
-            // apply negate or not to result
-            if (is_negated || not)
-            {
-                if (is_negated)
-                {
-                    constant = math.select(constant, -constant, is_negated);
-                }
-                else
-                {
-                    constant = math.select(0, 1, constant == 0);
-                }
-            }
-        }
-
-        private void handle_single_op_constant_to_register(float4* register, ref byte vector_size, float constant, blast_operation op, bool is_sequenced)
-        {
-            if (is_sequenced)
-            {
-                switch (vector_size)
-                {
-                    case 0:
-                    case 4: handle_op_f4_f1(op, register, constant, ref vector_size); return;
-                    case 3: handle_op_f3_f1(op, register, constant, ref vector_size); return;
-                    case 2: handle_op_f2_f1(op, register, constant, ref vector_size); return;
-                    case 1: handle_op_f1_f1(op, register, constant, ref vector_size); return;
-                    default:
-#if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"blast.ssmd.handle_single_op_constant -> sequence operation {op} not supported");
-#endif
-                        return;
-
-                }
-            }
-            else
-            {
-                // set all registers to the constant
-                switch (vector_size)
-                {
-                    case 0:
-                    case 4: simd.set_f4_from_constant(register, constant, ssmd_datacount); return;
-                    case 1: simd.set_f1_from_constant(register, constant, ssmd_datacount); return;
-                    case 2: simd.set_f2_from_constant(register, constant, ssmd_datacount); return;
-                    case 3: simd.set_f3_from_constant(register, constant, ssmd_datacount); return;
-
-                }
-            }
-        }
-
-        private void handle_single_op_constant_to_target(float4* register, ref byte vector_size, float constant, blast_operation op, bool is_sequenced, in DATAREC target_rec)
-        {
-            if (!target_rec.is_set)
-            {
-#if DEVELOPMENT_BUILD || TRACE
-                Debug.LogError($"blast.ssmd.handle_single_op_constant_to_target -> target not set");
-#endif
-                return;
-            }
-
-            if (is_sequenced)
-            {
-                // op is used in a sequenced operation (mul / add etc. ) 
-                switch (vector_size)
-                {
-                    case 0:
-                    case 4: handle_op_f4_f1(op, register, constant, ref vector_size, target_rec); break;
-                    case 3: handle_op_f3_f1(op, register, constant, ref vector_size, target_rec); break;
-                    case 2: handle_op_f2_f1(op, register, constant, ref vector_size, target_rec); break;
-                    case 1: handle_op_f1_f1(op, register, constant, ref vector_size, target_rec); break;
-                    default:
-#if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"blast.ssmd.handle_single_op_constant -> sequence operation {op} not supported");
-#endif
-                        return;
-
-                }
-            }
-            else
-            {
-                // set all registers to the constant
-                switch (vector_size)
-                {
-                    case 0:
-                    case 4: simd.move_f1_constant_to_indexed_data_as_f4(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break; 
-                    case 1: simd.move_f1_constant_to_indexed_data_as_f1(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break; 
-                    case 2: simd.move_f1_constant_to_indexed_data_as_f2(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break;
-                    case 3: simd.move_f1_constant_to_indexed_data_as_f3(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break;
-
-                }
-            }
-        }
-
-
-        private void handle_single_op_fn([NoAlias] float4* register, ref byte vector_size, [NoAlias] void** data, int source_index, in blast_operation op, in extended_blast_operation ex_op, in bool is_negated, in int indexed, in bool is_aligned, int stride)
-        {
-            // when indexed -> vectorsize is 1 element and we adjust index to point to it 
-            if (indexed >= 0)
-            {
-                source_index += indexed;
-                vector_size = 1;
-            }
-
-            switch (vector_size)
-            {
-                case 0:
-                case 4:
-                    switch (op)
-                    {
-                        // path when indexer is used as a function an not parsed inline 
-                        case blast_operation.index_x:
-                            if(!is_negated) simd.move_indexed_data_as_f1_to_f1f4(register, data, stride, is_aligned, source_index, ssmd_datacount);
-                            else simd.move_indexed_data_as_f1_to_f1f4_negated(register, data, stride, is_aligned, source_index, ssmd_datacount); 
-                            vector_size = 1;
-                            return;
-
-                        case blast_operation.index_y:
-                            if (!is_negated) simd.move_indexed_data_as_f1_to_f1f4(register, data, stride, is_aligned, source_index + 1, ssmd_datacount);
-                            else simd.move_indexed_data_as_f1_to_f1f4_negated(register, data, stride, is_aligned, source_index + 1, ssmd_datacount);
-                            vector_size = 1;
-                            return;
-
-                        case blast_operation.index_z:
-                            if (!is_negated) simd.move_indexed_data_as_f1_to_f1f4(register, data, stride, is_aligned, source_index + 2, ssmd_datacount);
-                            else simd.move_indexed_data_as_f1_to_f1f4_negated(register, data, stride, is_aligned, source_index + 2, ssmd_datacount);
-                            vector_size = 1;
-                            return;
-
-                        case blast_operation.index_w:
-                            if (!is_negated) simd.move_indexed_data_as_f1_to_f1f4(register, data, stride, is_aligned, source_index + 3, ssmd_datacount);
-                            else simd.move_indexed_data_as_f1_to_f1f4_negated(register, data, stride, is_aligned, source_index + 3, ssmd_datacount);
-                            vector_size = 1;
-                            return;
-
-                         
-                        case blast_operation.index_n:
-                            {
-                                // somewhat special indexer: every index for each record CAN be different
-                                // - should handle as a 2 parameter function thats handled in sequence 
-
-                                Debug.Log("Handle MEEEEEEE");
-                            }
-                      
-
-
-                            return;
-
-                        case blast_operation.abs:
-                            for (int i = 0; i < ssmd_datacount; i++) register[i] = math.abs(f4(data, source_index, i));
-                            return;
-
-                        case blast_operation.trunc:
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.trunc(f4(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.trunc(-f4(data, source_index, i));
-                            return;
-
-                        case blast_operation.mina:
-                            vector_size = 1;
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmin(f4(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmin(-f4(data, source_index, i));
-                            return;
-
-                        case blast_operation.maxa:
-                            vector_size = 1;
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmax(f4(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmax(-f4(data, source_index, i));
-                            return;
-
-                        case blast_operation.csum:
-                            vector_size = 1;
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.csum(f4(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.csum(-f4(data, source_index, i));
-                            return;
-
-                        case blast_operation.ex_op:
-                            switch (ex_op)
-                            {
-                                case extended_blast_operation.sqrt:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.sqrt(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.sqrt(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.rsqrt:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.rsqrt(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.rsqrt(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.sin:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.sin(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.sin(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.cos:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.cos(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.cos(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.tan:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.tan(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.tan(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.sinh:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.sinh(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.sinh(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.cosh:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.cosh(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.cosh(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.atan:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.atan(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.atan(-f4(data, source_index, i));
-                                    return;
-                                case extended_blast_operation.degrees:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.degrees(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.degrees(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.radians:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.radians(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.radians(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceil:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.ceil(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.ceil(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.floor:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.floor(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.floor(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.frac:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.frac(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.frac(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.normalize:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.normalize(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.normalize(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.saturate:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.saturate(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.saturate(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.logn:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.log(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.log(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.log10:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.log10(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.log10(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.log2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.log2(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.log2(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.exp10:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.exp10(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.exp10(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.exp:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.exp(f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.exp(-f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceillog2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.ceillog2((int4)f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.ceillog2(-(int4)f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceilpow2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.ceilpow2((int4)f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.ceilpow2(-(int4)f4(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.floorlog2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = math.floorlog2((int4)f4(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i] = math.floorlog2(-(int4)f4(data, source_index, i));
-                                    return;
-                            }
-                            break;
-
-
-                    }
-                    break;
-
-
-                case 1:
-                    switch (op)
-                    {
-                        case blast_operation.abs:
-                            for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.abs(((float*)data[i])[source_index]);
-                            return;
-
-                        case blast_operation.trunc:
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.trunc(f1(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.trunc(-f1(data, source_index, i));
-                            return;
-
-                        case blast_operation.csum:
-                        case blast_operation.mina:
-                        case blast_operation.maxa:
-                            vector_size = 1;
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i] = f1(data, source_index, i);
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i] = -f1(data, source_index, i);
-                            return;
-
-                        case blast_operation.ex_op:
-                            switch (ex_op)
-                            {
-                                case extended_blast_operation.sqrt:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.sqrt(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.sqrt(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.rsqrt:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.rsqrt(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.rsqrt(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.sin:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.sin(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.sin(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.cos:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cos(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cos(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.tan:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.tan(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.tan(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.sinh:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.sinh(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.sinh(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.cosh:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cosh(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cosh(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.atan:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.atan(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.atan(-f1(data, source_index, i));
-                                    return;
-                                case extended_blast_operation.degrees:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.degrees(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.degrees(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.radians:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.radians(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.radians(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceil:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.ceil(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.ceil(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.floor:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.floor(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.floor(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.frac:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.frac(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.frac(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.normalize:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = f1(data, source_index, i);
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = -f1(data, source_index, i);
-                                    return;
-
-                                case extended_blast_operation.saturate:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.saturate(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.saturate(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.logn:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.log(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.log(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.log10:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.log10(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.log10(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.log2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.log2(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.log2(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.exp10:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.exp10(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.exp10(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.exp:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.exp(f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.exp(-f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceillog2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.ceillog2((int)f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.ceillog2(-(int)f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceilpow2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.ceilpow2((int)f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.ceilpow2(-(int)f1(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.floorlog2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.floorlog2((int)f1(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.floorlog2(-(int)f1(data, source_index, i));
-                                    return;
-                            }
-                            break;
-
-                    }
-                    break;
-
-                case 2:
-                    switch (op)
-                    {
-                        // path when indexer is used as a function an not parsed inline 
-                        case blast_operation.index_x:
-                            // the index of float.x is the same as the index of float2.x in the index buffer 
-                            if (!is_negated) simd.move_indexed_data_as_f1_to_f1f4(register, data, stride, is_aligned, source_index, ssmd_datacount);
-                            else simd.move_indexed_data_as_f1_to_f1f4_negated(register, data, stride, is_aligned, source_index, ssmd_datacount);
-                            //if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = f2(data, source_index, i).x;
-                            //else for (int i = 0; i < ssmd_datacount; i++) register[i].x = (-f2(data, source_index, i)).x;
-                            vector_size = 1;
-                            return;
-
-                        case blast_operation.index_y:
-                            if (!is_negated) simd.move_indexed_data_as_f1_to_f1f4(register, data, stride, is_aligned, source_index + 1, ssmd_datacount);
-                            else simd.move_indexed_data_as_f1_to_f1f4_negated(register, data, stride, is_aligned, source_index + 1, ssmd_datacount);
-                            //if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = f2(data, source_index, i).y;
-                            //else for (int i = 0; i < ssmd_datacount; i++) register[i].x = (-f2(data, source_index, i)).y;
-                            vector_size = 1;
-                            return;
-
-                        case blast_operation.abs:
-                            for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.abs(f2(data, source_index, i));
-                            return;
-
-                        case blast_operation.trunc:
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.trunc(f2(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.trunc(-f2(data, source_index, i));
-                            return;
-
-                        case blast_operation.mina:
-                            vector_size = 1;
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmin(f2(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmin(-f2(data, source_index, i));
-                            return;
-
-                        case blast_operation.maxa:
-                            vector_size = 1;
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmax(f2(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmax(-f2(data, source_index, i));
-                            return;
-
-                        case blast_operation.csum:
-                            vector_size = 1;
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.csum(f2(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.csum(-f2(data, source_index, i));
-                            return;
-
-
-                        case blast_operation.ex_op:
-                            switch (ex_op)
-                            {
-                                case extended_blast_operation.sqrt:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.sqrt(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.sqrt(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.rsqrt:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.rsqrt(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.rsqrt(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.sin:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.sin(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.sin(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.cos:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.cos(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.cos(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.tan:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.tan(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.tan(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.sinh:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.sinh(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.sinh(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.cosh:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.cosh(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.cosh(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.atan:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.atan(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.atan(-f2(data, source_index, i));
-                                    return;
-                                case extended_blast_operation.degrees:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.degrees(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.degrees(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.radians:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.radians(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.radians(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceil:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.ceil(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.ceil(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.floor:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.floor(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.floor(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.frac:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.frac(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.frac(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.normalize:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.normalize(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.normalize(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.saturate:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.saturate(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.saturate(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.logn:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.log(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.log(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.log10:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.log10(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.log10(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.log2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.log2(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.log2(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.exp10:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.exp10(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.exp10(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.exp:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.exp(f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.exp(-f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceillog2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.ceillog2((int2)f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.ceillog2(-(int2)f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceilpow2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.ceilpow2((int2)f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.ceilpow2(-(int2)f2(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.floorlog2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.floorlog2((int2)f2(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.floorlog2(-(int2)f2(data, source_index, i));
-                                    return;
-                            }
-                            break;
-
-                    }
-                    break;
-
-
-                case 3:
-                    switch (op)
-                    {
-                        // path when indexer is used as a function an not parsed inline 
-                        case blast_operation.index_x:
-                            if (!is_negated) simd.move_indexed_data_as_f1_to_f1f4(register, data, stride, is_aligned, source_index, ssmd_datacount);
-                            else simd.move_indexed_data_as_f1_to_f1f4_negated(register, data, stride, is_aligned, source_index, ssmd_datacount);
-                            //if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = f3(data, source_index, i).x;
-                            //else for (int i = 0; i < ssmd_datacount; i++) register[i].x = (-f4(data, source_index, i)).x;
-                            vector_size = 1;
-                            return;
-
-                        case blast_operation.index_y:
-                            if (!is_negated) simd.move_indexed_data_as_f1_to_f1f4(register, data, stride, is_aligned, source_index + 1, ssmd_datacount);
-                            else simd.move_indexed_data_as_f1_to_f1f4_negated(register, data, stride, is_aligned, source_index + 1, ssmd_datacount);
-                            //if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = f3(data, source_index, i).y;
-                            //else for (int i = 0; i < ssmd_datacount; i++) register[i].x = (-f3(data, source_index, i)).y;
-                            vector_size = 1;
-                            return;
-
-                        case blast_operation.index_z:
-                            if (!is_negated) simd.move_indexed_data_as_f1_to_f1f4(register, data, stride, is_aligned, source_index + 2, ssmd_datacount);
-                            else simd.move_indexed_data_as_f1_to_f1f4_negated(register, data, stride, is_aligned, source_index + 2, ssmd_datacount);
-                            vector_size = 1;
-                            return;
-
-                        case blast_operation.abs:
-                            for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.abs(f3(data, source_index, i));
-                            return;
-
-                        case blast_operation.trunc:
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.trunc(f3(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.trunc(-f3(data, source_index, i));
-                            return;
-
-                        case blast_operation.mina:
-                            vector_size = 1;
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xy = math.cmin(f3(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmin(-f3(data, source_index, i));
-                            return;
-
-                        case blast_operation.maxa:
-                            vector_size = 1;
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmax(f3(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.cmax(-f3(data, source_index, i));
-                            return;
-
-                        case blast_operation.csum:
-                            vector_size = 1;
-                            if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.csum(f3(data, source_index, i));
-                            else for (int i = 0; i < ssmd_datacount; i++) register[i].x = math.csum(-f3(data, source_index, i));
-                            return;
-
-
-                        case blast_operation.ex_op:
-                            switch (ex_op)
-                            {
-                                case extended_blast_operation.sqrt:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.sqrt(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.sqrt(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.rsqrt:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.rsqrt(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.rsqrt(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.sin:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.sin(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.sin(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.cos:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.cos(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.cos(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.tan:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.tan(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.tan(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.sinh:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.sinh(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.sinh(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.cosh:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.cosh(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.cosh(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.atan:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.atan(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.atan(-f3(data, source_index, i));
-                                    return;
-                                case extended_blast_operation.degrees:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.degrees(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.degrees(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.radians:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.radians(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.radians(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceil:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.ceil(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.ceil(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.floor:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.floor(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.floor(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.frac:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.frac(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.frac(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.normalize:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.normalize(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.normalize(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.saturate:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.saturate(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.saturate(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.logn:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.log(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.log(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.log10:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.log10(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.log10(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.log2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.log2(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.log2(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.exp10:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.exp10(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.exp10(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.exp:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.exp(f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.exp(-f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceillog2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.ceillog2((int3)f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.ceillog2(-(int3)f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.ceilpow2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.ceilpow2((int3)f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.ceilpow2(-(int3)f3(data, source_index, i));
-                                    return;
-
-                                case extended_blast_operation.floorlog2:
-                                    if (!is_negated) for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.floorlog2((int3)f3(data, source_index, i));
-                                    else for (int i = 0; i < ssmd_datacount; i++) register[i].xyz = math.floorlog2(-(int3)f3(data, source_index, i));
-                                    return;
-                            }
-                            break;
-
-                    }
-                    break;
-            }
-
-            // reaching here should be an error
-
-#if DEVELOPMENT_BUILD || TRACE
-            Debug.LogError($"blast.ssmd.handle_single_op_fn -> operation {op}, extended: {ex_op} not supported on vectorsize {vector_size}");
-#endif
-
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float f1([NoAlias] void** data, in int source_index, in int i)
-        {
-            return ((float*)data[i])[source_index];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float2 f2([NoAlias] void** data, in int source_index, in int i)
-        {
-            return ((float2*)(void*)&((float*)data[i])[source_index])[0];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 f3([NoAlias] void** data, in int source_index, in int i)
-        {
-            return ((float3*)(void*)&((float*)data[i])[source_index])[0];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float4 f4([NoAlias] void** data, in int source_index, in int i)
-        {
-            return ((float4*)(void*)&((float*)data[i])[source_index])[0];
-        }
 
 
         /// <summary>
@@ -4805,10 +4238,11 @@ namespace NSS.Blast.SSMD
         /// - the parameter fed may be negated, indexed and can be an inlined constant 
         /// - the codepointer must be on the first value to read after op|function opcodes
         /// </summary>
-        void get_single_op_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* register, in blast_operation op, in extended_blast_operation ex_op = extended_blast_operation.nop, int indexed = -1, bool is_negated = false)
+        BlastError get_single_op_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, int ssmd_datacount, [NoAlias] float4* register, in blast_operation op, in extended_blast_operation ex_op = extended_blast_operation.nop, int indexed = -1, bool is_negated = false)
         {
-            // is negated?
+            bool constant_index = false;
             byte code_byte = code[code_pointer];
+            float* indices = (float*)temp;
 
             while (true)
             {
@@ -4822,10 +4256,24 @@ namespace NSS.Blast.SSMD
                     // not sure if this should be supported, math.abs(!a) ?? math.sin(!a) ?? => boolean error
                     //
 
-                    case blast_operation.index_x: indexed = 0; code_pointer++; code_byte = code[code_pointer]; continue;
-                    case blast_operation.index_y: indexed = 1; code_pointer++; code_byte = code[code_pointer]; continue;
-                    case blast_operation.index_z: indexed = 2; code_pointer++; code_byte = code[code_pointer]; continue;
-                    case blast_operation.index_w: indexed = 3; code_pointer++; code_byte = code[code_pointer]; continue;
+                    case blast_operation.index_x: indexed = 0; code_pointer++; code_byte = code[code_pointer]; constant_index = true; continue;
+                    case blast_operation.index_y: indexed = 1; code_pointer++; code_byte = code[code_pointer]; constant_index = true; continue;
+                    case blast_operation.index_z: indexed = 2; code_pointer++; code_byte = code[code_pointer]; constant_index = true; continue;
+                    case blast_operation.index_w: indexed = 3; code_pointer++; code_byte = code[code_pointer]; constant_index = true; continue;
+
+                    case blast_operation.index_n:
+                        {
+                            indexed = 4;
+                            code_pointer++;
+
+                            constant_index = pop_fx_into_ref<float>(ref code_pointer, indices, ssmd_datacount, true);
+                            if (constant_index)
+                            {
+                                indexed = (int)indices[0];
+                            }
+                            code_byte = code[code_pointer];
+                            continue;
+                        }
 
 
                     case blast_operation.constant_f1:
@@ -4840,9 +4288,9 @@ namespace NSS.Blast.SSMD
                                 p[3] = code[code_pointer + 4];
                             }
                             code_pointer += 4;
-                            handle_single_op_constant(register, ref vector_size, constant, op, ex_op, is_negated);
+                            handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
                         }
-                        return;
+                        return BlastError.success;
 
                     case blast_operation.constant_f1_h:
                         {
@@ -4856,9 +4304,9 @@ namespace NSS.Blast.SSMD
                                 p[3] = code[code_pointer + 2];
                             }
                             code_pointer += 2;
-                            handle_single_op_constant(register, ref vector_size, constant, op, ex_op, is_negated);
+                            handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
                         }
-                        return;
+                        return BlastError.success;
 
                     case blast_operation.constant_short_ref:
                         {
@@ -4883,10 +4331,9 @@ namespace NSS.Blast.SSMD
                                 p[2] = code[c_index + 2];
                                 p[3] = code[c_index + 3];
                             }
-
-                            handle_single_op_constant(register, ref vector_size, constant, op, ex_op, is_negated);
+                            handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
                         }
-                        return;
+                        return BlastError.success;
 
                     case blast_operation.constant_long_ref:
                         {
@@ -4912,9 +4359,88 @@ namespace NSS.Blast.SSMD
                                 p[3] = code[c_index + 3];
                             }
 
-                            handle_single_op_constant(register, ref vector_size, constant, op, ex_op, is_negated);
+                            handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
                         }
-                        return;
+                        return BlastError.success;
+
+                    case blast_operation.cdataref:
+                        {
+                            CDATAEncodingType encoding = CDATAEncodingType.None;
+
+                            if (BlastInterpretor.follow_cdataref(code, code_pointer, out int offset, out int length, out encoding))
+                            {
+                                // validate we end up at cdata
+                                if (!BlastInterpretor.IsValidCDATAStart(code[offset]))  // at some point we probably replace cdata with a datatype cdata_float etc.. 
+                                {
+                                    if (IsTrace) Debug.LogError($"Blast.SSMD.Interpretor.get_single_op_result: error in cdata reference at {code_pointer} in encoding {encoding}");
+                                    vector_size = 0;
+                                    return BlastError.error_failed_to_read_cdata_reference;
+                                }
+                                else
+                                {
+                                    // advance past the cdata 
+                                    code_pointer = code_pointer + 3;
+                                    constant_index = constant_index || (indexed >= 0 && indexed < 4);
+
+
+                                    // indexer at location ? 
+                                    if (!constant_index)
+                                    {
+                                        constant_index = simd.all_equal(indices, ssmd_datacount);
+                                    }
+
+                                    // if constant, set 1 otherwise need all 
+                                    if (indexed > 3)
+                                    {
+                                        // each index may be different 
+                                        if (constant_index)
+                                        {
+                                            indexed = (int)indices[0];
+                                        }
+                                        else
+                                        {
+                                            // handle each index seperately
+                                            for (int i = 0; i < ssmd_datacount; i++)
+                                            {
+                                                register[i] = BlastInterpretor.index_cdata_f1(code, offset, indexed, length);
+                                            }
+                                            vector_size = 1;
+                                            return BlastError.success;
+                                        }
+                                    }
+
+                                    // if op to handle is the indexing itself 
+                                    bool handle = true;
+                                    switch (op)
+                                    {
+                                        case blast_operation.index_x: indexed = 0; constant_index = true; handle = false; break;
+                                        case blast_operation.index_y: indexed = 1; constant_index = true; handle = false; break;
+                                        case blast_operation.index_z: indexed = 2; constant_index = true; handle = false; break;
+                                        case blast_operation.index_w: indexed = 3; constant_index = true; handle = false; break;
+                                    }
+
+
+                                    // unsported access as of this moment, no indexer 
+                                    if (indexed == -1)
+                                    {
+                                        if (IsTrace) Debug.LogError($"Blast.SSMD.Interpretor.get_single_op_result: error in cdata reference at {code_pointer} referencing code[index] {indexed}, cdata must be indexed");
+                                        return BlastError.error_failed_to_read_cdata_reference;
+                                    }
+                                    else
+                                    {
+                                        // single index returning a constant value 
+                                        float constant = BlastInterpretor.index_cdata_f1(code, offset, indexed, length);
+
+                                        // set the constant to all registers
+                                        handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op);
+
+                                        vector_size = 1;
+                                    }
+                                    return BlastError.success;
+                                }
+                            }
+                        }
+                        return BlastError.error_failed_to_read_cdata_reference;
 
                     case blast_operation.pi:
                     case blast_operation.inv_pi:
@@ -4970,10 +4496,10 @@ namespace NSS.Blast.SSMD
                         {
                             // handle operation using constant encoded op
                             float constant = engine_ptr->constants[code_byte];
-                            handle_single_op_constant(register, ref vector_size, constant, op, ex_op, is_negated);
+                            handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
                             code_pointer++;
                         }
-                        return;
+                        return BlastError.success;
 
                     case blast_operation.pop:
                         {
@@ -4981,9 +4507,9 @@ namespace NSS.Blast.SSMD
                             vector_size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(stack_offset - 1));
                             vector_size = (byte)math.select(vector_size, 4, vector_size == 0);
                             stack_offset = stack_offset - vector_size;
-                            handle_single_op_fn(register, ref vector_size, stack, stack_offset, op, ex_op, is_negated, indexed, stack_is_aligned, stack_rowsize);
+                            handle_single_op_fn(register, ref vector_size, ssmd_datacount, stack, stack_offset, op, ex_op, is_negated, indexed, stack_is_aligned, stack_rowsize);
                         }
-                        return;
+                        return BlastError.success;
 
                     default:
                         {
@@ -4996,1326 +4522,20 @@ namespace NSS.Blast.SSMD
 #if DEVELOPMENT_BUILD || TRACE
                                 Debug.LogError($"blast.ssmd.get_single_op_result -> invalid id {source_index} at {code_pointer}:{code_byte}");
 #endif
-                                return;
+                                return BlastError.error;
                             }
 
                             // datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)(source_index));
                             vector_size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(source_index));
                             vector_size = (byte)math.select(vector_size, 4, vector_size == 0);
 
-                            handle_single_op_fn(register, ref vector_size, data, source_index, op, ex_op, is_negated, indexed, data_is_aligned, data_rowsize);
+                            handle_single_op_fn(register, ref vector_size, ssmd_datacount, data, source_index, op, ex_op, is_negated, indexed, data_is_aligned, data_rowsize);
                         }
-                        return;
+                        return BlastError.success;
                 }
             }
         }
 
-
-
-        //
-        // Although for all of these we could use functionpointers the compiler will have a hard time
-        // vectorizing most inner loops if the use functionpointers instead of the known math library for
-        // which it has buildin support
-        //
-        // -> we could use some form of codegen in future version but these will not really change much i guess
-        //
-
-
-        #endregion
-
-        #region Dual input functions: math.pow fmod cross etc. 
-
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_fmod_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* register)
-        {
-            BlastVariableDataType datatype;
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"blast.ssmd.interpretor.fmod: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                return;
-            }
-#endif
-
-            switch (vector_size)
-            {
-                case 1:
-                    {
-                        float* fpa = (float*)temp;
-                        float* fpb = &fpa[ssmd_datacount];
-
-                        pop_fx_into_ref<float>(ref code_pointer, fpa, ssmd_datacount);   // _ref increases code_pointer according to data
-                        pop_fx_into_ref<float>(ref code_pointer, fpb);   // _ref increases code_pointer according to data
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].x = math.fmod(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 2:
-                    {
-                        float2* fpa = (float2*)temp;
-                        float2* fpb = &fpa[ssmd_datacount];
-
-                        pop_fx_into_ref<float2>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float2>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].xy = math.fmod(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 3:
-                    {
-                        float3* fpa = (float3*)temp;
-                        float3* fpb = stackalloc float3[ssmd_datacount]; // TODO test if this does not result in 2 x allocation in every case.,,..
-
-                        pop_fx_into_ref<float3>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float3>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].xyz = math.fmod(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 0:
-                case 4:
-                    {
-                        vector_size = 4;
-
-                        float4* fpa = (float4*)temp;
-                        float4* fpb = stackalloc float4[ssmd_datacount]; // TODO test if this does not result in 2 x allocation in every case.,,..
-
-                        pop_fx_into_ref<float4>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float4>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i] = math.fmod(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.fmod: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-
-
-            // pop into ref ends at the next byte, but we want functions to end on the last processed byte
-            code_pointer--;
-        }
-
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_pow_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* register)
-        {
-            BlastVariableDataType datatype;
-
-            //
-            // get metadata of next variable/constant minding any substract or indexing operator 
-            //
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"blast.ssmd.interpretor.pow: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                return;
-            }
-#endif
-
-            switch (vector_size)
-            {
-                case 1:
-                    {
-                        float* fpa = (float*)temp;
-                        float* fpb = &fpa[ssmd_datacount];
-
-                        pop_fx_into_ref<float>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].x = math.pow(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 2:
-                    {
-                        float2* fpa = (float2*)temp;
-                        float2* fpb = &fpa[ssmd_datacount];
-
-                        pop_fx_into_ref<float2>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float2>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].xy = math.pow(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 3:
-                    {
-                        float3* fpa = (float3*)temp;
-                        float3* fpb = stackalloc float3[ssmd_datacount]; // TODO test if this does not result in 2 x allocation in every case.,,..
-
-                        pop_fx_into_ref<float3>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float3>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].xyz = math.pow(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 0:
-                case 4:
-                    {
-                        vector_size = 4;
-
-                        float4* fpa = (float4*)temp;
-                        float4* fpb = stackalloc float4[ssmd_datacount]; // TODO test if this does not result in 2 x allocation in every case.,,..
-
-                        pop_fx_into_ref<float4>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float4>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i] = math.pow(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.pow: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-
-            code_pointer--;
-        }
-
-        /// <summary>
-        /// only accepts size 3 vectors 
-        /// </summary>
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_cross_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* register)
-        {
-            BlastVariableDataType datatype;
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric || vector_size != 3)
-            {
-                Debug.LogError($"blast.ssmd.interpretor.cross: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                return;
-            }
-#endif
-
-            switch (vector_size)
-            {
-                case 3:
-                    {
-                        float3* fpa = (float3*)temp;
-                        float3* fpb = stackalloc float3[ssmd_datacount];
-
-                        pop_fx_into_ref<float3>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float3>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].xyz = math.cross(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.pow: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-
-            code_pointer--;
-
-        }
-
-
-        /// <summary>
-        /// result vector size == 1 in all cases
-        /// </summary>
-        /// <param name="temp"></param>
-        /// <param name="code_pointer"></param>
-        /// <param name="vector_size"></param>
-        /// <param name="register"></param>
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_dot_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* register)
-        {
-            BlastVariableDataType datatype;
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"blast.ssmd.interpretor.dot: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                return;
-            }
-#endif
-            switch (vector_size)
-            {
-                case 1:
-                    {
-                        float* fpa = (float*)temp;
-                        float* fpb = &fpa[ssmd_datacount];
-
-                        pop_fx_into_ref<float>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].x = math.dot(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 2:
-                    {
-                        float2* fpa = (float2*)temp;
-                        float2* fpb = &fpa[ssmd_datacount];
-
-                        pop_fx_into_ref<float2>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float2>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].x = math.dot(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 3:
-                    {
-                        float3* fpa = (float3*)temp;
-                        float3* fpb = stackalloc float3[ssmd_datacount];
-
-                        pop_fx_into_ref<float3>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float3>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].x = math.dot(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 0:
-                case 4:
-                    {
-                        float4* fpa = (float4*)temp;
-                        float4* fpb = stackalloc float4[ssmd_datacount];
-
-                        pop_fx_into_ref<float4>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float4>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].x = math.dot(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.dot: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-
-            code_pointer--;
-            vector_size = 1;
-        }
-
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_atan2_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* register)
-        {
-            BlastVariableDataType datatype;
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"blast.ssmd.interpretor.dot: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                return;
-            }
-#endif
-            switch (vector_size)
-            {
-                case 1:
-                    {
-                        float* fpa = (float*)temp;
-                        float* fpb = &fpa[ssmd_datacount];
-
-                        pop_fx_into_ref<float>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].x = math.atan2(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 2:
-                    {
-                        float2* fpa = (float2*)temp;
-                        float2* fpb = &fpa[ssmd_datacount];
-
-                        pop_fx_into_ref<float2>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float2>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].xy = math.atan2(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 3:
-                    {
-                        float3* fpa = (float3*)temp;
-                        float3* fpb = stackalloc float3[ssmd_datacount];
-
-                        pop_fx_into_ref<float3>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float3>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].xyz = math.atan2(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-                case 0:
-                case 4:
-                    {
-                        float4* fpa = (float4*)temp;
-                        float4* fpb = stackalloc float4[ssmd_datacount];
-
-                        pop_fx_into_ref<float4>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float4>(ref code_pointer, fpb);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i] = math.atan2(fpa[i], fpb[i]);
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.atan2: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-
-            code_pointer--;
-            vector_size = 1;
-        }
-
-
-
-#endregion
-
-#region Tripple inputs: select, clamp, lerp etc
-
-        /// <summary>
-        /// select first input on a false condition, select the second on a true condition that is put in parameter 3
-        /// </summary>
-        /// <remarks>
-        /// 3 inputs, first 2 any type, 3rd type equal or scalar bool
-        /// 
-        /// c[x] = select(a[x], b[x], condition[1/x])
-        /// 
-        /// - input = outputvectorsize
-        /// - 1 output  
-        /// 
-        /// Assembly for scalar constants<c>a = select(1, 2, 1) => setf a select 1 2 1 nop</c>
-        /// 
-        /// Assembly sample with vectors: <c>a = select((1 1), (2 2), 1) => setf a select 1 pop pop nop</c>
-        /// </remarks>
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_select_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
-        {
-            // upon entry code_pointer is located on the function operation 
-            BlastVariableDataType datatype;
-            byte vector_size_condition;
-
-            //
-            // need to reorder parameters while compiling for better memory efficienty executing it 
-            // - if we can execute the condition first we can skip reading 1 of the parameters (we do need to 
-            //   move stackpointers though)
-            // - compiler update for SSMD only? or also normal?
-            // 
-
-            // peek vectorsize of first option
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-
-            //
-            // IMPORTANT
-            // stack allocations are moved to the start of the function and are always done,
-            // regardless conditionals, avoid allocating too much memory by calculating the amount needed 
-            // and casting the resulting pointers in each vectorsize-case
-            //
-            int data_byte_size = 4 * ssmd_datacount * vector_size;
-
-            // we could use memory from f4 to store 1 array, but that would probably mess up vectorizing the inner loops
-            byte* local1 = stackalloc byte[data_byte_size];
-            byte* local2 = stackalloc byte[data_byte_size];
-
-            //
-            // allocations could also be avoided, with each combination (constant/pop/var) and each vectorsize of each parameter in a seperate case... 
-            // this will happen a lot as generics is unusable.. codegen? TODO
-            //
-
-            switch (vector_size)
-            {
-
-                case 1:
-
-                    float* o1 = (float*)(void*)local1;
-                    float* o2 = (float*)(void*)local2;
-
-                    pop_fx_into_ref<float>(ref code_pointer, o1);
-                    pop_fx_into_ref<float>(ref code_pointer, o2);
-                    pop_fx_into_ref<float>(ref code_pointer, (float*)temp);
-
-                    for (int i = 0; i < ssmd_datacount; i++)
-                    {
-                        // not using f4 for storing any operand should allow for the compiler to optimize better
-                        // we could also optimize this by handling 4 at once in a float4.. TODO
-                        f4[i].x = math.select(o1[i], o2[i], ((float*)temp)[i] != 0);
-                    }
-                    break;
-
-
-                case 2:
-                    float2* o21 = (float2*)(void*)local1;
-                    float2* o22 = (float2*)(void*)local2;
-
-                    pop_fx_into_ref<float2>(ref code_pointer, o21);
-                    pop_fx_into_ref<float2>(ref code_pointer, o22);
-
-                    pop_op_meta_cp(code_pointer, out datatype, out vector_size_condition);
-
-                    if (vector_size_condition == 1)
-                    {
-                        pop_fx_into_ref<float>(ref code_pointer, (float*)temp);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            f4[i].xy = math.select(o21[i], o22[i], ((float*)temp)[i] != 0);
-                        }
-                    }
-                    else
-                    {
-                        pop_fx_into_ref<float2>(ref code_pointer, (float2*)temp);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            f4[i].xy = math.select(o21[i], o22[i], ((float2*)temp)[i] != 0);
-                        }
-                    }
-                    break;
-
-                case 3:
-                    float3* o31 = (float3*)(void*)local1;
-                    float3* o32 = (float3*)(void*)local2;
-
-                    pop_fx_into_ref<float3>(ref code_pointer, o31);
-                    pop_fx_into_ref<float3>(ref code_pointer, o32);
-
-                    pop_op_meta_cp(code_pointer, out datatype, out vector_size_condition);
-
-                    if (vector_size_condition == 1)
-                    {
-                        pop_fx_into_ref<float>(ref code_pointer, (float*)temp);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            f4[i].xyz = math.select(o31[i], o32[i], ((float*)temp)[i] != 0);
-                        }
-                    }
-                    else
-                    {
-                        pop_fx_into_ref<float3>(ref code_pointer, (float3*)temp);
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            f4[i].xyz = math.select(o31[i], o32[i], ((float3*)temp)[i] != 0);
-                        }
-                    }
-                    break;
-
-                case 0:
-                case 4:
-                    {
-                        vector_size = 4;
-
-                        float4* o41 = (float4*)(void*)local1;
-                        float4* o42 = (float4*)(void*)local2;
-
-                        pop_fx_into_ref<float4>(ref code_pointer, o41);
-                        pop_fx_into_ref<float4>(ref code_pointer, o42);
-                        pop_op_meta_cp(code_pointer, out datatype, out vector_size_condition);
-
-                        if (vector_size_condition == 1)
-                        {
-                            pop_fx_into_ref<float>(ref code_pointer, (float*)temp);
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                f4[i] = math.select(o41[i], o42[i], ((float*)temp)[i] != 0);
-                            }
-                        }
-                        else
-                        {
-                            pop_fx_into_ref<float4>(ref code_pointer, (float4*)temp);
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                f4[i] = math.select(o41[i], o42[i], ((float4*)temp)[i] != 0);
-                            }
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.select: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-
-            code_pointer--;
-        }
-
-
-        /// <summary>
-        /// clamp value between operands
-        /// </summary>
-        /// <remarks>
-        /// first min then max => saves 1 memory buffer doing this in sequence (math lib will also do min(max( so this should be equal in performance but turned upside down in flow
-        /// <code>
-        /// 
-        /// a = clamp(a, min, max); 
-        /// 
-        /// </code>
-        /// </remarks>
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_clamp_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
-        {
-            BlastVariableDataType datatype;
-            BlastVariableDataType datatype2;
-            byte vector_size_2;
-
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                return;
-            }
-#endif
-
-            switch (vector_size)
-            {
-                case 1:
-                    {
-                        // in case of v1 there is no memory problem 
-                        float* fpa = (float*)temp;
-                        float* fp_min = &fpa[ssmd_datacount];
-                        float* fp_max = &fp_min[ssmd_datacount];
-
-                        pop_fx_into_ref<float>(ref code_pointer, fpa);
-                        pop_fx_into_ref<float>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float>(ref code_pointer, fp_max);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].x = math.clamp(fpa[i], fp_min[i], fp_max[i]);
-                        }
-                    }
-                    break;
-
-                case 2:
-                    {
-                        // 2 float2's fit in temp, split op in 2 to save on the allocation
-                        float2* fpa = (float2*)temp;
-
-                        pop_fx_into_ref<float2>(ref code_pointer, fpa);
-
-
-                        // first the lower bound 
-                        pop_op_meta_cp(code_pointer, out datatype2, out vector_size_2);
-                        // must be size 1 or 2 
-#if DEVELOPMENT_BUILD || TRACE
-                        if (vector_size_2 != 1 && vector_size_2 != 2)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax vectorsize {vector_size_2} not supported");
-                            return;
-                        }
-                        if (datatype != datatype2)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax datatype = {datatype2}");
-                            return;
-                        }
-#endif
-                        if (vector_size_2 == 2)
-                        {
-                            float2* fp_m = &fpa[ssmd_datacount];
-                            pop_fx_into_ref<float2>(ref code_pointer, fp_m);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                fpa[i] = math.max(fpa[i], fp_m[i]);
-                            }
-                        }
-                        else
-                        {
-                            float* fp_m = (float*)(void*)&fpa[ssmd_datacount];
-                            pop_fx_into_ref<float>(ref code_pointer, fp_m);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                fpa[i] = math.max(fpa[i], (float2)fp_m[i]);
-                            }
-                        }
-
-                        // then the upper bound and write to output 
-                        pop_op_meta_cp(code_pointer, out datatype2, out vector_size_2);
-#if DEVELOPMENT_BUILD || TRACE
-                        if (vector_size_2 != 1 && vector_size_2 != 2)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax vectorsize {vector_size_2} not supported");
-                            return;
-                        }
-                        if (datatype != datatype2)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax datatype = {datatype2}");
-                            return;
-                        }
-#endif
-                        if (vector_size_2 == 2)
-                        {
-                            float2* fp_m = &fpa[ssmd_datacount];
-                            pop_fx_into_ref<float2>(ref code_pointer, fp_m);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i].xy = math.min(fpa[i], fp_m[i]);
-                            }
-                        }
-                        else
-                        {
-                            float* fp_m = (float*)(void*)&fpa[ssmd_datacount];
-                            pop_fx_into_ref<float>(ref code_pointer, fp_m);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i].xy = math.min(fpa[i], (float2)fp_m[i]);
-                            }
-                        }
-                    }
-                    break;
-
-                case 3:
-                    {
-                        // 2 float3;s wont fit in temp anymore 
-                        float3* fpa = (float3*)temp;
-                        float3* fp_m = stackalloc float3[ssmd_datacount];
-
-
-                        pop_fx_into_ref<float3>(ref code_pointer, fpa);
-
-                        // first the lower bound 
-                        pop_op_meta_cp(code_pointer, out datatype2, out vector_size_2);
-                        // must be size 1 or 3 
-#if DEVELOPMENT_BUILD || TRACE
-                        if (vector_size_2 != 1 && vector_size_2 != vector_size)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax vectorsize {vector_size_2} not supported");
-                            return;
-                        }
-                        if (datatype != datatype2)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax datatype = {datatype2}");
-                            return;
-                        }
-#endif
-                        if (vector_size_2 == vector_size)
-                        {
-                            pop_fx_into_ref<float3>(ref code_pointer, fp_m);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                fpa[i] = math.max(fpa[i], fp_m[i]);
-                            }
-                        }
-                        else
-                        {
-                            float* fp_m1 = (float*)(void*)fp_m;
-                            pop_fx_into_ref<float>(ref code_pointer, fp_m1);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                fpa[i] = math.max(fpa[i], (float3)fp_m1[i]);
-                            }
-                        }
-
-                        // then the upper bound and write to output 
-                        pop_op_meta_cp(code_pointer, out datatype2, out vector_size_2);
-#if DEVELOPMENT_BUILD || TRACE
-                        if (vector_size_2 != 1 && vector_size_2 != vector_size)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax vectorsize {vector_size_2} not supported");
-                            return;
-                        }
-                        if (datatype != datatype2)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax datatype = {datatype2}");
-                            return;
-                        }
-#endif
-                        if (vector_size_2 == vector_size)
-                        {
-                            pop_fx_into_ref<float3>(ref code_pointer, fp_m);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i].xyz = math.min(fpa[i], fp_m[i]);
-                            }
-                        }
-                        else
-                        {
-                            float* fp_m1 = (float*)(void*)fp_m;
-                            pop_fx_into_ref<float>(ref code_pointer, fp_m1);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i].xyz = math.min(fpa[i], (float3)fp_m1[i]);
-                            }
-                        }
-                    }
-                    break;
-
-                case 0:
-                case 4:
-                    {
-                        // 2 float4;s wont fit in temp anymore 
-                        float4* fpa = (float4*)temp;
-                        float4* fp_m = stackalloc float4[ssmd_datacount];
-
-                        pop_fx_into_ref<float4>(ref code_pointer, fpa);
-
-                        // first the lower bound 
-                        pop_op_meta_cp(code_pointer, out datatype2, out vector_size_2);
-                        // must be size 1 or 4 
-#if DEVELOPMENT_BUILD || TRACE
-                        if (vector_size_2 != 1 && vector_size_2 != vector_size)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax vectorsize {vector_size_2} not supported");
-                            return;
-                        }
-                        if (datatype != datatype2)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax datatype = {datatype2}");
-                            return;
-                        }
-#endif
-                        if (vector_size_2 == vector_size)
-                        {
-                            pop_fx_into_ref<float4>(ref code_pointer, fp_m);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                fpa[i] = math.max(fpa[i], fp_m[i]);
-                            }
-                        }
-                        else
-                        {
-                            float* fp_m1 = (float*)(void*)fp_m;
-                            pop_fx_into_ref<float>(ref code_pointer, fp_m1);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                fpa[i] = math.max(fpa[i], (float4)fp_m1[i]);
-                            }
-                        }
-
-                        // then the upper bound and write to output 
-                        pop_op_meta_cp(code_pointer, out datatype2, out vector_size_2);
-#if DEVELOPMENT_BUILD || TRACE
-                        if (vector_size_2 != 1 && vector_size_2 != vector_size)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax vectorsize {vector_size_2} not supported");
-                            return;
-                        }
-                        if (datatype != datatype2)
-                        {
-                            Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype}, minmax datatype = {datatype2}");
-                            return;
-                        }
-#endif
-                        if (vector_size_2 == vector_size)
-                        {
-                            pop_fx_into_ref<float4>(ref code_pointer, fp_m);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i] = math.min(fpa[i], fp_m[i]);
-                            }
-                        }
-                        else
-                        {
-                            float* fp_m1 = (float*)(void*)fp_m;
-                            pop_fx_into_ref<float>(ref code_pointer, fp_m1);
-
-                            // constrain lower bound 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i] = math.min(fpa[i], (float4)fp_m1[i]);
-                            }
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.clamp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-
-            code_pointer--;
-        }
-
-        /// <summary>
-        /// lerp value from min to max 
-        /// </summary>
-        /// <remarks>
-        /// 
-        /// a = lerp(min, max, s); 
-        /// 
-        /// TODO :     for all 3 input functions:   we should test stackallocs if they are conditional or not
-        /// - if they are always allocated move every case with stackalloc into its own function ? code explosin without templates/generics
-        ///  
-        /// </remarks>
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_lerp_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
-        {
-            BlastVariableDataType datatype;
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"blast.ssmd.interpretor.lerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                return;
-            }
-#endif
-
-            //
-            // NOTE the third parameter might have a different vectorsize, if different is MUST be size 1
-            //
-            BlastVariableDataType p_datatype;
-            byte p_vector_size;
-
-
-            switch (vector_size)
-            {
-                case 1:
-                    {
-                        // in case of v1 there is no memory problem 
-                        float* fpa = (float*)temp;
-                        float* fp_min = &fpa[ssmd_datacount];
-                        float* fp_max = &fp_min[ssmd_datacount];
-
-                        pop_fx_into_ref<float>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float>(ref code_pointer, fp_max);
-
-                        // the third param will always equal size 1
-                        pop_fx_into_ref<float>(ref code_pointer, fpa);
-
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].x = math.lerp(fp_min[i], fp_max[i], fpa[i]);
-                        }
-                    }
-                    break;
-
-                case 2:
-                    {
-                        float2* fpa = (float2*)temp;
-                        float2* fp_min = &fpa[ssmd_datacount];
-                        float2* fp_max = stackalloc float2[ssmd_datacount];
-
-                        pop_fx_into_ref<float2>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float2>(ref code_pointer, fp_max);
-
-                        pop_op_meta_cp(code_pointer, out p_datatype, out p_vector_size);
-
-
-                        // c param == size 1
-                        if (p_vector_size == 1)
-                        {
-                            // just cast the first piece of temp to a float1, the second half is used for min
-                            pop_fx_into_ref<float>(ref code_pointer, (float*)temp);
-
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i].xy = math.lerp(fp_min[i], fp_max[i], ((float*)temp)[i]);
-                            }
-                        }
-                        // same vectorsize, this relies on pop_fx_into to log errors on vectorsize mismatch
-                        else //if (p_vector_size == 2)
-                        {
-                            pop_fx_into_ref<float2>(ref code_pointer, fpa);
-
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i].xy = math.lerp(fp_min[i], fp_max[i], fpa[i]);
-                            }
-                        }
-                    }
-                    break;
-
-                case 3:
-                    {
-                        float3* fpa = (float3*)temp;
-                        float3* fp_min = stackalloc float3[ssmd_datacount];
-                        float3* fp_max = stackalloc float3[ssmd_datacount];
-
-                        pop_fx_into_ref<float3>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float3>(ref code_pointer, fp_max);
-
-                        pop_op_meta_cp(code_pointer, out p_datatype, out p_vector_size);
-
-
-                        // c param == size 1
-                        if (p_vector_size == 1)
-                        {
-                            // just cast the first piece of temp to a float1
-                            pop_fx_into_ref<float>(ref code_pointer, (float*)temp);
-
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i].xyz = math.lerp(fp_min[i], fp_max[i], ((float*)temp)[i]);
-                            }
-                        }
-                        else
-                        {
-                            pop_fx_into_ref<float3>(ref code_pointer, fpa);
-
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i].xyz = math.lerp(fp_min[i], fp_max[i], fpa[i]);
-                            }
-                        }
-                    }
-                    break;
-
-                case 0:
-                case 4:
-                    {
-                        float4* fpa = (float4*)temp;
-                        float4* fp_min = stackalloc float4[ssmd_datacount];
-                        float4* fp_max = f4; // only on equal vectorsize can we reuse output buffer because of how we overwrite our values writing to the output if the source is smaller in size
-
-                        pop_fx_into_ref<float4>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float4>(ref code_pointer, fp_max);
-
-                        pop_op_meta_cp(code_pointer, out p_datatype, out p_vector_size);
-
-
-                        // c param == size 1
-                        if (p_vector_size == 1)
-                        {
-                            // just cast the first piece of temp to a float1
-                            pop_fx_into_ref<float>(ref code_pointer, (float*)temp);
-
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i] = math.lerp(fp_min[i], fp_max[i], ((float*)temp)[i]);
-                            }
-                        }
-                        else
-                        {
-                            pop_fx_into_ref<float4>(ref code_pointer, fpa);
-
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                register[i] = math.lerp(fp_min[i], fp_max[i], fpa[i]);
-                            }
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.lerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-            code_pointer--;
-        }
-
-
-        /// <summary>
-        /// undo lerp 
-        /// </summary>
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_unlerp_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
-        {
-            BlastVariableDataType datatype;
-            pop_op_meta_cp(code_pointer + 1, out datatype, out vector_size);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"blast.ssmd.interpretor.unlerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                return;
-            }
-#endif
-
-            switch (vector_size)
-            {
-                case 1:
-                    {
-                        // in case of v1 there is no memory problem 
-                        float* fpa = (float*)temp;
-                        float* fp_min = &fpa[ssmd_datacount];
-                        float* fp_max = &fp_min[ssmd_datacount];
-
-                        pop_fx_into_ref<float>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float>(ref code_pointer, fp_max);
-                        pop_fx_into_ref<float>(ref code_pointer, fpa);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].x = math.unlerp(fp_min[i], fp_max[i], fpa[i]);
-                        }
-                    }
-                    break;
-
-                case 2:
-                    {
-                        float2* fpa = (float2*)temp;
-                        float2* fp_min = &fpa[ssmd_datacount];
-                        float2* fp_max = stackalloc float2[ssmd_datacount];
-
-                        pop_fx_into_ref<float2>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float2>(ref code_pointer, fp_max);
-                        pop_fx_into_ref<float2>(ref code_pointer, fpa);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].xy = math.unlerp(fp_min[i], fp_max[i], fpa[i]);
-                        }
-
-                    }
-                    break;
-
-                case 3:
-                    {
-                        float3* fpa = (float3*)temp;
-                        float3* fp_min = stackalloc float3[ssmd_datacount];
-                        float3* fp_max = stackalloc float3[ssmd_datacount];
-
-                        pop_fx_into_ref<float3>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float3>(ref code_pointer, fp_max);
-                        pop_fx_into_ref<float3>(ref code_pointer, fpa);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i].xyz = math.unlerp(fp_min[i], fp_max[i], fpa[i]);
-                        }
-                    }
-                    break;
-
-                case 0:
-                case 4:
-                    {
-                        float4* fpa = (float4*)temp;
-                        float4* fp_min = stackalloc float4[ssmd_datacount];
-                        float4* fp_max = f4; // only on equal vectorsize can we reuse output buffer because of how we overwrite our values writing to the output if the source is smaller in size
-
-                        pop_fx_into_ref<float4>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float4>(ref code_pointer, fp_max);
-                        pop_fx_into_ref<float4>(ref code_pointer, fpa);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i] = math.unlerp(fp_min[i], fp_max[i], fpa[i]);
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.unlerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-
-            code_pointer--;
-        }
-
-
-        /// <summary>
-        /// sperical lerp on quaternions 
-        /// </summary>
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_slerp_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
-        {
-            BlastVariableDataType datatype;
-            pop_op_meta_cp(code_pointer + 1, out datatype, out vector_size);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"blast.ssmd.interpretor.slerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                return;
-            }
-#endif
-
-            switch (vector_size)
-            {
-
-                case 0:
-                case 4:
-                    {
-                        float* fpa = stackalloc float[ssmd_datacount];
-                        float4* fp_min = (float4*)temp;
-                        float4* fp_max = f4; // only on equal vectorsize can we reuse output buffer because of how we overwrite our values writing to the output if the source is smaller in size
-
-                        pop_fx_into_ref<float4>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float4>(ref code_pointer, fp_max);
-                        pop_fx_into_ref<float>(ref code_pointer, fpa);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i] = math.slerp((quaternion)fp_min[i], (quaternion)fp_max[i], fpa[i]).value;
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.slerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-
-            code_pointer--;
-        }
-
-        /// <summary>
-        /// normalized lerp on quaternions
-        /// </summary>
-#if !STANDALONE_VSBUILD
-        [SkipLocalsInit]
-#endif
-        void get_nlerp_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
-        {
-            BlastVariableDataType datatype;
-            pop_op_meta_cp(code_pointer + 1, out datatype, out vector_size);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"blast.ssmd.interpretor.nlerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                return;
-            }
-#endif
-
-            switch (vector_size)
-            {
-
-                case 0:
-                case 4:
-                    {
-                        float* fpa = stackalloc float[ssmd_datacount];
-                        float4* fp_min = (float4*)temp;
-                        float4* fp_max = f4; // only on equal vectorsize can we reuse output buffer because of how we overwrite our values writing to the output if the source is smaller in size
-
-                        pop_fx_into_ref<float4>(ref code_pointer, fp_min);
-                        pop_fx_into_ref<float4>(ref code_pointer, fp_max);
-                        pop_fx_into_ref<float>(ref code_pointer, fpa);
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            register[i] = math.nlerp((quaternion)fp_min[i], (quaternion)fp_max[i], fpa[i]).value;
-                        }
-                    }
-                    break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.ssmd.interpretor.nlerp: datatype|vectorsize mismatch, vector_size: {vector_size}, datatype: {datatype} not supported");
-                    break;
-#endif
-            }
-
-            code_pointer--;
-        }
-
-
-
-
-#endregion
-
-#region op-a  
 
         /// <summary>
         /// 
@@ -6340,7 +4560,7 @@ namespace NSS.Blast.SSMD
         /// <param name="vector_size">output vectorsize</param>
         /// <param name="f4">output data vector</param>
         /// <param name="operation">operation to take on the vectors</param>
-        void get_op_a_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] ref float4* f4, blast_operation operation, BlastParameterEncoding encoding = BlastParameterEncoding.Encode62)
+        void get_op_a_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, int ssmd_datacount, [NoAlias] ref float4* f4, blast_operation operation, BlastParameterEncoding encoding = BlastParameterEncoding.Encode62)
         {
 #if DEVELOPMENT_BUILD || TRACE
             Assert.IsFalse(temp == null, $"blast.ssmd.interpretor.get_op_a_result: temp buffer NULL");
@@ -6457,7 +4677,7 @@ namespace NSS.Blast.SSMD
         /// - somewhere in this function BURST crashes on a type conversion of a single 
         /// 
         /// </summary>
-        void get_op_a_component_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] ref float4* f4, blast_operation operation)
+        void get_op_a_component_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, int ssmd_datacount, [NoAlias] ref float4* f4, blast_operation operation)
         {
 #if DEVELOPMENT_BUILD || TRACE
             Assert.IsFalse(temp == null, $"blast.ssmd.interpretor.get_op_a_component_result: temp buffer NULL");
@@ -6573,1173 +4793,9 @@ namespace NSS.Blast.SSMD
             vector_size = 1;
         }
 
+        #endregion
 
-
-#endregion
-
-#region fused substract multiply actions
-
-        /// <summary>
-        /// fused multiply add 
-        /// 
-        /// todo: convert this into a fused condition list, with n conditions and n+1 parameters ?:
-        ///
-        /// fused_op:
-        /// # 1 byte = encode62 = parametercount + vectorsize
-        /// # 1 byte * ceil(parametercount / 4) = conditions: +-/* encoded in 2 bits, 4 in byte 
-        /// # parameters 
-        /// 
-        /// - always 3 params, input vector size == output vectorsize
-        /// </summary>
-        /// <returns></returns>
-        void get_fma_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] ref float4* f4)
-        {
-            BlastVariableDataType datatype, datatype2;
-            byte vector_size2; 
-
-            // peek metadata of the first parameter
-            pop_op_meta_cp(code_pointer + 0, out datatype, out vector_size);
-
-            // first 2 inputs share datatype and vectorsize 
-            switch (vector_size)
-            {
-                case 1:
-                    // in case of v1. all parameters should equal in size
-                    float* m11 = (float*)temp;
-                    pop_fx_into_ref<float>(ref code_pointer, m11);
-                    pop_fx_with_op_into_fx_ref(ref code_pointer, m11, m11, blast_operation.multiply);
-                    pop_fx_with_op_into_fx_ref(ref code_pointer, m11, f4, blast_operation.add);
-                    // this is needed because pop_fx_with_op_into_fx_ref leaves codepointer after the last data while function should end at the last
-                    code_pointer--;
-                    break;
-
-                case 2:
-                    // the last op might be in another vectorsize 
-                    float2* m12 = (float2*)temp;
-                    pop_fx_into_ref<float2>(ref code_pointer, m12);
-                    pop_fx_with_op_into_fx_ref<float2, float2>(ref code_pointer, m12, m12, blast_operation.multiply);
-
-                    pop_op_meta_cp(code_pointer, out datatype2, out vector_size2);
-                    pop_fx_with_op_into_fx_ref<float2, float4>(ref code_pointer, m12, f4, blast_operation.add, datatype2, vector_size2 != 2);
-                    code_pointer--;
-                    break;
-
-                case 3:
-                    float3* m13 = (float3*)temp;
-                    pop_fx_into_ref<float3>(ref code_pointer, m13);
-                    pop_fx_with_op_into_fx_ref<float3, float3>(ref code_pointer, m13, m13, blast_operation.multiply);
-
-                    pop_op_meta_cp(code_pointer, out datatype2, out vector_size2);
-                    pop_fx_with_op_into_fx_ref<float3, float4>(ref code_pointer, m13, f4, blast_operation.add, datatype2, vector_size2 != 3);
-                    code_pointer--;
-                    break;
-
-                case 0:
-                case 4:
-                    float4* m14 = (float4*)temp;
-                    pop_fx_into_ref<float4>(ref code_pointer, f4); // with f4 we can avoid reading/writing to the same buffer by alternating as long as we end at f4
-                    pop_fx_with_op_into_fx_ref<float4, float4>(ref code_pointer, f4, m14, blast_operation.multiply);
-
-                    // last may differ in vectorsize 
-                    pop_op_meta_cp(code_pointer, out datatype2, out vector_size2);
-                    pop_fx_with_op_into_fx_ref<float4, float4>(ref code_pointer, m14, f4, blast_operation.add, datatype2, vector_size2 != 4);
-
-                    code_pointer--;
-                    break;
-            }
-        }
-
-#endregion
-
-#region Bitwise operations
-
-        /// <summary>
-        /// Note: sets bit in place, first parameter must be a direct data index (compiler should force this)
-        /// </summary>
-        void get_setbit_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size)
-        {
-            float* fp_index = (float*)temp;
-            float* fp_value = &fp_index[ssmd_datacount];
-
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.set_bit: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-#else
-            // dont check anything in release and vectorsize must be 1 so
-            vector_size = 1;
-#endif
-
-            // get index
-#if DEVELOPMENT_BUILD || TRACE
-            BlastVariableDataType datatype;
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-            if (vector_size != 1)
-            {
-                Debug.LogError($"ssmd.set_bit: the index to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
-                return;
-            }
-#endif
-
-            bool b_constant_index = pop_fx_into_ref<float>(ref code_pointer, fp_index);
-
-            // get value
-#if DEVELOPMENT_BUILD || TRACE
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-            if (vector_size != 1)
-            {
-                Debug.LogError($"ssmd.set_bit: the value to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
-                return;
-            }
-#endif
-
-            // NOTE: if the source of fp_value is a constant then in ssmd they would be the same value for each record 
-            // OPTIMIZE: and this loop can be optimized a lot... 
-
-            bool b_constant_value = pop_fx_into_ref<float>(ref code_pointer, fp_value);
-
-            // setbit & setbits override the datatype of the target to bool32 
-            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex);
-
-#if DEVELOPMENT_BUILD || TRACE
-
-            // check that all constant arrays are actually of all the same values 
-            // this would indicate a serious bug in constant handling early 
-
-            if (b_constant_index)
-            {
-                float f1 = fp_index[0];
-                for (int i = 1; i < ssmd_datacount; i++)
-                {
-                    if (fp_index[i] != f1)
-                    {
-                        Debug.LogError($"ssmd.set_bit: the index is marked constant but is not equal for all ssmd records at {code_pointer}");
-                        return;
-                    }
-                }
-            }
-
-            if (b_constant_value)
-            {
-                float f0 = fp_value[0];
-                for (int i = 1; i < ssmd_datacount; i++)
-                {
-                    if (fp_value[i] != f0)
-                    {
-                        Debug.LogError($"ssmd.set_bit: the value is marked constant but is not equal for all ssmd records at {code_pointer}");
-                        return;
-                    }
-                }
-            }
-
-#endif
-
-            //
-            // when index or value is constant we can do some very nice optimizations, in this case we can even skip stuff 
-            // 
-
-            if (b_constant_value)
-            {
-                if (b_constant_index)
-                {
-                    // mask always the same 
-                    uint mask = (uint)(1 << (byte)fp_index[0]);
-
-                    // value always the same 
-                    if (((uint*)fp_value)[0] == 0)
-                    {
-                        // unset bits: AND the mask 
-                        if (mask == uint.MaxValue)
-                        {
-                            // mask is all 1, data remains equal 
-                        }
-                        else
-                        {
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                uint current = ((uint*)data[i])[dataindex];
-
-                                current = (uint)(current & ~mask);
-
-                                ((uint*)data[i])[dataindex] = current;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // set bits: OR the mask
-                        if (mask == 0)
-                        {
-                            // mask all 0, data remains equal 
-                        }
-                        else
-                        {
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                uint current = ((uint*)data[i])[dataindex];
-
-                                current = current | mask;
-
-                                ((uint*)data[i])[dataindex] = current;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // the value is always the same but the mask changes for every i
-                    if (((uint*)fp_value)[0] == 0)
-                    {
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            uint current = ((uint*)data[i])[dataindex];
-
-                            uint mask = (uint)(1 << (byte)fp_index[i]);
-
-                            current = (uint)(current & ~mask);
-
-                            ((uint*)data[i])[dataindex] = current;
-                        }
-                    }
-                    else
-                    {
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            uint current = ((uint*)data[i])[dataindex];
-
-                            uint mask = (uint)(1 << (byte)fp_index[i]);
-
-                            current = (uint)(current | mask);
-
-                            ((uint*)data[i])[dataindex] = current;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if (b_constant_index)
-                {
-                    // mask always the same 
-                    uint mask = (uint)(1 << (byte)fp_index[0]);
-
-                    for (int i = 0; i < ssmd_datacount; i++)
-                    {
-                        uint current = ((uint*)data[i])[dataindex];
-
-                        current = math.select((uint)(current | mask), (uint)(current & ~mask), ((uint*)fp_value)[i] == 0);
-
-                        ((uint*)data[i])[dataindex] = current;
-                    }
-                }
-                else
-                {
-                    // nothing constant 
-                    for (int i = 0; i < ssmd_datacount; i++)
-                    {
-                        uint current = ((uint*)data[i])[dataindex];
-
-                        uint mask = (uint)(1 << (byte)fp_index[i]);
-
-                        current = math.select((uint)(current | mask), (uint)(current & ~mask), ((uint*)fp_value)[i] == 0);
-
-                        ((uint*)data[i])[dataindex] = current;
-                    }
-                }
-            }
-
-
-            code_pointer--;
-        }
-
-
-        /// <summary>
-        /// get bit and return result to f4 register.x
-        /// </summary>
-        void get_getbit_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4_result)
-        {
-            float* fp_index = (float*)temp;
-
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.get_bit: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
-            if (datatype != BlastVariableDataType.Bool32)
-            {
-                Debug.LogError($"ssmd.get_bit: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-            // get index
-#if DEVELOPMENT_BUILD || TRACE
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-            if (vector_size != 1)
-            {
-                Debug.LogError($"ssmd.get_bit: the index to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
-                return;
-            }
-#else
-            // in release we assume compiler did its job
-#endif
-
-            bool b_constant_index = pop_fx_into_ref<float>(ref code_pointer, fp_index);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (b_constant_index)
-            {
-                for (int i = 1; i < ssmd_datacount; i++)
-                {
-                    if (fp_index[i] != fp_index[0])
-                    {
-                        // without string magics this is burst compatible so we wont create a function but just have this code everywhere... codegen someday; 
-                        Debug.LogError($"ssmd.get_bit: the index is marked constant but is not equal for all ssmd records at {code_pointer}");
-                        return;
-                    }
-                }
-            }
-#endif
-
-            if (b_constant_index)
-            {
-                // in most cases get bit is called with a constant index 
-                uint mask = (uint)(1 << (byte)fp_index[0]);
-
-                // saving a shift and memindex every index:
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint current = ((uint*)data[i])[dataindex];
-                    f4_result[i].x = math.select(0f, 1f, (mask & current) == mask);
-                }
-
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint current = ((uint*)data[i])[dataindex];
-                    uint mask = (uint)(1 << (byte)fp_index[i]);
-
-                    f4_result[i].x = math.select(0f, 1f, (mask & current) == mask);
-                }
-            }
-
-            code_pointer--;
-        }
-
-
-
-
-
-        void get_setbits_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size)
-        {
-            float* fp_mask = (float*)temp;
-            float* fp_value = &fp_mask[ssmd_datacount];
-
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.set_bits: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-#else
-            // dont check anything in release and vectorsize must be 1 so
-            vector_size = 1;
-#endif
-
-            // get index
-#if DEVELOPMENT_BUILD || TRACE
-            BlastVariableDataType datatype;
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-            if (vector_size != 1)
-            {
-                Debug.LogError($"ssmd.set_bits: the mask to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
-                return;
-            }
-#endif
-
-            bool mask_is_constant = pop_fx_into_ref<float>(ref code_pointer, fp_mask);
-
-            // get value
-#if DEVELOPMENT_BUILD || TRACE
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-            if (vector_size != 1)
-            {
-                Debug.LogError($"ssmd.set_bits: the value to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
-                return;
-            }
-#endif
-
-            bool value_is_constant = pop_fx_into_ref<float>(ref code_pointer, fp_value);
-
-
-#if DEVELOPMENT_BUILD || TRACE
-
-            // check that all constant arrays are actually of all the same values 
-            // this would indicate a serious bug in constant handling early 
-
-            if (mask_is_constant)
-            {
-                float f1 = fp_mask[0];
-                for (int i = 1; i < ssmd_datacount; i++)
-                {
-                    if (fp_mask[i] != f1)
-                    {
-                        Debug.LogError($"ssmd.set_bits: the masks is marked constant but is not equal for all ssmd records at {code_pointer}");
-                        return;
-                    }
-                }
-            }
-
-            if (value_is_constant)
-            {
-                float f0 = fp_value[0];
-                for (int i = 1; i < ssmd_datacount; i++)
-                {
-                    if (fp_value[i] != f0)
-                    {
-                        Debug.LogError($"ssmd.set_bits: the value is marked constant but is not equal for all ssmd records at {code_pointer}");
-                        return;
-                    }
-                }
-            }
-
-#endif
-            // setbit & setbits override the datatype of the target to bool32 
-            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex);
-
-            if (mask_is_constant)
-            {
-                uint mask = ((uint*)fp_mask)[0];
-
-                if (value_is_constant)
-                {
-                    // constant mask constant value 
-                    if (((uint*)fp_value)[0] == 0)
-                    {
-                        mask = ~mask; // not it for clarity  
-
-                        if (mask == 0)
-                        {
-                            // something & 0 == always zero 
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                ((uint*)data[i])[dataindex] = 0;
-                            }
-                        }
-                        else
-                        if (mask == uint.MaxValue)
-                        {
-                            // all 1;s & something == copy value == nothing changes 
-                        }
-                        else
-                        {
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                uint current = ((uint*)data[i])[dataindex];
-                                current = (uint)(current & mask);
-                                ((uint*)data[i])[dataindex] = current;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (mask == uint.MaxValue)
-                        {
-                            // or with all 1's => nothing changes 
-                        }
-                        else
-                        {
-                            for (int i = 0; i < ssmd_datacount; i++)
-                            {
-                                uint current = ((uint*)data[i])[dataindex];
-                                current = (uint)(current | mask);
-                                ((uint*)data[i])[dataindex] = current;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // constant mask, variable value 
-                    for (int i = 0; i < ssmd_datacount; i++)
-                    {
-                        uint current = ((uint*)data[i])[dataindex];
-                        current = math.select((uint)(current | mask), (uint)(current & ~mask), ((uint*)fp_value)[i] == 0);
-                        ((uint*)data[i])[dataindex] = current;
-                    }
-                }
-            }
-            else
-            {
-                if (value_is_constant)
-                {
-                    if (((uint*)fp_value)[0] == 0)
-                    {
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            uint current = ((uint*)data[i])[dataindex];
-                            uint mask = ((uint*)fp_mask)[i];
-                            current = (uint)(current & ~mask);
-                            ((uint*)data[i])[dataindex] = current;
-                        }
-                    }
-                    else
-                    {
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            uint current = ((uint*)data[i])[dataindex];
-                            uint mask = ((uint*)fp_mask)[i];
-                            current = (uint)(current | mask);
-                            ((uint*)data[i])[dataindex] = current;
-                        }
-                    }
-                }
-                else
-                {
-                    // nothing is constant 
-                    for (int i = 0; i < ssmd_datacount; i++)
-                    {
-                        uint current = ((uint*)data[i])[dataindex];
-                        uint mask = ((uint*)fp_mask)[i];
-                        current = math.select((uint)(current | mask), (uint)(current & ~mask), ((uint*)fp_value)[i] == 0);
-                        ((uint*)data[i])[dataindex] = current;
-                    }
-                }
-            }
-
-            code_pointer--;
-        }
-
-
-        /// <summary>
-        /// get bit and return result to f4 register.x
-        /// </summary>
-        void get_getbits_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4_result)
-        {
-            float* fp_mask = (float*)temp;
-
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.get_bits: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
-            if (datatype != BlastVariableDataType.Bool32)
-            {
-                Debug.LogError($"ssmd.get_bits: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-            // get index
-#if DEVELOPMENT_BUILD || TRACE
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-            if (vector_size != 1)
-            {
-                Debug.LogError($"ssmd.get_bits: the mask to set may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
-                return;
-            }
-#else
-            // in release we assume compiler did its job
-#endif
-
-            bool is_constant_mask = pop_fx_into_ref<float>(ref code_pointer, fp_mask);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (is_constant_mask && !UnsafeUtils.AllEqual(fp_mask, ssmd_datacount))
-            {
-                Debug.LogError($"ssmd.get_bits: the mask is marked constant but not all ssmd records have the same value at codepointer {code_pointer}");
-                return;
-            }
-#endif
-
-            if (is_constant_mask)
-            {
-                uint mask = ((uint*)fp_mask)[0];
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint current = ((uint*)data[i])[dataindex];
-                    f4_result[i].x = math.select(0f, 1f, (mask & current) == mask);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint current = ((uint*)data[i])[dataindex];
-                    uint mask = ((uint*)fp_mask)[i];
-                    f4_result[i].x = math.select(0f, 1f, (mask & current) == mask);
-                }
-            }
-
-            code_pointer--;
-        }
-
-
-        /// <summary>
-        /// count bits set and return result to f4 register.x
-        /// </summary>
-        void get_countbits_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4_result)
-        {
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.get_countbits: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
-            if (datatype != BlastVariableDataType.Bool32)
-            {
-                Debug.LogError($"ssmd.get_countbits: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-
-
-            // TODO lookup popcount -> could do this with 32bytes at once with avx2
-
-            for (int i = 0; i < ssmd_datacount; i++)
-            {
-                uint current = ((uint*)data[i])[dataindex];
-
-                f4_result[i].x = math.countbits(current);
-            }
-
-            code_pointer--;
-        }
-
-        /// <summary>
-        /// count leading bits set to 0 and return result to f4 register.x
-        /// </summary>
-        void get_lzcnt_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4_result)
-        {
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.get_lzcnt: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
-            if (datatype != BlastVariableDataType.Bool32)
-            {
-                Debug.LogError($"ssmd.get_lzcnt: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-
-            for (int i = 0; i < ssmd_datacount; i++)
-            {
-                uint current = ((uint*)data[i])[dataindex];
-                f4_result[i].x = math.lzcnt(current);
-            }
-
-            code_pointer--;
-        }
-
-        /// <summary>
-        /// count tailing bits set to 0 and return result to f4 register.x
-        /// </summary>
-        void get_tzcnt_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4_result)
-        {
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.get_tzcnt: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
-            if (datatype != BlastVariableDataType.Bool32)
-            {
-                Debug.LogWarning($"ssmd.get_tzcnt: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-
-            for (int i = 0; i < ssmd_datacount; i++)
-            {
-                uint current = ((uint*)data[i])[dataindex];
-                f4_result[i].x = math.tzcnt(current);
-            }
-
-            code_pointer--;
-        }
-
-        /// <summary>
-        /// reverse bits in place
-        /// </summary>
-        void get_reversebits_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size)
-        {
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.get_reversebits: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
-            if (datatype != BlastVariableDataType.Bool32)
-            {
-                Debug.LogError($"ssmd.get_reversebits: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-
-            for (int i = 0; i < ssmd_datacount; i++)
-            {
-                uint* p = &((uint*)data[i])[dataindex];
-                p[0] = math.reversebits(p[0]);
-            }
-
-            code_pointer--;
-        }
-
-
-        /// <summary>
-        /// rotate bits left in place 
-        /// </summary>
-        void get_rol_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size)
-        {
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.get_rol: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
-            if (datatype != BlastVariableDataType.Bool32)
-            {
-                Debug.LogError($"ssmd.get_rol: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-
-            float* fp = (float*)temp;
-
-#if DEVELOPMENT_BUILD || TRACE
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-            if (vector_size != 1)
-            {
-                Debug.LogError($"ssmd.get_rol: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
-                return;
-            }
-#else
-            // in release we assume compiler did its job
-#endif
-
-            bool constant_rol = pop_fx_into_ref<float>(ref code_pointer, fp);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (constant_rol && !UnsafeUtils.AllEqual(fp, ssmd_datacount))
-            {
-                Debug.LogError($"ssmd.get_rol: constant defined rol does not have all values equal");
-                return;
-            }
-#endif
-            if (constant_rol)
-            {
-                int rol = (int)fp[0]; // save on memory access during loop
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint* current = &((uint*)data[i])[dataindex];
-                    current[0] = math.rol(current[0], rol);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint* current = &((uint*)data[i])[dataindex];
-                    current[0] = math.rol(current[0], (int)fp[i]);
-                }
-            }
-
-
-            code_pointer--;
-        }
-        /// <summary>
-        /// rotate bits right in place 
-        /// </summary>
-        void get_ror_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size)
-        {
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.get_ror: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
-            if (datatype != BlastVariableDataType.Bool32)
-            {
-                Debug.LogError($"ssmd.get_ror: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-
-            float* fp = (float*)temp;
-
-#if DEVELOPMENT_BUILD || TRACE
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-            if (vector_size != 1)
-            {
-                Debug.LogError($"ssmd.get_ror: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
-                return;
-            }
-#else
-            // in release we assume compiler did its job
-#endif
-
-            bool constant_ror = pop_fx_into_ref<float>(ref code_pointer, fp);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (constant_ror && !UnsafeUtils.AllEqual(fp, ssmd_datacount))
-            {
-                Debug.LogError($"ssmd.get_ror: although ror is called with a constant its values are not equal accross all ssmd records at {code_pointer}");
-                return;
-            }
-#endif
-
-            if (constant_ror)
-            {
-                int ror = (int)fp[0];
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint* current = &((uint*)data[i])[dataindex];
-                    current[0] = math.ror(current[0], ror);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint* current = &((uint*)data[i])[dataindex];
-                    current[0] = math.ror(current[0], (int)fp[i]);
-                }
-            }
-
-            code_pointer--;
-        }
-        /// <summary>
-        /// shift bits left in place 
-        /// </summary>
-        void get_shl_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size)
-        {
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.get_shl: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
-            if (datatype != BlastVariableDataType.Bool32)
-            {
-                Debug.LogError($"ssmd.get_shl: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-
-            float* fp = (float*)temp;
-
-#if DEVELOPMENT_BUILD || TRACE
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-            if (vector_size != 1)
-            {
-                Debug.LogError($"ssmd.get_shl: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
-                return;
-            }
-#else
-            // in release we assume compiler did its job
-#endif
-
-            bool constant_shift = pop_fx_into_ref<float>(ref code_pointer, fp);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (constant_shift && !UnsafeUtils.AllEqual(fp, ssmd_datacount))
-            {
-                Debug.LogError($"ssmd.get_shl: shift constant not equal across all ssmd records at codepointer {code_pointer}");
-                return;
-            }
-#endif
-            if (constant_shift)
-            {
-                int shift = (int)fp[0];
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint* current = &((uint*)data[i])[dataindex];
-                    current[0] = current[0] << shift;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint* current = &((uint*)data[i])[dataindex];
-                    current[0] = current[0] << (int)fp[i];
-                }
-            }
-            code_pointer--;
-        }
-        /// <summary>
-        /// shift bits right in place 
-        /// </summary>
-        void get_shr_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size)
-        {
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-            code_pointer++;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.get_shr: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-            BlastVariableDataType datatype = BlastInterpretor.GetMetaDataType(metadata, (byte)dataindex);
-            if (datatype != BlastVariableDataType.Bool32)
-            {
-                Debug.LogError($"ssmd.get_shr: retrieving a bit from a non Bool32 datatype, codepointer = {code_pointer}, data = {datatype}.{BlastInterpretor.GetMetaDataSize(metadata, (byte)dataindex)}");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-
-            float* fp = (float*)temp;
-
-#if DEVELOPMENT_BUILD || TRACE
-            pop_op_meta_cp(code_pointer, out datatype, out vector_size);
-            if (vector_size != 1)
-            {
-                Debug.LogError($"ssmd.get_shr: n may only be of vectorsize 1 p1 = {datatype}.{vector_size}");
-                return;
-            }
-#else
-            // in release we assume compiler did its job
-#endif
-
-            bool constant_shift = pop_fx_into_ref<float>(ref code_pointer, fp);
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (constant_shift && !UnsafeUtils.AllEqual(fp, ssmd_datacount))
-            {
-                Debug.LogError($"ssmd.get_shr: shift constant not equal across all ssmd records at codepointer {code_pointer}");
-                return;
-            }
-#endif
-            if (constant_shift)
-            {
-                int shift = (int)fp[0];
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint* current = &((uint*)data[i])[dataindex];
-                    current[0] = current[0] >> shift;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    uint* current = &((uint*)data[i])[dataindex];
-                    current[0] = current[0] >> (int)fp[i];
-                }
-            }
-
-            code_pointer--;
-        }
-
-        /// <summary>
-        /// set zero to given index
-        /// </summary>
-        void get_zero_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size)
-        {
-            // index would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.zero: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }                
-#endif
-
-            switch (BlastInterpretor.GetMetaDataSize(in metadata, (byte)dataindex))
-            {
-                case 1:
-                    simd.move_f1_constant_to_indexed_data_as_f1(data, data_rowsize, data_is_aligned, dataindex, 0, ssmd_datacount);
-                    break;
-
-                case 2:
-                    simd.move_f1_constant_to_indexed_data_as_f2(data, data_rowsize, data_is_aligned, dataindex, 0, ssmd_datacount);
-                    break;
-                case 3:
-                    simd.move_f1_constant_to_indexed_data_as_f3(data, data_rowsize, data_is_aligned, dataindex, 0, ssmd_datacount);
-                    break;
-
-                case 4:
-                case 0:
-                    simd.move_f1_constant_to_indexed_data_as_f4(data, data_rowsize, data_is_aligned, dataindex, 0, ssmd_datacount);
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// get size of given data element 
-        /// </summary>
-        BlastError GetSizeResult(ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4_result, in DATAREC target = default)
-        {
-            // in release this sets NaN on errors 
-            float fsize = float.NaN;
-            BlastError res = BlastError.success; 
-
-            // index would be the same for each ssmd record
-            byte c = code[code_pointer];
-
-            if (c == (byte)blast_operation.cdataref)
-            {
-                // get offset to the cdata from current location
-                int offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
-                int index = code_pointer - offset + 1;
-
-                // validate we end up at cdata
-                if (code[index] != (byte)blast_operation.cdata)  // at some point we probably replace cdata with a datatype cdata_float etc.. 
-                {
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError($"Blast.SSMD.Interpretor.size: error in cdata reference at {code_pointer} referencing code[index] {index} ");
-#endif
-                    vector_size = 0;
-                    res = BlastError.error_failed_to_read_cdata_reference; 
-                }
-                else
-                {
-                    // TODO when supporting integers, this should return integer data 
-                    fsize = ((code[index + 1] << 8) + code[index + 2]) >> 2; // size is in bytes we want size in elements and 1 element = single = 32bit
-                    vector_size = 1;
-                    code_pointer = code_pointer + 2;
-                }
-            }
-            else
-            {
-                int dataindex = c - BlastInterpretor.opt_id;
-
-                // dataindex must point to a valid id 
-                if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-                {
-
-#if DEVELOPMENT_BUILD || TRACE
-                    Debug.LogError($"Blast.SSMD.Interpretor.Size: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-#endif
-                    res = BlastError.error_failed_to_read_cdata_reference;
-                    vector_size = 0;
-                }
-                else
-                {
-                    // get size from variable data 
-                    int size = BlastInterpretor.GetMetaDataSize(in metadata, (byte)dataindex);
-                    size = math.select(size, 4, size == 0);
-
-                    // copy size into result variable 
-                    vector_size = 1;
-                    fsize = (float)size;
-                }
-            }
-
-            // move sizedata to target location 
-            if (target.is_set)
-            {
-                // direct to target from sequence assignment
-                simd.move_f1_constant_to_indexed_data_as_f1(target.data, target.row_size, target.is_aligned, target.index, fsize, ssmd_datacount); 
-            }
-            else
-            {
-                // into intermediate buffer 
-                simd.move_f1_constant_into_f4_array_as_f1(f4_result, fsize, ssmd_datacount);
-            }
-
-            return res; 
-        }
-
-#endregion
-
-#region Reinterpret XXXX [DataIndex]
+        #region Reinterpret XXXX [DataIndex]
 
         /// <summary>
         /// reinterpret the value at index as a boolean value (set metadata type to bool32)
@@ -7802,14 +4858,14 @@ namespace NSS.Blast.SSMD
             BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Numeric, 1, (byte)dataindex);
         }
 
-#endregion
+        #endregion
 
-#region External Function Handler 
+        #region External Function Handler 
 
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
 #endif
-        void get_external_function_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] float4* f4)
+        void get_external_function_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, int ssmd_datacount, [NoAlias] float4* f4)
         {
             // get int id from next 4 ops/bytes 
             int id =
@@ -7829,22 +4885,22 @@ namespace NSS.Blast.SSMD
             if (engine_ptr->CanBeAValidFunctionId(id))
             {
 #endif
-            BlastScriptFunction p = engine_ptr->Functions[id];
+                BlastScriptFunction p = engine_ptr->Functions[id];
 
-            // get parameter count (expected from script excluding the 3 data pointers: engine, env, caller) 
-            // but dont call it in validation mode 
-            if (ValidateOnce == true)
-            {
-                // external functions (to blast) always have a fixed amount of parameters 
+                // get parameter count (expected from script excluding the 3 data pointers: engine, env, caller) 
+                // but dont call it in validation mode 
+                if (ValidateOnce == true)
+                {
+                    // external functions (to blast) always have a fixed amount of parameters 
 #if DEVELOPMENT_BUILD || TRACE
                     if (id > (int)ReservedBlastScriptFunctionIds.Offset && p.MinParameterCount != p.MaxParameterCount)
                     {
                         Debug.LogError($"blast.ssmd.interpretor.call-external: function {id} min/max parameters should be of equal size");
                     }
 #endif
-                code_pointer += p.MinParameterCount;
-                return;
-            }
+                    code_pointer += p.MinParameterCount;
+                    return;
+                }
 
 #if DEVELOPMENT_BUILD || TRACE
                 Debug.Log($"call fp id: {id} <env:{environment_ptr.ToInt64()}> <ssmd:no-caller-data>, parmetercount = {p.MinParameterCount}");
@@ -7867,81 +4923,81 @@ namespace NSS.Blast.SSMD
             vector_size = 1;
 #endif
 
-            // 
-            // first gather up to MinParameterCount parameter components 
-            // - external functions have a fixed amount of parameters 
-            // - there is no vectorsize check on external functions, user should make sure call is correct or errors will result 
-            // 
+                // 
+                // first gather up to MinParameterCount parameter components 
+                // - external functions have a fixed amount of parameters 
+                // - there is no vectorsize check on external functions, user should make sure call is correct or errors will result 
+                // 
 
-            int p_count = 0;
-            float* p_data = stackalloc float[p.MinParameterCount * ssmd_datacount];
+                int p_count = 0;
+                float* p_data = stackalloc float[p.MinParameterCount * ssmd_datacount];
 
-            while (p_count < p.MinParameterCount)
-            {
-                byte vsize;
-                // code_pointer++;
-
-                pop_op_meta_cp(code_pointer, out BlastVariableDataType dtype, out vsize);
-
-                switch (vsize)
+                while (p_count < p.MinParameterCount)
                 {
-                    case 0:
-                    case 4:
-                        vsize = 4;
-                        pop_fx_into_ref<float4>(ref code_pointer, (float4*)(void*)&p_data[p_count * ssmd_datacount]);
-                        break;
+                    byte vsize;
+                    // code_pointer++;
 
-                    case 1:
-                        pop_fx_into_ref<float>(ref code_pointer, (float*)(void*)&p_data[p_count * ssmd_datacount]);
-                        break;
+                    pop_op_meta_cp(code_pointer, out BlastVariableDataType dtype, out vsize);
 
-                    case 2:
-                        pop_fx_into_ref<float2>(ref code_pointer, (float2*)(void*)&p_data[p_count * ssmd_datacount]);
-                        break;
+                    switch (vsize)
+                    {
+                        case 0:
+                        case 4:
+                            vsize = 4;
+                            pop_fx_into_ref<float4>(ref code_pointer, (float4*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
 
-                    case 3:
-                        pop_fx_into_ref<float3>(ref code_pointer, (float3*)(void*)&p_data[p_count * ssmd_datacount]);
-                        break;
+                        case 1:
+                            pop_fx_into_ref<float>(ref code_pointer, (float*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
+
+                        case 2:
+                            pop_fx_into_ref<float2>(ref code_pointer, (float2*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
+
+                        case 3:
+                            pop_fx_into_ref<float3>(ref code_pointer, (float3*)(void*)&p_data[p_count * ssmd_datacount]);
+                            break;
+                    }
+
+                    for (int i = 0; i < vsize && p_count < p.MinParameterCount; i++)
+                    {
+                        p_count++;
+                    }
                 }
-
-                for (int i = 0; i < vsize && p_count < p.MinParameterCount; i++)
-                {
-                    p_count++;
-                }
-            }
 
 
 #if STANDALONE_VSBUILD
-            MethodInfo mi = Blast.ScriptAPI.FunctionInfo[id].FunctionDelegate.Method;
+                MethodInfo mi = Blast.ScriptAPI.FunctionInfo[id].FunctionDelegate.Method;
 
 
-            object[] param = new object[p.MinParameterCount + (p.IsShortDefinition ? 0 : 3)];
+                object[] param = new object[p.MinParameterCount + (p.IsShortDefinition ? 0 : 3)];
 
-            int iparam = 0;
+                int iparam = 0;
 
-            if (!p.IsShortDefinition)
-            {
-                param[0] = new IntPtr(engine_ptr);
-                param[1] = environment_ptr;
-                param[2] = IntPtr.Zero; // SSMD has no caller data
-                iparam = 3;
-            }
-
-            if (!ValidateOnce)
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
+                if (!p.IsShortDefinition)
                 {
-                    for (int j = 0; j < p.MinParameterCount; j++)
-                    {
-                        param[j + iparam] = p_data[j * ssmd_datacount + i];
-                    }
-
-                    f4[i].x = (float)mi.Invoke(null, param);
+                    param[0] = new IntPtr(engine_ptr);
+                    param[1] = environment_ptr;
+                    param[2] = IntPtr.Zero; // SSMD has no caller data
+                    iparam = 3;
                 }
-            }
 
-            vector_size = 1;
-            return;
+                if (!ValidateOnce)
+                {
+                    for (int i = 0; i < ssmd_datacount; i++)
+                    {
+                        for (int j = 0; j < p.MinParameterCount; j++)
+                        {
+                            param[j + iparam] = p_data[j * ssmd_datacount + i];
+                        }
+
+                        f4[i].x = (float)mi.Invoke(null, param);
+                    }
+                }
+
+                vector_size = 1;
+                return;
 #else
                 // the native bursted version is a little more invloved ... 
 
@@ -8093,9 +5149,11 @@ namespace NSS.Blast.SSMD
 #endif
         }
 
-#endregion
+        #endregion
 
-#region GetFunction|Sequence and Execute (privates)
+        #region GetFunction|Sequence and Execute (privates)
+
+
 
         /// <summary>
         /// 
@@ -8105,7 +5163,16 @@ namespace NSS.Blast.SSMD
         /// get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
         /// although external calls should be directly called when possible
         /// </summary>
-        int GetFunctionResult([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, [NoAlias] ref float4* f4_result, bool error_if_not_exists = true)
+        private BlastError GetFunctionResult([NoAlias] void* temp,
+
+                                                ref int code_pointer,
+                                                ref byte vector_size,
+                                                in int ssmd_datacount,
+
+                                                [NoAlias] float4* f4_result = null,
+                                                in DATAREC target = default,
+
+                                                bool error_if_not_exists = true)
         {
             byte op = code[code_pointer];
             code_pointer++;
@@ -8114,46 +5181,45 @@ namespace NSS.Blast.SSMD
             {
                 // math functions
                 //case blast_operation.abs: get_abs_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                case blast_operation.abs: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.abs, extended_blast_operation.nop); break;
-                case blast_operation.trunc: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.trunc, extended_blast_operation.nop); break;
 
-                case blast_operation.maxa: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.maxa); break;
-                case blast_operation.mina: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.mina); break;
 
-                case blast_operation.max: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.max); break;
-                case blast_operation.min: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.min); break;
+                case blast_operation.maxa: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.maxa); break;
+                case blast_operation.mina: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.mina); break;
+                case blast_operation.csum: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.csum); break;
 
-                case blast_operation.all: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.and, BlastParameterEncoding.Encode44); break;
-                case blast_operation.any: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.or, BlastParameterEncoding.Encode44); break;
+                case blast_operation.max: get_op_a_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.max); break;
+                case blast_operation.min: get_op_a_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.min); break;
+                case blast_operation.all: get_op_a_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.and, BlastParameterEncoding.Encode44); break;
+                case blast_operation.any: get_op_a_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.or, BlastParameterEncoding.Encode44); break;
+                case blast_operation.mula: get_op_a_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.multiply); break;
+                case blast_operation.adda: get_op_a_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.add); break;
+                case blast_operation.suba: get_op_a_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.substract); break;
+                case blast_operation.diva: get_op_a_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.diva); break;
 
-                case blast_operation.select: get_select_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                case blast_operation.fma: get_fma_result(temp, ref code_pointer, ref vector_size, ref f4_result); break;
-                case blast_operation.csum: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.csum); break;
+                case blast_operation.abs: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.abs, extended_blast_operation.nop); break;
+                case blast_operation.trunc: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.trunc, extended_blast_operation.nop); break;
 
-                case blast_operation.mula: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.multiply); break;
-                case blast_operation.adda: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.add); break;
-                case blast_operation.suba: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.substract); break;
-                case blast_operation.diva: get_op_a_result(temp, ref code_pointer, ref vector_size, ref f4_result, blast_operation.diva); break;
+                case blast_operation.index_x: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.index_x, extended_blast_operation.nop, 0); break;
+                case blast_operation.index_y: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.index_y, extended_blast_operation.nop, 1); break;
+                case blast_operation.index_z: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.index_z, extended_blast_operation.nop, 2); break;
+                case blast_operation.index_w: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.index_w, extended_blast_operation.nop, 3); break;
 
-                case blast_operation.index_x: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_x, extended_blast_operation.nop); break;
-                case blast_operation.index_y: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_y, extended_blast_operation.nop); break;
-                case blast_operation.index_z: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_z, extended_blast_operation.nop); break;
-                case blast_operation.index_w: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.index_w, extended_blast_operation.nop); break;
+                case blast_operation.index_n: IndexF1IntoFn(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, default); break;
+                case blast_operation.expand_v2: ExpandF1IntoFn(2, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, default); break;
+                case blast_operation.expand_v3: ExpandF1IntoFn(3, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, default); break;
+                case blast_operation.expand_v4: ExpandF1IntoFn(4, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, default); break;
 
-                case blast_operation.index_n: IndexF1IntoFn(temp, ref code_pointer, ref vector_size, f4_result, default); break;
+                case blast_operation.select: get_select_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                case blast_operation.fma: get_fma_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result); break;
 
-                case blast_operation.expand_v2: ExpandF1IntoFn(2, ref code_pointer, ref vector_size, f4_result, default); break;
-                case blast_operation.expand_v3: ExpandF1IntoFn(3, ref code_pointer, ref vector_size, f4_result, default); break;
-                case blast_operation.expand_v4: ExpandF1IntoFn(4, ref code_pointer, ref vector_size, f4_result, default); break;
+                case blast_operation.get_bit: get_getbit_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                case blast_operation.get_bits: get_getbits_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
 
-                case blast_operation.get_bit: get_getbit_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                case blast_operation.get_bits: get_getbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                case blast_operation.set_bit: get_setbit_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
+                case blast_operation.set_bits: get_setbits_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
 
-                case blast_operation.set_bit: get_setbit_result(temp, ref code_pointer, ref vector_size); break;
-                case blast_operation.set_bits: get_setbits_result(temp, ref code_pointer, ref vector_size); break;
-
-                case blast_operation.zero: get_zero_result(temp, ref code_pointer, ref vector_size); break;
-                case blast_operation.size: GetSizeResult(ref code_pointer, ref vector_size, f4_result); break;
+                case blast_operation.zero: get_zero_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
+                case blast_operation.size: GetSizeResult(ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
 
                 case blast_operation.ex_op:
                     {
@@ -8163,47 +5229,48 @@ namespace NSS.Blast.SSMD
                         switch (exop)
                         {
                             // external calls 
-                            case extended_blast_operation.call: get_external_function_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.call: get_external_function_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
 
                             // single inputs
-                            case extended_blast_operation.sqrt: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.sqrt); break;
-                            case extended_blast_operation.rsqrt: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.rsqrt); break;
-                            case extended_blast_operation.sin: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.sin); break;
-                            case extended_blast_operation.cos: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.cos); break;
-                            case extended_blast_operation.tan: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.tan); break;
-                            case extended_blast_operation.sinh: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.sinh); break;
-                            case extended_blast_operation.cosh: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.cosh); break;
-                            case extended_blast_operation.atan: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.atan); break;
-                            case extended_blast_operation.degrees: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.degrees); break;
-                            case extended_blast_operation.radians: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.radians); break;
-                            case extended_blast_operation.ceil: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.ceil); break;
-                            case extended_blast_operation.floor: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.floor); break;
+                            case extended_blast_operation.sqrt: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.sqrt); break;
+                            case extended_blast_operation.rsqrt: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.rsqrt); break;
+                            case extended_blast_operation.sin: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.sin); break;
+                            case extended_blast_operation.cos: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.cos); break;
+                            case extended_blast_operation.tan: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.tan); break;
+                            case extended_blast_operation.sinh: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.sinh); break;
+                            case extended_blast_operation.cosh: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.cosh); break;
+                            case extended_blast_operation.atan: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.atan); break;
+                            case extended_blast_operation.degrees: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.degrees); break;
+                            case extended_blast_operation.radians: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.radians); break;
+                            case extended_blast_operation.ceil: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.ceil); break;
+                            case extended_blast_operation.floor: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.floor); break;
+                            case extended_blast_operation.frac: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.frac); break;
+                            case extended_blast_operation.normalize: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.normalize); break;
+                            case extended_blast_operation.saturate: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.saturate); break;
+                            case extended_blast_operation.logn: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.logn); break;
+                            case extended_blast_operation.log10: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.log10); break;
+                            case extended_blast_operation.log2: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.log2); break;
+                            case extended_blast_operation.exp10: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.exp10); break;
+                            case extended_blast_operation.exp: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.exp); break;
+                            case extended_blast_operation.ceillog2: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.ceillog2); break;
+                            case extended_blast_operation.ceilpow2: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.ceilpow2); break;
+                            case extended_blast_operation.floorlog2: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.floorlog2); break;
 
-                            case extended_blast_operation.frac: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.frac); break;
-                            case extended_blast_operation.normalize: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.normalize); break;
-                            case extended_blast_operation.saturate: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.saturate); break;
-                            case extended_blast_operation.logn: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.logn); break;
-                            case extended_blast_operation.log10: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.log10); break;
-                            case extended_blast_operation.log2: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.log2); break;
-                            case extended_blast_operation.exp10: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.exp10); break;
-                            case extended_blast_operation.exp: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.exp); break;
-                            case extended_blast_operation.ceillog2: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.ceillog2); break;
-                            case extended_blast_operation.ceilpow2: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.ceilpow2); break;
-                            case extended_blast_operation.floorlog2: get_single_op_result(temp, ref code_pointer, ref vector_size, f4_result, blast_operation.ex_op, extended_blast_operation.floorlog2); break;
-                            case extended_blast_operation.fmod: get_fmod_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+
+                            case extended_blast_operation.fmod: get_fmod_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
 
                             // dual inputs 
-                            case extended_blast_operation.pow: get_pow_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.cross: get_cross_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.dot: get_dot_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.atan2: get_atan2_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.pow: get_pow_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.cross: get_cross_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.dot: get_dot_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.atan2: get_atan2_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
 
                             // tripple inputs                 
-                            case extended_blast_operation.clamp: get_clamp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.lerp: get_lerp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.unlerp: get_unlerp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.slerp: get_slerp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.nlerp: get_nlerp_result(temp, ref code_pointer, ref vector_size, f4_result); break;
+                            case extended_blast_operation.clamp: get_clamp_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.lerp: get_lerp_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.unlerp: get_unlerp_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.slerp: get_slerp_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.nlerp: get_nlerp_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
 
                             // five inputs 
                             // 
@@ -8212,14 +5279,15 @@ namespace NSS.Blast.SSMD
                             // case extended_blast_operation.remap: get_remap_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                             // bitwise operations
-                            case extended_blast_operation.count_bits: get_countbits_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.reverse_bits: get_reversebits_result(temp, ref code_pointer, ref vector_size); break;
-                            case extended_blast_operation.tzcnt: get_tzcnt_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.lzcnt: get_lzcnt_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                            case extended_blast_operation.rol: get_rol_result(temp, ref code_pointer, ref vector_size); break;
-                            case extended_blast_operation.ror: get_ror_result(temp, ref code_pointer, ref vector_size); break;
-                            case extended_blast_operation.shr: get_shr_result(temp, ref code_pointer, ref vector_size); break;
-                            case extended_blast_operation.shl: get_shl_result(temp, ref code_pointer, ref vector_size); break;
+                            case extended_blast_operation.count_bits: get_countbits_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.reverse_bits: get_reversebits_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
+                            case extended_blast_operation.tzcnt: get_tzcnt_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.lzcnt: get_lzcnt_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+
+                            case extended_blast_operation.rol: get_rol_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
+                            case extended_blast_operation.ror: get_ror_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
+                            case extended_blast_operation.shr: get_shr_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
+                            case extended_blast_operation.shl: get_shl_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
 
                             // datatype reinterpretations 
                             case extended_blast_operation.reinterpret_bool32: reinterpret_bool32(ref code_pointer, ref vector_size); break;
@@ -8261,7 +5329,7 @@ namespace NSS.Blast.SSMD
                                     Debug.LogError($"SSMD Interpretor: GetFunctionResult: codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
                                 }
 #endif
-                                return (int)BlastError.ssmd_function_not_handled;
+                                return BlastError.ssmd_function_not_handled;
                         }
                     }
                     break;
@@ -8274,10 +5342,10 @@ namespace NSS.Blast.SSMD
                         Debug.LogError($"SSMD Interpretor: GetFunctionResult: codepointer: {code_pointer} => {code[code_pointer]}, operation {op} not handled");
                     }
 #endif
-                    return (int)BlastError.ssmd_function_not_handled;
+                    return BlastError.ssmd_function_not_handled;
             }
 
-            return (int)BlastError.success;
+            return BlastError.success;
         }
 
 
@@ -8309,7 +5377,7 @@ namespace NSS.Blast.SSMD
                     // if next is an id >= id < 255 then + 1, 
                     // if next is constant ->
                     op = (blast_operation)code[i + 1];
-                    switch(op)
+                    switch (op)
                     {
                         case blast_operation.constant_f1: i += 5; break;
                         case blast_operation.constant_f1_h: i += 4; break;
@@ -8328,7 +5396,7 @@ namespace NSS.Blast.SSMD
                             }
                             break;
                     }
-                    break; 
+                    break;
 
                 case blast_operation.pi:
                 case blast_operation.inv_pi:
@@ -8381,11 +5449,11 @@ namespace NSS.Blast.SSMD
                 case blast_operation.time:
                 case blast_operation.fixeddeltatime:
                 case blast_operation.deltatime:
-                    break; 
+                    break;
 
                 default: // assume single byte op if  
                     {
-                        return  (i >= package.CodeSize - 1)
+                        return (i >= package.CodeSize - 1)
                                 ||
                                 (op >= blast_operation.id)
                                 &&
@@ -8407,7 +5475,7 @@ namespace NSS.Blast.SSMD
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
 #endif
-        int GetSequenceResult([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, in DATAREC target_rec = default)
+        int GetSequenceResult([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, int ssmd_datacount, in DATAREC target_rec = default)
         {
             byte op = 0, prev_op;
 
@@ -8435,7 +5503,7 @@ namespace NSS.Blast.SSMD
                 prev_op = op;
                 op = code[code_pointer];
 
-                bool is_last_token_in_sequence = nesting_level <= 0 && is_last_in_sequence(code_pointer); 
+                bool is_last_token_in_sequence = nesting_level <= 0 && is_last_in_sequence(code_pointer);
 
                 // process operation, put any value in f4, set current_op if something else
                 switch ((blast_operation)op)
@@ -8489,13 +5557,13 @@ namespace NSS.Blast.SSMD
                             // at this point vector_size is decisive for the returned value
                             //
                             code_pointer++;
-                            goto end_seq; 
+                            goto end_seq;
                         }
 
                     case blast_operation.ret:
                         // termination of interpretation
                         code_pointer = package.CodeSize + 1;
-                        goto end_seq; 
+                        goto end_seq;
 
 
                     /*  case blast_operation.index_n:
@@ -8648,20 +5716,20 @@ namespace NSS.Blast.SSMD
                                 p[3] = code[code_pointer + 4];
                             }
                             code_pointer += 5;
-                            
+
                             if (!is_last_token_in_sequence || !target_rec.is_set)
                             {
                                 // put result into register
-                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not);
                             }
                             else
                             {
                                 // == last in sequence 
                                 // == target is set
                                 // output directly to target and skip end logics 
-                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
+                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
                                 code_pointer++;
-                                return (int)BlastError.success; 
+                                return (int)BlastError.success;
                             }
 
                             minus = false;
@@ -8687,12 +5755,12 @@ namespace NSS.Blast.SSMD
                             if (!is_last_token_in_sequence || !target_rec.is_set)
                             {
                                 // put result into register
-                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not);
                             }
                             else
                             {
                                 // output directly to target and skip end logics 
-                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
+                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
                                 code_pointer++;
                                 return (int)BlastError.success;
                             }
@@ -8738,12 +5806,12 @@ namespace NSS.Blast.SSMD
                             if (!is_last_token_in_sequence || !target_rec.is_set)
                             {
                                 // put result into register
-                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not);
                             }
                             else
                             {
                                 // output directly to target and skip end logics 
-                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
+                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
                                 code_pointer++;
                                 return (int)BlastError.success;
                             }
@@ -8789,12 +5857,12 @@ namespace NSS.Blast.SSMD
                             if (!is_last_token_in_sequence || !target_rec.is_set)
                             {
                                 // put result into register
-                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not);
+                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not);
                             }
                             else
                             {
                                 // output directly to target and skip end logics 
-                                handle_single_op_constant(register, ref vector_size, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
+                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
                                 code_pointer++;
                                 return (int)BlastError.success;
                             }
@@ -8856,7 +5924,7 @@ namespace NSS.Blast.SSMD
                             }
                         }
                         break;
-                    
+
                     // direct handling of some often used function save an array copy in simple ops
                     case blast_operation.size:
                         {
@@ -8866,17 +5934,17 @@ namespace NSS.Blast.SSMD
                             {
                                 if (current_op == blast_operation.nop)
                                 {
-                                    GetSizeResult(ref code_pointer, ref vector_size, f4_result);
+                                    GetSizeResult(ref code_pointer, ref vector_size, ssmd_datacount, f4_result);
                                 }
                                 else
                                 {
-                                    GetSizeResult(ref code_pointer, ref vector_size, f4);
+                                    GetSizeResult(ref code_pointer, ref vector_size, ssmd_datacount, f4);
                                 }
                             }
                             else
                             {
                                 // not sure if it ends right.. 
-                                GetSizeResult(ref code_pointer, ref vector_size, null, target_rec);
+                                GetSizeResult(ref code_pointer, ref vector_size, ssmd_datacount, null, target_rec);
                                 return (int)BlastError.success;
                             }
                         }
@@ -8918,6 +5986,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.expand_v2:
                     case blast_operation.expand_v3:
                     case blast_operation.expand_v4:
+                    case blast_operation.index_n:
                         //
                         // on no operation pending
                         //
@@ -8926,7 +5995,7 @@ namespace NSS.Blast.SSMD
                         if (current_op == 0)
                         {
                             // move directly to result
-                            GetFunctionResult(f4_temp, ref code_pointer, ref vector_size, ref f4_result);
+                            GetFunctionResult(f4_temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result);
                             if (minus || not)
                             {
                                 if (minus)
@@ -8959,16 +6028,10 @@ namespace NSS.Blast.SSMD
                         }
                         else
                         {
-                            GetFunctionResult(f4_temp, ref code_pointer, ref vector_size, ref f4);
+                            GetFunctionResult(f4_temp, ref code_pointer, ref vector_size, ssmd_datacount, f4);
                             break;
                         }
 
-
-#if DEVELOPMENT_BUILD || TRACE
-                    case blast_operation.seed:
-                        Assert.IsTrue(false, "NOT IMPLEMENTED YET");
-                        break;
-#endif
 
                     case blast_operation.pi:
                     case blast_operation.inv_pi:
@@ -9047,7 +6110,7 @@ namespace NSS.Blast.SSMD
                             if (target_rec.is_set && current_op == blast_operation.nop && (next_op == blast_operation.end || next_op == blast_operation.nop) && nesting_level <= 0)
                             {
                                 // no current operation and at end of sequence => direct move of a value into target location 
-                                switch(vector_size)
+                                switch (vector_size)
                                 {
                                     case 0:
                                     case 4: simd.move_f1_constant_to_indexed_data_as_f4(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, constant, ssmd_datacount); break;
@@ -9059,14 +6122,14 @@ namespace NSS.Blast.SSMD
                                             simd.move_f1_constant_to_indexed_data_as_f1(target_rec.data, target_rec.row_size, target_rec.is_aligned, math.select(target_rec.index, target_rec.index + indexer, indexer > 0), constant, ssmd_datacount); break;
                                         }
 #if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor, set constantvalue, codepointer: {code_pointer} => {code[code_pointer]}, error: vectorsize {vector_size} not supported");
-                                    return (int)BlastError.ssmd_error_unsupported_vector_size;
+                                    default:
+                                        Debug.LogError($"SSMD Interpretor, set constantvalue, codepointer: {code_pointer} => {code[code_pointer]}, error: vectorsize {vector_size} not supported");
+                                        return (int)BlastError.ssmd_error_unsupported_vector_size;
 #endif
                                 }
                                 // skip endlogic of sequence and return directly after setting the target 
                                 code_pointer++;
-                                return (int)BlastError.success; 
+                                return (int)BlastError.success;
                             }
                             else
                             {
@@ -9097,12 +6160,12 @@ namespace NSS.Blast.SSMD
                                     case 0:
                                     case BlastVectorSizes.float4: simd.move_f1_constant_into_f4_array_as_f4(f4_value, constant, ssmd_datacount); break;
 #if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor, set constantvalue, codepointer: {code_pointer} => {code[code_pointer]}, error: vectorsize {vector_size} not supported");
-                                    return (int)BlastError.ssmd_error_unsupported_vector_size;
+                                    default:
+                                        Debug.LogError($"SSMD Interpretor, set constantvalue, codepointer: {code_pointer} => {code[code_pointer]}, error: vectorsize {vector_size} not supported");
+                                        return (int)BlastError.ssmd_error_unsupported_vector_size;
 #endif
 
-                               }
+                                }
                             }
                             indexer = -1;
                         }
@@ -9284,14 +6347,14 @@ namespace NSS.Blast.SSMD
                     if (nesting_level <= 0 && target_rec.is_set && is_last_token_in_sequence)
                     {
                         // directly put result into target-rec 
-                        handle_in_getsequence_operation_to_target(ref vector_size, current_op, ref not, ref minus, f4, f4_result, prev_vector_size, target_rec);
+                        handle_in_getsequence_operation_to_target(ref vector_size, ssmd_datacount, current_op, ref not, ref minus, f4, f4_result, prev_vector_size, target_rec);
                         code_pointer++;
-                        return (int)BlastError.success; 
+                        return (int)BlastError.success;
                     }
                     else
                     {
                         // put result into register 
-                        handle_in_getsequence_operation_to_register(ref vector_size, current_op, ref not, ref minus, f4, f4_result, prev_vector_size);
+                        handle_in_getsequence_operation_to_register(ref vector_size, ssmd_datacount, current_op, ref not, ref minus, f4, f4_result, prev_vector_size);
                     }
                 }
 
@@ -9302,10 +6365,10 @@ namespace NSS.Blast.SSMD
                 code_pointer++;
             }
 
-end_seq:
+        end_seq:
             // if we reach here with a set target then it wasnt filled with data: the operation did not support output to data[][] directly 
             // - we need to copy the register to the target 
-            if(target_rec.is_set)
+            if (target_rec.is_set)
             {
                 switch (vector_size)
                 {
@@ -9314,26 +6377,26 @@ end_seq:
                     case 3: simd.move_f4_array_to_indexed_data_as_f3(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, f4_result, ssmd_datacount); break;
                     case 2: simd.move_f4_array_to_indexed_data_as_f2(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, f4_result, ssmd_datacount); break;
                     case 1: simd.move_f4_array_to_indexed_data_as_f1(target_rec.data, target_rec.row_size, target_rec.is_aligned, target_rec.index, f4_result, ssmd_datacount); break;
-                    default: return (int)BlastError.success; 
+                    default: return (int)BlastError.success;
                 }
                 return (int)BlastError.success;
             }
 
             // check, if target record is set reaching here is an error
             // return math.select((int)BlastError.success, (int)BlastError.error_target_not_set_in_sequence, target_rec.is_set); 
-            return (int) BlastError.success; 
+            return (int)BlastError.success;
         }
 
         /// <summary>
         /// pulled out of getsequence for refactoring : handle op and put result back into target record location 
         /// </summary>
-        void handle_in_getsequence_operation_to_target(ref byte vector_size, blast_operation current_op, ref bool not, ref bool minus, float4* f4, float4* f4_result, byte prev_vector_size, in DATAREC target)
+        void handle_in_getsequence_operation_to_target(ref byte vector_size, int ssmd_datacount, blast_operation current_op, ref bool not, ref bool minus, float4* f4, float4* f4_result, byte prev_vector_size, in DATAREC target)
         {
 #if DEVELOPMENT_BUILD || TRACE
-            if (!target.is_set) 
+            if (!target.is_set)
             {
-                 Debug.LogError($"blast.ssmd.interpretor.handle-in-sequence-operation: target not set, codepointer = {code_pointer}");
-                 return;
+                Debug.LogError($"blast.ssmd.interpretor.handle-in-sequence-operation: target not set, codepointer = {code_pointer}");
+                return;
             }
 #else
             if (!target.is_set) return;
@@ -9346,18 +6409,18 @@ end_seq:
 
                     switch ((BlastVectorSizes)vector_size)
                     {
-                        case BlastVectorSizes.float1: handle_op_f1_f1(current_op, f4_result, f4, ref vector_size, minus, not, in target); break;
-                        case BlastVectorSizes.float2: handle_op_f1_f2(current_op, f4_result, f4, ref vector_size, minus, not, in target); break;
-                        case BlastVectorSizes.float3: handle_op_f1_f3(current_op, f4_result, f4, ref vector_size, minus, not, in target); break;
-                        case BlastVectorSizes.float4: handle_op_f1_f4(current_op, f4_result, f4, ref vector_size, minus, not, in target); break;
+                        case BlastVectorSizes.float1: handle_op_f1_f1(current_op, f4_result, f4, ref vector_size, ssmd_datacount, minus, not, in target); break;
+                        case BlastVectorSizes.float2: handle_op_f1_f2(current_op, f4_result, f4, ref vector_size, ssmd_datacount, minus, not, in target); break;
+                        case BlastVectorSizes.float3: handle_op_f1_f3(current_op, f4_result, f4, ref vector_size, ssmd_datacount, minus, not, in target); break;
+                        case BlastVectorSizes.float4: handle_op_f1_f4(current_op, f4_result, f4, ref vector_size, ssmd_datacount, minus, not, in target); break;
 #if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
-                                    break;
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
+                            break;
 #endif
                     }
                     minus = false;
-                    not = false; 
+                    not = false;
                     break;
 
 
@@ -9365,12 +6428,12 @@ end_seq:
 
                     switch ((BlastVectorSizes)vector_size)
                     {
-                        case BlastVectorSizes.float1: handle_op_f2_f1(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
-                        case BlastVectorSizes.float2: handle_op_f2_f2(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+                        case BlastVectorSizes.float1: handle_op_f2_f1(current_op, f4_result, f4, ref vector_size, ssmd_datacount, minus, not, target); break;
+                        case BlastVectorSizes.float2: handle_op_f2_f2(current_op, f4_result, f4, ref vector_size, ssmd_datacount, minus, not, target); break;
 #if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
-                                    break;
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                            break;
 #endif
                     }
                     minus = false;
@@ -9381,13 +6444,13 @@ end_seq:
 
                     switch ((BlastVectorSizes)vector_size)
                     {
-                        case BlastVectorSizes.float1: handle_op_f3_f1(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
-                        case BlastVectorSizes.float3: handle_op_f3_f3(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+                        case BlastVectorSizes.float1: handle_op_f3_f1(current_op, f4_result, f4, ref vector_size, ssmd_datacount, minus, not, target); break;
+                        case BlastVectorSizes.float3: handle_op_f3_f3(current_op, f4_result, f4, ref vector_size, ssmd_datacount, minus, not, target); break;
 
 #if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
-                                    break;
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                            break;
 #endif
                     }
                     minus = false;
@@ -9400,12 +6463,12 @@ end_seq:
 
                     switch ((BlastVectorSizes)vector_size)
                     {
-                        case BlastVectorSizes.float1: handle_op_f4_f1(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
-                        case BlastVectorSizes.float4: handle_op_f4_f4(current_op, f4_result, f4, ref vector_size, minus, not, target); break;
+                        case BlastVectorSizes.float1: handle_op_f4_f1(current_op, f4_result, f4, ref vector_size, ssmd_datacount, minus, not, target); break;
+                        case BlastVectorSizes.float4: handle_op_f4_f4(current_op, f4_result, f4, ref vector_size, ssmd_datacount, minus, not, target); break;
 #if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
-                                    break;
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                            break;
 #endif
                     }
                     minus = false;
@@ -9414,9 +6477,9 @@ end_seq:
 
 
 #if DEVELOPMENT_BUILD || TRACE
-                        default:
-                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
-                            break;
+                default:
+                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
+                    break;
 #endif
 
 
@@ -9427,15 +6490,15 @@ end_seq:
         /// <summary>
         /// pulled out of getsequence for refactoring : handle op and put result back into register 
         /// </summary>
-        void handle_in_getsequence_operation_to_register(ref byte vector_size, blast_operation current_op, ref bool not, ref bool minus, float4* f4, float4* f4_result, byte prev_vector_size)
+        void handle_in_getsequence_operation_to_register(ref byte vector_size, int ssmd_datacount, blast_operation current_op, ref bool not, ref bool minus, float4* f4, float4* f4_result, byte prev_vector_size)
         {
             if ((minus || not))
             {
 #if DEVELOPMENT_BUILD || TRACE
-                            if (minus && not)
-                            {
-                                Debug.LogError("minus and not together active: error");
-                            }
+                if (minus && not)
+                {
+                    Debug.LogError("minus and not together active: error");
+                }
 #endif
                 if (not)
                 {
@@ -9472,14 +6535,14 @@ end_seq:
 
                     switch ((BlastVectorSizes)vector_size)
                     {
-                        case BlastVectorSizes.float1: handle_op_f1_f1(current_op, f4_result, f4, ref vector_size); break;
-                        case BlastVectorSizes.float2: handle_op_f1_f2(current_op, f4_result, f4, ref vector_size); break;
-                        case BlastVectorSizes.float3: handle_op_f1_f3(current_op, f4_result, f4, ref vector_size); break;
-                        case BlastVectorSizes.float4: handle_op_f1_f4(current_op, f4_result, f4, ref vector_size); break;
+                        case BlastVectorSizes.float1: handle_op_f1_f1(current_op, f4_result, f4, ref vector_size, ssmd_datacount); break;
+                        case BlastVectorSizes.float2: handle_op_f1_f2(current_op, f4_result, f4, ref vector_size, ssmd_datacount); break;
+                        case BlastVectorSizes.float3: handle_op_f1_f3(current_op, f4_result, f4, ref vector_size, ssmd_datacount); break;
+                        case BlastVectorSizes.float4: handle_op_f1_f4(current_op, f4_result, f4, ref vector_size, ssmd_datacount); break;
 #if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
-                                    break;
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
+                            break;
 #endif
                     }
                     break;
@@ -9489,12 +6552,12 @@ end_seq:
 
                     switch ((BlastVectorSizes)vector_size)
                     {
-                        case BlastVectorSizes.float1: handle_op_f2_f1(current_op, f4_result, f4, ref vector_size); break;
-                        case BlastVectorSizes.float2: handle_op_f2_f2(current_op, f4_result, f4, ref vector_size); break;
+                        case BlastVectorSizes.float1: handle_op_f2_f1(current_op, f4_result, f4, ref vector_size, ssmd_datacount); break;
+                        case BlastVectorSizes.float2: handle_op_f2_f2(current_op, f4_result, f4, ref vector_size, ssmd_datacount); break;
 #if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
-                                    break;
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                            break;
 #endif
                     }
                     break;
@@ -9503,13 +6566,13 @@ end_seq:
 
                     switch ((BlastVectorSizes)vector_size)
                     {
-                        case BlastVectorSizes.float1: handle_op_f3_f1(current_op, f4_result, f4, ref vector_size); break;
-                        case BlastVectorSizes.float3: handle_op_f3_f3(current_op, f4_result, f4, ref vector_size); break;
+                        case BlastVectorSizes.float1: handle_op_f3_f1(current_op, f4_result, f4, ref vector_size, ssmd_datacount); break;
+                        case BlastVectorSizes.float3: handle_op_f3_f3(current_op, f4_result, f4, ref vector_size, ssmd_datacount); break;
 
 #if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
-                                    break;
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                            break;
 #endif
                     }
                     break;
@@ -9520,21 +6583,21 @@ end_seq:
 
                     switch ((BlastVectorSizes)vector_size)
                     {
-                        case BlastVectorSizes.float1: handle_op_f4_f1(current_op, f4_result, f4, ref vector_size); break;
-                        case BlastVectorSizes.float4: handle_op_f4_f4(current_op, f4_result, f4, ref vector_size); break;
+                        case BlastVectorSizes.float1: handle_op_f4_f1(current_op, f4_result, f4, ref vector_size, ssmd_datacount); break;
+                        case BlastVectorSizes.float4: handle_op_f4_f4(current_op, f4_result, f4, ref vector_size, ssmd_datacount); break;
 #if DEVELOPMENT_BUILD || TRACE
-                                default:
-                                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
-                                    break;
+                        default:
+                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, vector operation undefined: {vector_size}");
+                            break;
 #endif
                     }
                     break;
 
 
 #if DEVELOPMENT_BUILD || TRACE
-                        default:
-                            Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
-                            break;
+                default:
+                    Debug.LogError($"SSMD Interpretor: execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size}");
+                    break;
 #endif
 
 
@@ -9544,7 +6607,7 @@ end_seq:
 
 
 
-#region Stack Operation Handlers 
+        #region Stack Operation Handlers 
 
         BlastError push(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp)
         {
@@ -9553,7 +6616,7 @@ end_seq:
                 code_pointer++;
 
                 // push the vector result of a compound 
-                BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size);
+                BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, default);
                 if (res < 0)
                 {
 #if DEVELOPMENT_BUILD || TRACE
@@ -9655,7 +6718,7 @@ end_seq:
         BlastError pushc(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp)
         {
             // push the vector result of a compound 
-            BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size);
+            BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, default);
             if (res < 0)
             {
 #if DEVELOPMENT_BUILD || TRACE
@@ -9692,7 +6755,7 @@ end_seq:
             //
             //  TODO -> split out GetFunctionResult() from GetCompoundResult 
             //
-            BlastError res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, ref register);
+            BlastError res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, register);
             if (res < 0)
             {
 #if DEVELOPMENT_BUILD || TRACE
@@ -9717,10 +6780,10 @@ end_seq:
             return BlastError.success;
         }
 
-#endregion
+        #endregion
 
 
-#region Assign[s|f] operation handlers
+        #region Assignments
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void determine_assigned_indexer(ref int code_pointer, ref byte assignee_op, out bool is_indexed, out blast_operation indexer)
@@ -9760,9 +6823,16 @@ end_seq:
             byte assignee = (byte)(assignee_op - BlastInterpretor.opt_id);
             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 
+
             // the assigned must have room for the indexer if indexed 
 
 #if DEVELOPMENT_BUILD || TRACE
+            if (is_indexed && (vector_size <= get_offset_from_indexed(0, indexer, is_indexed)))
+            {
+                Debug.LogError($"blast.ssmd.interpretor.assignsingle: cannot set component from vector at #{code_pointer}, component: {indexer}, vectorsize {vector_size}, index out of range");
+                return BlastError.error_indexer_out_of_bounds;
+            }
+
             // the compiler should have cought this, if it didt wel that would be noticed before going in release
             // so we define this only for debug saving the if
             // cannot set a component from a vector (yet)
@@ -9778,27 +6848,34 @@ end_seq:
 
             // set at index depending on size of the assigned
             // s_assignee = data; 
-            switch (s_assignee)
+            switch (math.select(s_assignee, 1, is_indexed))
             {
                 case 1:
-                    pop_fx_into_ref<float>(ref code_pointer, null, data, assignee, data_is_aligned, data_rowsize);  
+                    if (!is_indexed)
+                    {
+                        pop_fx_into_ref<float>(ref code_pointer, null, data, assignee, data_is_aligned, data_rowsize);
+                    }
+                    else
+                    {
+                        pop_fx_into_ref<float>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
+                    }
                     vector_size = 1;
                     break;
 
                 case 2:
-                    pop_fx_into_ref<float2>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
+                    pop_fx_into_ref<float2>(ref code_pointer, null, data, assignee, data_is_aligned, data_rowsize);
                     vector_size = 2;
                     break;
 
                 case 3:
-                    pop_fx_into_ref<float3>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
+                    pop_fx_into_ref<float3>(ref code_pointer, null, data, assignee, data_is_aligned, data_rowsize);
                     vector_size = 3;
                     break;
 
                 case 0:
                 case 4:
-                    pop_fx_into_ref<float4>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
-                    vector_size = 4;     
+                    pop_fx_into_ref<float4>(ref code_pointer, null, data, assignee, data_is_aligned, data_rowsize);
+                    vector_size = 4;
                     break;
             }
 
@@ -9824,6 +6901,19 @@ end_seq:
             blast_operation indexer;
             determine_assigned_indexer(ref code_pointer, ref assignee_op, out is_indexed, out indexer);
 
+            if (indexer == blast_operation.index_n)
+            {
+                //
+                // get array of indices to set for each assigned record
+                //
+
+                //    pop_fx_into_ref<>
+
+
+
+
+            }
+
             // get assignee
             byte assignee = (byte)(assignee_op - BlastInterpretor.opt_id);
 
@@ -9840,11 +6930,11 @@ end_seq:
                 // index data target 
                 // - correct vectorsize 4 => it is 0 after compressing into 2 bits
                 DATAREC data_target = IndexData(
-                    get_offset_from_indexed(in assignee, in indexer, in is_indexed), 
+                    get_offset_from_indexed(in assignee, in indexer, in is_indexed),
                     (byte)math.select(s_assignee, 4, s_assignee == 0));
 
                 // run sequencer, putting the last step into the data-target             
-                BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size, in data_target);
+                BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, in data_target);
                 if (res != BlastError.success)
                 {
 #if DEVELOPMENT_BUILD || TRACE
@@ -9859,7 +6949,7 @@ end_seq:
             else
             {
                 // run sequence result into a register 
-                BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size);
+                BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, default);
                 if (res != BlastError.success)
                 {
 #if DEVELOPMENT_BUILD || TRACE
@@ -9917,7 +7007,7 @@ end_seq:
 
                     case 0: // artifact from cutting 4 off at 2 bits 
                     case (byte)BlastVectorSizes.float4:
-                        vector_size = 4; 
+                        vector_size = 4;
                         if (s_assignee != 4)
                         {
 #if DEVELOPMENT_BUILD || TRACE
@@ -9939,7 +7029,17 @@ end_seq:
             return BlastError.success;
         }
 
-        BlastError assignf(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp, bool minus)
+
+
+        /// <summary>
+        /// Assign the result of a function
+        /// </summary>
+        /// <param name="code_pointer"></param>
+        /// <param name="vector_size"></param>
+        /// <param name="temp"></param>
+        /// <param name="minus"></param>
+        /// <returns></returns>
+        BlastError AssignF(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp, bool minus)
         {
 #if DEVELOPMENT_BUID || TRACE
             Assert.IsFalse(temp == null, "blast.ssmd.interpretor.assignf: temp buffer = NULL");
@@ -9964,43 +7064,57 @@ end_seq:
 
             // process functions that can directly output to target first 
             code_pointer++;
-            BlastError res; 
+            BlastError res;
 
-            switch((blast_operation)code[code_pointer])
+            if (!minus)
             {
-                 case blast_operation.size:
-                    // if minus active -> use getfunction and negate with register to data move
-                    if(minus) goto default; 
-                 
-                    // directly output to data skipping a register operation
-                    code_pointer++;
-                    res = GetSizeResult(ref code_pointer, ref vector_size, null,
-                        IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 1));
+                switch ((blast_operation)code[code_pointer])
+                {
+                    //
+                    // directly output to data skipping a register operation whenever possible
+                    //
+                    case blast_operation.size:
+                        code_pointer++;
+                        res = GetSizeResult(ref code_pointer, ref vector_size, ssmd_datacount, null,
+                            IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 1));
 
-                    need_copy_to_register = false; 
-                    break;
- 
-                case blast_operation.expand_v2:
-                    code_pointer++;
-                    res = ExpandF1IntoFn(2, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 2));
-                    need_copy_to_register = false;
-                    break; 
+                        need_copy_to_register = false;
+                        break;
 
-                case blast_operation.expand_v3:
-                    code_pointer++;
-                    res = ExpandF1IntoFn(3, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 3));
-                    need_copy_to_register = false;
-                    break;
+                    case blast_operation.expand_v2:
+                        code_pointer++;
+                        res = ExpandF1IntoFn(2, ref code_pointer, ref vector_size, ssmd_datacount, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 2));
+                        need_copy_to_register = false;
+                        break;
 
-                case blast_operation.expand_v4:
-                    code_pointer++;
-                    res  = ExpandF1IntoFn(4, ref code_pointer, ref vector_size, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 4));
-                    need_copy_to_register = false;
-                    break;  
-                                
-                default:
-                    res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, ref register);
-                    break; 
+                    case blast_operation.expand_v3:
+                        code_pointer++;
+                        res = ExpandF1IntoFn(3, ref code_pointer, ref vector_size, ssmd_datacount, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 3));
+                        need_copy_to_register = false;
+                        break;
+
+                    case blast_operation.expand_v4:
+                        code_pointer++;
+                        res = ExpandF1IntoFn(4, ref code_pointer, ref vector_size, ssmd_datacount, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 4));
+                        need_copy_to_register = false;
+                        break;
+
+                    case blast_operation.index_n:
+                        code_pointer++;
+                        res = IndexF1IntoFn(temp, ref code_pointer, ref vector_size, ssmd_datacount, null, IndexData(get_offset_from_indexed(in assignee, in indexer, in is_indexed), 1));
+                        need_copy_to_register = false;
+                        //code_pointer++;
+                        break;
+
+                    default:
+                        res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, register);
+                        break;
+                }
+            }
+            else
+            {
+                // with minus flag enabled we need to use the register returned 
+                res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, register);
             }
             code_pointer++;
 
@@ -10025,7 +7139,6 @@ end_seq:
             }
 #endif
 
-
             if (need_copy_to_register)
             {
                 set_data_from_register(
@@ -10033,7 +7146,7 @@ end_seq:
                     get_offset_from_indexed(in assignee, in indexer, in is_indexed),
                     minus);
             }
-            return res; 
+            return res;
         }
 
         BlastError assignfe(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp, bool minus)
@@ -10058,7 +7171,7 @@ end_seq:
             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
             code_pointer++;
-            get_external_function_result(temp, ref code_pointer, ref vector_size, register);
+            get_external_function_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, register);
             code_pointer++;
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -10122,18 +7235,24 @@ end_seq:
             return BlastError.success;
         }
 
-#region CDATA Assignments
-        BlastError assign_cdata(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp)
+        #region CDATA Assignments
+
+        /// <summary>
+        /// Assignment to CDATA 
+        /// </summary>
+        BlastError assign_cdata(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp, [NoAlias] float4* register)
         {
             int cdata_offset, cdata_length;
+            CDATAEncodingType encoding; 
 
-            BlastInterpretor.follow_cdataref(code, code_pointer - 1, out cdata_offset, out cdata_length);
+            BlastInterpretor.follow_cdataref(code, code_pointer - 1, out cdata_offset, out cdata_length, out encoding);
             code_pointer += 2;
 
             int index = -1;
             bool constant_index;
             bool constant_data;
-            
+            bool minus = false;
+
             // switch to assign|indexer 
             switch ((blast_operation)code[code_pointer])
             {
@@ -10144,7 +7263,7 @@ end_seq:
                 case blast_operation.index_n:
                     {
                         // read indexer, must be vector_size 1
-                        float* p = (float*)temp; 
+                        float* p = (float*)temp;
                         code_pointer++;
 
                         if (pop_fx_into_ref(ref code_pointer, p, ssmd_datacount, true))
@@ -10157,29 +7276,45 @@ end_seq:
                         }
                         else
                         {
-                            constant_index = false; 
-                        }                                                  
+                            constant_index = false;
+                        }
                     }
                     break;
 
                 // if indexer is skipped and we find an assignment, constantly index at 0
-                case blast_operation.assigns:  
-                case blast_operation.assignf:  
-                case blast_operation.assignfe: 
-                case blast_operation.assignfn: 
-                case blast_operation.assignfen:
-                case blast_operation.assignv:  
-                case blast_operation.assign: index = 0; constant_index = true; break; 
+                case blast_operation.assigns:
+                case blast_operation.assignf:
+                case blast_operation.assignfe:
+                case blast_operation.assign: index = 0; constant_index = true; break;
+
+                case blast_operation.assignfn:
+                case blast_operation.assignfen: index = 0; constant_index = true; minus = true; break;
+
+                case blast_operation.assignv:
+                    {
+                        if (IsTrace)
+                        {
+                            Debug.LogError($"Blast.ssmd.assign_cdata: cannot assign a vector to a cdata[] component at codepointer {code_pointer}");
+                        }
+                        return BlastError.error_in_cdata_assignment_size;
+                    }
 
                 // anything else should result in an error
                 default:
-                    return BlastError.error_failed_to_read_cdata_indexer; 
+                    return BlastError.error_failed_to_read_cdata_indexer;
             }
 
+
+
             // validate index if its constant 
-            if(constant_index && (index < 0 || index > cdata_length / 4))
+            int element_bytesize = BlastInterpretor.GetCDATAEncodingByteSize(encoding); 
+            if (constant_index && (index < 0 || index > cdata_length / element_bytesize))
             {
-                return BlastError.error_cdata_indexer_out_of_bounds; 
+                if (IsTrace)
+                {
+                    Debug.LogError($"Blast.ssmd.assign_cdata: cdata indexer out of bounds, codepointer = {code_pointer}");
+                }
+                return BlastError.error_cdata_indexer_out_of_bounds;
             }
 
             // process the assign operation
@@ -10191,26 +7326,26 @@ end_seq:
             //   if we reach here however WE know it is executed for this data stream
             //   and as blast gives no guarantee which record is executed when ...
             //
-            BlastVariableDataType assigned_datatype; 
+            BlastVariableDataType assigned_datatype;
 
             switch ((blast_operation)code[code_pointer])
             {
-
+                // set value directly to target when possible 
                 case blast_operation.assigns:
                     {
                         code_pointer++;
                         if (constant_index)
                         {
                             // can reuse temp buffer, we force pop_fx_into_ref into reading only 1 record into the buffer
-                            pop_op_meta_cp(code_pointer, out assigned_datatype, out vector_size); 
-                            switch(vector_size)
+                            pop_op_meta_cp(code_pointer, out assigned_datatype, out vector_size);
+                            switch (vector_size)
                             {
                                 case 0:
-                                case 4: constant_data = pop_fx_into_ref<float4>(ref code_pointer, (float4*)temp, 1, true); break; 
-                                case 3: constant_data = pop_fx_into_ref<float3>(ref code_pointer, (float3*)temp, 1, true); break; 
-                                case 2: constant_data = pop_fx_into_ref<float2>(ref code_pointer, (float2*)temp, 1, true); break; 
+                                case 4: constant_data = pop_fx_into_ref<float4>(ref code_pointer, (float4*)temp, 1, true); break;
+                                case 3: constant_data = pop_fx_into_ref<float3>(ref code_pointer, (float3*)temp, 1, true); break;
+                                case 2: constant_data = pop_fx_into_ref<float2>(ref code_pointer, (float2*)temp, 1, true); break;
                                 case 1: constant_data = pop_fx_into_ref<float>(ref code_pointer, (float*)temp, 1, true); break;
-                                default: return BlastError.error_vector_size_not_supported; 
+                                default: return BlastError.error_vector_size_not_supported;
                             }
 
                             // same index everywhere, set once 
@@ -10224,8 +7359,11 @@ end_seq:
                                 default: return BlastError.error_vector_size_not_supported;
                             }
 
+                            // compensate for pop_fx_into_ref
+                            // code_pointer--; 
+
                             // ok, assignment complete nxt token please
-                            return BlastError.success; 
+                            return BlastError.success;
                         }
                         else
                         {
@@ -10249,30 +7387,141 @@ end_seq:
                             return BlastError.success;
                         }
                     }
-                    break; 
+                    break;
 
 
-                /* TODO: compiler update in ssmd: we could omit the assignf by directly encoding the function opcodes and switch to function @ default, if not handled -> error */ 
+                /* TODO: compiler update in ssmd: we could omit the assignf by directly encoding the function opcodes and switch to function @ default, if not handled -> error */
                 case blast_operation.assignf:
                     {
-                        // code_pointer++;
-                        // get_function_result(ref code_pointer, ref vector_size, out f4_register);
-                        return BlastError.error_failed_to_interpret_cdata_assignment;
+                        return assignf_cdata(ref code_pointer, ref vector_size, temp, ref register, constant_index, index, cdata_offset, cdata_length, false);
                     }
 
+                // negation of the above 
+                case blast_operation.assignfn:
+                    {
+                        return assignf_cdata(ref code_pointer, ref vector_size, temp, ref register, constant_index, index, cdata_offset, cdata_length, true);
+                    }
 
-                case blast_operation.assignfe:  
-                case blast_operation.assignfn:  
-                case blast_operation.assignfen: 
-                case blast_operation.assignv:   
-                case blast_operation.assign:    
+                case blast_operation.assign:
+                    {
+                        return assign_cdata_sequence(ref code_pointer, ref vector_size, temp, ref register, constant_index, index, cdata_offset, cdata_length, true);
+                    }
+
+                case blast_operation.assignfe:
+                case blast_operation.assignfen:
+                    return BlastError.error_failed_to_interpret_cdata_assignment;
 
                 default:
-                    return BlastError.error_failed_to_interpret_cdata_assignment; 
+                    return BlastError.error_failed_to_interpret_cdata_assignment;
+
+                // cannot assign vector to cdata components
+                case blast_operation.assignv:
+                    return BlastError.error_cannot_assign_vector_to_cdata_component;
+
             }
 
-            return BlastError.error_failed_to_interpret_cdata_assignment; 
+            return BlastError.error_failed_to_interpret_cdata_assignment;
         }
+
+
+        /// <summary>
+        /// Assign the result of running a sequence to the cdata component
+        /// </summary>
+        private BlastError assign_cdata_sequence(ref int code_pointer, ref byte vector_size, void* temp, ref float4* register, bool constant_index, int index, int cdata_offset, int cdata_length, bool v)
+        {
+            code_pointer++;
+
+            if (constant_index)
+            {
+                // run sequence and put result in register 
+                BlastError res = (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size, 1, default);
+                if (res != BlastError.success) return res;
+
+                // assign data at constant index index 
+                BlastInterpretor.set_cdata_float(code, cdata_offset, index, register[0].x);
+            }
+            else
+            {
+                // allocate new temp memory in another non-inlined function 
+                BlastError res = (BlastError)assignf_cdata_getsequence_withmemory(ref code_pointer, ref vector_size, ssmd_datacount);
+                if (res != BlastError.success) return res;
+
+                // assign data to indices 
+                float* indices = (float*)temp;
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    BlastInterpretor.set_cdata_float(code, cdata_offset, (int)indices[i], register[i]);
+                }
+            }
+            return BlastError.success;
+        }
+
+        private BlastError assignf_cdata_getsequence_withmemory(ref int code_pointer, ref byte vector_size, int ssmd_datacount)
+        {
+            // we need to get more memory..... 
+            float4* temp2 = stackalloc float4[ssmd_datacount];
+            BlastError res = (BlastError)GetSequenceResult((void*)temp2, ref code_pointer, ref vector_size, ssmd_datacount, default);
+            if (res == BlastError.success)
+            {
+                // code_pointer--; 
+            }
+            return res;
+        }
+
+        /// <summary>
+        /// assign result of function to a cdata index
+        /// </summary>
+        BlastError assignf_cdata(ref int code_pointer, ref byte vector_size, void* temp, ref float4* register, bool constant_index, int index, int cdata_offset, int cdata_length, bool is_negated)
+        {
+            code_pointer++;
+            if (constant_index)
+            {
+                // get data once for one record, with a constant index to set its pointless to run all records  
+                BlastError res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, 1, register, default, true);
+
+                if (res != BlastError.success) return res;
+
+                // assign data at constant index index 
+                BlastInterpretor.set_cdata_float(code, cdata_offset, index, math.select(register[0].x, -register[0].x, is_negated));
+                return BlastError.success;
+            }
+            else
+            {
+                //
+                // !!! ->> cant use temp buffer; it is used for storing the indices to set !!!
+                // stackalloc in another function; in an attempt to remove it from the standard hot path
+                //
+                BlastError res = assignf_cdata_getfunction_withmemory(ref code_pointer, ref vector_size, ref register);
+                if (res != BlastError.success) return res;
+
+
+                // negate data if needed 
+                if (is_negated) simd.negate_f1(register, ssmd_datacount);
+
+                // assign data to indices 
+                float* indices = (float*)temp;
+                for (int i = 0; i < ssmd_datacount; i++)
+                {
+                    BlastInterpretor.set_cdata_float(code, cdata_offset, (int)indices[i], register[i]);
+                }
+
+                return BlastError.success;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private BlastError assignf_cdata_getfunction_withmemory(ref int code_pointer, ref byte vector_size, ref float4* register)
+        {
+            // we need to get more memory..... 
+            float4* temp2 = stackalloc float4[ssmd_datacount];
+            BlastError res = GetFunctionResult(temp2, ref code_pointer, ref vector_size, ssmd_datacount, register, default, true);
+            if (res == BlastError.success)
+            {
+                // code_pointer--; 
+            }
+            return res;
+        }
+
 
         bool assigns_cdata_indexed_f4(ref int code_pointer, int cdata_offset, float* cdata_indices, byte vector_size)
         {
@@ -10368,17 +7617,90 @@ end_seq:
                     break;
 
                 case 0: // reroute to other function, need to allocate memory to hold the f4 array on the stack 
-                case 4: return assigns_cdata_indexed_f4(ref code_pointer, cdata_offset, cdata_indices, 4); 
+                case 4: return assigns_cdata_indexed_f4(ref code_pointer, cdata_offset, cdata_indices, 4);
             }
             return false;
         }
 
-#endregion
-#endregion
+        #endregion
+        #endregion
 
 
 
+        #region EvalPushedJumpCondition
 
+        BlastError EvalPushedJumpCondition(ref int code_pointer, [NoAlias]float4* register, [NoAlias]void* temp, int ssmd_datacount)
+        {
+            // eval all push commands before running the compound
+            bool is_push = true;
+            byte vector_size = 1;
+
+            BlastError res; 
+
+            do
+            {
+                switch ((blast_operation)code[code_pointer])
+                {
+                    case blast_operation.push:
+                        code_pointer++;
+                        res = push(ref code_pointer, ref vector_size, temp);
+                        MaxStackSizeReachedDuringValidation = math.max(MaxStackSizeReachedDuringValidation, stack_offset);
+                        if (res != BlastError.success) return res;
+                        code_pointer++;
+                        break;
+
+                    //
+                    // pushv knows more about what it is pushing up the stack, it can do it without running the compound 
+                    //
+                    case blast_operation.pushv:
+                        code_pointer++;
+                        res = pushv(ref code_pointer, ref vector_size, temp);
+                        MaxStackSizeReachedDuringValidation = math.max(MaxStackSizeReachedDuringValidation, stack_offset);
+                        if (res != BlastError.success) return res;
+                        code_pointer++;
+                        break;
+
+                    //
+                    // push the result from a function directly onto the stack, saving a call to getcompound 
+                    //
+                    case blast_operation.pushf:
+                        code_pointer++;
+                        res = pushf(ref code_pointer, ref vector_size, temp);
+                        MaxStackSizeReachedDuringValidation = math.max(MaxStackSizeReachedDuringValidation, stack_offset);
+                        if (res != BlastError.success) return res;
+                        code_pointer++;
+                        break;
+
+                    //
+                    // push the result from a compound directly onto the stack 
+                    //
+                    case blast_operation.pushc:
+                        code_pointer++;
+                        res = pushc(ref code_pointer, ref vector_size, temp);
+                        MaxStackSizeReachedDuringValidation = math.max(MaxStackSizeReachedDuringValidation, stack_offset);
+                        if (res != BlastError.success) return res;
+                        code_pointer++;
+                        break;
+
+                    default:
+                        is_push = false;
+                        break;
+                }
+            }
+            while (is_push && code_pointer < package.CodeSize);
+
+            // get result from condition
+            // compiler has put braces|compound around it in certain situations    TODO FIX
+            // while they are not always needed 
+            code_pointer = math.select(code_pointer, code_pointer + 1, (blast_operation)code[code_pointer] == blast_operation.begin);
+
+
+            // process sequence into register
+            return (BlastError)GetSequenceResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, default);
+        }
+
+
+        #endregion 
 
 
 
@@ -10444,8 +7766,8 @@ end_seq:
                 // allocate local stack 
 
 
-                
-                byte* p = stackalloc byte[package.StackSize * ssmd_datacount]; 
+
+                byte* p = stackalloc byte[package.StackSize * ssmd_datacount];
 
                 // generate a list of stacksegment pointers on the stack:
                 byte** stack_indices = stackalloc byte*[ssmd_datacount];
@@ -10494,6 +7816,10 @@ end_seq:
 
             // local temp buffer 
             void* temp = stackalloc float4[ssmd_datacount];  //temp buffer of max vectorsize * 4 * ssmd_datacount 
+
+            // temp index buffer 
+            void* temp_indices = stackalloc float[ssmd_datacount];
+            indices = (float*)temp_indices; 
 
 #if DEVELOPMENT_BUILD || TRACE
 
@@ -10623,7 +7949,7 @@ end_seq:
                     case blast_operation.push:
                         ires = (int)push(ref code_pointer, ref vector_size, temp);
                         MaxStackSizeReachedDuringValidation = math.max(MaxStackSizeReachedDuringValidation, stack_offset);
-                        if(ires < 0) return ires;
+                        if (ires < 0) return ires;
                         break;
 
                     //
@@ -10658,7 +7984,7 @@ end_seq:
                         break;
 
                     case blast_operation.assignf:
-                        if ((ires = (int)assignf(ref code_pointer, ref vector_size, temp, false)) < 0) return ires;
+                        if ((ires = (int)AssignF(ref code_pointer, ref vector_size, temp, false)) < 0) return ires;
                         break;
 
                     case blast_operation.assignfe:
@@ -10666,7 +7992,7 @@ end_seq:
                         break;
 
                     case blast_operation.assignfn:
-                        if ((ires = (int)assignf(ref code_pointer, ref vector_size, temp, true)) < 0) return ires;
+                        if ((ires = (int)AssignF(ref code_pointer, ref vector_size, temp, true)) < 0) return ires;
                         break;
 
                     case blast_operation.assignfen:
@@ -10682,111 +8008,75 @@ end_seq:
                         if ((ires = (int)assign(ref code_pointer, ref vector_size, temp)) < 0) return ires;
                         break;
 
-                    // variably indexed assignment 
-                    case blast_operation.index_n:
-                       //  setf b idx_N #075 #000 idx_W [ cf1h #016 #065 ]
-                        break; 
-
                     // assing something to a cdata 
                     case blast_operation.cdataref:
-                        if ((ires = (int)assign_cdata(ref code_pointer, ref vector_size, temp)) < 0) return ires;
+                        if ((ires = (int)assign_cdata(ref code_pointer, ref vector_size, temp, register)) < 0) return ires;
                         break;
 
-                    // fixed jump -> no problem 
+                    // unconditional|fixed jump -> no problem 
                     case blast_operation.jump:
                         code_pointer = code_pointer + code[code_pointer];
                         break;
 
-                    // fixed jump -> no sync problem 
+                    // unconditional|fixed jump -> no sync problem 
                     case blast_operation.jump_back:
                         code_pointer = code_pointer - code[code_pointer];
                         break;
 
-                    // fixed long-jump, singed (forward && backward)
+                    // unconditional|fixed long-jump, singed (forward && backward)
                     case blast_operation.long_jump:
                         code_pointer = code_pointer + ((short)((code[code_pointer] << 8) + code[code_pointer + 1])) - 1;
                         break;
 
-                    //
-                    // conditional jumps -> generate a sync point after evaluation of condition 
-                    //
-                    case blast_operation.jnz:
-
-
-                        // calc endlocation of 
-                        int offset = code[code_pointer];
-                        int jump_to = code_pointer + offset;
-
-                        // eval condition => TODO -> check if we still write the begin... 
-                        code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
-
-                        // eval all push commands before running the compound
-                        bool is_push = true;
-                        do
+                    // constantly terminated short jump
+                    case blast_operation.cjz:
                         {
-                            switch ((blast_operation)code[code_pointer])
-                            {
-                                case blast_operation.pushc:
-                                    code_pointer++;
-                                    pushc(ref code_pointer, ref vector_size, temp);
-                                    code_pointer++;
-                                    break;
-                                case blast_operation.push:
-                                    code_pointer++;
-                                    push(ref code_pointer, ref vector_size, temp);
-                                    code_pointer++;
-                                    break;
-                                case blast_operation.pushf:
-                                    code_pointer++;
-                                    pushf(ref code_pointer, ref vector_size, temp);
-                                    code_pointer++;
-                                    break;
-                                case blast_operation.pushv:
-                                    code_pointer++;
-                                    pushv(ref code_pointer, ref vector_size, temp);
-                                    code_pointer++;
-                                    break;
-                                default:
-                                    is_push = false;
-                                    break;
-                            }
-                        }
-                        while (is_push && code_pointer < package.CodeSize);
+                            // calc endlocation of jump
+                            int offset = code[code_pointer];
+                            int jump_to = code_pointer + offset - 2;
 
-                        // get result from condition 
-                        int res = GetSequenceResult(temp, ref code_pointer, ref vector_size);
-                        if (res != 0)
+                            // jump over any opening statement 
+                            code_pointer += math.select(1, 2, code[code_pointer + 1] == (byte)blast_operation.begin);
+
+                            // evaluate condition once
+                            EvalPushedJumpCondition(ref code_pointer, register, temp, 1);
+
+                            // jump if NOT zero
+                            code_pointer = math.select(code_pointer, jump_to, register[0].x == 0);
+                        }
+                        break;
+
+                    // constantly terminated long jump
+                    case blast_operation.cjz_long:
                         {
-#if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"blast.ssmd.interpretor: operation {(byte)op} '{op}', codepointer = {code_pointer}, sync buffer overflow, increase syncbuffer depth or reduce nesting");
-#endif
-                            return res;
-                        }
+                            // calc endlocation of 
+                            int offset = ((short)(code[code_pointer] << 8) + code[code_pointer + 1]);
+                            int jump_to = code_pointer + offset - 3;
 
-                        // enter a new synclevel
-                        // if (syncbuffer_level == syncbuffer_depth)
-                        {
-#if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"blast.ssmd.interpretor: operation {(byte)op} '{op}', codepointer = {code_pointer}, sync buffer overflow, increase syncbuffer depth or reduce nesting");
-#endif
-                            return (int)BlastError.error_ssmd_sync_buffer_to_deep;
-                        }
+                            // jump over any opening statement 
+                            code_pointer += math.select(2, 3, code[code_pointer + 2] == (byte)blast_operation.begin);
 
-                    // code_pointer = math.select(code_pointer, jump_to, f4_register[i].x != 0);
-                    //break; 
+                            // evaluate condition once
+                            EvalPushedJumpCondition(ref code_pointer, register, temp, 1);
+
+                            // jump if NOT zero 
+                            code_pointer = math.select(code_pointer, jump_to, register[0].x == 0);
+                        }
+                        break; 
+
 
 
                     default:
                         {
                             code_pointer--;
-                            if (GetFunctionResult(temp, ref code_pointer, ref vector_size, ref f4_register, false) == (int)BlastError.ssmd_function_not_handled)
+                            BlastError res = GetFunctionResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_register, default, false);
+                            if (res != BlastError.success)
                             {
-                                // if not a function in root, then its nothing 
-                                // - if not in debug keep running but with updated codepointer 
+                                // if getting here its boom
 #if DEVELOPMENT_BUILD || TRACE
                                 Debug.LogError($"blast.ssmd: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
-                                return (int)BlastError.error_unsupported_operation_in_root;
 #endif
+                                return (int)BlastError.error_unsupported_operation_in_root;
                             }
                             code_pointer++;
                             break;
@@ -10798,6 +8088,6 @@ end_seq:
         }
 
 
-#endregion
+        #endregion
     }
 }

@@ -22,6 +22,16 @@ namespace NSS.Blast.SSMD
         /// </summary>
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_f1_array_to_indexed_data_as_f1(in DATAREC target, [NoAlias] float* f1, int ssmd_datacount)
+        {
+            move_f1_array_to_indexed_data_as_f1(target.data, target.row_size, target.is_aligned, target.index, f1, ssmd_datacount); 
+        }
+
+        /// <summary>
+        /// move a float[1] array into an indexed segment 
+        /// </summary>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_f1_array_to_indexed_data_as_f1([NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, [NoAlias] float* f1, int ssmd_datacount)
         {
             if (is_aligned)
@@ -450,6 +460,15 @@ namespace NSS.Blast.SSMD
         #endregion
 
         #region  move_fx_constant_to_indexed_data_as_fx
+
+        /// <summary>
+        /// move a constant float value as array into an indexed segment 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_f1_constant_to_indexed_data_as_f1(in DATAREC target, float constant, int ssmd_datacount)                       
+        {
+            move_f1_constant_to_indexed_data_as_f1(target.data, target.row_size, target.is_aligned, target.index, constant, ssmd_datacount);
+        }
 
         /// <summary>
         /// move a constant float value as array into an indexed segment 

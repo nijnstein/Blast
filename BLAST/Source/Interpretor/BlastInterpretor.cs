@@ -32,7 +32,7 @@ namespace NSS.Blast.Interpretor
     /// </summary>
     [BurstCompile]
 
-    unsafe public struct BlastInterpretor
+    unsafe public partial struct BlastInterpretor
     {
         #region Constant Compiletime Defines 
 #if DEVELOPMENT_BUILD
@@ -2328,374 +2328,115 @@ namespace NSS.Blast.Interpretor
         #endregion
 
         #region External Functionpointer calls 
+
+        internal float4 CALL_EF_F4_F1(ref int code_pointer, in int function_id)
+        {
+            byte vector_size;
+            bool is_negated;
+
+            float* vdata = (float*)pop_p_info(ref code_pointer, out BlastVariableDataType vtype, out vector_size, out is_negated);
+
+            if (vector_size == 1)
+            {
+                float p1 = math.select(vdata[0], -vdata[0], is_negated);
+
+
+#if STANDALONE_VSBUILD
+                float4 result = 0;// (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegateF4_f1).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1);
+                return result;
+#else
+                FunctionPointer<External.BlastEFDelegateF4_f1> fp0 = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegateF4_f1>;
+                if (fp.IsCreated && fp.Value != IntPtr.Zero)
+                {
+                    f4 = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1);
+                    return f4;
+                }
+#endif
+            }
+
+            if (IsTrace)
+            {
+                if (vector_size != 1) Debug.LogError($"Blast.interpretor.CALL_EF_F4_F1: error calling external function with id {function_id} invalid vectorsize for parameter p1, should be 1 but found {vector_size}");
+                else Debug.LogError($"Blast.interpretor.CALL_EF_F4_F1: error calling external function with id {function_id}");
+
+            }
+            return float.NaN;
+        }
+
+
+        internal float4 CALL_EF_SHORT_F4_F1(ref int code_pointer, in int function_id)
+        {
+            byte vector_size;
+            bool is_negated;
+
+            float* vdata = (float*)pop_p_info(ref code_pointer, out BlastVariableDataType vtype, out vector_size, out is_negated);
+
+            if (vector_size == 1)
+            {
+                float p1 = math.select(vdata[0], -vdata[0], is_negated);
+
+
+#if STANDALONE_VSBUILD
+                float4 result = 0;// (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegateF4_f1).Invoke(p1);
+                return result;
+#else
+                FunctionPointer<External.BlastEFDelegateF4_f1> fp0 = engine_ptr->Functions[function_id].Generic<External.BSEFDelegateF4_f1>;
+                if (fp.IsCreated && fp.Value != IntPtr.Zero)
+                {
+                    f4 = fp.Invoke(p1);
+                    return f4;
+                }
+#endif
+            }
+
+            if (IsTrace)
+            {
+                if (vector_size != 1) Debug.LogError($"Blast.interpretor.CALL_EF_SHORT_F4_F1: error calling external function with id {function_id} invalid vectorsize for parameter p1, should be 1 but found {vector_size}");
+                else Debug.LogError($"Blast.interpretor.CALL_EF_SHORT_F4_F1: error calling external function with id {function_id}");
+
+            }
+            return float.NaN;
+        }
+
+
+
         /// <summary>
         /// call an external function pointer, pointed to by an 8|16|32 bit identifier 
         ///</summary>
         void CallExternalFunction(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
-            // get int id from next 4 ops/bytes 
-            int id =
-                //(code[code_pointer + 1] << 24)
-                //+
-                //(code[code_pointer + 2] << 16)
-                //+
-                (code[code_pointer + 1] << 8)
-                +
-                code[code_pointer + 2];
+            // get 16 bit id from code stream 
+            int id = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
 
             // advance code pointer beyond the script id
-            code_pointer += 2;//4;
+            code_pointer += 2;
 
-            // get function pointer 
+            // call the function 
 #if DEVELOPMENT_BUILD || TRACE
             if (engine_ptr->CanBeAValidFunctionId(id))
             {
 #endif
                 BlastScriptFunction p = engine_ptr->Functions[id];
 
-                // get parameter count (expected from script excluding the 3 data pointers: engine, env, caller) 
-                // but dont call it in validation mode 
-                if (ValidateOnce == true)
+                if (IsTrace)
                 {
-                    // external functions (to blast) always have a fixed amount of parameters 
-#if DEVELOPMENT_BUILD || TRACE
-                    if (id > (int)ReservedBlastScriptFunctionIds.Offset && p.MinParameterCount != p.MaxParameterCount)
-                    {
-                        Debug.LogError($"function {id} min/max parameters should be of equal size");
-                    }
-#endif
-                    code_pointer += p.MinParameterCount;
-                    f4 = float.NaN;
-                    return;
+                    Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}, parameter count = {p.MinParameterCount}");
                 }
 
-#if TRACE
-                Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}, parmetercount = {p.MinParameterCount}");
-#endif
 
+                f4 = CALL_EF(ref code_pointer, in p);
 
-#if DEVELOPMENT_BUILD || TRACE
-                vector_size = (byte)math.select((int)p.ReturnsVectorSize, p.AcceptsVectorSize, p.ReturnsVectorSize == 0);
-                if (vector_size != 1)
-                {
-                    Debug.LogError($"function {id} a return vector size > 1 is not currently supported in external functions");
-                    f4 = float.NaN;
-                    return;
-                }
-                if (p.AcceptsVectorSize != 1)
-                {
-                    Debug.LogError($"function {id} a parameter vector size > 1 is not currently supported in external functions");
-                    f4 = float.NaN;
-                    return;
-                }
-#else
-                vector_size = 1; 
-#endif
-
-                //
-                // -   currently only a list of float 1 values of parametercount length is supported 
-                // 
-                // -   support to read parametercount components from parameters supplied in any vectorsize/ truncate at the last vector 
-                //  
-                // -   THIS NEEDS A COMPILER UPDATE TO ALLOW THIS
-                //     in case of external function it should count components of parameters as function parameters
-                //     
-
-
-                // in the case of 0 parameters, handle it and return skipping the rest 
-                if (p.MinParameterCount == 0)
-                {
-#if STANDALONE_VSBUILD
-                    Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, null);
-#else
-                    FunctionPointer<BlastDelegate_f0> fp0 = p.Generic<BlastDelegate_f0>();
-                    if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
-                    {
-                        f4 = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr);
-                        return;
-                    }
-                    else
-                    {
-                        f4 = float.NaN;
-#if DEVELOPMENT_BUILD || TRACE
-                        Debug.LogError($"blast.interpretor.call_external: error mapping external fuction pointer, function id {p.FunctionId} parametercount = {p.MinParameterCount}");
-#endif
-                        return; 
-                    }
-#endif
-                }
-
-                // first gather up to MinParameterCount parameter components 
-                int p_count = 0;
-                float* p_data = stackalloc float[p.MinParameterCount];
-
-                code_pointer++;
-
-                while (p_count < p.MinParameterCount)
-                {
-                    byte vsize;
-                    bool is_negated;
-                    float* vdata = (float*)pop_p_info(ref code_pointer, out BlastVariableDataType vtype, out vsize, out is_negated);
-                    for (int i = 0; i < vsize && p_count < p.MinParameterCount; i++)
-                    {
-                        p_data[p_count] = math.select(vdata[i], -vdata[i], is_negated);
-                        p_count++;
-                    }
-                }
-
-                // then with those components call the matching delegate (up until 16 parameters)
-                if (p.IsShortDefinition)
-                {
-                    switch (p.MinParameterCount)
-                    {
-                        // failure case -> could not map delegate
-                        case 112:
-#if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"blast.interpretor.call_external: error mapping external fuction pointer, function id {p.FunctionId} parametercount = {p.MinParameterCount}");
-#endif
-                            f4 = float.NaN;
-                            break;
-
-                        case 0:
-#if STANDALONE_VSBUILD
-                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, null);
-                            return;
-#else
-                        FunctionPointer<BlastDelegate_f0_s> fp0_s = p.Generic<BlastDelegate_f0_s>();
-                        if (fp0_s.IsCreated && fp0_s.Value != IntPtr.Zero)
-                        {
-                            f4 = fp0_s.Invoke();
-                            return;
-                        }
-                        goto case 112;
-#endif
-
-
-                        case 1:
-#if STANDALONE_VSBUILD
-                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, new object[] { p_data[0] });
-                            return;
-#else
-                        FunctionPointer<BlastDelegate_f1_s> fp1_s = p.Generic<BlastDelegate_f1_s>();
-                        if (fp1_s.IsCreated && fp1_s.Value != IntPtr.Zero)
-                        {
-                            f4 = fp1_s.Invoke(p_data[0]);
-                            return;
-                        }
-                        goto case 112;
-#endif
-
-                        case 2:
-#if STANDALONE_VSBUILD
-                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, new object[] { p_data[0], p_data[1] });
-                            return;
-#else
-                        FunctionPointer<BlastDelegate_f11_s> fp11_s = p.Generic<BlastDelegate_f11_s>();
-                        if (fp11_s.IsCreated && fp11_s.Value != IntPtr.Zero)
-                        {
-                            f4 = fp11_s.Invoke(p_data[0], p_data[1]);
-                            return;
-                        }
-                        goto case 112;
-#endif
-                    }
-                }
-                else
-                {
-                    switch (p.MinParameterCount)
-                    {
-                        // failure case -> could not map delegate
-                        case 112:
-#if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"blast.interpretor.call_external: error mapping external fuction pointer, function id {p.FunctionId} parametercount = {p.MinParameterCount}");
-#endif
-                            f4 = float.NaN;
-                            break;
-
-
-                        case 0:
-#if STANDALONE_VSBUILD
-                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, new object[] { IntPtr.Zero, IntPtr.Zero, IntPtr.Zero });
-                            return;
-#else
-                        FunctionPointer<BlastDelegate_f0> fp0 = p.Generic<BlastDelegate_f0>();
-                        if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
-                        {
-                            f4 = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr);
-                            return;
-                        }
-                        goto case 112;
-#endif
-
-                        case 1:
-#if STANDALONE_VSBUILD
-                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, new object[] { IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, p_data[0] });
-                            return;
-#else
-                        FunctionPointer<BlastDelegate_f1> fp1 = p.Generic<BlastDelegate_f1>();
-                        if (fp1.IsCreated && fp1.Value != IntPtr.Zero)
-                        {
-                            f4 = fp1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0]);
-                            return;
-                        }
-                        goto case 112;
-#endif
-
-                        case 2:
-#if STANDALONE_VSBUILD
-                            f4 = (float)Blast.Instance.API.FunctionInfo[id].FunctionDelegate.Method.Invoke(null, new object[] { IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, p_data[0], p_data[1] });
-                            return;
-#else
-                        FunctionPointer<BlastDelegate_f11> fp11 = p.Generic<BlastDelegate_f11>();
-                        if (fp11.IsCreated && fp11.Value != IntPtr.Zero)
-                        {
-                            f4 = fp11.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1]);
-                            return;
-                        }
-                        goto case 112;
-#endif
-
-                        case 3:
-                            FunctionPointer<BlastDelegate_f111> fp111 = p.Generic<BlastDelegate_f111>();
-                            if (fp111.IsCreated && fp111.Value != IntPtr.Zero)
-                            {
-                                f4 = fp111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 4:
-                            FunctionPointer<BlastDelegate_f1111> fp1111 = p.Generic<BlastDelegate_f1111>();
-                            if (fp1111.IsCreated && fp1111.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 5:
-                            FunctionPointer<BlastDelegate_f1111_1> fp1111_1 = p.Generic<BlastDelegate_f1111_1>();
-                            if (fp1111_1.IsCreated && fp1111_1.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 6:
-                            FunctionPointer<BlastDelegate_f1111_11> fp1111_11 = p.Generic<BlastDelegate_f1111_11>();
-                            if (fp1111_11.IsCreated && fp1111_11.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_11.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 7:
-                            FunctionPointer<BlastDelegate_f1111_111> fp1111_111 = p.Generic<BlastDelegate_f1111_111>();
-                            if (fp1111_111.IsCreated && fp1111_111.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 8:
-                            FunctionPointer<BlastDelegate_f1111_1111> fp1111_1111 = p.Generic<BlastDelegate_f1111_1111>();
-                            if (fp1111_1111.IsCreated && fp1111_1111.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_1111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 9:
-                            FunctionPointer<BlastDelegate_f1111_1111_1> fp1111_1111_1 = p.Generic<BlastDelegate_f1111_1111_1>();
-                            if (fp1111_1111_1.IsCreated && fp1111_1111_1.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_1111_1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 10:
-                            FunctionPointer<BlastDelegate_f1111_1111_11> fp1111_1111_11 = p.Generic<BlastDelegate_f1111_1111_11>();
-                            if (fp1111_1111_11.IsCreated && fp1111_1111_11.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_1111_11.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 11:
-                            FunctionPointer<BlastDelegate_f1111_1111_111> fp1111_1111_111 = p.Generic<BlastDelegate_f1111_1111_111>();
-                            if (fp1111_1111_111.IsCreated && fp1111_1111_111.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_1111_111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 12:
-                            FunctionPointer<BlastDelegate_f1111_1111_1111> fp1111_1111_1111 = p.Generic<BlastDelegate_f1111_1111_1111>();
-                            if (fp1111_1111_1111.IsCreated && fp1111_1111_1111.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_1111_1111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10], p_data[11]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 13:
-                            FunctionPointer<BlastDelegate_f1111_1111_1111_1> fp1111_1111_1111_1 = p.Generic<BlastDelegate_f1111_1111_1111_1>();
-                            if (fp1111_1111_1111_1.IsCreated && fp1111_1111_1111_1.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_1111_1111_1.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10], p_data[11], p_data[12]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 14:
-                            FunctionPointer<BlastDelegate_f1111_1111_1111_11> fp1111_1111_1111_11 = p.Generic<BlastDelegate_f1111_1111_1111_11>();
-                            if (fp1111_1111_1111_11.IsCreated && fp1111_1111_1111_11.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_1111_1111_11.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10], p_data[11], p_data[12], p_data[13]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 15:
-                            FunctionPointer<BlastDelegate_f1111_1111_1111_111> fp1111_1111_1111_111 = p.Generic<BlastDelegate_f1111_1111_1111_111>();
-                            if (fp1111_1111_1111_111.IsCreated && fp1111_1111_1111_111.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_1111_1111_111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10], p_data[11], p_data[12], p_data[13], p_data[14]);
-                                return;
-                            }
-                            goto case 112;
-
-                        case 16:
-                            FunctionPointer<BlastDelegate_f1111_1111_1111_1111> fp1111_1111_1111_1111 = p.Generic<BlastDelegate_f1111_1111_1111_1111>();
-                            if (fp1111_1111_1111_1111.IsCreated && fp1111_1111_1111_1111.Value != IntPtr.Zero)
-                            {
-                                f4 = (int)fp1111_1111_1111_1111.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p_data[0], p_data[1], p_data[2], p_data[3], p_data[4], p_data[5], p_data[6], p_data[7], p_data[8], p_data[9], p_data[10], p_data[11], p_data[12], p_data[13], p_data[14], p_data[15]);
-                                return;
-                            }
-                            goto case 112;
+                vector_size = p.ReturnsVectorSize;
 
 #if DEVELOPMENT_BUILD || TRACE
-                        default:
-                            Debug.LogError($"function id {id}, with parametercount {p.MinParameterCount} is not supported yet");
-                            break;
-#endif
-                    }
-                }
-#if DEVELOPMENT_BUILD || TRACE
+            }
+            else
+            {
+                Debug.LogError($"blast: failed to call function pointer with id: {id}");
+                f4 = float.NaN;
             }
 #endif
 
-#if DEVELOPMENT_BUILD || TRACE
-            Debug.LogError($"blast: failed to call function pointer with id: {id}");
-#endif
-            f4 = float.NaN;
         }
 
         #endregion
@@ -6177,16 +5918,18 @@ namespace NSS.Blast.Interpretor
             {
                 // this indexes a cdata in the code segment
                 int cdata_offset, length;
+                CDATAEncodingType encoding; 
 
 #if DEVELOPMENT_BUILD || TRACE
-                if (!follow_cdataref(code_pointer, out cdata_offset, out length))
+                if (!follow_cdataref(code, code_pointer, out cdata_offset, out length, out encoding))
                 {
                     return;
                 }
 #else
-                follow_cdataref(code_pointer, out cdata_offset, out length);
+                follow_cdataref(code, code_pointer, out cdata_offset, out length, out encoding);
 #endif
-                f4.x = index_cdata_f1(cdata_offset, offset, length);
+
+                f4.x = index_cdata_f1(code, cdata_offset, offset, length);
                 code_pointer += 3;
                 return;
             }
@@ -6231,205 +5974,10 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool follow_cdataref(int code_pointer, out int offset, out int length)
-        {
-            return follow_cdataref(code, code_pointer, out offset, out length);
-        }
+         
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal bool follow_cdataref([NoAlias] byte* code, int code_pointer, out int offset, out int length)
-        {
-            // validate codepointer is at cdataref 
-#if DEVELOPMENT_BUILD || TRACE || CHECK_CDATA
-            if (code[code_pointer] != (byte)blast_operation.cdataref)
-            {
-                // errror
-                Debug.LogError($"Blast.Interpretor.follow_cdataref: failed to follow cdataref to cdata record, codepointer not at cdataref, codepointer = {code_pointer}");
-                length = 0;
-                offset = 0;
-                return false;
-            }
-#endif 
-
-            // get offset
-            offset = code_pointer - ((code[code_pointer + 1] << 8) + code[code_pointer + 2]) + 1;
-
-#if DEVELOPMENT_BUILD || TRACE || CHECK_CDATA
-            if (offset < 0 || code[offset] != (byte)blast_operation.cdata)
-            {
-                // errror
-                Debug.LogError($"Blast.Interpretor.follow_cdataref: failed to follow cdataref to cdata record, cdataref codepointer = {code_pointer}, offset = {offset}");
-                length = 0;
-                return false;
-            }
-#endif 
-
-            length = (code[offset + 1] << 8) + code[offset + 2];
-            return true;
-        }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool follow_cdataref(int code_pointer, out int offset)
-        {
-            // validate codepointer is at cdataref 
-#if DEVELOPMENT_BUILD || TRACE || CHECK_CDATA
-            if (code[code_pointer] != (byte)blast_operation.cdataref)
-            {
-                // errror
-                Debug.LogError($"Blast.Interpretor.follow_cdataref: failed to follow cdataref to cdata record, codepointer not at cdataref, codepointer = {code_pointer}");
-                offset = 0;
-                return false;
-            }
-#endif 
-
-            // get offset
-            offset = code_pointer - ((code[code_pointer + 1] << 8) + code[code_pointer + 2]) + 1;
-
-            return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        float index_cdata_f1(in int offset, in int index, in int byte_length)
-        {
-            return index_cdata_f1(code, offset, index, byte_length);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal float index_cdata_f1([NoAlias] byte* code, in int offset, in int index, in int byte_length)
-        {
-            int i = offset + 3 + index * 4;
-
-#if DEVELOPMENT_BUILD || TRACE || CHECK_CDATA
-            int max_i = offset + 3 + byte_length;
-            if (i >= max_i - 3)
-            {
-                Debug.LogError($"Blast.Interpretor.index_cdata_f1: index [{index}] out of bounds for cdata at {offset} of bytesize: {byte_length} ");
-                return float.NaN;
-            }
-#endif 
-
-            return map_cdata_float(code, i);
-        }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        float index_cdata_f1(float* fdata, bool is_negated, int index)
-        {
-            // this will change when handling multiple datatypes 
-            return math.select(fdata[index], -fdata[index], is_negated);
-        }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        float map_cdata_float(in int offset_into_codebuffer)
-        {
-            return map_cdata_float(code, offset_into_codebuffer);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal float map_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer)
-        {
-            float f = default;
-            byte* p = (byte*)(void*)&f;
-
-            p[0] = code[offset_into_codebuffer + 0];
-            p[1] = code[offset_into_codebuffer + 1];
-            p[2] = code[offset_into_codebuffer + 2];
-            p[3] = code[offset_into_codebuffer + 3];
-
-            return f;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void set_cdata_float(in int offset_into_codebuffer, int index, float f)
-        {
-            set_cdata_float(code, offset_into_codebuffer, index, f);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal void set_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer, int index, float f)
-        {
-            byte* p = (byte*)(void*)&f;
-
-            int offset = offset_into_codebuffer + (index * 4) + 3; // float == 4 bytes 
-
-            code[offset + 0] = p[0];
-            code[offset + 1] = p[1];
-            code[offset + 2] = p[2];
-            code[offset + 3] = p[3];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal void set_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer, int index, float2 f)
-        {
-            byte* p = (byte*)(void*)&f;
-
-            int offset = offset_into_codebuffer + (index * 4) + 3; // float == 4 bytes 
-
-            code[offset + 0] = p[0];
-            code[offset + 1] = p[1];
-            code[offset + 2] = p[2];
-            code[offset + 3] = p[3];
-
-            code[offset + 4] = p[4];
-            code[offset + 5] = p[5];
-            code[offset + 6] = p[6];
-            code[offset + 7] = p[7];
-        }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal void set_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer, int index, float3 f)
-        {
-            byte* p = (byte*)(void*)&f;
-
-            int offset = offset_into_codebuffer + (index * 4) + 3; // float == 4 bytes 
-
-            code[offset + 0] = p[0];
-            code[offset + 1] = p[1];
-            code[offset + 2] = p[2];
-            code[offset + 3] = p[3];
-
-            code[offset + 4] = p[4];
-            code[offset + 5] = p[5];
-            code[offset + 6] = p[6];
-            code[offset + 7] = p[7];
-
-            code[offset + 8] = p[8];
-            code[offset + 9] = p[9];
-            code[offset + 10] = p[10];
-            code[offset + 11] = p[11];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static internal void set_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer, int index, float4 f)
-        {
-            byte* p = (byte*)(void*)&f;
-
-            int offset = offset_into_codebuffer + (index * 4) + 3; // float == 4 bytes 
-
-            code[offset + 0] = p[0];
-            code[offset + 1] = p[1];
-            code[offset + 2] = p[2];
-            code[offset + 3] = p[3];
-
-            code[offset + 4] = p[4];
-            code[offset + 5] = p[5];
-            code[offset + 6] = p[6];
-            code[offset + 7] = p[7];
-
-            code[offset + 8] = p[8];
-            code[offset + 9] = p[9];
-            code[offset + 10] = p[10];
-            code[offset + 11] = p[11];
-
-            code[offset + 12] = p[12];
-            code[offset + 13] = p[13];
-            code[offset + 14] = p[14];
-            code[offset + 15] = p[15];
-        }
+   
+ 
 
         void get_index_n_result(ref int code_pointer, ref byte vector_size, out float4 f4)
         {
@@ -6444,9 +5992,10 @@ namespace NSS.Blast.Interpretor
                 case (byte)blast_operation.cdataref:
                     {
                         int offset, length;
+                        CDATAEncodingType encoding; 
 
 #if DEVELOPMENT_BUILD || TRACE || CHECK_CDATA
-                        if (!follow_cdataref(code_pointer, out offset, out length))
+                        if (!follow_cdataref(code, code_pointer, out offset, out length, out encoding))
                         {
                             // error following reference ... 
                             f4 = float.NaN;
@@ -6454,7 +6003,7 @@ namespace NSS.Blast.Interpretor
                         }
 #else
                         // in release we assume all grass is green -> this is why stuff is validated during compilation 
-                        follow_cdataref(code_pointer, out offset, out length); 
+                        follow_cdataref(code_pointer, out offset, out length, out encoding); 
 #endif
                         // get indexer, must be a v[1] 
                         code_pointer += 3;
@@ -6463,7 +6012,7 @@ namespace NSS.Blast.Interpretor
                         float index = pop_f1(ref code_pointer);
 
                         // index and return data
-                        f4.x = index_cdata_f1(offset, (int)index, length);
+                        f4.x = index_cdata_f1(code, offset, (int)index, length);
                     }
                     break;
 
@@ -6489,9 +6038,8 @@ namespace NSS.Blast.Interpretor
                         int index = (int)findex[0];
                         index = math.select(index, -index, is_negated2);
 
-
-                        // vectorsize should be 1
-                        f4.x = index_cdata_f1(fdata, is_negated, index);
+                        // this will change when handling multiple datatypes 
+                        f4.x = math.select(fdata[0], -fdata[0], is_negated2);                        
                     }
                     break;
             }
@@ -7010,7 +6558,7 @@ namespace NSS.Blast.Interpretor
 
 #if DEVELOPMENT_BUILD || TRACE
                 // should end up at cdata
-                if (code[index] != (byte)blast_operation.cdata)  // at some point we probably replace cdata with a datatype cdata_float etc.. 
+                if (!IsValidCDATAStart(code[index]))  // at some point we probably replace cdata with a datatype cdata_float etc.. 
                 {
                     Debug.LogError($"Blast.Interpretor.size: error in cdata reference at {code_pointer}");
                     vector_size = 0;
@@ -7018,7 +6566,7 @@ namespace NSS.Blast.Interpretor
                 }
 #endif
                 // TODO when supporting integers, this should return integer data 
-                f4 = ((code[index + 1] << 8) + code[index + 2]) >> 2; // size is in bytes we want size in elements and 1 element = single = 32bit
+                f4 = GetCDATAElementCount(code, index);
                 vector_size = 1;
                 code_pointer = code_pointer + 3;
             }
@@ -7678,11 +7226,6 @@ namespace NSS.Blast.Interpretor
 
                 // random|seed
                 case blast_operation.random: get_random_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.seed:
-                    code_pointer++;
-                    f4_result = pop_f1(ref code_pointer);
-                    engine_ptr->Seed(math.asuint(f4_result.x));
-                    break;
 
                 // and|all
                 case blast_operation.all:
@@ -7740,6 +7283,12 @@ namespace NSS.Blast.Interpretor
                     {
                         switch (exop)
                         {
+                            case extended_blast_operation.seed:
+                                code_pointer++;
+                                f4_result = pop_f1(ref code_pointer);
+                                engine_ptr->Seed(math.asuint(f4_result.x));
+                                break;
+
                             case extended_blast_operation.logn: get_log_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.log10: get_log10_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.exp10: get_exp10_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -8253,12 +7802,6 @@ namespace NSS.Blast.Interpretor
                         code_pointer--;
                         break;
 
-#if DEVELOPMENT_BUILD || TRACE
-                    case blast_operation.seed:
-                        Assert.IsTrue(false, "NOT IMPLEMENTED YET");
-                        break;
-#endif
-
                     case blast_operation.pi:
                     case blast_operation.inv_pi:
                     case blast_operation.epsilon:
@@ -8752,12 +8295,13 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.cdataref:
                         {
                             // this is an assignment of a cdataref, possibly indexed 
+                            CDATAEncodingType encoding = CDATAEncodingType.None; 
 
 #if DEVELOPMENT_BUILD || TRACE
-                            follow_cdataref(code_pointer - 1, out cdata_offset, out cdata_length);
+                            follow_cdataref(code, code_pointer - 1, out cdata_offset, out cdata_length, out encoding);
 #else
                             // dont care for lengths 
-                            follow_cdataref(code_pointer - 1, out cdata_offset); 
+                            follow_cdataref(code, code_pointer - 1, out cdata_offset, out int length, out encoding); 
 #endif
 
                             assignee_type = BlastVariableDataType.CData;
@@ -8993,7 +8537,7 @@ namespace NSS.Blast.Interpretor
                                             return (int)BlastError.error_indexer_out_of_bounds;
                                         }
 #endif
-                                        set_cdata_float(cdata_offset, index, f4_register.x);
+                                        set_cdata_float(code, cdata_offset, index, f4_register.x);
                                     }
                                     break;
 
@@ -9264,19 +8808,7 @@ namespace NSS.Blast.Interpretor
 
                     //    
                     // by executing these in the root we save a lot on function calls and stack operations
-                    // - should implement all procedures here 
                     // 
-                    case blast_operation.send:
-                        {
-                            Handle_Send(ref code_pointer);
-                            break;
-                        }
-
-                    case blast_operation.seed:
-                        code_pointer++;
-                        f4_register.x = pop_f1(ref code_pointer);
-                        random = Unity.Mathematics.Random.CreateFromIndex((uint)f4_register.x);
-                        break;
 
 
                     case blast_operation.set_bit:
@@ -9355,6 +8887,18 @@ namespace NSS.Blast.Interpretor
                                         CallExternalFunction(ref code_pointer, ref vector_size, out f4_register);
                                         code_pointer++;
                                     }
+                                    break;
+
+                                case extended_blast_operation.send:
+                                    {
+                                        Handle_Send(ref code_pointer);
+                                        break;
+                                    }
+
+                                case extended_blast_operation.seed:
+                                    code_pointer++;
+                                    f4_register.x = pop_f1(ref code_pointer);
+                                    random = Unity.Mathematics.Random.CreateFromIndex((uint)f4_register.x);
                                     break;
 
                                 case extended_blast_operation.validate:

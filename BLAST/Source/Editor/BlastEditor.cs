@@ -102,8 +102,6 @@ namespace NSS.Blast.Editor
             GUILayout.Space(10);
             
             GUILayout.Label("Compiler Settings :", EditorStyles.boldLabel);
-            GUILayout.Label("Language Version:", EditorStyles.miniLabel);
-            LanguageVersion = supported_language_types[EditorGUILayout.Popup(_selected_language_version, supported_language_versions)];
             GUILayout.Space(3);
 
             GUILayout.Label("';' seperated list of key=value defines", EditorStyles.miniLabel);

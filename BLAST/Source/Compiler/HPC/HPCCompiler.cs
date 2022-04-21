@@ -118,7 +118,6 @@ namespace NSS.Blast.Compiler.Stage
                     case blast_operation.select: return "math.select";
                     
                     case blast_operation.random: return "blast.random"; 
-                    case blast_operation.seed: return "blast.seed"; 
                     case blast_operation.max: return "blast.max"; 
                     case blast_operation.min: return "blast.min"; 
                     case blast_operation.maxa: return "blast.maxa";
@@ -128,6 +127,7 @@ namespace NSS.Blast.Compiler.Stage
                     case blast_operation.ex_op:
                         switch(function.ExtendedScriptOp)
                         {
+                            case extended_blast_operation.seed: return "blast.seed";
                             case extended_blast_operation.exp: return "math.exp";
                             case extended_blast_operation.exp10: return "math.exp10";
                             case extended_blast_operation.log10: return "math.log10";

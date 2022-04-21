@@ -90,7 +90,33 @@ namespace NSS.Blast.Compiler.Stage
                     return false;
                 }
 
+
+                if (indexer == blast_operation.index_n)
+                {
+                    // we also need to add the indexed value 
+                    node indexnode = ast_param.indexers[1];
+                    if (indexnode.is_constant)
+                    {
+                        switch (indexnode.constant_op)
+                        {
+
+                            case blast_operation.value_0: indexer = blast_operation.index_x; break;
+                            case blast_operation.value_1: indexer = blast_operation.index_y; break;
+                            case blast_operation.value_2: indexer = blast_operation.index_z; break;
+                            case blast_operation.value_3: indexer = blast_operation.index_w; break;
+                        }
+                    }
+                }
                 code.Add(indexer); 
+
+                if(indexer == blast_operation.index_n)
+                {
+                    if (!CompileParameter(data, ast_param.indexers[1], code, true))
+                    {
+                        data.LogError($"CompileParameter: failed to compiled index parameter: <{ast_param}>.<{ast_param.indexers[1]}>");
+                        return false;
+                    }
+                }
             }
 
             // encode any constant value that is frequently used 
@@ -960,7 +986,15 @@ namespace NSS.Blast.Compiler.Stage
 
                             // encode [cdata]  ||  strictly, this is not needed but at the cost of a byte we simplify parsing it
                             // as we cant reliably indicate cdata while reading only forward in the interpretor without it
-                            code.Add(blast_operation.cdata, label);
+                            if (v.ConstantDataEncoding == CDATAEncodingType.None)
+                            {
+                                code.Add(blast_operation.cdata, label);
+                            }
+                            else
+                            {
+                                code.Add((byte)v.ConstantDataEncoding, label);
+                            }
+
 
                             // encode data size 
                             code.Add((byte)(v.ConstantData.Length >> 8));
@@ -1292,7 +1326,7 @@ namespace NSS.Blast.Compiler.Stage
             // should the assigned value be interpreted as a boolean and is b.datatype different:
             // then inject a reinterpret_bool32( assignee ); 
 
-            if (assigned_datatype != assignee.DataType)
+            if (assigned_datatype != assignee.DataType && assignee.DataType != BlastVariableDataType.CData)
             {
                 switch (assigned_datatype)
                 {
@@ -1362,6 +1396,8 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     case BlastPackageMode.Normal:
                     case BlastPackageMode.Compiler: return true; // in all other cases add the assignment operation 
+
+                    case BlastPackageMode.SSMD: return true; // v1.0.5 lets also do this in ssmd it gives a cleaner path
                 }
             }
             code.Add(assign_operation);
@@ -1700,6 +1736,18 @@ namespace NSS.Blast.Compiler.Stage
 
                         n_while_condition.EnsureIdentifierIsUniquelySet("whilecond_cset");
 
+                        // check that the loop is constant if packaged for SSMD interpretation
+                        if (data.CompilerOptions.PackageMode == BlastPackageMode.SSMD)
+                        {
+                            if (!ast_node.IsTerminatedConstantly || ast_node.IsTerminatedConditionally)
+                            {
+                                data.LogError($"Blast.Compiler.CompileNode: while loop not terminated in a constant manner. this is not allowed while compiling ssmd packages, node: <{ast_node}>");
+                                return null;
+                            }
+                        }
+
+
+
                         // while structure:
                         //
                         // [while_depends_on=initializer from for loops]  [condition_label][condition_depends_on] [jz_condition][offset_compound](condition)(compound)[jumpback condition_label][jump_back offset]
@@ -1734,7 +1782,16 @@ namespace NSS.Blast.Compiler.Stage
                         }
 
                         // start of while loop: jump over while compound when condition zero 
-                        code.Add((byte)blast_operation.jz, IMJumpLabel.Jump(n_while_compound.identifier));
+                        // -> do we want to encode the fact its a constantly sized loop?
+                        //    or do we let the ssmd interpretor assume compiler only compiles jz if allowed... 
+                        if (data.CompilerOptions.PackageMode == BlastPackageMode.SSMD)
+                        {
+                            code.Add((byte)blast_operation.cjz, IMJumpLabel.Jump(n_while_compound.identifier));
+                        }
+                        else
+                        {
+                            code.Add((byte)blast_operation.jz, IMJumpLabel.Jump(n_while_compound.identifier));
+                        }
                         code.Add((byte)0, IMJumpLabel.Offset(n_while_compound.identifier));
                         code.Add((byte)0);
 
@@ -1753,6 +1810,7 @@ namespace NSS.Blast.Compiler.Stage
                         }
                                                                    
                         // jump back to condition and re evaluate
+                        // - jumpback is always allowed as its unconditional
                         code.Add((byte)blast_operation.jump_back, IMJumpLabel.Jump(n_while_condition.identifier));
                         code.Add((byte)0, IMJumpLabel.Offset(n_while_condition.identifier));
                         code.Add((byte)0); 

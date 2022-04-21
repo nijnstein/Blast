@@ -203,7 +203,7 @@ namespace NSS.Blast.Compiler.Stage
             // } 
             //
 
-            node n_while = parent.CreateChild(nodetype.whileloop, BlastScriptToken.While, "while_tfor");
+            node n_while = parent.CreateChild(nodetype.whileloop, BlastScriptToken.While, "while_tfor", i_inject);
             node n_initialize = n_for.children[0];
             node n_condition = n_for.children[1];
             node n_iterator = n_for.children[2];
@@ -217,6 +217,49 @@ namespace NSS.Blast.Compiler.Stage
 
             n_compound.SetChild(n_iterator);
             n_while.SetChild(n_compound);
+
+            // when is a while constantly terminated: 
+            // 
+            // - if the condition is constant when the iterator is constant 
+            // - the iterator is unconditionally iterated: a = a + 1; and not a = select(1, 2, b); when b is not constant
+            //
+            //
+
+
+            // determine if the initializer is a constant expression 
+            bool constant_initializer = n_initialize.IsConstantExpression();
+
+            // get the iterator, the assignment target of the initializer
+            BlastVariable iterator = null;
+            if (constant_initializer && n_initialize.IsAssignment)
+            {
+                iterator = n_initialize.variable;
+
+                // at this point it must be set 
+                if (iterator == null)
+                {
+                    data.LogError($"blast.transform: iterator variable == null in transformed while compound, for loop node: {n_for}");
+                    return; 
+                }
+            }
+
+            // check condition, if initialized constant, then it may also be constant in nature during the frame 
+            bool constant_condition = /* iterator != null && */ constant_initializer && n_condition.IsConstantCondition(iterator);
+            bool constant_iteration = constant_initializer && n_iterator.IsConstantCondition(iterator);
+
+
+
+#if STANDALONE_VSBUILD && TRACE
+            Debug.Log("## FOR TRANSFORM - RESULTING WHILE OVERVIEW\n\n" +
+                        "## " + (constant_initializer ? "constant " : "") + "while initializer ##\n" + n_initialize.ToNodeTreeString() + "\n" +
+                        "## " + (constant_condition ? "constant " : "") + "while condition ##\n" + n_condition.ToNodeTreeString() + "\n" +
+                        "## " + (constant_iteration ? "constant " : "") + "while iterator ##\n" + n_iterator.ToNodeTreeString() + "\n" +
+                        "## while compound ##\n" + n_compound.ToNodeTreeString());
+#endif
+
+            // loop is of a constant number of iterations accross the dataset
+            n_while.IsTerminatedConstantly = (constant_condition && constant_initializer && constant_iteration);
+            n_while.IsTerminatedConditionally = !n_while.IsTerminatedConstantly;
         }
 
         node transform_merge_compound(IBlastCompilationData data, node n)

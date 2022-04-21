@@ -1766,6 +1766,7 @@ namespace NSS.Blast
                     case blast_operation.begin: sb.Append("("); break;
                     case blast_operation.end: sb.Append(")"); break;
 
+                    case blast_operation.cjz: sb.Append("cjz "); break;
                     case blast_operation.jz: sb.Append("jz "); break;
                     case blast_operation.jnz: sb.Append("jnz "); break;
 
@@ -1791,7 +1792,6 @@ namespace NSS.Blast
                     case blast_operation.abs: sb.Append("abs "); break; 
                     case blast_operation.select: sb.Append("select "); break; 
                     case blast_operation.random: sb.Append("random "); break;
-                    case blast_operation.seed: sb.Append("seed "); break;
                     case blast_operation.max: sb.Append("max "); break;
                     case blast_operation.min: sb.Append("min "); break; 
                     case blast_operation.maxa: sb.Append("maxa "); break;
@@ -1849,7 +1849,6 @@ namespace NSS.Blast
                     case blast_operation.jnz_long: sb.Append("jnz_long "); asnumber = 2; break;
 
                     case blast_operation.zero: sb.Append("zero "); asnumber = 0; break;
-                    case blast_operation.send: sb.Append("send "); break;
                     case blast_operation.size: sb.Append("size "); break;
 
                     case blast_operation.cdata:
@@ -1903,6 +1902,8 @@ namespace NSS.Blast
                             case extended_blast_operation.floorlog2:
                             case extended_blast_operation.ceilpow2:
                             case extended_blast_operation.fmod: sb.Append("fmod "); break;
+                            case extended_blast_operation.send: sb.Append("send "); break;
+                            case extended_blast_operation.seed: sb.Append("seed "); break;
                             case extended_blast_operation.reinterpret_float: 
                             case extended_blast_operation.reinterpret_bool32:
                             case extended_blast_operation.ror:
@@ -1911,6 +1912,7 @@ namespace NSS.Blast
                             case extended_blast_operation.shr:
                             case extended_blast_operation.count_bits:
                             case extended_blast_operation.reverse_bits:
+
 
 
                                 sb.Append($"{ex} ");

@@ -6,6 +6,9 @@
 //############################################################################################################################
 
 using NSS.Blast.Interpretor;
+#if STANDALONE_VSBUILD
+    using NSS.Blast.Standalone;
+#endif 
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -630,10 +633,9 @@ namespace NSS.Blast.Compiler
                 {
                     stack[i] = math.INFINITY;
                 }
+
                 if (!is_ssmd_packaged)
                 {
-
-
                     // set package 
                     Blast.blaster.SetPackage(package, pcode, pdata, pmetadata, initial_stack_offset);
                     Blast.blaster.SetValidationMode(validation_run);
@@ -642,6 +644,9 @@ namespace NSS.Blast.Compiler
                     int exitcode = Blast.blaster.Execute(blast);
                     if (exitcode != (int)BlastError.success) return exitcode;
 
+                    // determine used stack size from nr of stack slots not INF anymore 
+                    max_stack_size = 0;
+                    while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
                 }
                 else
                 {
@@ -657,17 +662,27 @@ namespace NSS.Blast.Compiler
                     if (exitcode != (int)BlastError.success) return exitcode;
 
                     // in ssmd we have a counter holding max reached
-                //    max_stack_size = (byte)math.min(255, Blast.ssmd_blaster.MaxStackSizeReachedDuringValidation);
+                    // determine used stack size from nr of stack slots not INF anymore 
+                    max_stack_size = 0;
+                    while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
 
-                 //   max_stack_size = 0;
-                //    while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
+                    int max_reached =  Blast.ssmd_blaster.MaxStackSizeReachedDuringValidation;
+                    if (max_stack_size != max_reached)
+                    {
+#if DEVELOPMENT_BUILD && TRACE
+                        Debug.Log($"Blast.Intermediate: packagemode = {package.PackageMode}, stacksize estimate = {max_stack_size}, initial offset = {initial_stack_offset}");
+#endif
+                        return (int)BlastError.stack_size_determination_error;                         
+                    }
 
+                    //   max_stack_size = 0;
+                    //    while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
                 }
 
+#if STANDALONE_VSBUILD && TRACE
+                Debug.Log($"Blast.Intermediate: packagemode = {package.PackageMode}, stacksize estimate = {max_stack_size}, initial offset = {initial_stack_offset}");
+#endif
 
-                // determine used stack size from nr of stack slots not INF anymore 
-                max_stack_size = 0;
-                while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
             }
 
             // if we ran out of stack we should return that error 

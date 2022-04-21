@@ -175,6 +175,11 @@ namespace NSS.Blast
         /// - TODO, V2/3/4?? could make this more strict
         /// </summary>
         public byte AcceptsVectorSize;
+                                               
+        /// <summary>
+        /// id of the delegate profile 
+        /// </summary>
+        public byte FunctionDelegateId;
 
         /// <summary>
         /// Flags: 
@@ -338,6 +343,7 @@ namespace NSS.Blast
         }
     }
 
+
     namespace Compiler
     {
         /// <summary>
@@ -401,7 +407,12 @@ namespace NSS.Blast
         /// <summary>
         /// managed delegate to any external function 
         /// </summary>
-        public Delegate FunctionDelegate; 
+        public Delegate FunctionDelegate;
+
+        /// <summary>
+        /// points to the external function profile
+        /// </summary>
+        public byte FunctionDelegateId; 
 
         /// <summary>
         /// the identifier to match the function to = function name
@@ -443,34 +454,6 @@ namespace NSS.Blast
     }
 
 
-#pragma warning disable CS1591
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f0(IntPtr engine, IntPtr data, IntPtr caller);
-
-    // externals, float params, up until 16
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1(IntPtr engine, IntPtr data, IntPtr caller, float a);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1111_1(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1111_11(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1111_111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1111_1111_1111_1111(IntPtr engine, IntPtr data, IntPtr caller, float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o, float p);
-
-    // short external defines 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f0_s();
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f1_s(float a);
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate float BlastDelegate_f11_s(float a, float b);
-
-#pragma warning restore CS1591
 
 
     /// <summary>
@@ -502,10 +485,125 @@ namespace NSS.Blast
         }
     }
 
+
+
+
+
+    /// <summary>
+    /// provides a link between a parameter profile and an external function 
+    /// so we can get all information needed while in native code
+    /// </summary>
+    public struct ExternalFunctionProfile
+    {
+        public byte DelegateType;
+
+        public byte ParameterCount;
+        public BlastVectorSizes Parameter1;
+        public BlastVectorSizes Parameter2;
+        public BlastVectorSizes Parameter3;
+        public BlastVectorSizes Parameter4;
+        public BlastVectorSizes Parameter5;
+        public BlastVectorSizes Parameter6;
+        public BlastVectorSizes Parameter7;
+        public BlastVectorSizes Parameter8;
+
+        public bool ReturnsValue => ReturnParameter != BlastVectorSizes.none;
+        public BlastVectorSizes ReturnParameter;
+
+        public bool IsShortDefinition;
+        public bool IsSSMD;
+
+        public BlastVectorSizes ParameterType(int index)
+        {
+            switch(index)
+            {
+                case 0: return Parameter1;
+                case 1: return Parameter2;
+                case 2: return Parameter3;
+                case 3: return Parameter4;
+                case 4: return Parameter5;
+                case 5: return Parameter6;
+                case 6: return Parameter7;
+                case 7: return Parameter8;
+                default: return BlastVectorSizes.none; 
+            }
+        }
+            
+    }
+
+    public static class BlastVectorSizesExtensions
+    {
+        public static string FullTypeName(this BlastVectorSizes vsize)
+        {
+            switch (vsize)
+            {
+                default:
+                case BlastVectorSizes.none: return "void";
+                case BlastVectorSizes.float1: return "float";
+                case BlastVectorSizes.float2: return "float2";
+                case BlastVectorSizes.float3: return "float3";
+                case BlastVectorSizes.float4: return "float4";
+                case BlastVectorSizes.bool32: return "Bool32";
+                case BlastVectorSizes.id1: return "int";
+                case BlastVectorSizes.id2: return "int2";
+                case BlastVectorSizes.id3: return "int3";
+                case BlastVectorSizes.id4: return "int4";
+                case BlastVectorSizes.id64: return "long";
+                case BlastVectorSizes.half2: return "half2";
+                case BlastVectorSizes.half4: return "half4";
+                case BlastVectorSizes.ptr: return "void*";
+            }
+        }
+        public static string ShortTypeName(this BlastVectorSizes vsize)
+        {
+            switch (vsize)
+            {
+                default:
+                case BlastVectorSizes.none: return "";
+                case BlastVectorSizes.float1: return "f1";
+                case BlastVectorSizes.float2: return "f2";
+                case BlastVectorSizes.float3: return "f3";
+                case BlastVectorSizes.float4: return "f4";
+                case BlastVectorSizes.bool32: return "b32";
+                case BlastVectorSizes.id1: return "i1";
+                case BlastVectorSizes.id2: return "i2";
+                case BlastVectorSizes.id3: return "i3";
+                case BlastVectorSizes.id4: return "i4";
+                case BlastVectorSizes.id64: return "l1";
+                case BlastVectorSizes.half2: return "h2";
+                case BlastVectorSizes.half4: return "h4";
+                case BlastVectorSizes.ptr: return "";
+            }
+        }
+        public static byte VectorSize(this BlastVectorSizes vsize)
+        {
+            switch (vsize)
+            {
+                default:
+                case BlastVectorSizes.none: return 0;
+                case BlastVectorSizes.float1: return 1;
+                case BlastVectorSizes.float2: return 2;
+                case BlastVectorSizes.float3: return 3;
+                case BlastVectorSizes.float4: return 4;
+                case BlastVectorSizes.bool32: return 1;
+                case BlastVectorSizes.id1: return 1;
+                case BlastVectorSizes.id2: return 2;
+                case BlastVectorSizes.id3: return 3;
+                case BlastVectorSizes.id4: return 4;
+                case BlastVectorSizes.id64: return 1;
+                case BlastVectorSizes.half2: return 2;
+                case BlastVectorSizes.half4: return 4;
+                case BlastVectorSizes.ptr: return 1;
+            }
+        }
+    }
+
+
+
     /// <summary>
     /// For now, just a collection of function pointers that holds a native list with function information
     /// </summary>
-    public abstract class BlastScriptAPI : IDisposable
+    public abstract partial class BlastScriptAPI : IDisposable
     {
         /// <summary>
         /// name of the api
@@ -521,6 +619,11 @@ namespace NSS.Blast
         /// managed information, includes a copy of the native info
         /// </summary>
         public List<BlastScriptFunctionInfo> FunctionInfo;
+
+        /// <summary>
+        /// list of the possible profiles
+        /// </summary>
+        public List<ExternalFunctionProfile> ExternalFunctionProfiles;
 
         /// <summary>
         /// allocated to be used for any data comming from this api
@@ -565,14 +668,14 @@ namespace NSS.Blast
             Assert.IsFalse(IsInitialized, "BlastScriptAPI: already initialized");
 
             // enum all methods marked as blast external and register them with this api
-            if (enumerate_attributes)
+            /* if (enumerate_attributes)
             {
                 BlastError res = EnumerateFunctionAttributes();
                 if(res != BlastError.success)
                 {
                     Debug.LogError("BlastScriptAPI: could not register all functions marked as a blastfunction through attributes"); 
                 }
-            }
+            } */
 
             // create native information
             if (FunctionInfo.Count > 0)
@@ -742,7 +845,7 @@ namespace NSS.Blast
         /// <param name="short_definition">the function is defined without enviroment and engine pointers </param>
         /// <param name="encoding">parameter encoding type, this is hardcoded into the interpretors implementation but should be configured for the compiler, defaults to 62</param>
         /// <returns>returns a unique (within the blast instance) function id</returns>
-        internal int RegisterFunction(string name, IntPtr nativefunction, int parameter_count, int accept_vector_size, int return_vector_size, bool short_definition, BlastParameterEncoding encoding = BlastParameterEncoding.Encode62, BlastVectorSizes fixed_output_type = BlastVectorSizes.none)
+        internal int RegisterFunction(string name, EFDelegateType delegate_type, IntPtr nativefunction, int parameter_count, int accept_vector_size, int return_vector_size, bool short_definition, BlastParameterEncoding encoding = BlastParameterEncoding.Encode62, BlastVectorSizes fixed_output_type = BlastVectorSizes.none)
         {
             Assert.IsTrue(!string.IsNullOrWhiteSpace(name));
             Assert.IsTrue(name.Length < Blast.MaximumFunctionNameLength, $"functionname '{name}' to long");
@@ -751,6 +854,8 @@ namespace NSS.Blast
 
             BlastScriptFunctionInfo info = new BlastScriptFunctionInfo();
             info.Function.FunctionId = FunctionInfo.Count;
+            info.Function.FunctionDelegateId = (byte)delegate_type;
+            info.FunctionDelegateId = (byte)delegate_type;
             FunctionInfo.Add(info);
 
             unsafe
@@ -883,9 +988,9 @@ namespace NSS.Blast
         /// <param name="returns">the variable type returned</param>
         /// <param name="parameters">a list of parameter names, used for visualization only</param>
         /// <returns>an unique id for this function</returns>
-        internal int RegisterFunction(string name, BlastVariableDataType returns, string[] parameters)
+        internal int RegisterFunction(EFDelegateType delegate_type, string name, BlastVariableDataType returns, string[] parameters)
         {
-            return RegisterFunction(IntPtr.Zero, name, returns, parameters);
+            return RegisterFunction(delegate_type, IntPtr.Zero, name, returns, parameters);
         }
 
 
@@ -897,7 +1002,7 @@ namespace NSS.Blast
         /// <param name="returns">the returned datatype</param>
         /// <param name="parameters">array of parameter names, used for visualizations only</param>
         /// <returns>an unique id for this function, negative errorcodes on error</returns>
-        internal int RegisterFunction(IntPtr fp, string name, BlastVariableDataType returns, string[] parameters)
+        internal int RegisterFunction(EFDelegateType delegate_type, IntPtr fp, string name, BlastVariableDataType returns, string[] parameters)
         {
             if (IsInitialized) Destroy();
 
@@ -918,6 +1023,8 @@ namespace NSS.Blast
             BlastScriptFunctionInfo finfo = new BlastScriptFunctionInfo();
             finfo.Function.FunctionId = id;
             finfo.Function.NativeFunctionPointer = fp;
+            finfo.Function.FunctionDelegateId = (byte)delegate_type;
+            finfo.FunctionDelegateId = (byte)delegate_type;
             finfo.Function.Flags = BlastScriptFunctionFlag.NativeFunction;
             finfo.Function.ScriptOp = blast_operation.ex_op;
             finfo.Function.ExtendedScriptOp = extended_blast_operation.call;
@@ -1102,6 +1209,7 @@ namespace NSS.Blast
         /// <summary>
         /// enumerate and register all static methods marked with the [BlastFunctionAttribute] as external functions
         /// </summary>
+        /*
         protected BlastError EnumerateFunctionAttributes()
         {
             bool has_error = false; 
@@ -1196,34 +1304,46 @@ namespace NSS.Blast
             if (has_error) return BlastError.error_enumerate_attributed_external_functions;
             else return BlastError.success;
         }
+          */
+        #endregion
+
+        #region External Function Profiles 
+
+        public ExternalFunctionProfile CreateExternalProfile(BlastVectorSizes returns, bool is_ssmd, bool is_short, params BlastVectorSizes[] parameters)
+        {
+            if (ExternalFunctionProfiles == null)
+            {
+                ExternalFunctionProfiles = new List<ExternalFunctionProfile>();
+            }
+
+            Assert.IsTrue(ExternalFunctionProfiles.Count < 255, "too many external function profiles defined"); 
+
+            ExternalFunctionProfile p = default;
+            p.DelegateType = (byte)ExternalFunctionProfiles.Count;
+            p.ReturnParameter = returns;
+            p.IsShortDefinition = is_short;
+            p.IsSSMD = is_ssmd;
+
+            int c = parameters != null ? parameters.Length : 0;
+
+            p.ParameterCount = (byte)c;
+            if (c > 0) p.Parameter1 = parameters[0];
+            if (c > 1) p.Parameter2 = parameters[1];
+            if (c > 2) p.Parameter3 = parameters[2];
+            if (c > 3) p.Parameter4 = parameters[3];
+            if (c > 4) p.Parameter5 = parameters[4];
+            if (c > 5) p.Parameter6 = parameters[5];
+            if (c > 6) p.Parameter7 = parameters[6];
+            if (c > 7) p.Parameter8 = parameters[7];
+
+            ExternalFunctionProfiles.Add(p);
+            return p;
+        }
 
         #endregion 
 
+
         #region External Functions (public registrations) 
-#pragma warning disable CS1591
-        public int Register(BlastDelegate_f0 function, string name = null) { return RegisterFunction(function, name, 0); }
-        public int Register(BlastDelegate_f1 function, string name = null) { return RegisterFunction(function, name, 1); }
-        public int Register(BlastDelegate_f11 function, string name = null) { return RegisterFunction(function, name, 2); }
-        public int Register(BlastDelegate_f111 function, string name = null) { return RegisterFunction(function, name, 3); }
-        public int Register(BlastDelegate_f1111 function, string name = null) { return RegisterFunction(function, name, 4); }
-        public int Register(BlastDelegate_f1111_1 function, string name = null) { return RegisterFunction(function, name, 5); }
-        public int Register(BlastDelegate_f1111_11 function, string name = null) { return RegisterFunction(function, name, 6); }
-        public int Register(BlastDelegate_f1111_111 function, string name = null) { return RegisterFunction(function, name, 7); }
-        public int Register(BlastDelegate_f1111_1111 function, string name = null) { return RegisterFunction(function, name, 8); }
-        public int Register(BlastDelegate_f1111_1111_1 function, string name = null) { return RegisterFunction(function, name, 9); }
-        public int Register(BlastDelegate_f1111_1111_11 function, string name = null) { return RegisterFunction(function, name, 10); }
-        public int Register(BlastDelegate_f1111_1111_111 function, string name = null) { return RegisterFunction(function, name, 11); }
-        public int Register(BlastDelegate_f1111_1111_1111 function, string name = null) { return RegisterFunction(function, name, 12); }
-        public int Register(BlastDelegate_f1111_1111_1111_1 function, string name = null) { return RegisterFunction(function, name, 13); }
-        public int Register(BlastDelegate_f1111_1111_1111_11 function, string name = null) { return RegisterFunction(function, name, 14); }
-        public int Register(BlastDelegate_f1111_1111_1111_111 function, string name = null) { return RegisterFunction(function, name, 15); }
-        public int Register(BlastDelegate_f1111_1111_1111_1111 function, string name = null) { return RegisterFunction(function, name, 16); }
-
-        public int Register(BlastDelegate_f0_s function, string name = null) { return RegisterFunction(function, name, 0, true); }
-        public int Register(BlastDelegate_f1_s function, string name = null) { return RegisterFunction(function, name, 1, true); }
-        public int Register(BlastDelegate_f11_s function, string name = null) { return RegisterFunction(function, name, 2, true); }
-
-#pragma warning restore CS1591
 
 
         /// <summary>
@@ -1235,7 +1355,7 @@ namespace NSS.Blast
         /// <param name="short_definition">short define: without engine and environment pointers</param>
         /// <param name="is_short"></param>
         /// <returns>a positive function id, or if negative a blasterror </returns>
-        internal int RegisterFunction<T>(T function_delegate, string name, int parameter_count, bool short_definition = false) where T:class 
+        internal int RegisterFunction<T>(T function_delegate, string name, int parameter_count, bool short_definition = false, byte delegateid = 0) where T:class 
         {
             Assert.IsNotNull(function_delegate);
 
@@ -1244,9 +1364,9 @@ namespace NSS.Blast
                 name = (function_delegate as Delegate).Method.Name; 
             }
 
-            int function_id = RegisterFunction(name, IntPtr.Zero, parameter_count, 1, 1, short_definition);
+            int function_id = RegisterFunction(name, (EFDelegateType) delegateid, IntPtr.Zero, parameter_count, 1, 1, short_definition);
       
-            BlastError res = UpdateFunctionDelegate(function_id, (function_delegate as Delegate));
+            BlastError res = UpdateFunctionDelegate(function_id, delegateid, (function_delegate as Delegate));
             if(res != BlastError.success)
             {
 #if DEVELOPMENT_BUILD || TRACE
@@ -1290,7 +1410,7 @@ namespace NSS.Blast
             Assert.IsNotNull(function_delegate);
             Assert.IsTrue(function_id > 0);
             
-            BlastError res = UpdateFunctionDelegate(function_id, function_delegate as Delegate);
+            BlastError res = UpdateFunctionDelegate(function_id, 0, function_delegate as Delegate);
             if (res != BlastError.success) return res;
 
 #if !STANDALONE_VSBUILD
@@ -1308,7 +1428,7 @@ namespace NSS.Blast
         /// <param name="id"></param>
         /// <param name="function_delegate"></param>
         /// <returns></returns>
-        internal BlastError UpdateFunctionDelegate(int id, Delegate function_delegate)
+        internal BlastError UpdateFunctionDelegate(int id, byte delegate_id, Delegate function_delegate)
         {
             Assert.IsNotNull(FunctionInfo);
 
@@ -1331,6 +1451,7 @@ namespace NSS.Blast
 #endif 
 
             info.FunctionDelegate = function_delegate;
+            info.FunctionDelegateId = delegate_id; 
             return BlastError.success; 
         }
 
@@ -1382,17 +1503,6 @@ namespace NSS.Blast
             return BlastError.success;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="del_function"></param>
-        /// <param name="name"></param>
-        /// <returns></returns>
-     //   public int Register(Func<IntPtr, IntPtr, IntPtr, float, float, float> del_function, string name)
-     //   {
-    //        return Register(del_function, name);
-     //   }
-
 
 
         #endregion
@@ -1428,7 +1538,7 @@ namespace NSS.Blast
             RegisterFunction(ReservedBlastScriptFunctionIds.Yield, "yield", 0, 1, 0, 0, blast_operation.yield);
             RegisterFunction(ReservedBlastScriptFunctionIds.Input, "input", 3, 3, 0, 0, blast_operation.nop);
             RegisterFunction(ReservedBlastScriptFunctionIds.Output, "output", 3, 3, 0, 0, blast_operation.nop);
-            RegisterFunction(ReservedBlastScriptFunctionIds.Seed, "seed", 1, 1, 0, 0, blast_operation.seed);
+            RegisterFunction(ReservedBlastScriptFunctionIds.Seed, "seed", 1, 1, 0, 0, extended_blast_operation.seed);
             RegisterFunction(ReservedBlastScriptFunctionIds.Debug, "debug", 1, 1, 0, 0, extended_blast_operation.debug);
             RegisterFunction(ReservedBlastScriptFunctionIds.DebugStack, "debugstack", 0, 0, 0, 0, extended_blast_operation.debugstack);
             RegisterFunction(ReservedBlastScriptFunctionIds.Validate, "validate", 2, 2, 0, 0, extended_blast_operation.validate); 
@@ -1525,8 +1635,70 @@ namespace NSS.Blast
             RegisterFunction("reinterpret_bool32", 1, 1, 1, 0, extended_blast_operation.reinterpret_bool32, BlastParameterEncoding.Encode62, BlastVectorSizes.bool32);
             RegisterFunction("reinterpret_float32", 1, 1, 1, 0, extended_blast_operation.reinterpret_float, BlastParameterEncoding.Encode62, BlastVectorSizes.float1);
 
-            RegisterFunction("send", 1, 1, 0, 0, blast_operation.send, BlastParameterEncoding.Encode44, BlastVectorSizes.none);
+            RegisterFunction("send", 1, 1, 0, 0, extended_blast_operation.send, BlastParameterEncoding.Encode44, BlastVectorSizes.none);
             RegisterFunction("size", 1, 1, 0, 1, blast_operation.size);
+
+
+            // full parameterset default external profiles 
+            CreateExternalProfile(BlastVectorSizes.none,   false, false);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float1);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float1, BlastVectorSizes.float1);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float1, BlastVectorSizes.float1, BlastVectorSizes.float1);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float2, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float4, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float4, BlastVectorSizes.float4, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.float2, false, false, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float3, false, false, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float4, false, false, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.none,   false, false, BlastVectorSizes.bool32);
+            CreateExternalProfile(BlastVectorSizes.bool32, false, false, BlastVectorSizes.bool32);
+
+            // short parameterset default external profiles 
+            CreateExternalProfile(BlastVectorSizes.none,   false, true);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1, BlastVectorSizes.float1);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1, BlastVectorSizes.float1, BlastVectorSizes.float1);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float4, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float4, BlastVectorSizes.float4, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.float2, false, true, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float3, false, true, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float4, false, true, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.none,   false, true, BlastVectorSizes.bool32);
+            CreateExternalProfile(BlastVectorSizes.bool32, false, true, BlastVectorSizes.bool32);
+
+            // default profiles for ssmd interpretor 
+            /*   
+               CreateExternalProfile(BlastVectorSizes.none,   true, false);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float1);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float1, BlastVectorSizes.float1);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float1, BlastVectorSizes.float1, BlastVectorSizes.float1);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float2);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float2, BlastVectorSizes.float2);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float3);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float3, BlastVectorSizes.float3);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float4);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float4, BlastVectorSizes.float4);
+               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float4, BlastVectorSizes.float4, BlastVectorSizes.float4);
+               CreateExternalProfile(BlastVectorSizes.float2, true, true, BlastVectorSizes.float2);
+               CreateExternalProfile(BlastVectorSizes.float3, true, true, BlastVectorSizes.float3);
+               CreateExternalProfile(BlastVectorSizes.float4, true, true, BlastVectorSizes.float4);
+               CreateExternalProfile(BlastVectorSizes.none,   true, false, BlastVectorSizes.bool32);
+               CreateExternalProfile(BlastVectorSizes.bool32, true, false, BlastVectorSizes.bool32);*/
 
             return this;
         }

@@ -22,10 +22,29 @@ namespace NSS.Blast.SSMD
         // 
 
         #region move_indexed_fx
+
+
+        /// <summary>
+        /// target[][].x = source[][].x
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_f1(in DATAREC target, in DATAREC source, int ssmd_datacount)
+        {
+            move_indexed_f1(target.data, target.row_size, target.is_aligned, target.index, source.data, source.row_size, source.is_aligned, source.index, ssmd_datacount);
+        }
+
         /// <summary>
         /// data[][].x = data[][].x
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_f1(in DATAREC target, [NoAlias] void** source_indexbuffer, int source_index_rowsize, bool source_is_aligned, int source_index, int ssmd_datacount)
+        {
+            move_indexed_f1(target.data, target.row_size, target.is_aligned, target.index, source_indexbuffer, source_index_rowsize, source_is_aligned, source_index, ssmd_datacount); 
+        }
 
+        /// <summary>
+        /// data[][].x = data[][].x
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_indexed_f1([NoAlias] void** destination_indexbuffer, int destination_index_rowsize, bool destination_is_aligned, int destination_index, [NoAlias] void** source_indexbuffer, int source_index_rowsize, bool source_is_aligned, int source_index, int ssmd_datacount)
         {

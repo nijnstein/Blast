@@ -17,6 +17,7 @@ using UnityEngine.Assertions;
 using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using NSS.Blast.Interpretor;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -211,6 +212,7 @@ namespace NSS.Blast.Compiler.Stage
             // defaults? 
             float4 variable_default = default;
             byte[] constant_data = null;
+            CDATAEncodingType cdata_encoding = CDATAEncodingType.None; 
 
             if (a.Length > 3)
             {
@@ -269,7 +271,7 @@ namespace NSS.Blast.Compiler.Stage
                             }
 
                             // all data after a[2] is part of the datastream 
-                            constant_data = ReadCDATAFromMapping(data, comment, a);
+                            constant_data = ReadCDATAFromMapping(data, comment, a, out cdata_encoding);
                             if (constant_data == null)
                             {
                                 // it should already have logged why 
@@ -333,6 +335,7 @@ namespace NSS.Blast.Compiler.Stage
             if (datatype == BlastVariableDataType.CData)
             {
                 v.ConstantData = constant_data;
+                v.ConstantDataEncoding = cdata_encoding;
                 v.VectorSize = 0;
                 v.IsConstant = false; // this is a constant data object added by input and thus resides in the datasegment
             }
@@ -353,36 +356,73 @@ namespace NSS.Blast.Compiler.Stage
         /// <summary>
         /// read cdata data from mapping
         /// </summary>
-        private static byte[] ReadCDATAFromMapping(IBlastCompilationData data, string comment, string[] a)
+        private static byte[] ReadCDATAFromMapping(IBlastCompilationData data, string comment, string[] a, out CDATAEncodingType cdata_encoding)
         {
             Assert.IsNotNull(data);
             Assert.IsTrue(a != null && a.Length > 3);
+
+
+            int current_i = 3;
+            bool is_typed = false;
+
+            // first check if this cdata object is typed
+            cdata_encoding = BlastInterpretor.GetCDATAEncodingType(a[current_i]);
+            if (cdata_encoding != CDATAEncodingType.None)
+            {
+                is_typed = true;
+                current_i++; 
+            }
+
 
             // text: '2342sdfggd35'
             // float list: 235.4 234.3 2345.22 344.44 354234.23
             // bool32 list: 1111.>32x.111111    filled with 0;s until nxt byte
 
             // classify the first value, anything in a is at least 1 char long
-            char ch = a[3][0];
+            char ch = a[current_i][0];
 
 
+            //#####################################################################################################
             // string: starts with opener: ' or " 
             // note: can span multiple elements if there is a space 
             //       we could account for that while parsing out the comment
             //       but this is cheaper to do considering its probably rare to be used 
             if (ch == '\'' || ch == '"')
             {
-                return ReadCDATAString(data, comment, a, 3);
+                // typing is out of the window, we look at string data as ascii unsigned bytes
+                return ReadCDATAString(data, comment, a, current_i);
             }
 
+            //#####################################################################################################
             // binary: allow only 1 single data element extra
             // binary: single bitstream of 1;s and 0s >= 16 bits 
             // binary: single bitstream starting with b
-            if (ch == 'b' || ((ch == '1' || ch == '0') && a[3].Length >= 16))
+            if (ch == 'b' || ((ch == '1' || ch == '0') && a[current_i].Length >= 16))
             {
-                if (a.Length == 4 || a[4].StartsWith("#"))
+                if (a.Length == (current_i + 1) || a[current_i + 1].StartsWith("#"))
                 {
-                    return ReadCDATABinary(data, comment, a[3]);
+                    if (is_typed)
+                    {
+                        if (cdata_encoding != CDATAEncodingType.bool32)
+                        {
+                            // keep it as is.. user might init an integer with a byte pattern who knows, as long as its done explicetly
+
+                            // - verify its 32 bits long, we must be able to store the bool 
+                            int bytesize = BlastInterpretor.GetCDATAEncodingByteSize(cdata_encoding);
+                            if (bytesize != 4)
+                            {
+                                data.LogError($"blast.tokenizer: explicetly typed cdata object does not have the correct backing bitsize (32bits) to store the bool32 value.");
+                                return null; 
+                            }
+                        }
+                    }
+                    else
+                    {
+                        cdata_encoding = CDATAEncodingType.bool32; 
+                    }
+
+
+                    return ReadCDATABinary(data, comment, a[current_i]);
                 }
                 else
                 {
@@ -391,8 +431,9 @@ namespace NSS.Blast.Compiler.Stage
                 }
             }
 
+            //#####################################################################################################
             // anything else is assumed to be a list of numerics || bool32
-            return ReadCDATAArray(data, comment, a, 3);
+            return ReadCDATAArray(data, comment, a, current_i);
         }
 
         /// <summary>

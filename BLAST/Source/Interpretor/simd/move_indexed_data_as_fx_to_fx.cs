@@ -286,6 +286,16 @@ namespace NSS.Blast.SSMD
         #region move_indexed_data_as_fx_to_fx negated    expanding from f1 
 
         /// <summary>
+        /// set a dest.x from indexed source[offset].x
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_data_as_f1_to_f1f4([NoAlias] float4* destination, in DATAREC source, int ssmd_datacount)
+        {
+            move_indexed_data_as_f1_to_f1f4(destination, source.data, source.row_size, source.is_aligned, source.index, ssmd_datacount);
+        }
+
+
+        /// <summary>
         /// set a dest.x from indexed data[offset].x
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

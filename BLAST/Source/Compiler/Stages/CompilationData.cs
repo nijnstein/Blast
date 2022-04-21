@@ -632,9 +632,12 @@ namespace NSS.Blast.Compiler
                         case blast_operation.abs: sb.Append("abs "); break;
 
                         case blast_operation.random: sb.Append("random "); break;
-                        case blast_operation.seed: sb.Append("seed "); break;
 
                         case blast_operation.yield: sb.Append("yield "); break;
+
+                        case blast_operation.cjz: sb.Append("cjz "); break;
+                        case blast_operation.cjz_long: sb.Append("cjz_long "); break;
+
                         case blast_operation.jz: sb.Append("jz "); break;
                         case blast_operation.jnz: sb.Append("jnz "); break;
                         case blast_operation.jump: sb.Append("jump "); break;
@@ -709,7 +712,6 @@ namespace NSS.Blast.Compiler
                         case blast_operation.get_bits: sb.Append("get_bits "); asnumber = 0; break;
 
                         case blast_operation.zero: sb.Append("zero "); asnumber = 0; break;
-                        case blast_operation.send: sb.Append("send "); break;
                         case blast_operation.size: sb.Append("size "); break;
 
                         case blast_operation.cdata:
@@ -777,6 +779,9 @@ namespace NSS.Blast.Compiler
 
                                 case extended_blast_operation.tzcnt: sb.Append("tzcnt "); break;
                                 case extended_blast_operation.lzcnt: sb.Append("lzcnt "); break;
+
+                                case extended_blast_operation.send: sb.Append("send "); break;
+                                case extended_blast_operation.seed: sb.Append("seed "); break;
 
                                 case extended_blast_operation.reinterpret_bool32: sb.Append("reinterpret_bool32 "); break;
                                 case extended_blast_operation.reinterpret_float: sb.Append("reinterpret_float32 "); break;

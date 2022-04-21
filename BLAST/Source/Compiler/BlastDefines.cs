@@ -172,6 +172,7 @@ namespace NSS.Blast
         CData = 5
     }
 
+
     /// <summary>
     /// when encoding xxx xxy etc:
     /// 
@@ -483,6 +484,8 @@ namespace NSS.Blast
         jump_assignfn = blast_operation.id + 4,
         jump_assignfe = blast_operation.id + 5,
         jump_assignfen = blast_operation.id + 6,
+
+        jump_ct_jz_eval = blast_operation.id + 7
     }
 
     /// <summary>
@@ -739,11 +742,6 @@ namespace NSS.Blast
         random,
 
         /// <summary>
-        /// seed the random number generator 
-        /// </summary>
-        seed,
-
-        /// <summary>
         /// get max value from operands, returns vector of same size as inputs 
         /// </summary>
         max,
@@ -900,12 +898,19 @@ namespace NSS.Blast
         /// - in ssmd packaging: compiler inlines cdata at first location of use and only after that references it 
         /// </summary>
         cdataref,
-        
-           
+
+
         /// <summary>
-        /// send data to some sink 
+        /// SSMD only, jump if zero, used in a frame-constant terminated sequence or conditional based on frame-constant data
+        /// - this will allow ssmd to jump without maintaining its state and causig disalignment in the datasegments 
         /// </summary>
-        send, 
+        cjz,
+
+        /// <summary>
+        /// SSMD only, jump if zero, used in a frame-constant terminated sequence or conditional based on frame-constant data
+        /// - this will allow ssmd to jump without maintaining its state and causig disalignment in the datasegments 
+        /// </summary>
+        cjz_long,
 
 
 
@@ -1163,6 +1168,15 @@ namespace NSS.Blast
         /// </summary>
         fmod,
 
+        /// <summary>
+        /// send all data in the element to a sink defined in blast 
+        /// </summary>
+        send,
+
+        /// <summary>
+        /// seed the random number generator 
+        /// </summary>
+        seed,
 
         // <summary>
         // snap value to its closest interval
@@ -1954,7 +1968,27 @@ namespace NSS.Blast
         /// <summary>
         /// the interpretor failed to follow a cdatareference 
         /// </summary>
-        error_failed_to_read_cdata_reference = -95
+        error_failed_to_read_cdata_reference = -95,
+        /// <summary>
+        /// compile has conflicting results about amount of stack memory used by the compiled script
+        /// </summary>
+        stack_size_determination_error = -96,
+        /// <summary>
+        /// the target of index_n is not a cdataref or vector in the datasegment 
+        /// </summary>
+        invalid_index_n_target = -97,
+        /// <summary>
+        /// the assignment attemted is not valid on a cdata reference (assigning vectors to component indices?)
+        /// </summary>
+        error_in_cdata_assignment_size = -98,
+        /// <summary>
+        /// the parameter to the current function must be a variable id 
+        /// </summary>
+        ssmd_parameter_must_be_variable = -99,
+        /// <summary>
+        /// an attempt was made to assign a vector to a component of a cdata 
+        /// </summary>
+        error_cannot_assign_vector_to_cdata_component = -100
     }
 
 }

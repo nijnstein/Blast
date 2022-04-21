@@ -927,7 +927,13 @@ namespace NSS.Blast
         /// if is_constant then this data should end up in de codesegment
         /// otherwise in a variable on the datasegment 
         /// </summary>
-        public byte[] ConstantData = null; 
+        public byte[] ConstantData = null;
+
+
+        /// <summary>
+        /// the encoding of the cdata segment described by this node if known
+        /// </summary>
+        public CDATAEncodingType ConstantDataEncoding = CDATAEncodingType.None;
 
         /// <summary>
         /// Add a reference to this variable 

@@ -495,6 +495,168 @@ namespace NSS.Blast.Compiler.Stage
 
 
         /// <summary>
+        /// 
+        ///  Analyze the contents of a cdata object and if no type is set in its definition then
+        ///  we analyze the values set and attempt to use the lowest bytesize possible for storage
+        /// 
+        /// ##### untyped cdata is stored as float32 in a byte array after tokenizing it #####
+        /// 
+        /// </summary>
+        /// <param name="data">current set of compilation data</param>
+        /// <param name="n">the current node that is classified as cdata</param>
+        /// <returns></returns>
+        unsafe static void AnalyzeCDATANode(IBlastCompilationData data, node n)
+        {
+            Assert.IsTrue(n != null && n.type == nodetype.cdata, "invalid node or not cdata");
+            Assert.IsNotNull(n.variable.ConstantData, "variable has no cdata assigned");
+
+            if (n.variable.ConstantDataEncoding == Interpretor.CDATAEncodingType.None
+                ||
+                n.variable.ConstantDataEncoding == Interpretor.CDATAEncodingType.CDATA)
+            {
+                // attempt repackaging  
+                bool all_16 = true;
+                bool all_8 = true;
+                bool u8 = true;
+                bool s8 = true; 
+
+                byte[] a = n.variable.ConstantData;
+
+                // determine smallest datatype fit for our series of numbers 
+                for (int i = 0; i < a.Length; i += 4)
+                {
+                    float fp32 = 0;
+                    byte* p = (byte*)(void*)&fp32;
+
+                    p[0] = a[i];
+                    p[1] = a[i + 1];
+                    p[2] = a[i + 2];
+                    p[3] = a[i + 3];
+
+                    all_16 = all_16 && a[i] == 0 && a[i + 1] == 0;
+                    all_8 = all_16 && a[i + 2] == 0;
+
+                    float fraction = math.abs(math.frac(fp32));
+                    fraction = math.select(fraction, 1 - fraction, fraction > 0.5); 
+                    u8 = u8 && fp32 >= 0 && fp32 <= 255 && (fraction < data.CompilerOptions.ConstantEpsilon);
+                    s8 = s8 && fp32 >= -128 && fp32 <= 127 && (fraction < data.CompilerOptions.ConstantEpsilon); 
+                }
+
+                // prefer byte over sbyte 
+                if (u8)
+                {
+                    // unsigned 8 bit integer: 0..255
+                    n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.u8_fp32;
+
+                    byte[] b = new byte[n.variable.ConstantData.Length / 4];
+                    int c = 0;
+                    for (int i = 0; i < a.Length; i += 4)
+                    {
+                        float fp32 = 0;
+                        byte* p = (byte*)(void*)&fp32;
+
+                        p[0] = a[i];
+                        p[1] = a[i + 1];
+                        p[2] = a[i + 2];
+                        p[3] = a[i + 3];
+
+
+                        b[c] = (byte)fp32; 
+                        c++;
+                    }
+                    n.variable.ConstantData = b;
+                }
+                else
+                if (s8)
+                {
+                    // signed 8 bit integer: -128 .. 127
+                    n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.s8_fp32;
+
+                    byte[] b = new byte[n.variable.ConstantData.Length / 4];
+                    int c = 0;
+                    for (int i = 0; i < a.Length; i += 4)
+                    {
+                        float fp32 = 0;
+                        byte* p = (byte*)(void*)&fp32;
+
+                        p[0] = a[i];
+                        p[1] = a[i + 1];
+                        p[2] = a[i + 2];
+                        p[3] = a[i + 3];
+
+                        sbyte sb = (sbyte)fp32;
+
+                        b[c] = ((byte*)(void*)&sb)[0];
+                        c++;
+                    }
+                    n.variable.ConstantData = b;
+                }
+                else
+                if (all_8)
+                {
+                    n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.fp8_fp32;
+
+                    byte[] b = new byte[n.variable.ConstantData.Length / 4];
+                    int c = 0;
+                    for (int i = 3; i < a.Length; i++)
+                    {
+                        b[c] = a[i]; c++;
+                    }
+                    n.variable.ConstantData = b;
+                }
+                else
+                if (all_16)
+                {
+                    n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.fp16_fp32;
+
+                    byte[] b = new byte[n.variable.ConstantData.Length / 2];
+                    int c = 0;
+                    for (int i = 0; i < a.Length; i += 2)
+                    {
+                        b[c] = a[i + 2]; c++;
+                        b[c] = a[i + 3]; c++;
+                    }
+                    n.variable.ConstantData = b;
+                }
+            }
+        }
+
+
+
+        /// <summary>
+        /// check if the while loop is constant looped (looped with a condition thats constant in repect to iterator) 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="n"></param>
+        static void AnalyzeWhileForSSMDConstantInteration(IBlastCompilationData data, node n)
+        {
+            Assert.IsNotNull(n);
+
+            // 
+
+            //
+            // we need to know if the condition is constant in respect to the iterator
+            //
+            //
+
+            // during transform life is easier when the while is a for loop, but doing this check only there would eliminate while loops
+            // for ssmd-exectution
+
+            // a simple constant check is done in the for-transform for for loops, so we might skip additional work 
+            if (n.IsTerminatedConstantly) return;
+            if (n.IsTerminatedConditionally) return;
+
+            
+            //
+            // get all elements of the while:   initializer, condition, iterator and the loop itself 
+            //
+
+
+        }
+
+
+
+        /// <summary>
         /// analyze a node and its children, can be run in parallel on different node roots
         /// </summary>
         /// <param name="n"></param>
@@ -504,6 +666,20 @@ namespace NSS.Blast.Compiler.Stage
             {
                 switch (n.type)
                 {
+                    case nodetype.cdata:
+                        {
+                            AnalyzeCDATANode(data, n);                                                          
+                        }
+                        return;
+
+                    case nodetype.whileloop:
+                        {
+                            AnalyzeWhileForSSMDConstantInteration(data, n);
+
+                            //check for nested stuf 
+                            goto default;
+                        }
+
                     case nodetype.assignment:
                         if (n.children.Count > 0)
                         {

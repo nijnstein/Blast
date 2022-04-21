@@ -161,7 +161,7 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// datatype is by default always a numeric unless set otherwise 
         /// </summary>
-        public BlastVariableDataType datatype = BlastVariableDataType.Numeric; 
+        public BlastVariableDataType datatype = BlastVariableDataType.Numeric;
 
         /// <summary>
         /// children of node 
@@ -192,6 +192,16 @@ namespace NSS.Blast.Compiler
         /// true if the node represents a constant value 
         /// </summary>
         public bool is_constant = false;
+
+        /// <summary>
+        /// if known: true if this a loop that has constant initialization and termination sequences resulting in fixed sized loops for a single set of constant|cdata input
+        /// </summary>
+        public bool IsTerminatedConstantly = false;
+
+        /// <summary>
+        /// if known: true if this a loop conditionally terminated, not constant
+        /// </summary>
+        public bool IsTerminatedConditionally = false; 
 
         /// <summary>
         /// the vector size 
@@ -237,7 +247,7 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// true if this node represents constant cdata to be compiled into the code stream 
         /// </summary>
-        public bool IsCData => type == nodetype.cdata; 
+        public bool IsCData => type == nodetype.cdata;
 
         /// <summary>
         /// true if the function maps to a stack operation: push, pop etc. 
@@ -358,10 +368,10 @@ namespace NSS.Blast.Compiler
         }
 
 
-            /// <summary>
-            /// get the total number of nodes in the tree as seen from current node
-            /// </summary>
-            public int CountNodes()
+        /// <summary>
+        /// get the total number of nodes in the tree as seen from current node
+        /// </summary>
+        public int CountNodes()
         {
             return CountChildNodes(this);
         }
@@ -486,7 +496,7 @@ namespace NSS.Blast.Compiler
         /// true if this node is an indexer function 
         /// </summary>
         /// <returns></returns>
-        public bool IsIndexFunction => IsFunction && function.IsIndexFunction; 
+        public bool IsIndexFunction => IsFunction && function.IsIndexFunction;
 
         /// <summary>
         /// true if the is a negation of an identifier
@@ -495,7 +505,7 @@ namespace NSS.Blast.Compiler
         /// <returns></returns>
         public static bool IsNegationCompound(node child)
         {
-            return child == null 
+            return child == null
                 && child.ChildCount == 2
                 && child.children[0].token == BlastScriptToken.Substract
                 && child.children[1].token == BlastScriptToken.Identifier;
@@ -517,7 +527,9 @@ namespace NSS.Blast.Compiler
                 {
                 }
                 else
-                { return false; }
+                {
+                    return false;
+                }
 
             }
 
@@ -807,7 +819,7 @@ namespace NSS.Blast.Compiler
                 case nodetype.function: return $"{sconstant}{svector}function {function.GetFunctionName()}";
                 case nodetype.operation: return $"{sconstant}{svector}operation {token}";
                 case nodetype.parameter:
-                    if(variable != null && variable.IsCData)
+                    if (variable != null && variable.IsCData)
                         return $"{sconstant} CDATA {identifier}";
                     else
                         return $"{sconstant}{svector}parameter {identifier}";
@@ -832,7 +844,7 @@ namespace NSS.Blast.Compiler
                         return $"constant cdata {variable.Name}[{variable.ConstantData.Length}]";
                     else
                         return "constat cdata";
-                    
+
                 default: return base.ToString();
             }
         }
@@ -954,7 +966,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public int GetFunctionResultVectorSize()
         {
-            return node.GetFunctionResultVectorSize(this); 
+            return node.GetFunctionResultVectorSize(this);
         }
 
         /// <summary>
@@ -989,7 +1001,7 @@ namespace NSS.Blast.Compiler
         /// <param name="node"></param>
         public static int GetNegatedCompoundVectorSize(node node)
         {
-            Assert.IsNotNull(node); 
+            Assert.IsNotNull(node);
             Assert.IsTrue(IsCompoundWithSingleNegationOfValue(node));
 
             node v = node.LastChild;
@@ -1015,13 +1027,13 @@ namespace NSS.Blast.Compiler
             }
             else
             // or a function 
-            if(v.type == nodetype.function)
+            if (v.type == nodetype.function)
             {
-                return GetFunctionResultVectorSize(v); 
+                return GetFunctionResultVectorSize(v);
             }
-                                                
+
             Assert.IsTrue(false, "check this out ");
-            return 0; 
+            return 0;
         }
 
         /// <summary>
@@ -1035,24 +1047,24 @@ namespace NSS.Blast.Compiler
             if (node.function.IsPopVariant)
             {
                 // size of linked push 
-                Assert.IsTrue(node.HasDependencies, "a pop node must have its push in its dependancy list"); 
-                 
+                Assert.IsTrue(node.HasDependencies, "a pop node must have its push in its dependancy list");
+
 
             }
-            else 
-            
-            if(node.function.ReturnsVectorSize > 0)
+            else
+
+            if (node.function.ReturnsVectorSize > 0)
             {
-                return node.function.ReturnsVectorSize; 
+                return node.function.ReturnsVectorSize;
             }
 
             // depends on parameters 
-            if(node.ChildCount > 0)
+            if (node.ChildCount > 0)
             {
                 return node.FirstChild.vector_size;
             }
 
-            return 0; 
+            return 0;
         }
 
 
@@ -1061,12 +1073,12 @@ namespace NSS.Blast.Compiler
             Assert.IsTrue(IsOperationList(node), "only call determinesequenccevectorsize on operationlists");
 
             int m = 0;
-            foreach(node child in node.children)
+            foreach (node child in node.children)
             {
-                m = math.max(child.vector_size, m); 
+                m = math.max(child.vector_size, m);
             }
 
-            return m; 
+            return m;
         }
 
 
@@ -1086,7 +1098,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public bool IsNegationOfValue(bool allow_function)
         {
-            return IsNegationOfValue(this, allow_function); 
+            return IsNegationOfValue(this, allow_function);
         }
 
 
@@ -1095,10 +1107,10 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public static bool IsNegationOfValue(node n, bool allow_function = true)
         {
-            return 
+            return
                 n.ChildCount == 2
                 &&
-                n.FirstChild.token == BlastScriptToken.Substract 
+                n.FirstChild.token == BlastScriptToken.Substract
                 &&
                 (n.LastChild.HasVariable || n.LastChild.IsConstantValue || (allow_function && n.LastChild.IsFunction));
         }
@@ -1121,7 +1133,7 @@ namespace NSS.Blast.Compiler
                     }
                 }
             }
-            return false; 
+            return false;
         }
 
         /// <summary>
@@ -1140,7 +1152,7 @@ namespace NSS.Blast.Compiler
             {
                 // only a negation should be possible to be 2 long 
                 if (node.FirstChild.token == BlastScriptToken.Substract &&
-                    (node.LastChild.IsFunction || node.LastChild.HasVariable || node.LastChild.IsConstantValue)) 
+                    (node.LastChild.IsFunction || node.LastChild.HasVariable || node.LastChild.IsConstantValue))
                 {
                     singleop = blast_operation.substract;
                     return true;
@@ -1348,7 +1360,7 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public bool HasChild(nodetype t)
         {
-            return children.Any(x => x.type == t); 
+            return children.Any(x => x.type == t);
         }
 
         /// <summary>
@@ -1406,7 +1418,7 @@ namespace NSS.Blast.Compiler
                     if (c.type != t)
                     {
                         others[count] = c;
-                        count++; 
+                        count++;
                     }
                 }
             }
@@ -1835,14 +1847,14 @@ namespace NSS.Blast.Compiler
         {
             if (ChildCount == 0) return true;
 
-            if(allow_negation_of_values)
+            if (allow_negation_of_values)
             {
-                if (IsNegationOfValue(false)) return true; 
+                if (IsNegationOfValue(false)) return true;
             }
 
             foreach (node child in children)
             {
-                if (allow_negation_of_values && child.IsNegationOfValue(false)) continue; 
+                if (allow_negation_of_values && child.IsNegationOfValue(false)) continue;
 
                 switch (child.type)
                 {
@@ -2041,7 +2053,10 @@ namespace NSS.Blast.Compiler
         /// </summary>
         public int ChildCount
         {
-            get { return children == null ? 0 : children.Count; }
+            get
+            {
+                return children == null ? 0 : children.Count;
+            }
         }
 
         /// <summary>
@@ -2372,8 +2387,222 @@ namespace NSS.Blast.Compiler
             skip_compilation = true;
             return this;
         }
-    }
 
+
+
+        /// <summary>
+        /// check if the node is a constant expression|assignment 
+        /// </summary>
+        /// <returns>true if the resulting value can be considered constant</returns>
+        public bool IsConstantExpression(bool allow_assignemnts = true)
+        {
+            return IsConstantExpression(this, allow_assignemnts);
+        }
+
+        /// <summary>
+        /// check if the node is a constant expression|assignment 
+        /// </summary>
+        /// <returns>true if the resulting value can be considered constant</returns>
+        static public bool IsConstantExpression(node n, bool allow_assignments = true)
+        {
+            Assert.IsNotNull(n);
+
+            if (n.IsAssignment && !allow_assignments) return false;
+
+
+            // target variable may be anything       
+            // expression may not contain non constant variables 
+            // only the functions size and zero result in a constant
+
+            List<node> stack = NodeListCache.Acquire();
+            try
+            {
+                stack.Add(n);
+                node c;
+
+                while (stack.TryPop(out c))
+                {
+                    // check variable only if not an assignment 
+                    if (c != n || (c == n && !n.IsAssignment))
+                    {
+                        // check variable to be constant 
+                        if (c.HasVariable && !c.variable.IsConstant)
+                        {
+                            return false;
+                        }
+
+                        // nothing using the stack is constant 
+                        if (c.IsStackFunction)
+                        {
+                            return false;
+                        }
+
+                        // if not a constant value node 
+                        if (!c.IsConstantValue)
+                        {
+                            if (c.IsFunction)
+                            {
+                                if (c.function.ScriptOp == blast_operation.size
+                                    ||
+                                   c.function.ScriptOp == blast_operation.zero
+                                    ||
+                                   c.function.IsIndexFunction)
+                                {
+                                    // these are ok, constant regardless their parameters so continue directly to next node 
+                                    continue;
+                                }
+                                else
+                                {
+                                    if (c.function.IsExternalCall) return false;
+
+                                    // most other functions are only constant if all parameters are constant
+                                    stack.AddRange(c.children);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (c.type == nodetype.parameter && c.children.Count == 0) continue;
+
+                            // operations are constant, anything else possibly not 
+                            if (!c.IsOperation)
+                            {
+                                if (!c.HasChildren)
+                                {
+                                    // no op, no value, no allowed function -> not constant
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+
+                    stack.AddRange(c.children);
+                }
+            }
+            finally
+            {
+                NodeListCache.Release(stack);
+            }
+            return true;
+        }
+
+        public bool HasParent(node n, bool look_in_grand_parents = false)
+        {
+            Assert.IsNotNull(n);
+
+            if (this.parent == n)
+            {
+                return true;
+            }
+
+            if (look_in_grand_parents)
+            {
+                node p = n.parent; 
+                while(p != null)
+                {
+                    if (p.parent == n) return true;
+                    p = p.parent;
+                }
+            }
+
+            return false; 
+        }
+
+
+
+        /// <summary>
+        /// check if the node defines a condition that is in all parts except the iterator constant
+        /// </summary>
+        /// <param name="n"></param>
+        public bool IsConstantCondition(BlastVariable iterator = null)
+        {
+            return IsConstantCondition(this, iterator);
+        }
+
+        /// <summary>
+        /// check if the node defines a condition that is in all parts except the iterator constant
+        /// </summary>
+        /// <param name="n"></param>
+        static public bool IsConstantCondition(node n, BlastVariable iterator = null)
+        {
+            Assert.IsNotNull(n);
+
+
+            List<node> stack = NodeListCache.Acquire();
+            try
+            {
+                stack.Add(n);
+                node c;
+
+                while (stack.TryPop(out c))
+                {
+                    if (c.IsStackFunction)
+                    {
+                        // this is only allowed if the connected push-pop is al within the condition
+                        if (c.IsPopFunction)
+                        {
+                            if (c.linked_push == null || !c.linked_push.HasParent(n, true))
+                            {
+                                return false;
+                            }
+                        }
+
+                        if (c.IsPushFunction)
+                        {
+                            if (c.linked_pop == null || !c.linked_pop.HasParent(n, true))
+                            {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }
+
+                    if (c.IsFunction)
+                    {
+                        if (c.function.ScriptOp != blast_operation.size 
+                            && 
+                            c.function.ScriptOp != blast_operation.zero
+                            && 
+                            !c.function.IsIndexFunction)
+                        {
+                            // not a constant function
+                            // - it depends on the paremeters 
+                            if(c.function.IsExternalCall) return false; 
+                        }
+                        if (c.function.ScriptOp == blast_operation.size
+                            ||
+                            c.function.ScriptOp == blast_operation.zero)
+                        {
+                            // do not check child nodes of size and zero 
+                            continue; 
+                        }
+                    }
+
+                    if (c.HasVariable)
+                    {
+                        if (iterator != null && c.variable == iterator)
+                        {
+                            // ok 
+                        }
+                        else
+                        {
+                            if (!c.IsConstant) return false;
+                            if (!c.IsConstantValue) return false;
+                        }
+                    }
+
+                    stack.AddRange(c.children);
+                }
+            }
+            finally
+            {
+                NodeListCache.Release(stack);
+            }
+
+            return true;
+        }
+    }
 
     /// <summary>
     /// a node list cache, trashes the gc a little less using this, 

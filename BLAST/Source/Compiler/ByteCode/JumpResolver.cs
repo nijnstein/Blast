@@ -171,7 +171,7 @@ namespace NSS.Blast.Compiler.Stage
                     //
                     // 
 
-                    if (!(op == blast_operation.jump || op == blast_operation.jnz || op == blast_operation.jz))
+                    if (!(op == blast_operation.jump || op == blast_operation.jnz || op == blast_operation.jz || op == blast_operation.cjz))
                     {
                         cdata.LogError($"Compiler Failure: encountered invalid jumptype <{op}> for forward jump of size {jump_size}");
                         return false;
@@ -179,11 +179,15 @@ namespace NSS.Blast.Compiler.Stage
 
                     jump_over.Add(new Tuple<short, short, string>(source_offset, jump_size, offset.Item1));
 
+                    // if the jump is too large or this is a constant jump condition 
                     if (jump_size > 255)
                     {
                         // update to a long jump with positive jumpsize 
                         switch (op)
                         {
+                            case blast_operation.cjz:
+                                op = blast_operation.cjz_long;
+                                break;
                             case blast_operation.jz:
                                 op = blast_operation.jz_long;
                                 break;

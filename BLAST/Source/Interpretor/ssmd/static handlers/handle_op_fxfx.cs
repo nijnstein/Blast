@@ -27,7 +27,7 @@ namespace NSS.Blast.SSMD
         /// <summary>                    
         /// perform operation: a.x = a.x [op] [sub|not] b.x
         /// </summary>
-        void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
+        static void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 1;
             switch (op)
@@ -63,7 +63,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform:  a.x = a.x [op] constant
         /// </summary>
-        void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size)
+        static void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 1;
             switch (op)
@@ -97,7 +97,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform:  target.x = a.x [op] constant
         /// </summary>
-        void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, in DATAREC target)
+        static void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, int ssmd_datacount, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -140,7 +140,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform:  target.xy = a.x [op] [sub|not] b.xy
         /// </summary>
-        void handle_op_f1_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
+        static void handle_op_f1_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 2;
             switch (op)
@@ -174,7 +174,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform:  target.x = a.x [op] [sub|not] b.x
         /// </summary>
-        void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        static void handle_op_f1_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount, in bool minus, in bool not, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -339,7 +339,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform:  target.xyz = a.x [op] [minus|not] b.xyz
         /// </summary>
-        void handle_op_f1_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        static void handle_op_f1_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount, in bool minus, in bool not, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -504,7 +504,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform:  target.xyz = a.x [op] [minus|not] b.xyz
         /// </summary>
-        void handle_op_f1_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        static void handle_op_f1_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount, in bool minus, in bool not, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -668,7 +668,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform:  target.xyzw = a.x [op] [minus|not] b.xyzw
         /// </summary>
-        void handle_op_f1_f4(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        static void handle_op_f1_f4(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount, in bool minus, in bool not, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -832,7 +832,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform:  target.xyz = a.x [op] b.xyz
         /// </summary>
-        void handle_op_f1_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
+        static void handle_op_f1_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 3;
             switch (op)
@@ -862,7 +862,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0f, 1f, a[i].x != b[i].xyz); return;
             }
         }
-        void handle_op_f1_f4(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
+        static void handle_op_f1_f4(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 4;
             switch (op)
@@ -892,7 +892,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0f, 1f, a[i].x != b[i]); return;
             }
         }
-        void handle_op_f2_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
+        static void handle_op_f2_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 2;
             switch (op)
@@ -931,7 +931,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform: [][].xy = a[].xy * b[].x
         /// </summary>
-        void handle_op_f2_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        static void handle_op_f2_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount, in bool minus, in bool not, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -1030,7 +1030,7 @@ namespace NSS.Blast.SSMD
         }
 
 
-        void handle_op_f2_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size)
+        static void handle_op_f2_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 2;
             bool bconstant;
@@ -1076,10 +1076,10 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform:  target.xy = a.xy [op] constant
         /// </summary>
-        void handle_op_f2_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, in DATAREC target)
+        static void handle_op_f2_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, int ssmd_datacount, in DATAREC target)
         {
             if (!target.is_set)
-            {
+            {              
 #if DEVELOPMENT_BUILD || TRACE
                 Debug.LogError($"blast.ssmd.handle_op_f2_f1 [constant b]: target not set");
 #endif
@@ -1118,7 +1118,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform:  a.xy = a.xy [op] b.xy
         /// </summary>
-        void handle_op_f2_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
+        static void handle_op_f2_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 2;
             switch (op)
@@ -1159,7 +1159,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) a[i].xy = math.select(0f, 1f, a[i].xy != b[i].xy); return;
             }
         }
-        void handle_op_f3_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
+        static void handle_op_f3_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 3;
             switch (op)
@@ -1189,7 +1189,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0f, 1f, a[i].xyz != b[i].x); return;
             }
         }
-        void handle_op_f3_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size)
+        static void handle_op_f3_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 3;
             bool bconstant;
@@ -1223,7 +1223,8 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) a[i].xyz = math.select(0f, 1f, a[i].xyz != constant); return;
             }
         }
-        void handle_op_f3_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, in DATAREC target)
+        
+        static void handle_op_f3_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, int ssmd_datacount, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -1269,7 +1270,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform: [][].xyz = a[].xyz * b[].x
         /// </summary>
-        void handle_op_f3_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        static void handle_op_f3_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount, in bool minus, in bool not, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -1366,7 +1367,7 @@ namespace NSS.Blast.SSMD
             }
         }
 
-        void handle_op_f3_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
+        static void handle_op_f3_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 3;
             switch (op)
@@ -1413,7 +1414,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// [][].xy = [].xy [op] [minus|not] [].xy
         /// </summary>
-        void handle_op_f2_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        static void handle_op_f2_f2(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount, in bool minus, in bool not, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -1534,7 +1535,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// [][].xyz = [].xyz [op] [minus|not] [].xyz
         /// </summary>
-        void handle_op_f3_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        static void handle_op_f3_f3(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount, in bool minus, in bool not, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -1656,7 +1657,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// [][].xyzw = [].xyzw [op] [minus|not] [].xyzw
         /// </summary>
-        void handle_op_f4_f4(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        static void handle_op_f4_f4(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount, in bool minus, in bool not, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -1774,8 +1775,7 @@ namespace NSS.Blast.SSMD
         }
 
 
-
-        void handle_op_f4_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
+        static void handle_op_f4_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 4;
             switch (op)
@@ -1805,7 +1805,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0f, 1f, a[i] != b[i].x); return;
             }
         }
-        void handle_op_f4_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size)
+        static void handle_op_f4_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 4;
             bool bconstant;
@@ -1838,7 +1838,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.not_equals: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0f, 1f, a[i] != constant); return;
             }
         }
-        void handle_op_f4_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, in DATAREC target)
+        static void handle_op_f4_f1(in blast_operation op, [NoAlias] float4* a, float constant, ref byte vector_size, int ssmd_datacount, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -1884,7 +1884,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// perform: [][].xyzw = a[].xyzw * b[].x
         /// </summary>
-        void handle_op_f4_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, in bool minus, in bool not, in DATAREC target)
+        static void handle_op_f4_f1(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount, in bool minus, in bool not, in DATAREC target)
         {
             if (!target.is_set)
             {
@@ -1981,7 +1981,7 @@ namespace NSS.Blast.SSMD
             }
         }
 
-        void handle_op_f4_f4(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size)
+        static void handle_op_f4_f4(in blast_operation op, [NoAlias] float4* a, [NoAlias] float4* b, ref byte vector_size, int ssmd_datacount)
         {
             vector_size = 4;
             switch (op)
