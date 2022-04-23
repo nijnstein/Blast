@@ -5,7 +5,7 @@
 //                                                                                                                     (__)  #
 //############################################################################################################################
 
-#if UNITY_EDITOR && BS2
+#if UNITY_EDITOR  
 
 using UnityEngine;
 using UnityEditor;
@@ -100,7 +100,13 @@ namespace NSS.Blast.Editor
         {
             GUILayout.Label("BLAST Configuration", EditorStyles.boldLabel);
             GUILayout.Space(10);
-            
+            GUILayout.Label("Regenerate the code used in blast to handle external functions to reflect any updates to external function profiles.");
+            if (GUILayout.Button("Regenerate externalfunction support"))
+            {
+                NSS.Blast.Compiler.CodeGen.CG_ExternalFunctionSupport.RunExternalFunctionDelegateCodeGen(Blast.ScriptAPI);
+            }
+
+            GUILayout.Space(10);
             GUILayout.Label("Compiler Settings :", EditorStyles.boldLabel);
             GUILayout.Space(3);
 
@@ -108,7 +114,7 @@ namespace NSS.Blast.Editor
             CompilerDefines = GUILayout.TextArea(CompilerDefines, GUILayout.Height(40));
             GUILayout.Space(10);
 
-            
+                    /*
             GUILayout.Label("Designtime Compilation", EditorStyles.boldLabel);
             hpc_cache = EditorGUILayout.TextField("Compilation Target:", hpc_cache);
             if(GUILayout.Button("Pre-Compile Scripts"))
@@ -161,7 +167,8 @@ namespace NSS.Blast.Editor
                 GUILayout.Label($"{job.ScriptId.ToString().PadLeft(3, '0')} {job.GetType().Name}", EditorStyles.miniLabel);
             }
             GUILayout.EndScrollView(); 
-            GUILayout.Space(3);
+            GUILayout.Space(3); 
+                    */
 
 
         }

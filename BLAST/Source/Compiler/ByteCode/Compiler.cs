@@ -1396,10 +1396,18 @@ namespace NSS.Blast.Compiler.Stage
                 {
                     case BlastPackageMode.Normal:
                     case BlastPackageMode.Compiler: return true; // in all other cases add the assignment operation 
-
-                    case BlastPackageMode.SSMD: return true; // v1.0.5 lets also do this in ssmd it gives a cleaner path
                 }
             }
+
+            if (is_constant_cdata_assignment)
+            {
+                switch (data.CompilerOptions.PackageMode)
+                {
+                    case BlastPackageMode.SSMD: return true; // in all other cases add the assignment operation 
+                }
+            }
+           
+
             code.Add(assign_operation);
             return false; 
         }

@@ -304,6 +304,16 @@ namespace NSS.Blast
     /// </summary>
     unsafe public class Blast : IDisposable
     {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        public const bool ChecksEnabled = true;
+#else
+        public const bool ChecksEnabled = false;
+#endif
+
+        static public Version Version => new Version(1, 0, 4, 4);
+
+        static public string VersionString => "1.0.4d"; 
+
         /// <summary>
         /// the singleton instance if created 
         /// </summary>
@@ -407,7 +417,7 @@ namespace NSS.Blast
 
 
 
-        #region Create / Destroy
+#region Create / Destroy
 
         /// <summary>
         /// create a static instance, this instance will be used if no blast reference is given to functions that need it:
@@ -622,9 +632,9 @@ namespace NSS.Blast
             is_created = false;
         }
 
-        #endregion
+#endregion
 
-        #region Execute 
+#region Execute 
 #if !STANDALONE_VSBUILD
 
 
@@ -834,9 +844,9 @@ namespace NSS.Blast
         }
 
 
-        #endregion
+#endregion
 
-        #region Package
+#region Package
 
         /// <summary>
         /// Complile the code and package into blastscriptpackage 
@@ -919,9 +929,9 @@ namespace NSS.Blast
             return BlastCompiler.Compile(blast, script, options);
         }
 
-        #endregion
+#endregion
 
-        #region Constants 
+#region Constants 
 
         /// <summary>
         /// list all value operations, these operations directly encode constant values 
@@ -1264,9 +1274,9 @@ namespace NSS.Blast
         }
 
 
-        #endregion
+#endregion
 
-        #region Tokens 
+#region Tokens 
 
         /// <summary>
         /// defines tokens that can be used in script, not all tokens are referenced here, only those not built on keywords (if then/ switch etc.)
@@ -1488,9 +1498,9 @@ namespace NSS.Blast
         }
 
 
-        #endregion
+#endregion
 
-        #region Functions 
+#region Functions 
 
 
         /// <summary>
@@ -1532,9 +1542,9 @@ namespace NSS.Blast
             return false;
         }
 
-        #endregion
+#endregion
 
-        #region Blast Script API:   Compiletime Function Pointers 
+#region Blast Script API:   Compiletime Function Pointers 
 
         /// <summary>
         /// the current set of script accessible functions, check OwnScriptAPIMemory to see if this instance of blast is the owner of the memory used in the API
@@ -1547,9 +1557,9 @@ namespace NSS.Blast
         private bool OwnScriptAPIMemory;
 
 
-        #endregion
+#endregion
 
-        #region Designtime CompileRegistry
+#region Designtime CompileRegistry
 
         /// <summary>
         /// Enumerates all scripts known by blast 
@@ -1592,9 +1602,9 @@ namespace NSS.Blast
             }
         }
 #endif
-        #endregion
+#endregion
 
-        #region Runtime compilation of configuration into compiletime script for use next compilation
+#region Runtime compilation of configuration into compiletime script for use next compilation
 
         /// <summary>
         /// compile the script into the designtime registry 
@@ -1650,9 +1660,9 @@ namespace NSS.Blast
         }
 
 
-        #endregion
+#endregion
 
-        #region HPC Jobs 
+#region HPC Jobs 
         static Dictionary<int, IBlastHPCScriptJob> _hpc_jobs = null;
         [BurstDiscard]
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member 'Blast.HPCJobs'
@@ -1694,9 +1704,9 @@ namespace NSS.Blast
             }
             return null;
         }
-        #endregion
+#endregion
 
-        #region bytecode reading / tostring
+#region bytecode reading / tostring
 
         /// <summary>
         /// get somewhat readable assembly from bytes
@@ -2028,9 +2038,9 @@ namespace NSS.Blast
             return false;
         }
 
-        #endregion
+#endregion
 
-        #region Execute Scripts (UNITY)
+#region Execute Scripts (UNITY)
 #if !STANDALONE_VSBUILD && FALSE
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, DisableSafetyChecks = true)]
         public struct burst_once : IJob
@@ -2117,7 +2127,7 @@ namespace NSS.Blast
             return 0;
         }
 #endif
-        #endregion
+#endregion
 
 
         /// <summary>

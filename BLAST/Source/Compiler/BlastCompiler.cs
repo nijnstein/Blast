@@ -708,13 +708,23 @@ namespace NSS.Blast.Compiler
             {
                 case BlastPackageMode.SSMD:
                     {
-                        cdata.Executable.ValidateSSMD(blast);
+                        BlastError error = (BlastError)cdata.Executable.ValidateSSMD(blast);
+                        if (error != BlastError.success)
+                        {
+                            result.LogError($"validate: error validating ssmd executable package: {error}");
+                            return false;
+                        }
                     }
                     break;
                     
                 case BlastPackageMode.Normal:
                     {
-                        cdata.Executable.Validate(blast);
+                        BlastError error = (BlastError)cdata.Executable.Validate(blast);
+                        if (error != BlastError.success)
+                        {
+                            result.LogError($"validate: error validating ssmd executable package: {error}");
+                            return false;
+                        }
                     }
                     break;
 

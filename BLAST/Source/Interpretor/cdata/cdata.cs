@@ -7,8 +7,6 @@
 
 #if STANDALONE_VSBUILD
 using NSS.Blast.Standalone;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 #else
     using UnityEngine;
     using Unity.Burst.CompilerServices;
@@ -17,6 +15,8 @@ using System.Runtime.CompilerServices;
 
 using Unity.Burst;
 using Unity.Mathematics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace NSS.Blast.Interpretor
 {
@@ -79,6 +79,10 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         bool32 = 20,
 
+        /// <summary>
+        /// ascii encoded string data 
+        /// </summary>
+        ASCII  = 21, 
 
         /// <summary>
         /// the untyped CDATA 
@@ -199,6 +203,7 @@ namespace NSS.Blast.Interpretor
             switch ((CDATAEncodingType)code)
             {
                 case CDATAEncodingType.CDATA:
+                case CDATAEncodingType.ASCII: 
 
                 case CDATAEncodingType.fp16_fp32:
                 case CDATAEncodingType.fp32_fp32:
@@ -241,6 +246,7 @@ namespace NSS.Blast.Interpretor
             switch (encoding)
             {
                 case CDATAEncodingType.CDATA:
+
                 case CDATAEncodingType.fp32_fp32:
                 case CDATAEncodingType.bool32:
                 case CDATAEncodingType.i32_i32:
@@ -258,6 +264,7 @@ namespace NSS.Blast.Interpretor
                 case CDATAEncodingType.u8_fp32:
                 case CDATAEncodingType.s8_fp32:
                 case CDATAEncodingType.i8_i32:
+                case CDATAEncodingType.ASCII:
                     // 1 byte per elemennt
                     return GetCDATAContentByteSize(code, index); 
             }
@@ -276,16 +283,16 @@ namespace NSS.Blast.Interpretor
             switch (encoding_name.Trim().ToLowerInvariant())
             {
                 // float 32 and its backing types 
-                case "fp16fp32": 
+                case "fp16fp32":
                 case "fp16_fp32": return CDATAEncodingType.fp16_fp32;
-                case "fp32fp32": 
+                case "fp32fp32":
                 case "fp32_fp32": return CDATAEncodingType.fp32_fp32;
-                case "fp8fp32": 
+                case "fp8fp32":
                 case "fp8_fp32": return CDATAEncodingType.fp8_fp32;
                 case "u8fp32":
                 case "u8_fp32": return CDATAEncodingType.u8_fp32;
-                case "s8fp32": 
-                case "s8_fp32": return CDATAEncodingType.s8_fp32; 
+                case "s8fp32":
+                case "s8_fp32": return CDATAEncodingType.s8_fp32;
 
 
                 // int 32 and its backing
@@ -299,6 +306,9 @@ namespace NSS.Blast.Interpretor
                 case "bool32":
                 case "b32": return CDATAEncodingType.bool32;
 
+                case "ascii":
+                case "text":
+                case "string": return CDATAEncodingType.ASCII;
             }
 
             return CDATAEncodingType.None;
@@ -320,10 +330,12 @@ namespace NSS.Blast.Interpretor
                 case CDATAEncodingType.i32_i32:
                 case CDATAEncodingType.bool32: return 4;
 
+                case CDATAEncodingType.ASCII: 
                 case CDATAEncodingType.s8_fp32:
                 case CDATAEncodingType.u8_fp32:
                 case CDATAEncodingType.fp8_fp32:
                 case CDATAEncodingType.i8_i32: return 1; 
+
                 case CDATAEncodingType.fp16_fp32:
                 case CDATAEncodingType.i16_i32: return 2;
             }
@@ -341,6 +353,7 @@ namespace NSS.Blast.Interpretor
             switch (type)
             {
                 default: 
+
                 case CDATAEncodingType.None:
                 case CDATAEncodingType.fp32_fp32:
                     {
@@ -375,6 +388,8 @@ namespace NSS.Blast.Interpretor
                     }
                     break;
 
+
+                case CDATAEncodingType.ASCII: 
                 case CDATAEncodingType.u8_fp32:
                     {
                         bytes_per_element = 1;
@@ -422,6 +437,8 @@ namespace NSS.Blast.Interpretor
                     }
                     return;
 
+
+                case CDATAEncodingType.ASCII: 
                 case CDATAEncodingType.u8_fp32:
                     {
                         // unsigned byte as backing: 0 through 255

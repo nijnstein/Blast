@@ -36,7 +36,14 @@ namespace ScriptTestJobs
             int ssmddatasize = blaster.CurrentSSMDDataSize;
             byte* ssmddata = //stackalloc byte[ssmddatasize * datacount];
 
-            (byte*)UnsafeUtility.Malloc(ssmddatasize * datacount, 16, Unity.Collections.Allocator.Temp);
+                (byte*)UnsafeUtility.Malloc(ssmddatasize * datacount, 16, Unity.Collections.Allocator.Temp);
+
+            if (BlastSSMDInterpretor.IsTrace)
+            {
+                UnityEngine.Debug.Log($"datasize = {ssmddatasize}, datacount = {datacount}"); 
+            }
+
+            
 
             // generate a list of datasegment pointers on the stack:
            /* byte** datastack = stackalloc byte*[datacount];

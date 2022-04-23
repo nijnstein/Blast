@@ -108,6 +108,61 @@ namespace NSS.Blast.SSMD
                 fb += 4;
             }
         }
+
+        /// <summary>
+        /// a[i].x = b[i]    (float4.x = float1.x)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_f1_array_into_f4_array_as_f1([NoAlias] float4* destination, [NoAlias] float* source, int ssmd_datacount)
+        {
+            float* fa = (float*)(void*)destination;
+            float* fb = (float*)(void*)source;
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                fa[0] = fb[0]; 
+                fa += 4;       
+                fb += 1;
+            }
+        }
+
+        /// <summary>
+        /// a[i].xy = b[i]    (float4.xy = float2.xy)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_f2_array_into_f4_array_as_f2([NoAlias] float4* destination, [NoAlias] float2* source, int ssmd_datacount)
+        {
+            float* fa = (float*)(void*)destination;
+            float* fb = (float*)(void*)source;
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                fa[0] = fb[0];
+                fa[1] = fb[1];
+                fa += 4;
+                fb += 2;
+            }
+        }
+
+        /// <summary>
+        /// a[i].xyz = b[i]    (float4.xyz = float3.xyz)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_f3_array_into_f4_array_as_f3([NoAlias] float4* destination, [NoAlias] float3* source, int ssmd_datacount)
+        {
+            float* fa = (float*)(void*)destination;
+            float* fb = (float*)(void*)source;
+
+            for (int i = 0; i < ssmd_datacount; i++)
+            {
+                fa[0] = fb[0];
+                fa[1] = fb[1];
+                fa[1] = fb[1];
+                fa += 4;
+                fb += 3;
+            }
+        }
+
         /// <summary>
         /// a[i].xyz = b[i].x
         /// </summary>

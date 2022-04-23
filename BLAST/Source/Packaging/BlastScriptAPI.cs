@@ -858,6 +858,9 @@ namespace NSS.Blast
             info.FunctionDelegateId = (byte)delegate_type;
             FunctionInfo.Add(info);
 
+            //ExternalFunctionProfile profile = ExternalFunctionProfiles[(byte)delegate_type];
+            //Assert.IsNotNull(profile); 
+
             unsafe
             {
                 fixed (char* pch = info.Function.Match)
@@ -1009,14 +1012,18 @@ namespace NSS.Blast
             Assert.IsFalse(string.IsNullOrWhiteSpace(name));
             Assert.IsNotNull(FunctionInfo);
 
-            if (FunctionExists(name))
-            {
+            BlastScriptFunctionInfo existing = GetFunctionByName(name); 
+            if (existing != null)
+            {              
 #if DEVELOPMENT_BUILD || TRACE
                 // consider this an error in program flow
                 Debug.LogError($"blast.scriptapi.register: a function with the name '{name}' already exists and thus cannot be registered again.");
 #endif
                 return (int)BlastError.error_scriptapi_function_already_exists;
             }
+
+
+
 
             int id = FunctionInfo.Count;
 
@@ -1309,6 +1316,47 @@ namespace NSS.Blast
 
         #region External Function Profiles 
 
+
+        
+        public bool ExternalProfileExists(in ExternalFunctionProfile profile)
+        {
+            if (ExternalFunctionProfiles == null) return false;
+            foreach (ExternalFunctionProfile f in ExternalFunctionProfiles)
+            {
+                if (f.IsShortDefinition != profile.IsShortDefinition
+                    ||
+                    f.IsSSMD != profile.IsSSMD
+                    ||
+                    f.ParameterCount != profile.ParameterCount
+                    ||
+                    f.ReturnParameter != profile.ReturnParameter
+                    ||
+                    f.Parameter1 != profile.Parameter1
+                    ||
+                    f.Parameter2 != profile.Parameter2
+                    ||
+                    f.Parameter3 != profile.Parameter3
+                    ||
+                    f.Parameter4 != profile.Parameter4
+                    ||
+                    f.Parameter5 != profile.Parameter5
+                    ||
+                    f.Parameter6 != profile.Parameter6
+                    ||
+                    f.Parameter7 != profile.Parameter7
+                    ||
+                    f.Parameter8 != profile.Parameter8)
+                {
+                    continue;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            return false; 
+        }
+
         public ExternalFunctionProfile CreateExternalProfile(BlastVectorSizes returns, bool is_ssmd, bool is_short, params BlastVectorSizes[] parameters)
         {
             if (ExternalFunctionProfiles == null)
@@ -1316,7 +1364,7 @@ namespace NSS.Blast
                 ExternalFunctionProfiles = new List<ExternalFunctionProfile>();
             }
 
-            Assert.IsTrue(ExternalFunctionProfiles.Count < 255, "too many external function profiles defined"); 
+            Assert.IsTrue(ExternalFunctionProfiles.Count < 255, "too many external function profiles defined");
 
             ExternalFunctionProfile p = default;
             p.DelegateType = (byte)ExternalFunctionProfiles.Count;
@@ -1336,6 +1384,10 @@ namespace NSS.Blast
             if (c > 6) p.Parameter7 = parameters[6];
             if (c > 7) p.Parameter8 = parameters[7];
 
+            // check if the pattern already exists, ifso -> assert 
+            Assert.IsFalse(ExternalProfileExists(p), "an external function profile with the same parameters already exists");
+
+            // add new if unique
             ExternalFunctionProfiles.Add(p);
             return p;
         }
@@ -1644,61 +1696,62 @@ namespace NSS.Blast
             CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float1);
             CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float1, BlastVectorSizes.float1);
             CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float1, BlastVectorSizes.float1, BlastVectorSizes.float1);
-            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float2);
-            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float2, BlastVectorSizes.float2);
-            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);
-            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float3);
-            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float3, BlastVectorSizes.float3);
-            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
-            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float4);
-            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float4, BlastVectorSizes.float4);
-            CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float4, BlastVectorSizes.float4, BlastVectorSizes.float4);
-            CreateExternalProfile(BlastVectorSizes.float2, false, false, BlastVectorSizes.float2);
-            CreateExternalProfile(BlastVectorSizes.float3, false, false, BlastVectorSizes.float3);
-            CreateExternalProfile(BlastVectorSizes.float4, false, false, BlastVectorSizes.float4);
-            CreateExternalProfile(BlastVectorSizes.none,   false, false, BlastVectorSizes.bool32);
-            CreateExternalProfile(BlastVectorSizes.bool32, false, false, BlastVectorSizes.bool32);
+//            CreateExternalProfile(BlastVectorSizes.none,   false, false, BlastVectorSizes.bool32);
+//            CreateExternalProfile(BlastVectorSizes.bool32, false, false, BlastVectorSizes.bool32);
+//            CreateExternalProfile(BlastVectorSizes.bool32, false, false, BlastVectorSizes.bool32, BlastVectorSizes.float4, BlastVectorSizes.float1);
 
             // short parameterset default external profiles 
             CreateExternalProfile(BlastVectorSizes.none,   false, true);
             CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1);
             CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1, BlastVectorSizes.float1);
-            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1, BlastVectorSizes.float1, BlastVectorSizes.float1);
-            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2);
-            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2, BlastVectorSizes.float2);
-            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);
-            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float3);
-            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float3, BlastVectorSizes.float3);
-            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
-            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float4);
-            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float4, BlastVectorSizes.float4);
-            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float4, BlastVectorSizes.float4, BlastVectorSizes.float4);
-            CreateExternalProfile(BlastVectorSizes.float2, false, true, BlastVectorSizes.float2);
-            CreateExternalProfile(BlastVectorSizes.float3, false, true, BlastVectorSizes.float3);
-            CreateExternalProfile(BlastVectorSizes.float4, false, true, BlastVectorSizes.float4);
-            CreateExternalProfile(BlastVectorSizes.none,   false, true, BlastVectorSizes.bool32);
-            CreateExternalProfile(BlastVectorSizes.bool32, false, true, BlastVectorSizes.bool32);
+//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1, BlastVectorSizes.float1, BlastVectorSizes.float1);
+//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2);
+//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2, BlastVectorSizes.float2);
+//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);
+//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float3);
+//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float3, BlastVectorSizes.float3);
+//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float4);
+//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float4, BlastVectorSizes.float4);
+//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float4, BlastVectorSizes.float4, BlastVectorSizes.float4);
+//            CreateExternalProfile(BlastVectorSizes.float2, false, true, BlastVectorSizes.float2);
+//            CreateExternalProfile(BlastVectorSizes.float2, false, true, BlastVectorSizes.float2, BlastVectorSizes.float2);
+//            CreateExternalProfile(BlastVectorSizes.float2, false, true, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);
+//            CreateExternalProfile(BlastVectorSizes.float3, false, true, BlastVectorSizes.float3);
+//            CreateExternalProfile(BlastVectorSizes.float3, false, true, BlastVectorSizes.float3, BlastVectorSizes.float3);
+//            CreateExternalProfile(BlastVectorSizes.float3, false, true, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+//            CreateExternalProfile(BlastVectorSizes.float4, false, true, BlastVectorSizes.float4);
+//            CreateExternalProfile(BlastVectorSizes.float4, false, true, BlastVectorSizes.float4, BlastVectorSizes.float4);
+//            CreateExternalProfile(BlastVectorSizes.float4, false, true, BlastVectorSizes.float4, BlastVectorSizes.float4, BlastVectorSizes.float4);
+//            CreateExternalProfile(BlastVectorSizes.none,   false, true, BlastVectorSizes.bool32);
+//            CreateExternalProfile(BlastVectorSizes.bool32, false, true, BlastVectorSizes.bool32);
+//            CreateExternalProfile(BlastVectorSizes.bool32, false, true, BlastVectorSizes.bool32, BlastVectorSizes.float4, BlastVectorSizes.float1);
 
-            // default profiles for ssmd interpretor 
-            /*   
-               CreateExternalProfile(BlastVectorSizes.none,   true, false);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float1);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float1, BlastVectorSizes.float1);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float1, BlastVectorSizes.float1, BlastVectorSizes.float1);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float2);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float2, BlastVectorSizes.float2);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float3);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float3, BlastVectorSizes.float3);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float4);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float4, BlastVectorSizes.float4);
-               CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float4, BlastVectorSizes.float4, BlastVectorSizes.float4);
-               CreateExternalProfile(BlastVectorSizes.float2, true, true, BlastVectorSizes.float2);
-               CreateExternalProfile(BlastVectorSizes.float3, true, true, BlastVectorSizes.float3);
-               CreateExternalProfile(BlastVectorSizes.float4, true, true, BlastVectorSizes.float4);
-               CreateExternalProfile(BlastVectorSizes.none,   true, false, BlastVectorSizes.bool32);
-               CreateExternalProfile(BlastVectorSizes.bool32, true, false, BlastVectorSizes.bool32);*/
+            // default profiles for ssmd interpretor, vectorized parameters  
+            CreateExternalProfile(BlastVectorSizes.none,   true, false);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float1);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float1, BlastVectorSizes.float1);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float1, BlastVectorSizes.float1, BlastVectorSizes.float1);
+            
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float2, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float4, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.float1, true, false, BlastVectorSizes.float4, BlastVectorSizes.float4, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.float2, true, false, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float2, true, false, BlastVectorSizes.float2, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float2, true, false, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);
+            CreateExternalProfile(BlastVectorSizes.float3, true, false, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float3, true, false, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float3, true, false, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.float4, true, false, BlastVectorSizes.float4);
+            CreateExternalProfile(BlastVectorSizes.none,   true, false, BlastVectorSizes.bool32);
+            CreateExternalProfile(BlastVectorSizes.bool32, true, false, BlastVectorSizes.bool32);
+            CreateExternalProfile(BlastVectorSizes.bool32, true, false, BlastVectorSizes.bool32, BlastVectorSizes.float4, BlastVectorSizes.float1);
 
             return this;
         }

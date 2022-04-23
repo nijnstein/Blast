@@ -8,7 +8,9 @@
 using NSS.Blast.Interpretor;
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
-#endif 
+#else
+using UnityEngine; 
+#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -666,23 +668,16 @@ namespace NSS.Blast.Compiler
                     max_stack_size = 0;
                     while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
 
-                    int max_reached =  Blast.ssmd_blaster.MaxStackSizeReachedDuringValidation;
+                    int max_reached =  Blast.ssmd_blaster.MaxStackSizeReachedDuringValidation - initial_stack_offset;
                     if (max_stack_size != max_reached)
                     {
-#if DEVELOPMENT_BUILD && TRACE
-                        Debug.Log($"Blast.Intermediate: packagemode = {package.PackageMode}, stacksize estimate = {max_stack_size}, initial offset = {initial_stack_offset}");
-#endif
-                        return (int)BlastError.stack_size_determination_error;                         
+                        Debug.LogError($"Blast.Intermediate: packagemode = {package.PackageMode}, maxreached = {max_reached}, stacksize estimate = {max_stack_size}, initial offset = {initial_stack_offset}");
+                            return (int)BlastError.stack_size_determination_error;                         
                     }
 
                     //   max_stack_size = 0;
                     //    while (!math.isinf(stack[max_stack_size]) && max_stack_size < package.StackCapacity) max_stack_size++;
                 }
-
-#if STANDALONE_VSBUILD && TRACE
-                Debug.Log($"Blast.Intermediate: packagemode = {package.PackageMode}, stacksize estimate = {max_stack_size}, initial offset = {initial_stack_offset}");
-#endif
-
             }
 
             // if we ran out of stack we should return that error 

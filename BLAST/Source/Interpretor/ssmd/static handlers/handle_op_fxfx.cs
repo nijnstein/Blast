@@ -1994,10 +1994,10 @@ namespace NSS.Blast.SSMD
                 case blast_operation.nop: simd.move_f4_array_into_f4_array_as_f4(a, b, ssmd_datacount); break;
                 case blast_operation.not: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select((float4)1f, (float4)0f, b[i] != 0); break;
 
-                case blast_operation.add: simd.add_array_f4f1(a, b, ssmd_datacount); return;
-                case blast_operation.substract: simd.sub_array_f4f1(a, b, ssmd_datacount); return;
-                case blast_operation.multiply: simd.mul_array_f4f1(a, b, ssmd_datacount); return;
-                case blast_operation.divide: simd.div_array_f4f1(a, b, ssmd_datacount); return;
+                case blast_operation.add: simd.add_array_f4f4(a, b, ssmd_datacount); return;
+                case blast_operation.substract: simd.sub_array_f4f4(a, b, ssmd_datacount); return;
+                case blast_operation.multiply: simd.mul_array_f4f4(a, b, ssmd_datacount); return;
+                case blast_operation.divide: simd.div_array_f4f4(a, b, ssmd_datacount); return;
 
                 case blast_operation.and: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0, 1, math.any(a[i]) && math.any(b[i])); return;
                 case blast_operation.or: for (int i = 0; i < ssmd_datacount; i++) a[i] = math.select(0, 1, math.any(a[i]) || math.any(b[i])); return;

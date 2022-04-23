@@ -136,10 +136,10 @@ namespace NSS.Blast
         /// Prepare the script for execution
         /// </summary>
         /// <returns>success if all is ok </returns>
-        public BlastError Prepare(bool prepare_variable_info = true, bool ssmd = false)
+        public BlastError Prepare(bool prepare_variable_info = true, bool ssmd = false, bool ssmd_package_stack = false)
         {
             if (!Blast.IsInstantiated) return BlastError.error_blast_not_initialized;
-            return Prepare(Blast.Instance.Engine, prepare_variable_info, ssmd);
+            return Prepare(Blast.Instance.Engine, prepare_variable_info, ssmd, ssmd_package_stack);
         }
 
 
@@ -190,12 +190,17 @@ namespace NSS.Blast
         /// </summary>
         /// <param name="blast">blast engine data</param>
         /// <returns>success if all is ok </returns>
-        public BlastError Prepare(IntPtr blast, bool prepare_variable_info = true, bool ssmd = false)
+        public BlastError Prepare(IntPtr blast, bool prepare_variable_info = true, bool ssmd = false, bool ssmd_package_stack = false)
         {
             if (blast == IntPtr.Zero) return BlastError.error_blast_not_initialized;
             if (IsPackaged) return BlastError.error_already_packaged;
 
-            BlastCompilerOptions options = ssmd ? Blast.SSMDCompilerOptions : Blast.CompilerOptions; 
+            BlastCompilerOptions options = ssmd ? Blast.SSMDCompilerOptions : Blast.CompilerOptions;
+
+            if (ssmd && ssmd_package_stack)
+            {
+                options.PackageStack = ssmd_package_stack;
+            }
 
             if (prepare_variable_info)
             {
@@ -1701,7 +1706,34 @@ namespace NSS.Blast
             return r; 
         }
 
-#endregion
+        #endregion
+
+
+        #region CompileAST | Compile into an ast so we can see what the compiler is doing 
+        public node CompileAST(BlastCompilerOptions options)
+        {
+            return CompileAST(Blast.Instance, options); 
+        }
+        public node CompileAST(bool ssmd)
+        {
+            return CompileAST(Blast.Instance, ssmd ? BlastCompilerOptions.SSMD : BlastCompilerOptions.Default);
+        }
+
+        public node CompileAST(Blast blast, BlastCompilerOptions options)
+        {
+            IBlastCompilationData cdata = BlastCompiler.Compile(blast.Engine, this.Code, options);
+            if (cdata != null)
+            {
+                return cdata.AST;
+            }
+            else 
+            {
+                return null;
+            }
+        }
+
+
+        #endregion 
 
     }
 

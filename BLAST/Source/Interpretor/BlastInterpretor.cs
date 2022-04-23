@@ -2329,76 +2329,6 @@ namespace NSS.Blast.Interpretor
 
         #region External Functionpointer calls 
 
-        internal float4 CALL_EF_F4_F1(ref int code_pointer, in int function_id)
-        {
-            byte vector_size;
-            bool is_negated;
-
-            float* vdata = (float*)pop_p_info(ref code_pointer, out BlastVariableDataType vtype, out vector_size, out is_negated);
-
-            if (vector_size == 1)
-            {
-                float p1 = math.select(vdata[0], -vdata[0], is_negated);
-
-
-#if STANDALONE_VSBUILD
-                float4 result = 0;// (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegateF4_f1).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1);
-                return result;
-#else
-                FunctionPointer<External.BlastEFDelegateF4_f1> fp0 = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegateF4_f1>;
-                if (fp.IsCreated && fp.Value != IntPtr.Zero)
-                {
-                    f4 = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1);
-                    return f4;
-                }
-#endif
-            }
-
-            if (IsTrace)
-            {
-                if (vector_size != 1) Debug.LogError($"Blast.interpretor.CALL_EF_F4_F1: error calling external function with id {function_id} invalid vectorsize for parameter p1, should be 1 but found {vector_size}");
-                else Debug.LogError($"Blast.interpretor.CALL_EF_F4_F1: error calling external function with id {function_id}");
-
-            }
-            return float.NaN;
-        }
-
-
-        internal float4 CALL_EF_SHORT_F4_F1(ref int code_pointer, in int function_id)
-        {
-            byte vector_size;
-            bool is_negated;
-
-            float* vdata = (float*)pop_p_info(ref code_pointer, out BlastVariableDataType vtype, out vector_size, out is_negated);
-
-            if (vector_size == 1)
-            {
-                float p1 = math.select(vdata[0], -vdata[0], is_negated);
-
-
-#if STANDALONE_VSBUILD
-                float4 result = 0;// (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegateF4_f1).Invoke(p1);
-                return result;
-#else
-                FunctionPointer<External.BlastEFDelegateF4_f1> fp0 = engine_ptr->Functions[function_id].Generic<External.BSEFDelegateF4_f1>;
-                if (fp.IsCreated && fp.Value != IntPtr.Zero)
-                {
-                    f4 = fp.Invoke(p1);
-                    return f4;
-                }
-#endif
-            }
-
-            if (IsTrace)
-            {
-                if (vector_size != 1) Debug.LogError($"Blast.interpretor.CALL_EF_SHORT_F4_F1: error calling external function with id {function_id} invalid vectorsize for parameter p1, should be 1 but found {vector_size}");
-                else Debug.LogError($"Blast.interpretor.CALL_EF_SHORT_F4_F1: error calling external function with id {function_id}");
-
-            }
-            return float.NaN;
-        }
-
-
 
         /// <summary>
         /// call an external function pointer, pointed to by an 8|16|32 bit identifier 
@@ -2409,7 +2339,7 @@ namespace NSS.Blast.Interpretor
             int id = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
 
             // advance code pointer beyond the script id
-            code_pointer += 2;
+            code_pointer += 3;
 
             // call the function 
 #if DEVELOPMENT_BUILD || TRACE
@@ -2425,6 +2355,11 @@ namespace NSS.Blast.Interpretor
 
 
                 f4 = CALL_EF(ref code_pointer, in p);
+
+                //
+                // codepointer might be 1 too far if paramater or not
+                //
+
 
                 vector_size = p.ReturnsVectorSize;
 
@@ -6039,7 +5974,7 @@ namespace NSS.Blast.Interpretor
                         index = math.select(index, -index, is_negated2);
 
                         // this will change when handling multiple datatypes 
-                        f4.x = math.select(fdata[0], -fdata[0], is_negated2);                        
+                        f4.x = math.select(fdata[index], -fdata[index], is_negated2);                        
                     }
                     break;
             }
@@ -6818,6 +6753,7 @@ namespace NSS.Blast.Interpretor
         void Handle_Send(ref int code_pointer)
         {
             // check out, this might get called with cdataref  
+            code_pointer++; 
             blast_operation op = (blast_operation)code[code_pointer];
             if (op == blast_operation.cdataref)
             {
@@ -8531,7 +8467,7 @@ namespace NSS.Blast.Interpretor
                                         // cdata assignment of something with vector_size 
                                         // - all cdata assignments at this point should be indexed so vector_size SHOULD BE 1 
 #if DEVELOPMENT_BUILD || TRACE
-                                        if (index > (cdata_length / 4))
+                                        if (index > GetCDATAElementCount(code, cdata_offset))
                                         {
                                             Debug.LogError($"Blast.Interpretor.assign_result: assigned cdata index {index} is out of bounds for cdata at {cdata_offset} with byte length {cdata_length}");
                                             return (int)BlastError.error_indexer_out_of_bounds;

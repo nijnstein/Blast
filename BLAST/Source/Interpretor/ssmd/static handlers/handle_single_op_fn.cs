@@ -34,8 +34,14 @@ namespace NSS.Blast.SSMD
             // when indexed -> vectorsize is 1 element and we adjust index to point to it 
             if (indexed >= 0)
             {
-                source_index += indexed;
-                vector_size = 1;
+                if (op >= blast_operation.index_x && op <= blast_operation.index_n)
+                {
+                }
+                else
+                {
+                   source_index += indexed;
+                   vector_size = 1;
+                }
             }
 
             switch (vector_size)

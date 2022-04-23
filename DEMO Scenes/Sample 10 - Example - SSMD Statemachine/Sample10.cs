@@ -119,7 +119,7 @@ state = select(3, 0, position.y < 0);
         for (int i = 0; i < StateCount; i++)
         {
             var bs = BlastScript.FromText(StateScripts[i]);
-            bs.Prepare(false, true);
+            bs.Prepare(false, true, false);
             scripts[i] = bs;
         }
     }

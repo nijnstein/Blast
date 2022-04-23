@@ -390,7 +390,9 @@ namespace NSS.Blast.Compiler.Stage
             if (ch == '\'' || ch == '"')
             {
                 // typing is out of the window, we look at string data as ascii unsigned bytes
-                return ReadCDATAString(data, comment, a, current_i);
+                byte[] asciidata = ReadCDATAString(data, comment, a, current_i);
+                cdata_encoding = CDATAEncodingType.ASCII;
+                return asciidata; 
             }
 
             //#####################################################################################################
@@ -450,25 +452,25 @@ namespace NSS.Blast.Compiler.Stage
             Assert.IsTrue(a != null && a.Length > 2);
 
             // if first token is: float|numeric  bool32   
-#pragma warning disable CS0219 // Variable is assigned but its value is never used
-            BlastVectorSizes datatype ;
-#pragma warning restore CS0219 // Variable is assigned but its value is never used
             string possible_datatype = a[2];
-            int offset_for_datatype = 0; 
+            int offset_for_datatype = 0;
+            CDATAEncodingType encoding = CDATAEncodingType.None;
+
             switch(possible_datatype.ToLowerInvariant())
             {
                 // default to numerics
-                default: datatype = BlastVectorSizes.float1; break; 
-                
                 case "float":
-                case "numeric": datatype = BlastVectorSizes.float1; offset_for_datatype = 1; break; 
+                case "numeric": encoding = CDATAEncodingType.None; offset_for_datatype = 1; break;
+                case "fp32": encoding = CDATAEncodingType.None; offset_for_datatype = 1; break; 
 
-                case "bool32": datatype = BlastVectorSizes.bool32; offset_for_datatype = 1; break; 
-                case "string": datatype = BlastVectorSizes.none; offset_for_datatype = 1; break; 
+                case "bool32": encoding = CDATAEncodingType.bool32; offset_for_datatype = 1; break;
+                case "ascii":
+                case "text":
+                case "string": encoding = CDATAEncodingType.ASCII; offset_for_datatype = 1; break; 
             }
 
             // classify the first value, anything in a is at least 1 char long
-            char ch = a[2][0];
+            char ch = a[2 + offset_for_datatype][0];
             byte[] constant_data = null;
 
 
@@ -478,7 +480,7 @@ namespace NSS.Blast.Compiler.Stage
             //       but this is cheaper to do considering its probably rare to be used 
             if (ch == '\'' || ch == '"')
             {
-                datatype = BlastVectorSizes.none; 
+                encoding = CDATAEncodingType.ASCII;
                 constant_data = ReadCDATAString(data, comment, a, 2 + offset_for_datatype);
                 if (constant_data == null) return false;
             }
@@ -489,10 +491,10 @@ namespace NSS.Blast.Compiler.Stage
             // binary: single bitstream starting with b
             if (ch == 'b' || ((ch == '1' || ch == '0') && a[2].Length >= 16))
             {
-                if (a.Length == 3 || a[3].StartsWith("#"))
+                if (a.Length == 3 + offset_for_datatype || a[3 + offset_for_datatype].StartsWith("#"))
                 {
                     constant_data = ReadCDATABinary(data, comment, a[2 + offset_for_datatype]);
-                    datatype = BlastVectorSizes.bool32;
+                    encoding = CDATAEncodingType.ASCII; 
                 }
                 else
                 {
@@ -521,6 +523,7 @@ namespace NSS.Blast.Compiler.Stage
             // setup
             v.DataType = BlastVariableDataType.CData;
             v.ConstantData = constant_data;
+            v.ConstantDataEncoding = encoding;
             v.VectorSize = constant_data == null ? 0 : constant_data.Length / 4;
             v.ReferenceCount = 0; // 0 references 
             v.IsConstant = true;  // this is a constant data object added by input and thus resides in the datasegment

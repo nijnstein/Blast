@@ -4040,13 +4040,13 @@ namespace NSS.Blast.SSMD
                         if (c1 || c2 || c3 || c4)
                         {
                             if (c1) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1[0], ssmd_datacount);
-                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1, ssmd_datacount);
+                            else    simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 0, t1, ssmd_datacount);
                             if (c2) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2[0], ssmd_datacount);
-                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2, ssmd_datacount);
+                            else    simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 1, t2, ssmd_datacount);
                             if (c3) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3[0], ssmd_datacount);
-                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3, ssmd_datacount);
+                            else    simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 2, t3, ssmd_datacount);
                             if (c4) simd.move_f1_constant_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4[0], ssmd_datacount);
-                            else simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4, ssmd_datacount);
+                            else    simd.move_f1_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset + 3, t4, ssmd_datacount);
                         }
                         else
                         {
@@ -4379,7 +4379,7 @@ namespace NSS.Blast.SSMD
                                 else
                                 {
                                     // advance past the cdata 
-                                    code_pointer = code_pointer + 3;
+                                    code_pointer = code_pointer + 2; // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                     constant_index = constant_index || (indexed >= 0 && indexed < 4);
 
 
@@ -4497,7 +4497,7 @@ namespace NSS.Blast.SSMD
                             // handle operation using constant encoded op
                             float constant = engine_ptr->constants[code_byte];
                             handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
-                            code_pointer++;
+                           // code_pointer++;
                         }
                         return BlastError.success;
 
@@ -4865,290 +4865,73 @@ namespace NSS.Blast.SSMD
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
 #endif
-        void get_external_function_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, int ssmd_datacount, [NoAlias] float4* f4)
+        void CallExternalFunction([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, int ssmd_datacount, [NoAlias] float4* f4)
         {
             // get int id from next 4 ops/bytes 
-            int id =
-                //(code[code_pointer + 1] << 24)
-                //+
-                //(code[code_pointer + 2] << 16)
-                //+
-                (code[code_pointer + 0] << 8)
-                +
-                code[code_pointer + 1];
+            int id = (code[code_pointer + 0] << 8) + code[code_pointer + 1];
 
             // advance code pointer beyond the script id
-            code_pointer += 2;//4;
+            code_pointer += 2;
 
             // get function pointer 
-#if DEVELOPMENT_BUILD || TRACE
-            if (engine_ptr->CanBeAValidFunctionId(id))
+            if (!engine_ptr->CanBeAValidFunctionId(id))
             {
-#endif
-                BlastScriptFunction p = engine_ptr->Functions[id];
-
-                // get parameter count (expected from script excluding the 3 data pointers: engine, env, caller) 
-                // but dont call it in validation mode 
-                if (ValidateOnce == true)
-                {
-                    // external functions (to blast) always have a fixed amount of parameters 
-#if DEVELOPMENT_BUILD || TRACE
-                    if (id > (int)ReservedBlastScriptFunctionIds.Offset && p.MinParameterCount != p.MaxParameterCount)
-                    {
-                        Debug.LogError($"blast.ssmd.interpretor.call-external: function {id} min/max parameters should be of equal size");
-                    }
-#endif
-                    code_pointer += p.MinParameterCount;
-                    return;
-                }
-
-#if DEVELOPMENT_BUILD || TRACE
-                Debug.Log($"call fp id: {id} <env:{environment_ptr.ToInt64()}> <ssmd:no-caller-data>, parmetercount = {p.MinParameterCount}");
-#endif
-
-
-#if DEVELOPMENT_BUILD || TRACE
-                vector_size = (byte)math.select((int)p.ReturnsVectorSize, p.AcceptsVectorSize, p.ReturnsVectorSize == 0);
-                if (vector_size != 1)
-                {
-                    Debug.LogError($"blast.ssmd.interpretor.call-external: function {id} a return vector size > 1 is not currently supported in external functions");
-                    return;
-                }
-                if (p.AcceptsVectorSize != 1)
-                {
-                    Debug.LogError($"blast.ssmd.interpretor.call-external: function {id} a parameter vector size > 1 is not currently supported in external functions");
-                    return;
-                }
-#else
-            vector_size = 1;
-#endif
-
-                // 
-                // first gather up to MinParameterCount parameter components 
-                // - external functions have a fixed amount of parameters 
-                // - there is no vectorsize check on external functions, user should make sure call is correct or errors will result 
-                // 
-
-                int p_count = 0;
-                float* p_data = stackalloc float[p.MinParameterCount * ssmd_datacount];
-
-                while (p_count < p.MinParameterCount)
-                {
-                    byte vsize;
-                    // code_pointer++;
-
-                    pop_op_meta_cp(code_pointer, out BlastVariableDataType dtype, out vsize);
-
-                    switch (vsize)
-                    {
-                        case 0:
-                        case 4:
-                            vsize = 4;
-                            pop_fx_into_ref<float4>(ref code_pointer, (float4*)(void*)&p_data[p_count * ssmd_datacount]);
-                            break;
-
-                        case 1:
-                            pop_fx_into_ref<float>(ref code_pointer, (float*)(void*)&p_data[p_count * ssmd_datacount]);
-                            break;
-
-                        case 2:
-                            pop_fx_into_ref<float2>(ref code_pointer, (float2*)(void*)&p_data[p_count * ssmd_datacount]);
-                            break;
-
-                        case 3:
-                            pop_fx_into_ref<float3>(ref code_pointer, (float3*)(void*)&p_data[p_count * ssmd_datacount]);
-                            break;
-                    }
-
-                    for (int i = 0; i < vsize && p_count < p.MinParameterCount; i++)
-                    {
-                        p_count++;
-                    }
-                }
-
-
-#if STANDALONE_VSBUILD
-                MethodInfo mi = Blast.ScriptAPI.FunctionInfo[id].FunctionDelegate.Method;
-
-
-                object[] param = new object[p.MinParameterCount + (p.IsShortDefinition ? 0 : 3)];
-
-                int iparam = 0;
-
-                if (!p.IsShortDefinition)
-                {
-                    param[0] = new IntPtr(engine_ptr);
-                    param[1] = environment_ptr;
-                    param[2] = IntPtr.Zero; // SSMD has no caller data
-                    iparam = 3;
-                }
-
-                if (!ValidateOnce)
-                {
-                    for (int i = 0; i < ssmd_datacount; i++)
-                    {
-                        for (int j = 0; j < p.MinParameterCount; j++)
-                        {
-                            param[j + iparam] = p_data[j * ssmd_datacount + i];
-                        }
-
-                        f4[i].x = (float)mi.Invoke(null, param);
-                    }
-                }
-
-                vector_size = 1;
+                if (IsTrace) Debug.LogError($"blast.ssmd.interpretor.call-external: function id {id} is invalid");
                 return;
-#else
-                // the native bursted version is a little more invloved ... 
 
-                if (!ValidateOnce)
-                {
-                    if (p.IsShortDefinition)
-                    {
-
-                        switch (p.MinParameterCount)
-                        {
-                            // failure case -> could not map delegate
-                            case 112:
-#if DEVELOPMENT_BUILD || TRACE
-                                Debug.LogError($"blast.ssmd.interpretor.call_external: error mapping external fuction pointer, function id {p.FunctionId} parametercount = {p.MinParameterCount}");
-#endif
-                                for (int i = 0; i < ssmd_datacount; i++)
-                                {
-                                    f4[i].x = float.NaN;
-                                }
-                                break;
-
-                            case 0:
-                                FunctionPointer<BlastDelegate_f0_s> fp0_s = p.Generic<BlastDelegate_f0_s>();
-                                if (fp0_s.IsCreated && fp0_s.Value != IntPtr.Zero)
-                                {
-                                    for (int i = 0; i < ssmd_datacount; i++) f4[i].x = fp0_s.Invoke();
-                                    return;
-                                }
-                                goto case 112;
-
-
-                            case 1:
-                                FunctionPointer<BlastDelegate_f1_s> fp1_s = p.Generic<BlastDelegate_f1_s>();
-                                if (fp1_s.IsCreated && fp1_s.Value != IntPtr.Zero)
-                                {
-                                    for (int i = 0; i < ssmd_datacount; i++) f4[i].x = fp1_s.Invoke(p_data[i]);
-                                    return;
-                                }
-                                goto case 112;
-
-                            case 2:
-                                FunctionPointer<BlastDelegate_f11_s> fp11_s = p.Generic<BlastDelegate_f11_s>();
-                                if (fp11_s.IsCreated && fp11_s.Value != IntPtr.Zero)
-                                {
-                                    for (int i = 0; i < ssmd_datacount; i++)
-                                    {
-                                        f4[i].x = fp11_s.Invoke(p_data[i], p_data[1 * ssmd_datacount + i]);
-                                    }
-                                    return;
-                                }
-                                goto case 112;
-
-                        }
-                    }
-                    else
-                    {
-                        switch (p.MinParameterCount)
-                        {
-                            // zero parameters 
-                            case 0:
-                                FunctionPointer<BlastDelegate_f0> fp0 = p.Generic<BlastDelegate_f0>();
-                                if (fp0.IsCreated && fp0.Value != IntPtr.Zero)
-                                {
-                                    vector_size = 1;
-
-                                    for (int i = 0; i < ssmd_datacount; i++)
-                                    {
-                                        f4[i].x = fp0.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero);
-                                    }
-                                    return;
-                                }
-                                break;
-
-                            //
-                            // obviously this would be a whole lot more efficient if we vectorize the external functions 
-                            // - this is however not always good: 
-                            // - if the function is expensive to execute there would be very little benefit
-                            // - small lightweight functions would benefit greatly
-                            // - user should be able to optionally register a vectorized variant and we use that here if present
-                            // 
-                            case 1:
-                                FunctionPointer<BlastDelegate_f1> fp1 = p.Generic<BlastDelegate_f1>();
-                                if (fp1.IsCreated && fp1.Value != IntPtr.Zero)
-                                {
-                                    for (int i = 0; i < ssmd_datacount; i++)
-                                    {
-                                        f4[i].x = fp1.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i]);
-                                    }
-                                    return;
-                                }
-                                break;
-
-                            case 2:
-                                FunctionPointer<BlastDelegate_f11> fp2 = p.Generic<BlastDelegate_f11>();
-                                if (fp2.IsCreated && fp2.Value != IntPtr.Zero)
-                                {
-                                    for (int i = 0; i < ssmd_datacount; i++)
-                                    {
-                                        f4[i].x = fp2.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i]);
-                                    }
-                                    return;
-                                }
-                                break;
-
-                            case 3:
-                                FunctionPointer<BlastDelegate_f111> fp3 = p.Generic<BlastDelegate_f111>();
-                                if (fp3.IsCreated && fp3.Value != IntPtr.Zero)
-                                {
-                                    for (int i = 0; i < ssmd_datacount; i++)
-                                    {
-                                        f4[i].x = fp3.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i], p_data[2 * ssmd_datacount + i]);
-                                    }
-                                    return;
-                                }
-                                break;
-
-                            case 4:
-                                FunctionPointer<BlastDelegate_f1111> fp4 = p.Generic<BlastDelegate_f1111>();
-                                if (fp4.IsCreated && fp4.Value != IntPtr.Zero)
-                                {
-                                    for (int i = 0; i < ssmd_datacount; i++)
-                                    {
-                                        f4[i].x = fp4.Invoke((IntPtr)engine_ptr, environment_ptr, IntPtr.Zero, p_data[i], p_data[ssmd_datacount + i], p_data[2 * ssmd_datacount + i], p_data[3 * ssmd_datacount + i]);
-                                    }
-                                    return;
-                                }
-                                break;
-
-
-
-#if DEVELOPMENT_BUILD || TRACE
-                            default:
-                                Debug.LogError($"blast.ssmd.interpretor.call-external: function id {id}, with parametercount {p.MinParameterCount} is not supported yet");
-                                break;
-#endif
-                        }
-                    }
-                }
-
-#endif
-
-
-#if DEVELOPMENT_BUILD || TRACE
             }
-#endif
 
-#if DEVELOPMENT_BUILD || TRACE
-            Debug.LogError($"blast.ssmd.interpretor.call-external: failed to call function pointer with id: {id}");
-#endif
+            BlastScriptFunction p = engine_ptr->Functions[id];
+
+            if (IsTrace)
+            {
+                Debug.Log($"call fp <id:{id}> <profile:{p.FunctionDelegateId}> <env:{environment_ptr.ToInt64()}> <parametercount:{p.MinParameterCount}>");
+            }
+
+            vector_size = (byte)math.select((int)p.ReturnsVectorSize, p.AcceptsVectorSize, p.ReturnsVectorSize == 0);
+            if (vector_size != 1)
+            {
+                if (IsTrace) Debug.LogError($"blast.ssmd.interpretor.call-external: function {id} a return vector size > 1 is not currently supported in external functions");
+                return;
+            }
+            if (p.AcceptsVectorSize != 1)
+            {
+                if (IsTrace) Debug.LogError($"blast.ssmd.interpretor.call-external: function {id} a parameter vector size > 1 is not currently supported in external functions");
+                return;
+            }
+
+            void* result = CALL_EF(ref code_pointer, in p, ssmd_datacount, temp);
+
+            if (result != null)
+            {
+                // copy to output depending on vectorsize 
+
+                // todo -> need to fill in all values from profile in info native 
+                switch (vector_size)
+                {
+                    case 1: simd.move_f1_array_into_f4_array_as_f1(f4, (float*)result, ssmd_datacount); return;
+                    case 2: simd.move_f2_array_into_f4_array_as_f2(f4, (float2*)result, ssmd_datacount); return;
+                    case 3: simd.move_f3_array_into_f4_array_as_f3(f4, (float3*)result, ssmd_datacount); return;
+                    case 0:
+                    case 4: simd.move_f4_array_into_f4_array_as_f4(f4, (float4*)result, ssmd_datacount); return;
+                    default:
+                        break;
+                }
+            }
+            else
+            {
+                if (p.ReturnsVectorSize == 0)
+                {
+                    return;
+                }
+            }
+
+            // reaching here is an error 
+            if (IsTrace)
+            {
+                Debug.LogError($"blast.ssmd.interpretor.call-external: failed to call function pointer with id: {id}");
+            }
         }
-
         #endregion
 
         #region GetFunction|Sequence and Execute (privates)
@@ -5181,7 +4964,7 @@ namespace NSS.Blast.SSMD
             {
                 // math functions
                 //case blast_operation.abs: get_abs_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-
+                case blast_operation.random: CALL_RANDOM(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result);   break;
 
                 case blast_operation.maxa: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.maxa); break;
                 case blast_operation.mina: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.mina); break;
@@ -5229,7 +5012,7 @@ namespace NSS.Blast.SSMD
                         switch (exop)
                         {
                             // external calls 
-                            case extended_blast_operation.call: get_external_function_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.call: CallExternalFunction(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
 
                             // single inputs
                             case extended_blast_operation.sqrt: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.sqrt); break;
@@ -6805,7 +6588,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// assign single value 
         /// </summary>
-        BlastError assigns(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp)
+        BlastError assigns(ref int code_pointer, [NoAlias] void* temp)
         {
 #if DEVELOPMENT_BUILD || TRACE
             Assert.IsFalse(temp == null, "blast.ssmd.interpretor.assigns: temp buffer = NULL");
@@ -6822,21 +6605,21 @@ namespace NSS.Blast.SSMD
             // get assignee
             byte assignee = (byte)(assignee_op - BlastInterpretor.opt_id);
             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
-
+            
 
             // the assigned must have room for the indexer if indexed 
 
 #if DEVELOPMENT_BUILD || TRACE
-            if (is_indexed && (vector_size <= get_offset_from_indexed(0, indexer, is_indexed)))
+            if (is_indexed && (s_assignee <= get_offset_from_indexed(0, indexer, is_indexed)))
             {
-                Debug.LogError($"blast.ssmd.interpretor.assignsingle: cannot set component from vector at #{code_pointer}, component: {indexer}, vectorsize {vector_size}, index out of range");
+                Debug.LogError($"blast.ssmd.interpretor.assignsingle: cannot set component from vector at #{code_pointer}, component: {indexer}, vectorsize {s_assignee}, index out of range");
                 return BlastError.error_indexer_out_of_bounds;
             }
 
             // the compiler should have cought this, if it didt wel that would be noticed before going in release
             // so we define this only for debug saving the if
             // cannot set a component from a vector (yet)
-            if (vector_size != 1 && is_indexed)
+            if (s_assignee == 1 && is_indexed)
             {
                 Debug.LogError($"blast.ssmd.interpretor.assignsingle: cannot set component from vector at #{code_pointer}, component: {indexer}");
                 return BlastError.error_assign_component_from_vector;
@@ -6859,23 +6642,19 @@ namespace NSS.Blast.SSMD
                     {
                         pop_fx_into_ref<float>(ref code_pointer, null, data, get_offset_from_indexed(in assignee, in indexer, in is_indexed), data_is_aligned, data_rowsize);
                     }
-                    vector_size = 1;
                     break;
 
                 case 2:
                     pop_fx_into_ref<float2>(ref code_pointer, null, data, assignee, data_is_aligned, data_rowsize);
-                    vector_size = 2;
                     break;
 
                 case 3:
                     pop_fx_into_ref<float3>(ref code_pointer, null, data, assignee, data_is_aligned, data_rowsize);
-                    vector_size = 3;
                     break;
 
                 case 0:
                 case 4:
                     pop_fx_into_ref<float4>(ref code_pointer, null, data, assignee, data_is_aligned, data_rowsize);
-                    vector_size = 4;
                     break;
             }
 
@@ -7116,8 +6895,12 @@ namespace NSS.Blast.SSMD
                 // with minus flag enabled we need to use the register returned 
                 res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, register);
             }
-            code_pointer++;
 
+            //
+            // CODE POINTER MOET GOED ZIJN NA GETFUNCTION 
+            //
+            code_pointer++; 
+          
 
 #if DEVELOPMENT_BUILD || TRACE
             if (res == (int)BlastError.success)
@@ -7171,7 +6954,7 @@ namespace NSS.Blast.SSMD
             byte s_assignee = BlastInterpretor.GetMetaDataSize(in metadata, in assignee);
 #endif
             code_pointer++;
-            get_external_function_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, register);
+            CallExternalFunction(temp, ref code_pointer, ref vector_size, ssmd_datacount, register);
             code_pointer++;
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -7479,6 +7262,7 @@ namespace NSS.Blast.SSMD
                 // get data once for one record, with a constant index to set its pointless to run all records  
                 BlastError res = (BlastError)GetFunctionResult(temp, ref code_pointer, ref vector_size, 1, register, default, true);
 
+                code_pointer++;
                 if (res != BlastError.success) return res;
 
                 // assign data at constant index index 
@@ -7791,7 +7575,7 @@ namespace NSS.Blast.SSMD
             // pre-fill stack with infs for validation/stack estimation
             if (ValidateOnce)
             {
-                MaxStackSizeReachedDuringValidation = 0;
+                MaxStackSizeReachedDuringValidation = stack_offset;
 
                 if (!package.HasStackPackaged)
                 {
@@ -7980,7 +7764,7 @@ namespace NSS.Blast.SSMD
                         break;
 
                     case blast_operation.assigns:
-                        if ((ires = (int)assigns(ref code_pointer, ref vector_size, temp)) < 0) return ires;
+                        if ((ires = (int)assigns(ref code_pointer, temp)) < 0) return ires;
                         break;
 
                     case blast_operation.assignf:

@@ -1151,10 +1151,10 @@ namespace NSS.Blast
         /// <returns></returns>
         public string GetPackageCodeBytesText(int column_count = 8, bool show_index = false)
         {
-            if (IntPtr.Zero == Package.DataSegmentPtr) return string.Empty;
+            if (IntPtr.Zero == Package.CodeSegmentPtr) return string.Empty;
             unsafe
             {
-                return CodeUtils.GetBytesView((byte*)(void*)Package.Code, Package.DataSegmentSize, column_count, show_index);
+                return CodeUtils.GetBytesView((byte*)(void*)Package.Code, Package.CodeSize, column_count, show_index);
             }
         }
 
@@ -1647,8 +1647,25 @@ namespace NSS.Blast
             return BlastError.compile_packaging_error;
         }
 
+        public bool GetMetaDataInfo(int i, out BlastVariableDataType datatype, out byte vector_size)
+        {
+            unsafe
+            {
+                if (Package.Metadata != null && i >= 0 && i < Package.MetadataSize)
+                {
+                    byte b = Package.Metadata[i];
+                    vector_size = (byte)(b & 0b0000_1111);
+                    datatype = (BlastVariableDataType)((b & 0b1111_0000) >> 4);
+                    return true; 
+                }
+            }
+            vector_size = 0;
+            datatype = BlastVariableDataType.Numeric;
+            return false;
+        }
 
-#endregion
+
+        #endregion
 
     }
 
