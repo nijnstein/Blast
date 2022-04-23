@@ -1704,7 +1704,7 @@ namespace NSS.Blast
             CreateExternalProfile(BlastVectorSizes.none,   false, true);
             CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1);
             CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1, BlastVectorSizes.float1);
-//            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1, BlastVectorSizes.float1, BlastVectorSizes.float1);
+            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float1, BlastVectorSizes.float1, BlastVectorSizes.float1);
 //            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2);
 //            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2, BlastVectorSizes.float2);
 //            CreateExternalProfile(BlastVectorSizes.float1, false, true, BlastVectorSizes.float2, BlastVectorSizes.float2, BlastVectorSizes.float2);

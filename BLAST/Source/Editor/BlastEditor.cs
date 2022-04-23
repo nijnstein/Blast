@@ -106,15 +106,7 @@ namespace NSS.Blast.Editor
                 NSS.Blast.Compiler.CodeGen.CG_ExternalFunctionSupport.RunExternalFunctionDelegateCodeGen(Blast.ScriptAPI);
             }
 
-            GUILayout.Space(10);
-            GUILayout.Label("Compiler Settings :", EditorStyles.boldLabel);
-            GUILayout.Space(3);
-
-            GUILayout.Label("';' seperated list of key=value defines", EditorStyles.miniLabel);
-            CompilerDefines = GUILayout.TextArea(CompilerDefines, GUILayout.Height(40));
-            GUILayout.Space(10);
-
-                    /*
+                        /*
             GUILayout.Label("Designtime Compilation", EditorStyles.boldLabel);
             hpc_cache = EditorGUILayout.TextField("Compilation Target:", hpc_cache);
             if(GUILayout.Button("Pre-Compile Scripts"))

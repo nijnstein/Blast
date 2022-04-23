@@ -245,6 +245,7 @@ public class Sample13 : MonoBehaviour
         if (Metadata != null)
         {
             StringBuilder sb = StringBuilderCache.Acquire();
+            sb.AppendLine("Metadata Information:");
             int i = 0; int inlast = 0;  
             for (; i < script.PackageData.MetadataSize; i += 1)
             {

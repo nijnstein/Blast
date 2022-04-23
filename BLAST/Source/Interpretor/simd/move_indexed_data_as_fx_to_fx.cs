@@ -329,7 +329,7 @@ namespace NSS.Blast.SSMD
                 }
                 while (i < ssmd_datacount)
                 {
-                    p[0] = -s[0];
+                    p[0] = s[0];
                     s += stride_s;
                     p += 4;
                     i++;

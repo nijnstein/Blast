@@ -4964,7 +4964,7 @@ namespace NSS.Blast.SSMD
             {
                 // math functions
                 //case blast_operation.abs: get_abs_result(temp, ref code_pointer, ref vector_size, f4_result); break;
-                case blast_operation.random: CALL_RANDOM(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result);   break;
+                case blast_operation.random: CALL_RANDOM(ref code_pointer, ref vector_size, ssmd_datacount, f4_result);   break;
 
                 case blast_operation.maxa: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.maxa); break;
                 case blast_operation.mina: get_op_a_component_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result, blast_operation.mina); break;
@@ -5722,6 +5722,12 @@ namespace NSS.Blast.SSMD
                                 else
                                 {
                                     GetSizeResult(ref code_pointer, ref vector_size, ssmd_datacount, f4);
+                                }
+
+                                if (current_op == 0)
+                                {
+                                    code_pointer++;
+                                    continue;
                                 }
                             }
                             else

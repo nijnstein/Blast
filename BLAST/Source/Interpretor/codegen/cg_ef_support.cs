@@ -32,6 +32,7 @@ public delegate float BlastEFDelegate_F1_f1f1f1(IntPtr engine, IntPtr data, IntP
 public delegate void BSEFDelegate();
 public delegate float BSEFDelegate_F1_f1(float p0);
 public delegate float BSEFDelegate_F1_f1f1(float p0, float p1);
+public delegate float BSEFDelegate_F1_f1f1f1(float p0, float p1, float p2);
 unsafe public delegate void* BlastEFSSMDDelegate(IntPtr engine, IntPtr data);
 unsafe public delegate float* BlastEFSSMDDelegate_F1_f1(IntPtr engine, IntPtr data, float* result, [NoAlias]float* p0, int ssmd_datacount);
 unsafe public delegate float* BlastEFSSMDDelegate_F1_f1f1(IntPtr engine, IntPtr data, float* result, [NoAlias]float* p0, [NoAlias]float* p1, int ssmd_datacount);
@@ -73,6 +74,7 @@ public int Register(External.BlastEFDelegate_F1_f1f1f1 function, string name = n
 public int Register(External.BSEFDelegate function, string name = null) { return RegisterFunction(function, name, 0, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT); }
 public int Register(External.BSEFDelegate_F1_f1 function, string name = null) { return RegisterFunction(function, name, 1, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1); }
 public int Register(External.BSEFDelegate_F1_f1f1 function, string name = null) { return RegisterFunction(function, name, 2, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1f1); }
+public int Register(External.BSEFDelegate_F1_f1f1f1 function, string name = null) { return RegisterFunction(function, name, 3, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1f1f1); }
 public int Register(External.BlastEFSSMDDelegate function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD); }
 public int Register(External.BlastEFSSMDDelegate_F1_f1 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f1); }
 public int Register(External.BlastEFSSMDDelegate_F1_f1f1 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f1f1); }
@@ -108,29 +110,30 @@ CALL_PROC_EF_F1_f1f1f1 = 3,
 CALL_PROC_EF_SHORT = 4,
 CALL_PROC_EF_SHORT_F1_f1 = 5,
 CALL_PROC_EF_SHORT_F1_f1f1 = 6,
-CALL_PROC_EF_SSMD = 7,
-CALL_PROC_EF_SSMD_F1_f1 = 8,
-CALL_PROC_EF_SSMD_F1_f1f1 = 9,
-CALL_PROC_EF_SSMD_F1_f1f1f1 = 10,
-CALL_PROC_EF_SSMD_F1_f2 = 11,
-CALL_PROC_EF_SSMD_F1_f2f2 = 12,
-CALL_PROC_EF_SSMD_F1_f2f2f2 = 13,
-CALL_PROC_EF_SSMD_F1_f3 = 14,
-CALL_PROC_EF_SSMD_F1_f3f3 = 15,
-CALL_PROC_EF_SSMD_F1_f3f3f3 = 16,
-CALL_PROC_EF_SSMD_F1_f4 = 17,
-CALL_PROC_EF_SSMD_F1_f4f4 = 18,
-CALL_PROC_EF_SSMD_F1_f4f4f4 = 19,
-CALL_PROC_EF_SSMD_F2_f2 = 20,
-CALL_PROC_EF_SSMD_F2_f2f2 = 21,
-CALL_PROC_EF_SSMD_F2_f2f2f2 = 22,
-CALL_PROC_EF_SSMD_F3_f3 = 23,
-CALL_PROC_EF_SSMD_F3_f3f3 = 24,
-CALL_PROC_EF_SSMD_F3_f3f3f3 = 25,
-CALL_PROC_EF_SSMD_F4_f4 = 26,
-CALL_PROC_EF_SSMD_b32 = 27,
-CALL_PROC_EF_SSMD_B32_b32 = 28,
-CALL_PROC_EF_SSMD_B32_b32f4f1 = 29,
+CALL_PROC_EF_SHORT_F1_f1f1f1 = 7,
+CALL_PROC_EF_SSMD = 8,
+CALL_PROC_EF_SSMD_F1_f1 = 9,
+CALL_PROC_EF_SSMD_F1_f1f1 = 10,
+CALL_PROC_EF_SSMD_F1_f1f1f1 = 11,
+CALL_PROC_EF_SSMD_F1_f2 = 12,
+CALL_PROC_EF_SSMD_F1_f2f2 = 13,
+CALL_PROC_EF_SSMD_F1_f2f2f2 = 14,
+CALL_PROC_EF_SSMD_F1_f3 = 15,
+CALL_PROC_EF_SSMD_F1_f3f3 = 16,
+CALL_PROC_EF_SSMD_F1_f3f3f3 = 17,
+CALL_PROC_EF_SSMD_F1_f4 = 18,
+CALL_PROC_EF_SSMD_F1_f4f4 = 19,
+CALL_PROC_EF_SSMD_F1_f4f4f4 = 20,
+CALL_PROC_EF_SSMD_F2_f2 = 21,
+CALL_PROC_EF_SSMD_F2_f2f2 = 22,
+CALL_PROC_EF_SSMD_F2_f2f2f2 = 23,
+CALL_PROC_EF_SSMD_F3_f3 = 24,
+CALL_PROC_EF_SSMD_F3_f3f3 = 25,
+CALL_PROC_EF_SSMD_F3_f3f3f3 = 26,
+CALL_PROC_EF_SSMD_F4_f4 = 27,
+CALL_PROC_EF_SSMD_b32 = 28,
+CALL_PROC_EF_SSMD_B32_b32 = 29,
+CALL_PROC_EF_SSMD_B32_b32f4f1 = 30,
 
     }
 
@@ -157,6 +160,7 @@ namespace NSS.Blast.Interpretor
         case 4: CALL_PROC_EF_SHORT(ref code_pointer, id); return 0;
         case 5: return CALL_PROC_EF_SHORT_F1_f1(ref code_pointer, id); 
         case 6: return CALL_PROC_EF_SHORT_F1_f1f1(ref code_pointer, id); 
+        case 7: return CALL_PROC_EF_SHORT_F1_f1f1f1(ref code_pointer, id); 
     }
 
     return float.NaN;
@@ -371,6 +375,46 @@ CALLERROR:
 #endif
    return float.NaN;
 }
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f1f1f1).Invoke(p1, p2, p3);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(p1, p2, p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
 
     }   
 
@@ -391,29 +435,29 @@ namespace NSS.Blast.SSMD
 
     switch(delegate_type)
     {
-        case 7: CALL_PROC_EF_SSMD(ref code_pointer, id); return null;
-        case 8: return CALL_PROC_EF_SSMD_F1_f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 9: return CALL_PROC_EF_SSMD_F1_f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 10: return CALL_PROC_EF_SSMD_F1_f1f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 11: return CALL_PROC_EF_SSMD_F1_f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 12: return CALL_PROC_EF_SSMD_F1_f2f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 13: return CALL_PROC_EF_SSMD_F1_f2f2f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 14: return CALL_PROC_EF_SSMD_F1_f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 15: return CALL_PROC_EF_SSMD_F1_f3f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 16: return CALL_PROC_EF_SSMD_F1_f3f3f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 17: return CALL_PROC_EF_SSMD_F1_f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 18: return CALL_PROC_EF_SSMD_F1_f4f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 19: return CALL_PROC_EF_SSMD_F1_f4f4f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 20: return CALL_PROC_EF_SSMD_F2_f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
-        case 21: return CALL_PROC_EF_SSMD_F2_f2f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
-        case 22: return CALL_PROC_EF_SSMD_F2_f2f2f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
-        case 23: return CALL_PROC_EF_SSMD_F3_f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
-        case 24: return CALL_PROC_EF_SSMD_F3_f3f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
-        case 25: return CALL_PROC_EF_SSMD_F3_f3f3f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
-        case 26: return CALL_PROC_EF_SSMD_F4_f4(ref code_pointer, id, ssmd_datacount, (float4*)temp); 
-        case 27: CALL_PROC_EF_SSMD_b32(ref code_pointer, id, ssmd_datacount); return null;
-        case 28: return CALL_PROC_EF_SSMD_B32_b32(ref code_pointer, id, ssmd_datacount, (Bool32*)temp); 
-        case 29: return CALL_PROC_EF_SSMD_B32_b32f4f1(ref code_pointer, id, ssmd_datacount, (Bool32*)temp); 
+        case 8: CALL_PROC_EF_SSMD(ref code_pointer, id); return null;
+        case 9: return CALL_PROC_EF_SSMD_F1_f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 10: return CALL_PROC_EF_SSMD_F1_f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 11: return CALL_PROC_EF_SSMD_F1_f1f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 12: return CALL_PROC_EF_SSMD_F1_f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 13: return CALL_PROC_EF_SSMD_F1_f2f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 14: return CALL_PROC_EF_SSMD_F1_f2f2f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 15: return CALL_PROC_EF_SSMD_F1_f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 16: return CALL_PROC_EF_SSMD_F1_f3f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 17: return CALL_PROC_EF_SSMD_F1_f3f3f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 18: return CALL_PROC_EF_SSMD_F1_f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 19: return CALL_PROC_EF_SSMD_F1_f4f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 20: return CALL_PROC_EF_SSMD_F1_f4f4f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 21: return CALL_PROC_EF_SSMD_F2_f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
+        case 22: return CALL_PROC_EF_SSMD_F2_f2f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
+        case 23: return CALL_PROC_EF_SSMD_F2_f2f2f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
+        case 24: return CALL_PROC_EF_SSMD_F3_f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
+        case 25: return CALL_PROC_EF_SSMD_F3_f3f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
+        case 26: return CALL_PROC_EF_SSMD_F3_f3f3f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
+        case 27: return CALL_PROC_EF_SSMD_F4_f4(ref code_pointer, id, ssmd_datacount, (float4*)temp); 
+        case 28: CALL_PROC_EF_SSMD_b32(ref code_pointer, id, ssmd_datacount); return null;
+        case 29: return CALL_PROC_EF_SSMD_B32_b32(ref code_pointer, id, ssmd_datacount, (Bool32*)temp); 
+        case 30: return CALL_PROC_EF_SSMD_B32_b32f4f1(ref code_pointer, id, ssmd_datacount, (Bool32*)temp); 
     }
 
     return null;
