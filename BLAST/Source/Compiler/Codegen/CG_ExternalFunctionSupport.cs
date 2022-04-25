@@ -377,7 +377,18 @@ namespace NSS.Blast.SSMD
             string returns_ptr = profile.ReturnsValue ? (result_needs_pointer ? "*" : ptr) : "";
             string ssmd_return_buffer = (profile.IsSSMD || result_needs_pointer) && profile.ReturnsValue ? $", {profile.ReturnParameter.FullTypeName()}{returns_ptr} result" : "";
 
-            s.AppendLine("[MethodImpl(MethodImplOptions.AggressiveInlining)]"); 
+            // if there are parameters dont inline the function 
+            if (profile.IsSSMD && profile.ParameterCount > 0)
+            {
+                // dont inline stackallocs they are unconditional
+                s.AppendLine("[MethodImpl(MethodImplOptions.NoInlining)]");
+            }
+            else
+            {
+                // if no allocations needed,
+                s.AppendLine("[MethodImpl(MethodImplOptions.AggressiveInlining)]");
+            }
+
             s.AppendLine($"internal {profile.ReturnParameter.FullTypeName()}{returns_ptr} CALL_PROC_EF{shortname}{ssmd}{returns}{postfix}(ref int code_pointer, in int function_id{ssmd_count}{ssmd_return_buffer})");
             s.AppendLine("{");
 

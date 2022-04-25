@@ -18,8 +18,9 @@ using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Mathematics;
 
-     
+
 #pragma warning disable CS1591
+#pragma warning disable CS0164
 
 namespace NSS.Blast.External
 {
@@ -3055,7 +3056,7 @@ internal Bool32* CALL_PROC_EF_SSMD_B32(ref int code_pointer, in int function_id,
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float* p1 = stackalloc float[ssmd_datacount];
@@ -3076,7 +3077,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f1(ref int code_pointer, in int function_id
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float* p1 = stackalloc float[ssmd_datacount];
@@ -3099,7 +3100,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1(ref int code_pointer, in int function_
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float* p1 = stackalloc float[ssmd_datacount];
@@ -3124,7 +3125,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1(ref int code_pointer, in int functio
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float* p1 = stackalloc float[ssmd_datacount];
@@ -3151,7 +3152,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1(ref int code_pointer, in int funct
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float* p1 = stackalloc float[ssmd_datacount];
@@ -3180,7 +3181,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1(ref int code_pointer, in int fun
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float* p1 = stackalloc float[ssmd_datacount];
@@ -3211,7 +3212,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1(ref int code_pointer, in int f
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float* p1 = stackalloc float[ssmd_datacount];
@@ -3244,7 +3245,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1(ref int code_pointer, in int
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float* p1 = stackalloc float[ssmd_datacount];
@@ -3279,7 +3280,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1f1(ref int code_pointer, in i
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f2(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float2* p1 = stackalloc float2[ssmd_datacount];
@@ -3300,7 +3301,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f2(ref int code_pointer, in int function_id
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f2f2(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float2* p1 = stackalloc float2[ssmd_datacount];
@@ -3323,7 +3324,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f2f2(ref int code_pointer, in int function_
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f2f2f2(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float2* p1 = stackalloc float2[ssmd_datacount];
@@ -3348,7 +3349,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f2f2f2(ref int code_pointer, in int functio
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f3(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float3* p1 = stackalloc float3[ssmd_datacount];
@@ -3369,7 +3370,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f3(ref int code_pointer, in int function_id
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f3f3(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float3* p1 = stackalloc float3[ssmd_datacount];
@@ -3392,7 +3393,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f3f3(ref int code_pointer, in int function_
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f3f3f3(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float3* p1 = stackalloc float3[ssmd_datacount];
@@ -3417,7 +3418,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f3f3f3(ref int code_pointer, in int functio
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f4(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float4* p1 = stackalloc float4[ssmd_datacount];
@@ -3438,7 +3439,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f4(ref int code_pointer, in int function_id
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f4f4(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float4* p1 = stackalloc float4[ssmd_datacount];
@@ -3461,7 +3462,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f4f4(ref int code_pointer, in int function_
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f4f4f4(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
    float4* p1 = stackalloc float4[ssmd_datacount];
@@ -3486,7 +3487,7 @@ internal float* CALL_PROC_EF_SSMD_F1_f4f4f4(ref int code_pointer, in int functio
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float2* CALL_PROC_EF_SSMD_F2_f2(ref int code_pointer, in int function_id, int ssmd_datacount, float2* result)
 {
    float2* p1 = stackalloc float2[ssmd_datacount];
@@ -3507,7 +3508,7 @@ internal float2* CALL_PROC_EF_SSMD_F2_f2(ref int code_pointer, in int function_i
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float2* CALL_PROC_EF_SSMD_F2_f2f2(ref int code_pointer, in int function_id, int ssmd_datacount, float2* result)
 {
    float2* p1 = stackalloc float2[ssmd_datacount];
@@ -3530,7 +3531,7 @@ internal float2* CALL_PROC_EF_SSMD_F2_f2f2(ref int code_pointer, in int function
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float2* CALL_PROC_EF_SSMD_F2_f2f2f2(ref int code_pointer, in int function_id, int ssmd_datacount, float2* result)
 {
    float2* p1 = stackalloc float2[ssmd_datacount];
@@ -3555,7 +3556,7 @@ internal float2* CALL_PROC_EF_SSMD_F2_f2f2f2(ref int code_pointer, in int functi
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float3* CALL_PROC_EF_SSMD_F3_f3(ref int code_pointer, in int function_id, int ssmd_datacount, float3* result)
 {
    float3* p1 = stackalloc float3[ssmd_datacount];
@@ -3576,7 +3577,7 @@ internal float3* CALL_PROC_EF_SSMD_F3_f3(ref int code_pointer, in int function_i
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float3* CALL_PROC_EF_SSMD_F3_f3f3(ref int code_pointer, in int function_id, int ssmd_datacount, float3* result)
 {
    float3* p1 = stackalloc float3[ssmd_datacount];
@@ -3599,7 +3600,7 @@ internal float3* CALL_PROC_EF_SSMD_F3_f3f3(ref int code_pointer, in int function
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float3* CALL_PROC_EF_SSMD_F3_f3f3f3(ref int code_pointer, in int function_id, int ssmd_datacount, float3* result)
 {
    float3* p1 = stackalloc float3[ssmd_datacount];
@@ -3624,7 +3625,7 @@ internal float3* CALL_PROC_EF_SSMD_F3_f3f3f3(ref int code_pointer, in int functi
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float4* CALL_PROC_EF_SSMD_F4_f4(ref int code_pointer, in int function_id, int ssmd_datacount, float4* result)
 {
    float4* p1 = stackalloc float4[ssmd_datacount];
@@ -3645,7 +3646,7 @@ internal float4* CALL_PROC_EF_SSMD_F4_f4(ref int code_pointer, in int function_i
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float4* CALL_PROC_EF_SSMD_F4_f4f4(ref int code_pointer, in int function_id, int ssmd_datacount, float4* result)
 {
    float4* p1 = stackalloc float4[ssmd_datacount];
@@ -3668,7 +3669,7 @@ internal float4* CALL_PROC_EF_SSMD_F4_f4f4(ref int code_pointer, in int function
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float4* CALL_PROC_EF_SSMD_F4_f4f4f4(ref int code_pointer, in int function_id, int ssmd_datacount, float4* result)
 {
    float4* p1 = stackalloc float4[ssmd_datacount];
@@ -3693,7 +3694,7 @@ internal float4* CALL_PROC_EF_SSMD_F4_f4f4f4(ref int code_pointer, in int functi
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal void CALL_PROC_EF_SSMD_b32(ref int code_pointer, in int function_id, int ssmd_datacount)
 {
    float* p1 = stackalloc float[ssmd_datacount];
@@ -3714,7 +3715,7 @@ internal void CALL_PROC_EF_SSMD_b32(ref int code_pointer, in int function_id, in
 #endif
    return;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal Bool32* CALL_PROC_EF_SSMD_B32_b32(ref int code_pointer, in int function_id, int ssmd_datacount, Bool32* result)
 {
    float* p1 = stackalloc float[ssmd_datacount];
@@ -3735,7 +3736,7 @@ internal Bool32* CALL_PROC_EF_SSMD_B32_b32(ref int code_pointer, in int function
 #endif
    return null;
 }
-[MethodImpl(MethodImplOptions.NoInlining)]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal Bool32* CALL_PROC_EF_SSMD_B32_b32f4f1(ref int code_pointer, in int function_id, int ssmd_datacount, Bool32* result)
 {
    float* p1 = stackalloc float[ssmd_datacount];
