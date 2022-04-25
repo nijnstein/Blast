@@ -706,11 +706,6 @@ namespace NSS.Blast.Compiler
                         case blast_operation.expand_v3: sb.Append("expand_v3 "); break;
                         case blast_operation.expand_v4: sb.Append("expand_v4 "); break;
 
-                        case blast_operation.set_bit: sb.Append("set_bit "); asnumber = 0; break;
-                        case blast_operation.set_bits: sb.Append("set_bits "); asnumber = 0; break;
-                        case blast_operation.get_bit: sb.Append("get_bit "); asnumber = 0; break;
-                        case blast_operation.get_bits: sb.Append("get_bits "); asnumber = 0; break;
-
                         case blast_operation.zero: sb.Append("zero "); asnumber = 0; break;
                         case blast_operation.size: sb.Append("size "); break;
 
@@ -771,6 +766,11 @@ namespace NSS.Blast.Compiler
 
                                 case extended_blast_operation.count_bits: sb.Append("count_bits "); break;
                                 case extended_blast_operation.reverse_bits: sb.Append("reverse_bits "); break;
+
+                                case extended_blast_operation.set_bit: sb.Append("set_bit "); asnumber = 0; break;
+                                case extended_blast_operation.set_bits: sb.Append("set_bits "); asnumber = 0; break;
+                                case extended_blast_operation.get_bit: sb.Append("get_bit "); asnumber = 0; break;
+                                case extended_blast_operation.get_bits: sb.Append("get_bits "); asnumber = 0; break;
 
                                 case extended_blast_operation.shl: sb.Append("shl "); break; 
                                 case extended_blast_operation.shr: sb.Append("shr "); break; 

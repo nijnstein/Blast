@@ -825,12 +825,16 @@ namespace NSS.Blast
         expand_v4,
 
         /// <summary>
-        /// packagemode ssmd|entity only: inline constant definition of f1 
+        /// packagemode ssmd|entity only: inline constant definition of f1
+        /// 
+        /// DO NOT CHANGE BYTE VALUE ORDER OF CONSTANT REFS!!!
         /// </summary>
         constant_f1,
 
         /// <summary>
         /// packagemode ssmd|entity only: inline constant definition of a float1 encoded in 2 bytes 
+        /// 
+        /// DO NOT CHANGE BYTE VALUE ORDER OF CONSTANT REFS!!!
         /// </summary>
         constant_f1_h,
 
@@ -848,38 +852,32 @@ namespace NSS.Blast
         /// ref_f -addressoffset (2 bytes)... ref_f2 data data 
         /// </remarks>
         constant_long_ref,
-
-
-        /// todo soon
-
+                                                                                          
+        /// <summary>
+        /// DO NOT CHANGE BYTE VALUE ORDER OF CONSTANT REFS!!!
+        /// </summary>
+        constant_i1,
 
         /// <summary>
-        /// set(variable, mask, value[0|1])
+        /// DO NOT CHANGE BYTE VALUE ORDER OF CONSTANT REFS!!!
         /// </summary>
-        set_bits,
+        constant_i1_h,
 
         /// <summary>
-        /// get(variable, mask) => [0|1]
+        /// DO NOT CHANGE BYTE VALUE ORDER OF CONSTANT REFS!!!
         /// </summary>
-        get_bits,
+        constant_reserved_1,
 
         /// <summary>
-        /// set a bit: set_bit(variable, index, 0|1); 
+        /// DO NOT CHANGE BYTE VALUE ORDER OF CONSTANT REFS!!!
         /// </summary>
-        set_bit,
+        constant_reserved_2, 
 
-        /// <summary>
-        /// get(variable, index) => 0|1
-        /// </summary>
-        get_bit,
         
         /// <summary>
         /// set data at index to zero 
         /// </summary>
         zero,
-
-
-
 
         /// <summary>
         /// get element size of a given variable, for vectors returns vectorsize, for cdata returns number of elements in interpreted datatype
@@ -1237,11 +1235,37 @@ namespace NSS.Blast
         /// </summary>
         reverse_bits,     // == 42 
 
+        /// <summary>
+        /// set(variable, mask, value[0|1])
+        /// </summary>
+        set_bits,
+
+        /// <summary>
+        /// get(variable, mask) => [0|1]
+        /// </summary>
+        get_bits,
+
+        /// <summary>
+        /// set a bit: set_bit(variable, index, 0|1); 
+        /// </summary>
+        set_bit,
+
+        /// <summary>
+        /// get(variable, index) => 0|1
+        /// </summary>
+        get_bit,
+
+
 
         // bool32 bit operations  -> these are explicetly in extended ops to force things to be more flexible in the interpretors        \
         // when they accept this, ID and HALF should not be a big problem  
         or32, and32, xor32, not32,
 
+
+        /// <summary>
+        /// reinterpret data at index as an integer, updates metadata only 
+        /// </summary>
+        reinterpret_int32 = 248,
 
         /// <summary>
         /// reinterpret data at index as a float, updates metadata only 
@@ -1988,7 +2012,19 @@ namespace NSS.Blast
         /// <summary>
         /// an attempt was made to assign a vector to a component of a cdata 
         /// </summary>
-        error_cannot_assign_vector_to_cdata_component = -100
+        error_cannot_assign_vector_to_cdata_component = -100,
+        /// <summary>
+        /// failed to follow a constant reference in the codestream
+        /// </summary>
+        error_constant_reference_error = -101,
+        /// <summary>
+        /// the referenced codesegment is null  
+        /// </summary>
+        error_codesegment_null = 102,
+        /// <summary>
+        /// attempting to assing a datatype to a cdata index of a different datatype 
+        /// </summary>
+        error_cdata_datatype_mismatch = 103
     }
 
 }

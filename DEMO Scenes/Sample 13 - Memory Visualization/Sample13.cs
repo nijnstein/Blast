@@ -55,17 +55,22 @@ public class Sample13 : MonoBehaviour
     const int SSMDCount = 32; 
 
 
-    public Texture2D DataStackTexture;
+    // the memory view map 
+    Texture2D memorytexture;
+    public RawImage MemoryView;
+    public const float MemoryColorLowerBound = 40f;
+    public const float MemoryAlphafactor = 0.8f; 
+    
     public TMPro.TMP_InputField ScriptInput;
     public TMPro.TMP_Text NodeStructure;
     public TMPro.TMP_Text ErrorMessage;
     public TMPro.TMP_Text Bytecode;
     public TMPro.TMP_Text Metadata;
+    public TMPro.TMP_Text MetadataStack;
     public TMPro.TMP_Text PackageInfo;
     public TMPro.TMP_Text DataInfo;
     public TMPro.TMP_InputField SSMDRecordNumber;
-    public Button ExecuteButton; 
-
+    public Button ExecuteButton;
 
 
     /// <summary>
@@ -101,7 +106,18 @@ public class Sample13 : MonoBehaviour
         {
             ExecuteButton.onClick.AddListener(Execute);
         }
-        ClearAll(); 
+        ClearAll();
+
+
+        // setup a texure to visualize our data|stack in, 32 floats, 32 rows|records 
+        memorytexture = new Texture2D(DataCount, SSMDCount, TextureFormat.ARGB32, false);
+        memorytexture.wrapMode = TextureWrapMode.Clamp;
+        memorytexture.filterMode = FilterMode.Point; 
+        if (MemoryView != null)
+        {
+            MemoryView.texture = memorytexture;
+        }
+        memorytexture.Apply(); 
     }
 
     /// <summary>
@@ -119,13 +135,13 @@ public class Sample13 : MonoBehaviour
         {
             Application.Quit();
         }
-        if(DataStackTexture == null || string.IsNullOrWhiteSpace(Script))
-        {
-            return; 
-        }
         if (ScriptInput != null)
         {
             Script = ScriptInput.text;
+        }
+        if(memorytexture == null || string.IsNullOrWhiteSpace(Script))
+        {
+            return; 
         }
 
         // remember the last script so we dont run the same script twice 
@@ -171,7 +187,7 @@ public class Sample13 : MonoBehaviour
         }
 
         // setup backing memory from a texture 
-        NativeArray<byte> texture_data = DataStackTexture.GetRawTextureData<byte>();
+        NativeArray<byte> texture_data = memorytexture.GetRawTextureData<byte>();
 
         //if(memory == IntPtr.Zero)
         if(!texture_data.IsCreated)
@@ -202,7 +218,7 @@ public class Sample13 : MonoBehaviour
 
                 StringBuilder sb = StringBuilderCache.Acquire();
                 sb.Append($"SSMD Record #{SSMDRecordToView}");
-                for(int i = (SSMDRecordToView * 32); i < 32 + (SSMDRecordToView * 32); i += 8)
+                for(int i = (SSMDRecordToView * DataCount); i < DataCount + (SSMDRecordToView * DataCount); i += 8)
                 {
                     sb.AppendLine();
                     sb.Append($"{data[i + 0].ToString("0.00").PadLeft(8)}");
@@ -226,8 +242,40 @@ public class Sample13 : MonoBehaviour
             }
 
 
-            DataStackTexture.SetPixelData<byte>(texture_data, 0);
-            DataStackTexture.Apply();
+            memorytexture.SetPixelData<byte>(texture_data, 0);
+            
+            // show the stack by coloring it black/white
+            NativeArray<Color32> color = memorytexture.GetPixelData<Color32>(0);
+            for (int y = 0; y < SSMDCount; y++)
+            {
+                for (int x = 0; x < DataCount; x++)
+                {
+                    Color32 c = color[y * DataCount + x];
+
+                    byte r = (byte)(c.r > 0 ? math.max(MemoryColorLowerBound, c.r) : 0);
+                    byte g = (byte)(c.g > 0 ? math.max(MemoryColorLowerBound, c.g) : 0);
+                    byte b = (byte)(c.b > 0 ? math.max(MemoryColorLowerBound, c.b) : 0);
+                    byte a = (byte)math.max(r, math.max(g, (int)b) * MemoryAlphafactor); 
+
+                    color[y * DataCount + x] = new Color32(r, g, b, a);
+
+                }
+            }
+            for (int y = 0; y < SSMDCount; y++)
+            {
+                for (int x = script.PackageData.DataSize / 4; x < DataCount; x++)
+                {
+                    Color32 c = color[y * DataCount + x];
+
+                    // grayscale it and darken
+                    byte b = (byte)math.max(c.r, math.max((int)c.g, c.b) / 2);
+
+                    color[y * DataCount + x] = new Color32(b, b, b, c.a);
+                }
+            }
+            memorytexture.SetPixelData<Color32>(color, 0);
+
+            memorytexture.Apply();
 
         }
     }
@@ -245,32 +293,55 @@ public class Sample13 : MonoBehaviour
         if (Metadata != null)
         {
             StringBuilder sb = StringBuilderCache.Acquire();
-            sb.AppendLine("Metadata Information:");
+            StringBuilder sbs = new StringBuilder(); 
+            sb.AppendLine("Metadata Information:"); 
+            sbs.AppendLine(); 
             int i = 0; int inlast = 0;  
+            
             for (; i < script.PackageData.MetadataSize; i += 1)
             {
                 BlastVariableDataType type;
                 byte vectorsize;
+                bool in_stack = i >= script.PackageData.DataSize / 4; 
                 if (script.Package.GetMetaDataInfo(i, out type, out vectorsize))
                 {
                     if (inlast > 0 || vectorsize == 0)
                     {
                         inlast--;
                         // later version will use this space left over by vectors for information on the structure or array
-                        sb.Append($"{(i).ToString().PadLeft(2)}:                   ");
+
+                        if (in_stack)
+                        {
+                            sb.Append($"{(i).ToString().PadLeft(2)}:                   ");
+                            sbs.Append($"      STACK MEMORY    ");
+                        }
+                        else
+                        {
+                            sb.Append($"{(i).ToString().PadLeft(2)}:       ######      ");
+                            sbs.Append($"                      ");
+                        }
                     }
                     else
                     {
                         sb.Append($"{(i).ToString().PadLeft(2)}: {(type.ToString().PadLeft(10))}[{vectorsize}]     ");
+                        sbs.Append($"                      ");
                         if (vectorsize > 1)
                         {
                             inlast = vectorsize - 1;
                         }
                     }
-                    if (i % 2 == 1) sb.AppendLine();
+                    if (i % 2 == 1)
+                    {
+                        sb.AppendLine();
+                        sbs.AppendLine(); 
+                    }
                 }
             }
             Metadata.text = StringBuilderCache.GetStringAndRelease(ref sb);
+            if(MetadataStack != null) 
+            {
+                MetadataStack.text = sbs.ToString(); 
+            }
         }
         // show some usefull information on the package 
         if (PackageInfo != null)
@@ -309,6 +380,10 @@ public class Sample13 : MonoBehaviour
         if (Metadata != null)
         {
             Metadata.text = ""; 
+        }
+        if(MetadataStack != null)
+        {
+            MetadataStack.text = ""; 
         }
         if (Bytecode != null)
         {

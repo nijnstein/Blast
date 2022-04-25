@@ -460,14 +460,25 @@ namespace NSS.Blast.Compiler.Stage
             {
                 // default to numerics
                 case "float":
-                case "numeric": encoding = CDATAEncodingType.None; offset_for_datatype = 1; break;
-                case "fp32": encoding = CDATAEncodingType.None; offset_for_datatype = 1; break; 
+                case "single":
+                case "numeric": encoding = CDATAEncodingType.None; break;
+                case "fp32":    encoding = CDATAEncodingType.None; break;
 
-                case "bool32": encoding = CDATAEncodingType.bool32; offset_for_datatype = 1; break;
+                case "fp16_fp32": encoding = CDATAEncodingType.fp16_fp32; break;
+                case "i32_i32":
+                case "int": encoding = CDATAEncodingType.i32_i32; break;
+
+                case "i16_i32": encoding = CDATAEncodingType.i16_i32; break;
+                case "i8_i32": encoding = CDATAEncodingType.i8_i32; break;
+                case "short": encoding = CDATAEncodingType.i16_i32; break;
+
+                case "bool32": encoding = CDATAEncodingType.bool32; break;
                 case "ascii":
                 case "text":
-                case "string": encoding = CDATAEncodingType.ASCII; offset_for_datatype = 1; break; 
+                case "string": encoding = CDATAEncodingType.ASCII; break; 
             }
+
+            if (encoding != CDATAEncodingType.None) offset_for_datatype = 1; 
 
             // classify the first value, anything in a is at least 1 char long
             char ch = a[2 + offset_for_datatype][0];

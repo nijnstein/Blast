@@ -194,6 +194,12 @@ namespace NSS.Blast.SSMD
             s.AppendLine("    int id = function.FunctionId;");
             s.AppendLine("    byte delegate_type = function.FunctionDelegateId;");
             s.AppendLine("");
+            if (!ssmd)
+            {
+                s.AppendLine("    float4 f4;");         // for returning vector types in non ssmd   
+                s.AppendLine("    void* temp = &f4; ");
+                s.AppendLine("");
+            }
             s.AppendLine("    switch(delegate_type)");
             s.AppendLine("    {");
 
@@ -242,18 +248,21 @@ namespace NSS.Blast.SSMD
                                 break;
 
                             case BlastVectorSizes.bool32:
-                                s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id).Single; ");
+                                // bool is a struct but should pass as float32 as value 
+                                s.AppendLine($"        case {profile.DelegateType}: return new float4({functionname}(ref code_pointer, id, (Bool32*)temp)[0].Single, 0, 0, 0);");//.Single; ");
                                 break;
 
                             case BlastVectorSizes.float2:
-                                s.AppendLine($"        case {profile.DelegateType}: return new float4({functionname}(ref code_pointer, id), 0, 0);");
+                                s.AppendLine($"        case {profile.DelegateType}: return new float4({functionname}(ref code_pointer, id, (float2*)temp)[0], 0, 0);");
                                 break;
                             case BlastVectorSizes.float3:
-                                s.AppendLine($"        case {profile.DelegateType}: return new float4({functionname}(ref code_pointer, id), 0); ");
+                                s.AppendLine($"        case {profile.DelegateType}: return new float4({functionname}(ref code_pointer, id, (float3*)temp)[0], 0); ");
                                 break;
                             case BlastVectorSizes.float1:
-                            case BlastVectorSizes.float4:
                                 s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id); ");
+                                break;
+                            case BlastVectorSizes.float4:
+                                s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id, (float4*)temp)[0]; ");
                                 break;
                         }
                     }
@@ -337,6 +346,11 @@ namespace NSS.Blast.SSMD
             return $"CALL_PROC_EF{shortname}{ssmd}{returns}{postfix}";
         }
 
+
+
+        // any function using float 2-4 or any other struct should pass it as pointer
+
+
         static string CreateDelegateCall(ExternalFunctionProfile profile)
         {
             StringBuilder s = StringBuilderCache.Acquire();
@@ -355,9 +369,13 @@ namespace NSS.Blast.SSMD
             string ssmd_count = profile.IsSSMD && profile.ParameterCount > 0 ? ", int ssmd_datacount" : "";
             string ssmd_param = profile.IsSSMD && profile.ParameterCount > 0 ? ", ssmd_datacount" : "";
 
-            string returns_ptr = profile.ReturnsValue ? ptr : "";
+            
+            bool result_needs_pointer = profile.ReturnParameter.VectorSize() > 1 || profile.ReturnParameter == BlastVectorSizes.bool32;
 
-            string ssmd_return_buffer = profile.IsSSMD && profile.ReturnsValue ? $", {profile.ReturnParameter.FullTypeName()}{returns_ptr} result" : "";
+
+            // if ssmd or vector return : pointer
+            string returns_ptr = profile.ReturnsValue ? (result_needs_pointer ? "*" : ptr) : "";
+            string ssmd_return_buffer = (profile.IsSSMD || result_needs_pointer) && profile.ReturnsValue ? $", {profile.ReturnParameter.FullTypeName()}{returns_ptr} result" : "";
 
             s.AppendLine("[MethodImpl(MethodImplOptions.AggressiveInlining)]"); 
             s.AppendLine($"internal {profile.ReturnParameter.FullTypeName()}{returns_ptr} CALL_PROC_EF{shortname}{ssmd}{returns}{postfix}(ref int code_pointer, in int function_id{ssmd_count}{ssmd_return_buffer})");
@@ -415,7 +433,14 @@ namespace NSS.Blast.SSMD
                     }
                     else
                     {
-                        delegate_parameters += $"p{(i + 1)}";
+                        if (!profile.IsSSMD && (profile.ParameterType(i).VectorSize() > 1 || profile.ParameterType(i) == BlastVectorSizes.bool32))
+                        {
+                            delegate_parameters += $"&p{(i + 1)}";
+                        }
+                        else
+                        {
+                            delegate_parameters += $"p{(i + 1)}";
+                        }
                     }
                 }
             }
@@ -427,24 +452,30 @@ namespace NSS.Blast.SSMD
                 {
                     case BlastVectorSizes.none: break;
                     case BlastVectorSizes.float1: s.AppendLine($"   float{ptr} result;"); break;
-                    case BlastVectorSizes.float2: s.AppendLine($"   float2{ptr} result;"); break;
-                    case BlastVectorSizes.float3: s.AppendLine($"   float3{ptr} result;"); break;
-                    case BlastVectorSizes.float4: s.AppendLine($"   float4{ptr} result;"); break;
-                    case BlastVectorSizes.bool32: s.AppendLine($"   Bool32{ptr} result;"); break;
                     case BlastVectorSizes.id1: s.AppendLine($"   int{ptr} result;"); break;
-                    case BlastVectorSizes.id2: s.AppendLine($"   int2{ptr} result;"); break;
-                    case BlastVectorSizes.id3: s.AppendLine($"   int3{ptr} result;"); break;
-                    case BlastVectorSizes.id4: s.AppendLine($"   int4{ptr} result;"); break;
                     case BlastVectorSizes.id64: s.AppendLine($"   long{ptr} result;"); break;
-                    case BlastVectorSizes.half2: s.AppendLine($"   half2{ptr} result;"); break;
-                    case BlastVectorSizes.half4: s.AppendLine($"   half4{ptr} result;"); break;
                     case BlastVectorSizes.ptr: s.AppendLine($"   void*{ptr} result;"); break;
                 }
             }
             // call external 
             string long_params = profile.IsShortDefinition ? "" : "(IntPtr)engine_ptr, environment_ptr";
-            if (!profile.IsShortDefinition && !profile.IsSSMD) long_params += ", caller_ptr"; 
-            if (!profile.IsShortDefinition && !string.IsNullOrWhiteSpace(delegate_parameters)) long_params += ", ";
+            if (!profile.IsShortDefinition && !profile.IsSSMD) long_params += ", caller_ptr";
+            if (!profile.IsShortDefinition)
+            {
+                if (profile.IsSSMD)
+                {
+                    if (profile.ReturnsValue || profile.ParameterCount > 0) long_params += ", ";
+                }
+                else
+                {
+                    if (
+                    !string.IsNullOrWhiteSpace(delegate_parameters)
+                    ||
+                    profile.ReturnParameter.VectorSize() > 1
+                    ||
+                    profile.ReturnParameter == BlastVectorSizes.bool32) long_params += ", ";
+                }
+            }
 
 
             if (profile.ParameterCount > 0 || !profile.IsShortDefinition)
@@ -460,7 +491,7 @@ namespace NSS.Blast.SSMD
             s.AppendLine("#if STANDALONE_VSBUILD");
             if (profile.ReturnsValue)
             {
-                string passbuffer = profile.IsSSMD ? "result, ": "";
+                string passbuffer = profile.IsSSMD || result_needs_pointer ? (profile.ParameterCount > 0 ? "result, " : "result"): "";
                 s.AppendLine($"   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.{delegate_name}).Invoke({long_params}{passbuffer}{delegate_parameters}{ssmd_param});");
                 s.AppendLine("   return result;");
             }
@@ -480,7 +511,7 @@ namespace NSS.Blast.SSMD
 
             if (profile.ReturnsValue)
             {
-                string passbuffer = profile.IsSSMD ? "result, " : "";
+                string passbuffer = profile.IsSSMD || result_needs_pointer ? (profile.ParameterCount > 0 ? "result, " : "result") : "";
                 s.AppendLine($"       result = fp.Invoke({long_params}{passbuffer}{delegate_parameters}{ssmd_param});");
                 s.AppendLine("       return result;");
             }
@@ -514,18 +545,18 @@ namespace NSS.Blast.SSMD
                 switch (profile.ReturnParameter)
                 {
                     case BlastVectorSizes.none: s.AppendLine("   return;"); break;
-                    case BlastVectorSizes.float1:
+                    case BlastVectorSizes.float1: s.AppendLine("   return float.NaN;"); break;
                     case BlastVectorSizes.float2:
                     case BlastVectorSizes.float3:
-                    case BlastVectorSizes.float4: s.AppendLine("   return float.NaN;"); break;
-                    case BlastVectorSizes.bool32: s.AppendLine("   return Bool32.FailPattern;"); break;
-                    case BlastVectorSizes.id1:
+                    case BlastVectorSizes.float4: 
+                    case BlastVectorSizes.bool32: s.AppendLine("   return null;"); break;
+                    case BlastVectorSizes.id1: s.AppendLine("   return 0;"); break;
                     case BlastVectorSizes.id2:
                     case BlastVectorSizes.id3:
-                    case BlastVectorSizes.id4: s.AppendLine("   return 0;"); break;
-                    case BlastVectorSizes.id64: s.AppendLine("   return 0;"); break;
+                    case BlastVectorSizes.id4: 
+                    case BlastVectorSizes.id64: s.AppendLine("   return null;"); break;
                     case BlastVectorSizes.half2:
-                    case BlastVectorSizes.half4: s.AppendLine("   return new half(float.NaN);"); break;
+                    case BlastVectorSizes.half4: s.AppendLine("   return null;"); break;
                     case BlastVectorSizes.ptr: s.AppendLine("   return null;"); break;
                 }
             }  
@@ -551,23 +582,38 @@ namespace NSS.Blast.SSMD
 
             if (profile.IsShortDefinition)
             {
-                code.Append($"public delegate {returntype} {delegate_name}(");
+                if (profile.ReturnsValue && (profile.ReturnParameter.VectorSize() > 1 || profile.ReturnParameter == BlastVectorSizes.bool32))
+                {
+                    code.Append($"unsafe public delegate {returntype}* {delegate_name}([NoAlias]{returntype}* result");
+                    if (profile.ParameterCount > 0) code.Append(", ");
+                }
+                else
+                {
+                    code.Append($"unsafe public delegate {returntype} {delegate_name}(");
+                }
             }
             else
             if (profile.IsSSMD)
             {
                 if (profile.ReturnsValue)
                 {
-                    code.Append($"unsafe public delegate {returntype}* {delegate_name}(IntPtr engine, IntPtr data, {returntype}* result");
+                    code.Append($"unsafe public delegate {returntype}* {delegate_name}([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]{returntype}* result");
                 }
                 else
                 {
-                    code.Append($"unsafe public delegate {returntype}* {delegate_name}(IntPtr engine, IntPtr data");
+                    code.Append($"unsafe public delegate {returntype}* {delegate_name}([NoAlias]IntPtr engine, [NoAlias]IntPtr data");
                 }
             }
             else
             {
-                code.Append($"public delegate {returntype} {delegate_name}(IntPtr engine, IntPtr data, IntPtr caller");
+                if (profile.ReturnsValue && (profile.ReturnParameter.VectorSize() > 1 || profile.ReturnParameter == BlastVectorSizes.bool32))
+                {
+                    code.Append($"unsafe public delegate {returntype}* {delegate_name}([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]{returntype}* result");
+                }
+                else
+                {
+                    code.Append($"unsafe public delegate {returntype} {delegate_name}([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller");
+                }                                                                                                                                                                                
             }
 
             code.Append(parameters);
@@ -590,7 +636,14 @@ namespace NSS.Blast.SSMD
 
                     if (!profile.IsSSMD)
                     {
-                        parameters += $"{psize.FullTypeName()} p{i}";
+                        if (profile.ParameterType(i).VectorSize() > 1 || profile.ParameterType(i) == BlastVectorSizes.bool32)
+                        {
+                            parameters += $"[NoAlias]{psize.FullTypeName()}* p{i}";
+                        }
+                        else
+                        {
+                            parameters += $"{psize.FullTypeName()} p{i}";
+                        }
                     }
                     else
                     {

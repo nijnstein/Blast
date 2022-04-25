@@ -486,32 +486,8 @@ namespace NSS.Blast.SSMD
             // update metadata with type set 
             SetStackMetaData(BlastVariableDataType.Numeric, 1, (byte)stack_offset);
 
-            if (stack_is_aligned)
-            {
-                // calc destination offset  
-                float* p_stack = &((float*)stack[0])[stack_offset];
-
-                // fast aligned pointer walk 
-                float* p_data = (float*)(void*)register;
-
-                int i_stack = stack_rowsize >> 2;
-                int i_row = 4;
-
-                for (int i = 0; i < ssmd_datacount; i++) // we could force to always allocate a multiple 4 
-                {
-                    ((float*)p_stack)[0] = ((float*)p_data)[0];
-                    p_stack += i_stack;
-                    p_data += i_row;
-                }
-            }
-            else
-            {
-                // then push the actual data for each element 
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    ((float*)stack[i])[stack_offset] = register[i].x;
-                }
-            }
+            // move the data 
+            simd.move_f4_array_to_indexed_data_as_f1(stack, stack_rowsize, stack_is_aligned, stack_offset, register, ssmd_datacount);
 
             // advance 1 element in stack offset 
             stack_offset += 1;
@@ -525,36 +501,8 @@ namespace NSS.Blast.SSMD
         {
             // update metadata with type set 
             SetStackMetaData(BlastVariableDataType.Numeric, 1, (byte)stack_offset);
-
-            // perform a simd copy if all data is aligned
-            if (data_is_aligned && stack_is_aligned)
-            {
-                // NOTE:  after testing, pointer walks seem to speed things up greatly in vs2019/win32 release builds 
-                if (stack_is_aligned && data_is_aligned)
-                {
-                    float* p_stack = &((float*)stack[0])[stack_offset];
-                    float* p_data = &((float*)data[0])[index];
-
-                    int i_stack = stack_rowsize >> 2;
-                    int i_row = data_rowsize >> 2;
-
-                    for (int i = 0; i < ssmd_datacount; i++)
-                    {
-                        ((float*)p_stack)[0] = ((float*)p_data)[0];
-                        p_stack += i_stack;
-                        p_data += i_row;
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < ssmd_datacount; i++)
-                    {
-                        float* p = ((float*)stack[i]);
-                        p[stack_offset] = ((float*)(data[i]))[index];
-                    }
-                }
-            }
-
+            // move indexed f1 from data to stack 
+            simd.move_indexed_f1(stack, stack_rowsize, stack_is_aligned, stack_offset, data, data_rowsize, data_is_aligned, index, ssmd_datacount); 
             // advance 1 element in stack offset 
             stack_offset += 1;
         }
@@ -565,34 +513,8 @@ namespace NSS.Blast.SSMD
         void push_register_f2()
         {
             SetStackMetaData(BlastVariableDataType.Numeric, 2, (byte)stack_offset);
-
-            if (stack_is_aligned)
-            {
-                // calc destination offset  
-                float* p_stack = &((float*)stack[0])[stack_offset];
-
-                // fast aligned pointer walk 
-                float* p_data = (float*)(void*)register;
-
-                int i_stack = stack_rowsize >> 2;
-                int i_row = 4;
-
-                for (int i = 0; i < ssmd_datacount; i++) // we could force to always allocate a multiple 4 
-                {
-                    ((float*)p_stack)[0] = ((float*)p_data)[0];
-                    ((float*)p_stack)[1] = ((float*)p_data)[1];
-                    p_stack += i_stack;
-                    p_data += i_row;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    ((float*)stack[i])[stack_offset] = register[i].x;
-                    ((float*)stack[i])[stack_offset + 1] = register[i].y;
-                }
-            }
+            // stack[][].xy = register[].xy
+            simd.move_f4_array_to_indexed_data_as_f2(stack, stack_rowsize, stack_is_aligned, stack_offset, register, ssmd_datacount); 
             stack_offset += 2;
         }
 
@@ -602,41 +524,10 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void push_register_f3()
         {
-            push_f3(register);
-        }
-        void push_f3(float4* f4)
-        {
             SetStackMetaData(BlastVariableDataType.Numeric, 3, (byte)stack_offset);
-            if (stack_is_aligned)
-            {
-                // calc destination offset  
-                float* p_stack = &((float*)stack[0])[stack_offset];
-
-                // fast aligned pointer walk 
-                float* p_data = (float*)(void*)register;
-
-                int i_stack = stack_rowsize >> 2;
-                int i_row = 4;
-
-                for (int i = 0; i < ssmd_datacount; i++) // we could force to always allocate a multiple 4 
-                {
-                    ((float*)p_stack)[0] = ((float*)p_data)[0];
-                    ((float*)p_stack)[1] = ((float*)p_data)[1];
-                    ((float*)p_stack)[2] = ((float*)p_data)[2];
-                    p_stack += i_stack;
-                    p_data += i_row;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    ((float*)stack[i])[stack_offset] = register[i].x;
-                    ((float*)stack[i])[stack_offset + 1] = register[i].y;
-                    ((float*)stack[i])[stack_offset + 2] = register[i].z;
-                }
-            }
-            stack_offset += 3;  // size 3
+            // stack[][].xyz = register[].xyz
+            simd.move_f4_array_to_indexed_data_as_f3(stack, stack_rowsize, stack_is_aligned, stack_offset, register, ssmd_datacount);
+            stack_offset += 3;   
         }
 
         /// <summary>
@@ -645,43 +536,9 @@ namespace NSS.Blast.SSMD
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void push_register_f4()
         {
-            push_f4(register);
-        }
-
-        void push_f4(float4* f4)
-        {
             SetStackMetaData(BlastVariableDataType.Numeric, 4, (byte)stack_offset);
-
-            if (stack_is_aligned)
-            {
-                // calc destination offset  
-                float* p_stack = &((float*)stack[0])[stack_offset];
-
-                // fast aligned pointer walk 
-                float* p_data = (float*)(void*)register;
-
-                int i_stack = stack_rowsize >> 2;
-                int i_row = 4;
-
-                for (int i = 0; i < ssmd_datacount; i++) // we could force to always allocate a multiple 4 
-                {
-                    p_stack[0] = p_data[0];
-                    p_stack[1] = p_data[1];
-                    p_stack[2] = p_data[2];
-                    p_stack[3] = p_data[3];
-                    p_stack += i_stack;
-                    p_data += i_row;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < ssmd_datacount; i++)
-                {
-                    // when stack is not aligned we need to follow each pointer in the segment array 
-                    ((float4*)(void*)&((float*)stack[i])[stack_offset])[0] = register[i];
-                }
-            }
-            stack_offset += 4;  // size 4
+            simd.move_f4_array_to_indexed_data_as_f4(stack, stack_rowsize, stack_is_aligned, stack_offset, register, ssmd_datacount);
+            stack_offset += 4;  
         }
 
         /// <summary>
@@ -1405,15 +1262,8 @@ namespace NSS.Blast.SSMD
                     case blast_operation.constant_f1:
                         {
                             // handle operation with inlined constant data 
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-                            {
-                                p[0] = code[code_pointer + 1];
-                                p[1] = code[code_pointer + 2];
-                                p[2] = code[code_pointer + 3];
-                                p[3] = code[code_pointer + 4];
-                            }
-                            code_pointer += 4; // function ends on this and should leave pointer at last processed token
+                            float constant = read_constant_f1(code, ref code_pointer);
+                            code_pointer--; ; // function ends on this and should leave pointer at last processed token
 
                             constant = math.select(constant, -constant, substract);
                             if (target.is_set)
@@ -1430,60 +1280,8 @@ namespace NSS.Blast.SSMD
                     case blast_operation.constant_f1_h:
                         {
                             // handle operation with inlined constant data 
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-                            {
-                                p[0] = 0;
-                                p[1] = 0;
-                                p[2] = code[code_pointer + 1];
-                                p[3] = code[code_pointer + 2];
-                            }
-                            code_pointer += 2;  // function ends on this and should leave pointer at last processed token
-
-                            constant = math.select(constant, -constant, substract);
-                            if (target.is_set)
-                            {
-                                expand_constant_into_n(expand_into_n, ssmd_datacount, target, constant);
-                            }
-                            else
-                            {
-                                expand_constant_into_n(expand_into_n, ssmd_datacount, destination, constant);
-                            }
-                        }
-                        return BlastError.success;
-
-                    case blast_operation.constant_short_ref:
-                        {
-                            code_pointer += 1;
-                            int c_index = code_pointer - code[code_pointer];
-                            //code_pointer += 1;  // function ends on this and should leave pointer at last processed token
-
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-
-                            if (code[c_index] == (byte)blast_operation.constant_f1)
-                            {
-                                p[0] = code[c_index + 1];
-                                p[1] = code[c_index + 2];
-                                p[2] = code[c_index + 3];
-                                p[3] = code[c_index + 4];
-                            }
-                            else
-                            {
-#if DEVELOPMENT_BUILD || TRACE
-                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
-                                {
-                                    Debug.LogError($"blast.ssmd.expand_f1_into_fn: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
-                                    return BlastError.error;
-                                }
-#endif
-
-                                // 16 bit encoding
-                                p[0] = 0;
-                                p[1] = 0;
-                                p[2] = code[c_index + 1];
-                                p[3] = code[c_index + 2];
-                            }
+                            float constant = read_constant_f1_h(code, ref code_pointer);
+                            code_pointer--; // function ends on this and should leave pointer at last processed token
 
                             constant = math.select(constant, -constant, substract);
                             if (target.is_set)
@@ -1498,49 +1296,30 @@ namespace NSS.Blast.SSMD
                         return BlastError.success;
 
                     case blast_operation.constant_long_ref:
+                    case blast_operation.constant_short_ref:
                         {
-                            code_pointer += 1;
-                            int c_index = code_pointer - ((code[code_pointer] << 8) + code[code_pointer + 1]) + 1;
-                            code_pointer += 1;      // += 2; function ends on this and should leave pointer at last processed token
-
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-
-                            if (code[c_index] == (byte)blast_operation.constant_f1)
+                            if (follow_constant_ref(code, ref code_pointer, out BlastVariableDataType datatype, out int reference_index, c == (byte)blast_operation.constant_short_ref))
                             {
-                                p[0] = code[c_index + 1];
-                                p[1] = code[c_index + 2];
-                                p[2] = code[c_index + 3];
-                                p[3] = code[c_index + 4];
-                            }
-                            else
-                            {
-#if DEVELOPMENT_BUILD || TRACE
-                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                                float constant = read_constant_float(code, reference_index); 
+
+                                code_pointer--;   // function ends on this and should leave pointer at last processed token
+                                
+                                constant = math.select(constant, -constant, substract);
+                                if (target.is_set)
                                 {
-                                    Debug.LogError($"blast.ssmd.expand_f1_into_fn: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                    expand_constant_into_n(expand_into_n, ssmd_datacount, target, constant);
                                 }
-#endif
-                                // 16 bit encoding
-                                p[0] = 0;
-                                p[1] = 0;
-                                p[2] = code[c_index + 1];
-                                p[3] = code[c_index + 2];
-                            }
-
-                            constant = math.select(constant, -constant, substract);
-                            if (target.is_set)
-                            {
-                                expand_constant_into_n(expand_into_n, ssmd_datacount, target, constant);
+                                else
+                                {
+                                    expand_constant_into_n(expand_into_n, ssmd_datacount, destination, constant);
+                                }
                             }
                             else
                             {
-                                expand_constant_into_n(expand_into_n, ssmd_datacount, destination, constant);
-                            }
+                                return BlastError.error_constant_reference_error;  
+                            }                                  
                         }
                         return BlastError.success;
-
-
 
                     case blast_operation.pi:
                     case blast_operation.inv_pi:
@@ -2158,14 +1937,7 @@ namespace NSS.Blast.SSMD
 
                     case blast_operation.constant_f1:
                         {
-                            bf[0] = code[code_pointer + 1];
-                            bf[1] = code[code_pointer + 2];
-                            bf[2] = code[code_pointer + 3];
-                            bf[3] = code[code_pointer + 4];
-
-                            code_pointer += 5;
-
-                            constant = ((float*)(void*)bf)[0];
+                            constant = read_constant_f1(code, ref code_pointer);
                             constant = math.select(constant, -constant, is_negated);
 
                             if (destination_offset >= 0)
@@ -2181,14 +1953,8 @@ namespace NSS.Blast.SSMD
 
                     case blast_operation.constant_f1_h:
                         {
-                            bf[0] = 0;
-                            bf[1] = 0;
-                            bf[2] = code[code_pointer + 1];
-                            bf[3] = code[code_pointer + 2];
-
-                            code_pointer += 3;
-
-                            constant = ((float*)(void*)bf)[0];
+                            constant = read_constant_f1_h(code, ref code_pointer);
+               
                             constant = math.select(constant, -constant, is_negated);
 
                             if (destination_offset >= 0)
@@ -2201,88 +1967,27 @@ namespace NSS.Blast.SSMD
                             }
                         }
                         return true;
-
+                                                  
                     case blast_operation.constant_short_ref:
-                        {
-                            code_pointer += 1;
-                            int c_index = code_pointer - code[code_pointer];
-                            code_pointer += 1;
-
-                            if (code[c_index] == (byte)blast_operation.constant_f1)
-                            {
-                                bf[0] = code[c_index + 1];
-                                bf[1] = code[c_index + 2];
-                                bf[2] = code[c_index + 3];
-                                bf[3] = code[c_index + 4];
-                            }
-                            else
-                            {
-#if DEVELOPMENT_BUILD || TRACE
-                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
-                                {
-                                    Debug.LogError($"blast.ssmd.pop_fx_int_ref<t>: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
-                                }
-#endif
-
-                                // 16 bit encoding
-                                bf[0] = 0;
-                                bf[1] = 0;
-                                bf[2] = code[c_index + 1];
-                                bf[3] = code[c_index + 2];
-                            }
-
-                            constant = ((float*)(void*)bf)[0];
-                            constant = math.select(constant, -constant, is_negated);
-
-                            if (destination_offset >= 0)
-                            {
-                                pop_fx_into_constant_handler<T>(destination_data, destination_offset, constant, is_aligned, stride);
-                            }
-                            else
-                            {
-                                pop_fx_into_constant_handler<T>(destination, constant, copy_only_the_first_if_constant);
-                            }
-                        }
-                        return true;
-
                     case blast_operation.constant_long_ref:
                         {
-                            int offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
-                            int c_index = code_pointer - offset + 1;
-                            code_pointer += 3;
+                            if (follow_constant_ref(code, ref code_pointer, out BlastVariableDataType datatype, out int reference_index, c == (byte)blast_operation.constant_short_ref))
+                            {
+                                constant = read_constant_float(code, reference_index);
+                                constant = math.select(constant, -constant, is_negated);
 
-                            if (code[c_index] == (byte)blast_operation.constant_f1)
-                            {
-                                bf[0] = code[c_index + 1];
-                                bf[1] = code[c_index + 2];
-                                bf[2] = code[c_index + 3];
-                                bf[3] = code[c_index + 4];
-                            }
-                            else
-                            {
-#if DEVELOPMENT_BUILD || TRACE
-                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                                if (destination_offset >= 0)
                                 {
-                                    Debug.LogError($"blast.ssmd.pop_fx_int_ref<t>: constant reference error, long constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                    pop_fx_into_constant_handler<T>(destination_data, destination_offset, constant, is_aligned, stride);
                                 }
-#endif
-                                // 16 bit encoding
-                                bf[0] = 0;
-                                bf[1] = 0;
-                                bf[2] = code[c_index + 1];
-                                bf[3] = code[c_index + 2];
-                            }
-
-                            constant = ((float*)(void*)bf)[0];
-                            constant = math.select(constant, -constant, is_negated);
-
-                            if (destination_offset >= 0)
-                            {
-                                pop_fx_into_constant_handler<T>(destination_data, destination_offset, constant, is_aligned, stride);
+                                else
+                                {
+                                    pop_fx_into_constant_handler<T>(destination, constant, copy_only_the_first_if_constant);
+                                }
                             }
                             else
                             {
-                                pop_fx_into_constant_handler<T>(destination, constant, copy_only_the_first_if_constant);
+                                return false;
                             }
                         }
                         return true;
@@ -2530,97 +2235,19 @@ namespace NSS.Blast.SSMD
             switch (vsize)
             {
                 case 1:
-                    if (is_aligned)
-                    {
-                        float* dest = &((float*)data[0])[destination_offset];
-                        int i_dest = stride >> 2;
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            dest[0] = constant;
-                            dest += i_dest;
-                        }
-                    }
-                    else
-                    {
-                        // unaligned 
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            ((float*)data[i])[destination_offset] = constant;
-                        }
-                    }
+                    simd.move_f1_constant_to_indexed_data_as_f1(data, stride, is_aligned, destination_offset, constant, ssmd_datacount);
                     return;
 
                 case 2:
-                    if (is_aligned)
-                    {
-                        float* dest = &((float*)data[0])[destination_offset];
-                        int i_dest = stride >> 2;
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            dest[0] = constant;
-                            dest[1] = constant;
-                            dest += i_dest;
-                        }
-                    }
-                    else
-                    {
-                        // unaligned 
-                        float2 constant_f2 = constant;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            ((float2*)(void*)&((float*)data[i])[destination_offset])[0] = constant_f2;
-                        }
-                    }
+                    simd.move_f1_constant_to_indexed_data_as_f2(data, stride, is_aligned, destination_offset, constant, ssmd_datacount);
                     return;
 
                 case 3:
-                    if (is_aligned)
-                    {
-                        float* dest = &((float*)data[0])[destination_offset];
-                        int i_dest = stride >> 2;
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            dest[0] = constant;
-                            dest[1] = constant;
-                            dest[2] = constant;
-                            dest += i_dest;
-                        }
-                    }
-                    else
-                    {
-                        float3 constant_f3 = constant;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            ((float3*)(void*)&((float*)data[i])[destination_offset])[0] = constant_f3;
-                        }
-                    }
+                    simd.move_f1_constant_to_indexed_data_as_f3(data, stride, is_aligned, destination_offset, constant, ssmd_datacount);
                     return;
 
                 case 4:
-                    if (is_aligned)
-                    {
-                        float* dest = &((float*)data[0])[destination_offset];
-                        int i_dest = stride >> 2;
-
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            dest[0] = constant;
-                            dest[1] = constant;
-                            dest[2] = constant;
-                            dest += i_dest;
-                        }
-                    }
-                    else
-                    {
-                        float4 constant_f4 = constant;
-                        for (int i = 0; i < ssmd_datacount; i++)
-                        {
-                            ((float4*)(void*)&((float*)data[i])[destination_offset])[0] = constant_f4;
-                        }
-                    }
+                    simd.move_f1_constant_to_indexed_data_as_f4(data, stride, is_aligned, destination_offset, constant, ssmd_datacount);
                     return;
             }
 #if DEVELOPMENT_BUILD || TRACE
@@ -3807,93 +3434,37 @@ namespace NSS.Blast.SSMD
 
                 case blast_operation.constant_f1:
                     {
-                        bf[0] = code[code_pointer + 0];
-                        bf[1] = code[code_pointer + 1];
-                        bf[2] = code[code_pointer + 2];
-                        bf[3] = code[code_pointer + 3];
-
-                        code_pointer += 4;
-
-                        constant = ((float*)(void*)bf)[0];
+                        code_pointer--;
+                        constant = read_constant_f1(code, ref code_pointer); 
                         pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant, datatype);
                     }
                     break;
 
                 case blast_operation.constant_f1_h:
                     {
-                        bf[0] = 0;
-                        bf[1] = 0;
-                        bf[2] = code[code_pointer + 0];
-                        bf[3] = code[code_pointer + 1];
-
-                        code_pointer += 2;
-
-                        constant = ((float*)(void*)bf)[0];
+                        code_pointer--;
+                        constant = read_constant_f1_h(code, ref code_pointer);
                         pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant, datatype);
                     }
                     break;
 
                 case blast_operation.constant_short_ref:
-                    {
-                        int c_index = code_pointer - code[code_pointer]; // + 1
-                        code_pointer += 1;
-
-                        if (code[c_index] == (byte)blast_operation.constant_f1)
-                        {
-                            bf[0] = code[c_index + 1];
-                            bf[1] = code[c_index + 2];
-                            bf[2] = code[c_index + 3];
-                            bf[3] = code[c_index + 4];
-                        }
-                        else
-                        {
-#if DEVELOPMENT_BUILD || TRACE
-                            if (code[c_index] != (byte)blast_operation.constant_f1_h)
-                            {
-                                Debug.LogError($"blast.ssmd.pop_fx_with_op_into_fx_ref: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
-                            }
-#endif
-                            // 16 bit encoding
-                            bf[0] = 0;
-                            bf[1] = 0;
-                            bf[2] = code[c_index + 1];
-                            bf[3] = code[c_index + 2];
-                        }
-
-                        constant = ((float*)(void*)bf)[0];
-                        pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant, datatype);
-                    }
-                    break;
-
                 case blast_operation.constant_long_ref:
                     {
-                        int c_index = code_pointer - ((code[code_pointer]) << 8 + code[code_pointer + 1]) + 1;
-                        code_pointer += 2;
-
-                        if (code[c_index] == (byte)blast_operation.constant_f1)
+                        code_pointer--;
+                        if (follow_constant_ref(code, ref code_pointer, out BlastVariableDataType data_type, out int reference_index, c == (byte)blast_operation.constant_short_ref))
                         {
-                            bf[0] = code[c_index + 1];
-                            bf[1] = code[c_index + 2];
-                            bf[2] = code[c_index + 3];
-                            bf[3] = code[c_index + 4];
+                            constant = read_constant_float(code, reference_index);
+                            pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant, datatype);
+
                         }
                         else
                         {
-#if DEVELOPMENT_BUILD || TRACE
-                            if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                            if (IsTrace)
                             {
-                                Debug.LogError($"blast.ssmd.pop_fx_with_op_into_fx_ref: constant reference error, long constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                Debug.LogError($"blast.ssmd.pop_fx_with_op_into_fx_ref: constant reference error, constant reference at {code_pointer - 1} points at invalid operation");
                             }
-#endif
-                            // 16 bit encoding
-                            bf[0] = 0;
-                            bf[1] = 0;
-                            bf[2] = code[c_index + 1];
-                            bf[3] = code[c_index + 2];
                         }
-
-                        constant = ((float*)(void*)bf)[0];
-                        pop_fx_with_op_into_fx_constant_handler<Tin, Tout>(buffer, output, op, constant, datatype);
                     }
                     break;
 
@@ -4279,15 +3850,8 @@ namespace NSS.Blast.SSMD
                     case blast_operation.constant_f1:
                         {
                             // handle operation with inlined constant data 
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-                            {
-                                p[0] = code[code_pointer + 1];
-                                p[1] = code[code_pointer + 2];
-                                p[2] = code[code_pointer + 3];
-                                p[3] = code[code_pointer + 4];
-                            }
-                            code_pointer += 4;
+                            float constant = read_constant_f1(code, ref code_pointer); 
+                            code_pointer--; 
                             handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
                         }
                         return BlastError.success;
@@ -4295,75 +3859,29 @@ namespace NSS.Blast.SSMD
                     case blast_operation.constant_f1_h:
                         {
                             // handle operation with inlined constant data 
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-                            {
-                                p[0] = 0;
-                                p[1] = 0;
-                                p[2] = code[code_pointer + 1];
-                                p[3] = code[code_pointer + 2];
-                            }
-                            code_pointer += 2;
-                            handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
-                        }
-                        return BlastError.success;
-
-                    case blast_operation.constant_short_ref:
-                        {
-                            int c_index = code_pointer - code[code_pointer + 1];
-                            code_pointer++;
-
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-
-                            if (code[c_index + 1] == (byte)blast_operation.constant_f1)
-                            {
-                                p[0] = code[c_index + 2];
-                                p[1] = code[c_index + 3];
-                                p[2] = code[c_index + 4];
-                                p[3] = code[c_index + 5];
-                            }
-                            else
-                            {
-                                // 16 bit encoding
-                                p[0] = 0;
-                                p[1] = 0;
-                                p[2] = code[c_index + 2];
-                                p[3] = code[c_index + 3];
-                            }
+                            float constant = read_constant_f1_h(code, ref code_pointer);
+                            code_pointer--; 
                             handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
                         }
                         return BlastError.success;
 
                     case blast_operation.constant_long_ref:
+                    case blast_operation.constant_short_ref:
                         {
-                            int c_index = code_pointer - ((code[code_pointer] << 8) + code[code_pointer + 1]) + 1;
-                            code_pointer += 2;
-
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-
-                            if (code[c_index + 1] == (byte)blast_operation.constant_f1)
+                           if (follow_constant_ref(code, ref code_pointer, out BlastVariableDataType datatype, out int reference_index, code_byte == (byte)blast_operation.constant_short_ref))
                             {
-                                p[0] = code[c_index + 2];
-                                p[1] = code[c_index + 3];
-                                p[2] = code[c_index + 4];
-                                p[3] = code[c_index + 5];
+                                float constant = read_constant_float(code, reference_index);
+                                code_pointer--;
+                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
                             }
                             else
                             {
-                                // 16 bit encoding
-                                p[0] = 0;
-                                p[1] = 0;
-                                p[2] = code[c_index + 2];
-                                p[3] = code[c_index + 3];
+                                return BlastError.error_constant_reference_error; 
                             }
-
-                            handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op, is_negated);
                         }
                         return BlastError.success;
 
-                    case blast_operation.cdataref:
+                     case blast_operation.cdataref:
                         {
                             CDATAEncodingType encoding = CDATAEncodingType.None;
 
@@ -4410,13 +3928,12 @@ namespace NSS.Blast.SSMD
                                     }
 
                                     // if op to handle is the indexing itself 
-                                    bool handle = true;
                                     switch (op)
                                     {
-                                        case blast_operation.index_x: indexed = 0; constant_index = true; handle = false; break;
-                                        case blast_operation.index_y: indexed = 1; constant_index = true; handle = false; break;
-                                        case blast_operation.index_z: indexed = 2; constant_index = true; handle = false; break;
-                                        case blast_operation.index_w: indexed = 3; constant_index = true; handle = false; break;
+                                        case blast_operation.index_x: indexed = 0; constant_index = true; break;
+                                        case blast_operation.index_y: indexed = 1; constant_index = true; break;
+                                        case blast_operation.index_z: indexed = 2; constant_index = true; break;
+                                        case blast_operation.index_w: indexed = 3; constant_index = true; break;
                                     }
 
 
@@ -4798,18 +4315,17 @@ namespace NSS.Blast.SSMD
         #region Reinterpret XXXX [DataIndex]
 
         /// <summary>
-        /// reinterpret the value at index as a boolean value (set metadata type to bool32)
+        /// reinterpret the value at index as a different datatype (set metadata type to datatype)
         /// </summary>
-        void reinterpret_bool32(ref int code_pointer, ref byte vector_size)
+        void reinterpret(ref int code_pointer, ref byte vector_size, BlastVariableDataType datatype)
         {
             // reinterpret operation would be the same for each ssmd record
             int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
 
-#if DEVELOPMENT_BUILD || TRACE
             // dataindex must point to a valid id 
             if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
             {
-                Debug.LogError($"ssmd.reinterpret_bool32: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                if(IsTrace) Debug.LogError($"ssmd.reinterpret<{datatype}>: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
                 return;
             }
 
@@ -4817,46 +4333,14 @@ namespace NSS.Blast.SSMD
             // datasize is in bytes 
             if (dataindex >= package.DataSize >> 2)
             {
-                Debug.LogError($"ssmd.reinterpret_bool32: compilation or packaging error, dataindex {dataindex} is out of bounds");
+                if(IsTrace) Debug.LogError($"ssmd.reinterpret<{datatype}>: compilation or packaging error, dataindex {dataindex} is out of bounds");
                 return;
             }
 
-#else
-            vector_size = 1;
-#endif
-
-            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Bool32, 1, (byte)dataindex);
+            BlastInterpretor.GetMetaData(metadata, (byte) dataindex, out vector_size, out BlastVariableDataType old_type);
+            BlastInterpretor.SetMetaData(in metadata, datatype, vector_size, (byte)dataindex);
         }
 
-        /// <summary>
-        /// reinterpret the value at index as a float value (set metadata type to float[1])
-        /// </summary>
-        void reinterpret_float(ref int code_pointer, ref byte vector_size)
-        {
-            // reinterpret operation would be the same for each ssmd record
-            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
-
-#if DEVELOPMENT_BUILD || TRACE
-            // dataindex must point to a valid id 
-            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
-            {
-                Debug.LogError($"ssmd.reinterpret_float: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
-                return;
-            }
-
-            // validate if within package bounds, catch packaging errors early on 
-            // datasize is in bytes 
-            if (dataindex >= package.DataSize >> 2)
-            {
-                Debug.LogError($"ssmd.reinterpret_bool32: compilation or packaging error, dataindex {dataindex} is out of bounds");
-                return;
-            }
-#else
-            vector_size = 1;
-#endif
-
-            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Numeric, 1, (byte)dataindex);
-        }
 
         #endregion
 
@@ -4995,12 +4479,6 @@ namespace NSS.Blast.SSMD
                 case blast_operation.select: get_select_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
                 case blast_operation.fma: get_fma_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result); break;
 
-                case blast_operation.get_bit: get_getbit_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
-                case blast_operation.get_bits: get_getbits_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
-
-                case blast_operation.set_bit: get_setbit_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
-                case blast_operation.set_bits: get_setbits_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
-
                 case blast_operation.zero: get_zero_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
                 case blast_operation.size: GetSizeResult(ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
 
@@ -5062,6 +4540,10 @@ namespace NSS.Blast.SSMD
                             // case extended_blast_operation.remap: get_remap_result(temp, ref code_pointer, ref vector_size, f4_result); break;
 
                             // bitwise operations
+                            case extended_blast_operation.get_bit: get_getbit_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.get_bits: get_getbits_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
+                            case extended_blast_operation.set_bit: get_setbit_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
+                            case extended_blast_operation.set_bits: get_setbits_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
                             case extended_blast_operation.count_bits: get_countbits_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
                             case extended_blast_operation.reverse_bits: get_reversebits_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
                             case extended_blast_operation.tzcnt: get_tzcnt_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
@@ -5073,8 +4555,9 @@ namespace NSS.Blast.SSMD
                             case extended_blast_operation.shl: get_shl_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
 
                             // datatype reinterpretations 
-                            case extended_blast_operation.reinterpret_bool32: reinterpret_bool32(ref code_pointer, ref vector_size); break;
-                            case extended_blast_operation.reinterpret_float: reinterpret_float(ref code_pointer, ref vector_size); break;
+                            case extended_blast_operation.reinterpret_bool32: reinterpret(ref code_pointer, ref vector_size, BlastVariableDataType.Bool32); break;
+                            case extended_blast_operation.reinterpret_float: reinterpret(ref code_pointer, ref vector_size, BlastVariableDataType.Numeric); break;
+                            case extended_blast_operation.reinterpret_int32: reinterpret(ref code_pointer, ref vector_size, BlastVariableDataType.ID); break;
 
                             // debugging
                             case extended_blast_operation.debugstack:
@@ -5490,15 +4973,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.constant_f1:
                         {
                             // handle operation with inlined constant data 
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-                            {
-                                p[0] = code[code_pointer + 1];
-                                p[1] = code[code_pointer + 2];
-                                p[2] = code[code_pointer + 3];
-                                p[3] = code[code_pointer + 4];
-                            }
-                            code_pointer += 5;
+                            float constant = read_constant_f1(code, ref code_pointer); 
 
                             if (!is_last_token_in_sequence || !target_rec.is_set)
                             {
@@ -5525,15 +5000,7 @@ namespace NSS.Blast.SSMD
                     case blast_operation.constant_f1_h:
                         {
                             // handle operation with inlined constant data 
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-                            {
-                                p[0] = 0;
-                                p[1] = 0;
-                                p[2] = code[code_pointer + 1];
-                                p[3] = code[code_pointer + 2];
-                            }
-                            code_pointer += 3;
+                            float constant = read_constant_f1_h(code, ref code_pointer); 
 
                             if (!is_last_token_in_sequence || !target_rec.is_set)
                             {
@@ -5557,103 +5024,63 @@ namespace NSS.Blast.SSMD
 
                     case blast_operation.constant_short_ref:
                         {
-                            code_pointer += 1;
-                            int c_index = code_pointer - code[code_pointer];
-                            code_pointer += 1;
-
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-
-                            if (code[c_index] == (byte)blast_operation.constant_f1)
+                            if (follow_constant_ref(code, ref code_pointer, out BlastVariableDataType datatype, out int ref_index, true))
                             {
-                                p[0] = code[c_index + 1];
-                                p[1] = code[c_index + 2];
-                                p[2] = code[c_index + 3];
-                                p[3] = code[c_index + 4];
-                            }
-                            else
-                            {
-#if DEVELOPMENT_BUILD || TRACE
-                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                                float constant = read_constant_float(code, in ref_index);
+
+                                if (!is_last_token_in_sequence || !target_rec.is_set)
                                 {
-                                    Debug.LogError($"blast.ssmd.getsequenceresult: constant reference error, short constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                    // put result into register
+                                    handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not);
                                 }
-#endif
-                                // 16 bit encoding
-                                p[0] = 0;
-                                p[1] = 0;
-                                p[2] = code[c_index + 1];
-                                p[3] = code[c_index + 2];
-                            }
+                                else
+                                {
+                                    // output directly to target and skip end logics 
+                                    handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
+                                    code_pointer++;
+                                    return (int)BlastError.success;
+                                }
 
-                            if (!is_last_token_in_sequence || !target_rec.is_set)
-                            {
-                                // put result into register
-                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not);
+                                minus = false;
+                                not = false;
+                                indexer = -1;
+                                current_op = blast_operation.nop;
                             }
                             else
                             {
-                                // output directly to target and skip end logics 
-                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
-                                code_pointer++;
-                                return (int)BlastError.success;
+                                return (int)BlastError.error_constant_reference_error;
                             }
-
-                            minus = false;
-                            not = false;
-                            indexer = -1;
-                            current_op = blast_operation.nop;
                         }
                         continue;
 
                     case blast_operation.constant_long_ref:
                         {
-                            code_pointer += 1;
-                            int c_index = code_pointer - ((code[code_pointer] << 8) + code[code_pointer + 1]) + 1;
-                            code_pointer += 2;
-
-                            float constant = default;
-                            byte* p = (byte*)(void*)&constant;
-
-                            if (code[c_index] == (byte)blast_operation.constant_f1)
+                            if (follow_constant_ref(code, ref code_pointer, out BlastVariableDataType datatype, out int ref_index, false))
                             {
-                                p[0] = code[c_index + 1];
-                                p[1] = code[c_index + 2];
-                                p[2] = code[c_index + 3];
-                                p[3] = code[c_index + 4];
-                            }
-                            else
-                            {
-#if DEVELOPMENT_BUILD || TRACE
-                                if (code[c_index] != (byte)blast_operation.constant_f1_h)
+                                float constant = read_constant_float(code, in ref_index);
+
+                                if (!is_last_token_in_sequence || !target_rec.is_set)
                                 {
-                                    Debug.LogError($"blast.ssmd.getsequenceresult: constant reference error, long constant reference at {code_pointer - 1} points at invalid operation {code[c_index]} at {c_index}");
+                                    // put result into register
+                                    handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not);
                                 }
-#endif
-                                // 16 bit encoding
-                                p[0] = 0;
-                                p[1] = 0;
-                                p[2] = code[c_index + 1];
-                                p[3] = code[c_index + 2];
-                            }
+                                else
+                                {
+                                    // output directly to target and skip end logics 
+                                    handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
+                                    code_pointer++;
+                                    return (int)BlastError.success;
+                                }
 
-                            if (!is_last_token_in_sequence || !target_rec.is_set)
-                            {
-                                // put result into register
-                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not);
+                                minus = false;
+                                not = false;
+                                indexer = -1;
+                                current_op = blast_operation.nop;
                             }
                             else
                             {
-                                // output directly to target and skip end logics 
-                                handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, current_op, extended_blast_operation.nop, minus, not, false, target_rec);
-                                code_pointer++;
-                                return (int)BlastError.success;
+                                return (int)BlastError.error_constant_reference_error;
                             }
-
-                            minus = false;
-                            not = false;
-                            indexer = -1;
-                            current_op = blast_operation.nop;
                         }
                         continue;
 
@@ -5762,10 +5189,6 @@ namespace NSS.Blast.SSMD
                     case blast_operation.index_y:
                     case blast_operation.index_z:
                     case blast_operation.index_w:
-                    case blast_operation.get_bit:
-                    case blast_operation.get_bits:
-                    case blast_operation.set_bit:
-                    case blast_operation.set_bits:
                     case blast_operation.zero:
                     case blast_operation.ex_op:
                     // although we could handle there here the path is mosly the same and complicates stuff even more
@@ -7040,7 +6463,7 @@ namespace NSS.Blast.SSMD
             int index = -1;
             bool constant_index;
             bool constant_data;
-            bool minus = false;
+            //bool minus = false;
 
             // switch to assign|indexer 
             switch ((blast_operation)code[code_pointer])
@@ -7077,7 +6500,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.assign: index = 0; constant_index = true; break;
 
                 case blast_operation.assignfn:
-                case blast_operation.assignfen: index = 0; constant_index = true; minus = true; break;
+                case blast_operation.assignfen: index = 0; constant_index = true; break;
 
                 case blast_operation.assignv:
                     {

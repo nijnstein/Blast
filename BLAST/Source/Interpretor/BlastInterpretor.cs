@@ -2348,11 +2348,9 @@ namespace NSS.Blast.Interpretor
 #endif
                 BlastScriptFunction p = engine_ptr->Functions[id];
 
-                if (IsTrace)
-                {
-                    Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}, parameter count = {p.MinParameterCount}");
-                }
-
+#if TRACE 
+                Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}, parameter count = {p.MinParameterCount}");
+#endif 
 
                 f4 = CALL_EF(ref code_pointer, in p);
 
@@ -2366,7 +2364,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD || TRACE
             }
             else
-            {
+            {                 
                 Debug.LogError($"blast: failed to call function pointer with id: {id}");
                 f4 = float.NaN;
             }
@@ -6648,6 +6646,38 @@ namespace NSS.Blast.Interpretor
             BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.Numeric, 1, (byte)dataindex);
         }
 
+        /// <summary>
+        /// reinterpret the value at index as a float value (set metadata type to float[1])
+        /// </summary>
+        void reinterpret_int32(ref int code_pointer, ref byte vector_size)
+        {
+            // index would be the same for each ssmd record
+            code_pointer++;
+            int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
+            code_pointer++;
+
+#if DEVELOPMENT_BUILD || TRACE
+            // dataindex must point to a valid id 
+            if (dataindex < 0 || dataindex + BlastInterpretor.opt_id >= 255)
+            {
+                Debug.LogError($"reinterpret_int32: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                return;
+            }
+
+            // validate if within package bounds, catch packaging errors early on 
+            // datasize is in bytes 
+            if (dataindex >= package.DataSize >> 2)
+            {
+                Debug.LogError($"reinterpret_int32: compilation or packaging error, dataindex {dataindex} is out of bounds");
+                return;
+            }
+#else
+            vector_size = 1;
+#endif
+
+            BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.ID, 1, (byte)dataindex);
+        }
+
         #endregion
 
         #region validation fuction 
@@ -7192,12 +7222,6 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.expand_v3: get_expand_result(ref code_pointer, ref vector_size, 3, out f4_result); break;
                 case blast_operation.expand_v4: get_expand_result(ref code_pointer, ref vector_size, 4, out f4_result); break;
 
-                // bitwise ops 
-                case blast_operation.set_bit: get_setbit_result(ref code_pointer, ref vector_size); f4_result = 0; break;
-                case blast_operation.set_bits: get_setbits_result(ref code_pointer, ref vector_size); f4_result = 0; break;
-                case blast_operation.get_bit: get_getbit_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.get_bits: get_getbits_result(ref code_pointer, ref vector_size, out f4_result); break;
-
                 // zero a vector | cdata
                 case blast_operation.zero: get_zero_result(ref code_pointer, ref vector_size); f4_result = 0; break;
 
@@ -7258,6 +7282,10 @@ namespace NSS.Blast.Interpretor
                             case extended_blast_operation.ceilpow2: get_ceilpow2_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.unlerp: get_unlerp_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.floorlog2: get_floorlog2_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.set_bit: get_setbit_result(ref code_pointer, ref vector_size); f4_result = 0; break;
+                            case extended_blast_operation.set_bits: get_setbits_result(ref code_pointer, ref vector_size); f4_result = 0; break;
+                            case extended_blast_operation.get_bit: get_getbit_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.get_bits: get_getbits_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.count_bits: get_countbits_result(ref code_pointer, ref vector_size, out f4_result); break;
                             case extended_blast_operation.reverse_bits: get_reversebits_result(ref code_pointer, ref vector_size); f4_result = 0; break;
                             case extended_blast_operation.lzcnt: get_lzcnt_result(ref code_pointer, ref vector_size, out f4_result); break;
@@ -7270,6 +7298,7 @@ namespace NSS.Blast.Interpretor
 
                             case extended_blast_operation.reinterpret_bool32: reinterpret_bool32(ref code_pointer, ref vector_size); f4_result = 0; break;
                             case extended_blast_operation.reinterpret_float: reinterpret_float(ref code_pointer, ref vector_size); f4_result = 0; break;
+                            case extended_blast_operation.reinterpret_int32: reinterpret_int32(ref code_pointer, ref vector_size); f4_result = 0; break;
 
                             default:
 #if DEVELOPMENT_BUILD || TRACE
@@ -7654,12 +7683,6 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.expand_v3: get_expand_result(ref code_pointer, ref vector_size, 3, out f4); code_pointer--; break;
                     case blast_operation.expand_v4: get_expand_result(ref code_pointer, ref vector_size, 4, out f4); code_pointer--; break;
 
-                    // bitwise ops 
-                    case blast_operation.set_bit: get_setbit_result(ref code_pointer, ref vector_size); code_pointer--; break;
-                    case blast_operation.set_bits: get_setbits_result(ref code_pointer, ref vector_size); code_pointer--; break;
-                    case blast_operation.get_bit: get_getbit_result(ref code_pointer, ref vector_size, out f4); code_pointer--; break;
-                    case blast_operation.get_bits: get_getbits_result(ref code_pointer, ref vector_size, out f4); code_pointer--; break;
-
                     // zero data index / clear bits 
                     case blast_operation.zero: get_zero_result(ref code_pointer, ref vector_size); code_pointer--; break;
                     case blast_operation.size: get_size_result(ref code_pointer, ref current_vector_size, out f4); code_pointer--; break;
@@ -7714,6 +7737,10 @@ namespace NSS.Blast.Interpretor
                                     case extended_blast_operation.floorlog2: get_floorlog2_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.fmod: get_fmod_result(ref code_pointer, ref vector_size, out f4); break;
 
+                                    case extended_blast_operation.set_bit: get_setbit_result(ref code_pointer, ref vector_size); code_pointer--; break;
+                                    case extended_blast_operation.set_bits: get_setbits_result(ref code_pointer, ref vector_size); code_pointer--; break;
+                                    case extended_blast_operation.get_bit: get_getbit_result(ref code_pointer, ref vector_size, out f4); code_pointer--; break;
+                                    case extended_blast_operation.get_bits: get_getbits_result(ref code_pointer, ref vector_size, out f4); code_pointer--; break;
                                     case extended_blast_operation.count_bits: get_countbits_result(ref code_pointer, ref vector_size, out f4); break;
                                     case extended_blast_operation.reverse_bits: get_reversebits_result(ref code_pointer, ref vector_size); break;
                                     case extended_blast_operation.lzcnt: get_lzcnt_result(ref code_pointer, ref vector_size, out f4); break;
@@ -7725,6 +7752,7 @@ namespace NSS.Blast.Interpretor
 
                                     case extended_blast_operation.reinterpret_bool32: reinterpret_bool32(ref code_pointer, ref vector_size); break;
                                     case extended_blast_operation.reinterpret_float: reinterpret_float(ref code_pointer, ref vector_size); break;
+                                    case extended_blast_operation.reinterpret_int32: reinterpret_int32(ref code_pointer, ref vector_size); break;
 
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -8747,15 +8775,6 @@ namespace NSS.Blast.Interpretor
                     // 
 
 
-                    case blast_operation.set_bit:
-                        code_pointer--;
-                        get_setbit_result(ref code_pointer, ref vector_size);
-                        break;
-
-                    case blast_operation.set_bits:
-                        code_pointer--;
-                        get_setbits_result(ref code_pointer, ref vector_size);
-                        break;
 
                     case blast_operation.zero:
                         code_pointer--;
@@ -8781,6 +8800,15 @@ namespace NSS.Blast.Interpretor
                                         get_reversebits_result(ref code_pointer, ref vector_size);
                                     }
                                     break;
+
+                                case extended_blast_operation.set_bit:
+                                    get_setbit_result(ref code_pointer, ref vector_size);
+                                    break;
+
+                                case extended_blast_operation.set_bits:
+                                    get_setbits_result(ref code_pointer, ref vector_size);
+                                    break;
+
 
                                 case extended_blast_operation.rol:
                                     {
@@ -8815,6 +8843,12 @@ namespace NSS.Blast.Interpretor
                                 case extended_blast_operation.reinterpret_float:
                                     {
                                         reinterpret_float(ref code_pointer, ref vector_size);
+                                    }
+                                    break;
+
+                                case extended_blast_operation.reinterpret_int32:
+                                    {
+                                        reinterpret_int32(ref code_pointer, ref vector_size);
                                     }
                                     break;
 

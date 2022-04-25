@@ -762,7 +762,36 @@ namespace NSS.Blast
             }
         }
 
-#endregion
+        #endregion
+
+        #region CDATA updates | update of scripted constant data without recompilation
+
+        public BlastError SetCDATA(int cdata_reference, int cdata_index, float data)
+        {
+            if (!IsAllocated) return BlastError.error_package_not_allocated; 
+            if (CodeSegmentPtr == null) return BlastError.error_codesegment_null;
+            if (cdata_reference < 0 || cdata_reference >= CodeSize - 2) return BlastError.error_constant_reference_error;
+
+            unsafe
+            {
+                return NSS.Blast.Interpretor.BlastInterpretor.WriteCDATA((byte*)CodeSegmentPtr, cdata_reference, cdata_index, data); 
+            }
+        }
+
+        public BlastError SetCDATA(int cdata_reference, int cdata_index, byte data)
+        {
+            if (!IsAllocated) return BlastError.error_package_not_allocated;
+            if (CodeSegmentPtr == null) return BlastError.error_codesegment_null;
+            if (cdata_reference < 0 || cdata_reference >= CodeSize - 2) return BlastError.error_constant_reference_error;
+
+            unsafe
+            {
+                return NSS.Blast.Interpretor.BlastInterpretor.WriteCDATA((byte*)CodeSegmentPtr, cdata_reference, cdata_index, data);
+            }
+        }
+
+        #endregion 
+
 
         /// <summary>
         /// free any memory allocated 

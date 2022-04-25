@@ -18,44 +18,119 @@ using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Mathematics;
 
-     
+
 #pragma warning disable CS1591
+#pragma warning disable CS0164
 
 namespace NSS.Blast.External
 {
 
     #region External Function Delegates
-    public delegate void BlastEFDelegate(IntPtr engine, IntPtr data, IntPtr caller);
-public delegate float BlastEFDelegate_F1_f1(IntPtr engine, IntPtr data, IntPtr caller, float p0);
-public delegate float BlastEFDelegate_F1_f1f1(IntPtr engine, IntPtr data, IntPtr caller, float p0, float p1);
-public delegate float BlastEFDelegate_F1_f1f1f1(IntPtr engine, IntPtr data, IntPtr caller, float p0, float p1, float p2);
-public delegate void BSEFDelegate();
-public delegate float BSEFDelegate_F1_f1(float p0);
-public delegate float BSEFDelegate_F1_f1f1(float p0, float p1);
-public delegate float BSEFDelegate_F1_f1f1f1(float p0, float p1, float p2);
-unsafe public delegate void* BlastEFSSMDDelegate(IntPtr engine, IntPtr data);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f1(IntPtr engine, IntPtr data, float* result, [NoAlias]float* p0, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f1f1(IntPtr engine, IntPtr data, float* result, [NoAlias]float* p0, [NoAlias]float* p1, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f1f1f1(IntPtr engine, IntPtr data, float* result, [NoAlias]float* p0, [NoAlias]float* p1, [NoAlias]float* p2, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f2(IntPtr engine, IntPtr data, float* result, [NoAlias]float2* p0, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f2f2(IntPtr engine, IntPtr data, float* result, [NoAlias]float2* p0, [NoAlias]float2* p1, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f2f2f2(IntPtr engine, IntPtr data, float* result, [NoAlias]float2* p0, [NoAlias]float2* p1, [NoAlias]float2* p2, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f3(IntPtr engine, IntPtr data, float* result, [NoAlias]float3* p0, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f3f3(IntPtr engine, IntPtr data, float* result, [NoAlias]float3* p0, [NoAlias]float3* p1, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f3f3f3(IntPtr engine, IntPtr data, float* result, [NoAlias]float3* p0, [NoAlias]float3* p1, [NoAlias]float3* p2, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f4(IntPtr engine, IntPtr data, float* result, [NoAlias]float4* p0, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f4f4(IntPtr engine, IntPtr data, float* result, [NoAlias]float4* p0, [NoAlias]float4* p1, int ssmd_datacount);
-unsafe public delegate float* BlastEFSSMDDelegate_F1_f4f4f4(IntPtr engine, IntPtr data, float* result, [NoAlias]float4* p0, [NoAlias]float4* p1, [NoAlias]float4* p2, int ssmd_datacount);
-unsafe public delegate float2* BlastEFSSMDDelegate_F2_f2(IntPtr engine, IntPtr data, float2* result, [NoAlias]float2* p0, int ssmd_datacount);
-unsafe public delegate float2* BlastEFSSMDDelegate_F2_f2f2(IntPtr engine, IntPtr data, float2* result, [NoAlias]float2* p0, [NoAlias]float2* p1, int ssmd_datacount);
-unsafe public delegate float2* BlastEFSSMDDelegate_F2_f2f2f2(IntPtr engine, IntPtr data, float2* result, [NoAlias]float2* p0, [NoAlias]float2* p1, [NoAlias]float2* p2, int ssmd_datacount);
-unsafe public delegate float3* BlastEFSSMDDelegate_F3_f3(IntPtr engine, IntPtr data, float3* result, [NoAlias]float3* p0, int ssmd_datacount);
-unsafe public delegate float3* BlastEFSSMDDelegate_F3_f3f3(IntPtr engine, IntPtr data, float3* result, [NoAlias]float3* p0, [NoAlias]float3* p1, int ssmd_datacount);
-unsafe public delegate float3* BlastEFSSMDDelegate_F3_f3f3f3(IntPtr engine, IntPtr data, float3* result, [NoAlias]float3* p0, [NoAlias]float3* p1, [NoAlias]float3* p2, int ssmd_datacount);
-unsafe public delegate float4* BlastEFSSMDDelegate_F4_f4(IntPtr engine, IntPtr data, float4* result, [NoAlias]float4* p0, int ssmd_datacount);
-unsafe public delegate void* BlastEFSSMDDelegate_b32(IntPtr engine, IntPtr data, [NoAlias]Bool32* p0, int ssmd_datacount);
-unsafe public delegate Bool32* BlastEFSSMDDelegate_B32_b32(IntPtr engine, IntPtr data, Bool32* result, [NoAlias]Bool32* p0, int ssmd_datacount);
-unsafe public delegate Bool32* BlastEFSSMDDelegate_B32_b32f4f1(IntPtr engine, IntPtr data, Bool32* result, [NoAlias]Bool32* p0, [NoAlias]float4* p1, [NoAlias]float* p2, int ssmd_datacount);
+    unsafe public delegate void BlastEFDelegate([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller);
+unsafe public delegate float BlastEFDelegate_F1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller);
+unsafe public delegate float2* BlastEFDelegate_F2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float2* result);
+unsafe public delegate float3* BlastEFDelegate_F3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float3* result);
+unsafe public delegate float4* BlastEFDelegate_F4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float4* result);
+unsafe public delegate Bool32* BlastEFDelegate_B32([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]Bool32* result);
+unsafe public delegate float BlastEFDelegate_F1_f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, float p0);
+unsafe public delegate float BlastEFDelegate_F1_f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, float p0, float p1);
+unsafe public delegate float BlastEFDelegate_F1_f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, float p0, float p1, float p2);
+unsafe public delegate float BlastEFDelegate_F1_f1f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, float p0, float p1, float p2, float p3);
+unsafe public delegate float BlastEFDelegate_F1_f1f1f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, float p0, float p1, float p2, float p3, float p4);
+unsafe public delegate float BlastEFDelegate_F1_f1f1f1f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, float p0, float p1, float p2, float p3, float p4, float p5);
+unsafe public delegate float BlastEFDelegate_F1_f1f1f1f1f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, float p0, float p1, float p2, float p3, float p4, float p5, float p6);
+unsafe public delegate float BlastEFDelegate_F1_f1f1f1f1f1f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, float p0, float p1, float p2, float p3, float p4, float p5, float p6, float p7);
+unsafe public delegate float BlastEFDelegate_F1_f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float2* p0);
+unsafe public delegate float BlastEFDelegate_F1_f2f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float2* p0, [NoAlias]float2* p1);
+unsafe public delegate float BlastEFDelegate_F1_f2f2f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float2* p0, [NoAlias]float2* p1, [NoAlias]float2* p2);
+unsafe public delegate float BlastEFDelegate_F1_f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float3* p0);
+unsafe public delegate float BlastEFDelegate_F1_f3f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float3* p0, [NoAlias]float3* p1);
+unsafe public delegate float BlastEFDelegate_F1_f3f3f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float3* p0, [NoAlias]float3* p1, [NoAlias]float3* p2);
+unsafe public delegate float BlastEFDelegate_F1_f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float4* p0);
+unsafe public delegate float BlastEFDelegate_F1_f4f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float4* p0, [NoAlias]float4* p1);
+unsafe public delegate float BlastEFDelegate_F1_f4f4f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float4* p0, [NoAlias]float4* p1, [NoAlias]float4* p2);
+unsafe public delegate float2* BlastEFDelegate_F2_f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float2* result, [NoAlias]float2* p0);
+unsafe public delegate float2* BlastEFDelegate_F2_f2f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float2* result, [NoAlias]float2* p0, [NoAlias]float2* p1);
+unsafe public delegate float2* BlastEFDelegate_F2_f2f2f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float2* result, [NoAlias]float2* p0, [NoAlias]float2* p1, [NoAlias]float2* p2);
+unsafe public delegate float3* BlastEFDelegate_F3_f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float3* result, [NoAlias]float3* p0);
+unsafe public delegate float3* BlastEFDelegate_F3_f3f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float3* result, [NoAlias]float3* p0, [NoAlias]float3* p1);
+unsafe public delegate float3* BlastEFDelegate_F3_f3f3f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float3* result, [NoAlias]float3* p0, [NoAlias]float3* p1, [NoAlias]float3* p2);
+unsafe public delegate float4* BlastEFDelegate_F4_f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float4* result, [NoAlias]float4* p0);
+unsafe public delegate float4* BlastEFDelegate_F4_f4f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float4* result, [NoAlias]float4* p0, [NoAlias]float4* p1);
+unsafe public delegate float4* BlastEFDelegate_F4_f4f4f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]float4* result, [NoAlias]float4* p0, [NoAlias]float4* p1, [NoAlias]float4* p2);
+unsafe public delegate void BlastEFDelegate_b32([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]Bool32* p0);
+unsafe public delegate Bool32* BlastEFDelegate_B32_b32([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]Bool32* result, [NoAlias]Bool32* p0);
+unsafe public delegate Bool32* BlastEFDelegate_B32_b32f4f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]IntPtr caller, [NoAlias]Bool32* result, [NoAlias]Bool32* p0, [NoAlias]float4* p1, float p2);
+unsafe public delegate void BSEFDelegate();
+unsafe public delegate float BSEFDelegate_F1();
+unsafe public delegate float2* BSEFDelegate_F2([NoAlias]float2* result);
+unsafe public delegate float3* BSEFDelegate_F3([NoAlias]float3* result);
+unsafe public delegate float4* BSEFDelegate_F4([NoAlias]float4* result);
+unsafe public delegate Bool32* BSEFDelegate_B32([NoAlias]Bool32* result);
+unsafe public delegate float BSEFDelegate_F1_f1(float p0);
+unsafe public delegate float BSEFDelegate_F1_f1f1(float p0, float p1);
+unsafe public delegate float BSEFDelegate_F1_f1f1f1(float p0, float p1, float p2);
+unsafe public delegate float BSEFDelegate_F1_f1f1f1f1(float p0, float p1, float p2, float p3);
+unsafe public delegate float BSEFDelegate_F1_f1f1f1f1f1(float p0, float p1, float p2, float p3, float p4);
+unsafe public delegate float BSEFDelegate_F1_f1f1f1f1f1f1(float p0, float p1, float p2, float p3, float p4, float p5);
+unsafe public delegate float BSEFDelegate_F1_f1f1f1f1f1f1f1(float p0, float p1, float p2, float p3, float p4, float p5, float p6);
+unsafe public delegate float BSEFDelegate_F1_f1f1f1f1f1f1f1f1(float p0, float p1, float p2, float p3, float p4, float p5, float p6, float p7);
+unsafe public delegate float BSEFDelegate_F1_f2([NoAlias]float2* p0);
+unsafe public delegate float BSEFDelegate_F1_f2f2([NoAlias]float2* p0, [NoAlias]float2* p1);
+unsafe public delegate float BSEFDelegate_F1_f2f2f2([NoAlias]float2* p0, [NoAlias]float2* p1, [NoAlias]float2* p2);
+unsafe public delegate float BSEFDelegate_F1_f3([NoAlias]float3* p0);
+unsafe public delegate float BSEFDelegate_F1_f3f3([NoAlias]float3* p0, [NoAlias]float3* p1);
+unsafe public delegate float BSEFDelegate_F1_f3f3f3([NoAlias]float3* p0, [NoAlias]float3* p1, [NoAlias]float3* p2);
+unsafe public delegate float BSEFDelegate_F1_f4([NoAlias]float4* p0);
+unsafe public delegate float BSEFDelegate_F1_f4f4([NoAlias]float4* p0, [NoAlias]float4* p1);
+unsafe public delegate float BSEFDelegate_F1_f4f4f4([NoAlias]float4* p0, [NoAlias]float4* p1, [NoAlias]float4* p2);
+unsafe public delegate float2* BSEFDelegate_F2_f2([NoAlias]float2* result, [NoAlias]float2* p0);
+unsafe public delegate float2* BSEFDelegate_F2_f2f2([NoAlias]float2* result, [NoAlias]float2* p0, [NoAlias]float2* p1);
+unsafe public delegate float2* BSEFDelegate_F2_f2f2f2([NoAlias]float2* result, [NoAlias]float2* p0, [NoAlias]float2* p1, [NoAlias]float2* p2);
+unsafe public delegate float3* BSEFDelegate_F3_f3([NoAlias]float3* result, [NoAlias]float3* p0);
+unsafe public delegate float3* BSEFDelegate_F3_f3f3([NoAlias]float3* result, [NoAlias]float3* p0, [NoAlias]float3* p1);
+unsafe public delegate float3* BSEFDelegate_F3_f3f3f3([NoAlias]float3* result, [NoAlias]float3* p0, [NoAlias]float3* p1, [NoAlias]float3* p2);
+unsafe public delegate float4* BSEFDelegate_F4_f4([NoAlias]float4* result, [NoAlias]float4* p0);
+unsafe public delegate float4* BSEFDelegate_F4_f4f4([NoAlias]float4* result, [NoAlias]float4* p0, [NoAlias]float4* p1);
+unsafe public delegate float4* BSEFDelegate_F4_f4f4f4([NoAlias]float4* result, [NoAlias]float4* p0, [NoAlias]float4* p1, [NoAlias]float4* p2);
+unsafe public delegate void BSEFDelegate_b32([NoAlias]Bool32* p0);
+unsafe public delegate Bool32* BSEFDelegate_B32_b32([NoAlias]Bool32* result, [NoAlias]Bool32* p0);
+unsafe public delegate Bool32* BSEFDelegate_B32_b32f4f1([NoAlias]Bool32* result, [NoAlias]Bool32* p0, [NoAlias]float4* p1, float p2);
+unsafe public delegate void* BlastEFSSMDDelegate([NoAlias]IntPtr engine, [NoAlias]IntPtr data);
+unsafe public delegate float* BlastEFSSMDDelegate_F1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, int ssmd_datacount);
+unsafe public delegate float2* BlastEFSSMDDelegate_F2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float2* result, int ssmd_datacount);
+unsafe public delegate float3* BlastEFSSMDDelegate_F3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float3* result, int ssmd_datacount);
+unsafe public delegate float4* BlastEFSSMDDelegate_F4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float4* result, int ssmd_datacount);
+unsafe public delegate Bool32* BlastEFSSMDDelegate_B32([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]Bool32* result, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float* p0, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float* p0, [NoAlias]float* p1, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float* p0, [NoAlias]float* p1, [NoAlias]float* p2, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f1f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float* p0, [NoAlias]float* p1, [NoAlias]float* p2, [NoAlias]float* p3, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f1f1f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float* p0, [NoAlias]float* p1, [NoAlias]float* p2, [NoAlias]float* p3, [NoAlias]float* p4, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f1f1f1f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float* p0, [NoAlias]float* p1, [NoAlias]float* p2, [NoAlias]float* p3, [NoAlias]float* p4, [NoAlias]float* p5, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float* p0, [NoAlias]float* p1, [NoAlias]float* p2, [NoAlias]float* p3, [NoAlias]float* p4, [NoAlias]float* p5, [NoAlias]float* p6, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float* p0, [NoAlias]float* p1, [NoAlias]float* p2, [NoAlias]float* p3, [NoAlias]float* p4, [NoAlias]float* p5, [NoAlias]float* p6, [NoAlias]float* p7, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float2* p0, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f2f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float2* p0, [NoAlias]float2* p1, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f2f2f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float2* p0, [NoAlias]float2* p1, [NoAlias]float2* p2, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float3* p0, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f3f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float3* p0, [NoAlias]float3* p1, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f3f3f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float3* p0, [NoAlias]float3* p1, [NoAlias]float3* p2, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float4* p0, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f4f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float4* p0, [NoAlias]float4* p1, int ssmd_datacount);
+unsafe public delegate float* BlastEFSSMDDelegate_F1_f4f4f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float* result, [NoAlias]float4* p0, [NoAlias]float4* p1, [NoAlias]float4* p2, int ssmd_datacount);
+unsafe public delegate float2* BlastEFSSMDDelegate_F2_f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float2* result, [NoAlias]float2* p0, int ssmd_datacount);
+unsafe public delegate float2* BlastEFSSMDDelegate_F2_f2f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float2* result, [NoAlias]float2* p0, [NoAlias]float2* p1, int ssmd_datacount);
+unsafe public delegate float2* BlastEFSSMDDelegate_F2_f2f2f2([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float2* result, [NoAlias]float2* p0, [NoAlias]float2* p1, [NoAlias]float2* p2, int ssmd_datacount);
+unsafe public delegate float3* BlastEFSSMDDelegate_F3_f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float3* result, [NoAlias]float3* p0, int ssmd_datacount);
+unsafe public delegate float3* BlastEFSSMDDelegate_F3_f3f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float3* result, [NoAlias]float3* p0, [NoAlias]float3* p1, int ssmd_datacount);
+unsafe public delegate float3* BlastEFSSMDDelegate_F3_f3f3f3([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float3* result, [NoAlias]float3* p0, [NoAlias]float3* p1, [NoAlias]float3* p2, int ssmd_datacount);
+unsafe public delegate float4* BlastEFSSMDDelegate_F4_f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float4* result, [NoAlias]float4* p0, int ssmd_datacount);
+unsafe public delegate float4* BlastEFSSMDDelegate_F4_f4f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float4* result, [NoAlias]float4* p0, [NoAlias]float4* p1, int ssmd_datacount);
+unsafe public delegate float4* BlastEFSSMDDelegate_F4_f4f4f4([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]float4* result, [NoAlias]float4* p0, [NoAlias]float4* p1, [NoAlias]float4* p2, int ssmd_datacount);
+unsafe public delegate void* BlastEFSSMDDelegate_b32([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]Bool32* p0, int ssmd_datacount);
+unsafe public delegate Bool32* BlastEFSSMDDelegate_B32_b32([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]Bool32* result, [NoAlias]Bool32* p0, int ssmd_datacount);
+unsafe public delegate Bool32* BlastEFSSMDDelegate_B32_b32f4f1([NoAlias]IntPtr engine, [NoAlias]IntPtr data, [NoAlias]Bool32* result, [NoAlias]Bool32* p0, [NoAlias]float4* p1, [NoAlias]float* p2, int ssmd_datacount);
 
     #endregion 
 
@@ -68,17 +143,89 @@ namespace NSS.Blast
     public abstract partial class BlastScriptAPI
     {
         public int Register(External.BlastEFDelegate function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF); }
+public int Register(External.BlastEFDelegate_F1 function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_F1); }
+public int Register(External.BlastEFDelegate_F2 function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_F2); }
+public int Register(External.BlastEFDelegate_F3 function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_F3); }
+public int Register(External.BlastEFDelegate_F4 function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_F4); }
+public int Register(External.BlastEFDelegate_B32 function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_B32); }
 public int Register(External.BlastEFDelegate_F1_f1 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f1); }
 public int Register(External.BlastEFDelegate_F1_f1f1 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f1f1); }
 public int Register(External.BlastEFDelegate_F1_f1f1f1 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f1f1f1); }
+public int Register(External.BlastEFDelegate_F1_f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 4, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f1f1f1f1); }
+public int Register(External.BlastEFDelegate_F1_f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 5, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f1f1f1f1f1); }
+public int Register(External.BlastEFDelegate_F1_f1f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 6, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f1f1f1f1f1f1); }
+public int Register(External.BlastEFDelegate_F1_f1f1f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 7, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f1f1f1f1f1f1f1); }
+public int Register(External.BlastEFDelegate_F1_f1f1f1f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 8, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f1f1f1f1f1f1f1f1); }
+public int Register(External.BlastEFDelegate_F1_f2 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f2); }
+public int Register(External.BlastEFDelegate_F1_f2f2 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f2f2); }
+public int Register(External.BlastEFDelegate_F1_f2f2f2 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f2f2f2); }
+public int Register(External.BlastEFDelegate_F1_f3 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f3); }
+public int Register(External.BlastEFDelegate_F1_f3f3 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f3f3); }
+public int Register(External.BlastEFDelegate_F1_f3f3f3 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f3f3f3); }
+public int Register(External.BlastEFDelegate_F1_f4 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f4); }
+public int Register(External.BlastEFDelegate_F1_f4f4 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f4f4); }
+public int Register(External.BlastEFDelegate_F1_f4f4f4 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_F1_f4f4f4); }
+public int Register(External.BlastEFDelegate_F2_f2 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_F2_f2); }
+public int Register(External.BlastEFDelegate_F2_f2f2 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_F2_f2f2); }
+public int Register(External.BlastEFDelegate_F2_f2f2f2 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_F2_f2f2f2); }
+public int Register(External.BlastEFDelegate_F3_f3 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_F3_f3); }
+public int Register(External.BlastEFDelegate_F3_f3f3 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_F3_f3f3); }
+public int Register(External.BlastEFDelegate_F3_f3f3f3 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_F3_f3f3f3); }
+public int Register(External.BlastEFDelegate_F4_f4 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_F4_f4); }
+public int Register(External.BlastEFDelegate_F4_f4f4 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_F4_f4f4); }
+public int Register(External.BlastEFDelegate_F4_f4f4f4 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_F4_f4f4f4); }
+public int Register(External.BlastEFDelegate_b32 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_b32); }
+public int Register(External.BlastEFDelegate_B32_b32 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_B32_b32); }
+public int Register(External.BlastEFDelegate_B32_b32f4f1 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_B32_b32f4f1); }
 public int Register(External.BSEFDelegate function, string name = null) { return RegisterFunction(function, name, 0, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT); }
+public int Register(External.BSEFDelegate_F1 function, string name = null) { return RegisterFunction(function, name, 0, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1); }
+public int Register(External.BSEFDelegate_F2 function, string name = null) { return RegisterFunction(function, name, 0, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F2); }
+public int Register(External.BSEFDelegate_F3 function, string name = null) { return RegisterFunction(function, name, 0, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F3); }
+public int Register(External.BSEFDelegate_F4 function, string name = null) { return RegisterFunction(function, name, 0, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F4); }
+public int Register(External.BSEFDelegate_B32 function, string name = null) { return RegisterFunction(function, name, 0, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_B32); }
 public int Register(External.BSEFDelegate_F1_f1 function, string name = null) { return RegisterFunction(function, name, 1, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1); }
 public int Register(External.BSEFDelegate_F1_f1f1 function, string name = null) { return RegisterFunction(function, name, 2, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1f1); }
 public int Register(External.BSEFDelegate_F1_f1f1f1 function, string name = null) { return RegisterFunction(function, name, 3, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1f1f1); }
+public int Register(External.BSEFDelegate_F1_f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 4, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1f1f1f1); }
+public int Register(External.BSEFDelegate_F1_f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 5, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1f1f1f1f1); }
+public int Register(External.BSEFDelegate_F1_f1f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 6, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1); }
+public int Register(External.BSEFDelegate_F1_f1f1f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 7, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1f1); }
+public int Register(External.BSEFDelegate_F1_f1f1f1f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 8, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1f1f1); }
+public int Register(External.BSEFDelegate_F1_f2 function, string name = null) { return RegisterFunction(function, name, 1, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f2); }
+public int Register(External.BSEFDelegate_F1_f2f2 function, string name = null) { return RegisterFunction(function, name, 2, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f2f2); }
+public int Register(External.BSEFDelegate_F1_f2f2f2 function, string name = null) { return RegisterFunction(function, name, 3, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f2f2f2); }
+public int Register(External.BSEFDelegate_F1_f3 function, string name = null) { return RegisterFunction(function, name, 1, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f3); }
+public int Register(External.BSEFDelegate_F1_f3f3 function, string name = null) { return RegisterFunction(function, name, 2, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f3f3); }
+public int Register(External.BSEFDelegate_F1_f3f3f3 function, string name = null) { return RegisterFunction(function, name, 3, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f3f3f3); }
+public int Register(External.BSEFDelegate_F1_f4 function, string name = null) { return RegisterFunction(function, name, 1, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f4); }
+public int Register(External.BSEFDelegate_F1_f4f4 function, string name = null) { return RegisterFunction(function, name, 2, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f4f4); }
+public int Register(External.BSEFDelegate_F1_f4f4f4 function, string name = null) { return RegisterFunction(function, name, 3, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F1_f4f4f4); }
+public int Register(External.BSEFDelegate_F2_f2 function, string name = null) { return RegisterFunction(function, name, 1, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F2_f2); }
+public int Register(External.BSEFDelegate_F2_f2f2 function, string name = null) { return RegisterFunction(function, name, 2, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F2_f2f2); }
+public int Register(External.BSEFDelegate_F2_f2f2f2 function, string name = null) { return RegisterFunction(function, name, 3, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F2_f2f2f2); }
+public int Register(External.BSEFDelegate_F3_f3 function, string name = null) { return RegisterFunction(function, name, 1, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F3_f3); }
+public int Register(External.BSEFDelegate_F3_f3f3 function, string name = null) { return RegisterFunction(function, name, 2, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F3_f3f3); }
+public int Register(External.BSEFDelegate_F3_f3f3f3 function, string name = null) { return RegisterFunction(function, name, 3, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F3_f3f3f3); }
+public int Register(External.BSEFDelegate_F4_f4 function, string name = null) { return RegisterFunction(function, name, 1, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F4_f4); }
+public int Register(External.BSEFDelegate_F4_f4f4 function, string name = null) { return RegisterFunction(function, name, 2, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F4_f4f4); }
+public int Register(External.BSEFDelegate_F4_f4f4f4 function, string name = null) { return RegisterFunction(function, name, 3, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_F4_f4f4f4); }
+public int Register(External.BSEFDelegate_b32 function, string name = null) { return RegisterFunction(function, name, 1, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_b32); }
+public int Register(External.BSEFDelegate_B32_b32 function, string name = null) { return RegisterFunction(function, name, 1, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_B32_b32); }
+public int Register(External.BSEFDelegate_B32_b32f4f1 function, string name = null) { return RegisterFunction(function, name, 3, true, (byte)EFDelegateType.CALL_PROC_EF_SHORT_B32_b32f4f1); }
 public int Register(External.BlastEFSSMDDelegate function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD); }
+public int Register(External.BlastEFSSMDDelegate_F1 function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1); }
+public int Register(External.BlastEFSSMDDelegate_F2 function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F2); }
+public int Register(External.BlastEFSSMDDelegate_F3 function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F3); }
+public int Register(External.BlastEFSSMDDelegate_F4 function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F4); }
+public int Register(External.BlastEFSSMDDelegate_B32 function, string name = null) { return RegisterFunction(function, name, 0, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_B32); }
 public int Register(External.BlastEFSSMDDelegate_F1_f1 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f1); }
 public int Register(External.BlastEFSSMDDelegate_F1_f1f1 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f1f1); }
 public int Register(External.BlastEFSSMDDelegate_F1_f1f1f1 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f1f1f1); }
+public int Register(External.BlastEFSSMDDelegate_F1_f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 4, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f1f1f1f1); }
+public int Register(External.BlastEFSSMDDelegate_F1_f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 5, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f1f1f1f1f1); }
+public int Register(External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 6, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1); }
+public int Register(External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 7, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1); }
+public int Register(External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1f1 function, string name = null) { return RegisterFunction(function, name, 8, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1f1); }
 public int Register(External.BlastEFSSMDDelegate_F1_f2 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f2); }
 public int Register(External.BlastEFSSMDDelegate_F1_f2f2 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f2f2); }
 public int Register(External.BlastEFSSMDDelegate_F1_f2f2f2 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F1_f2f2f2); }
@@ -95,6 +242,8 @@ public int Register(External.BlastEFSSMDDelegate_F3_f3 function, string name = n
 public int Register(External.BlastEFSSMDDelegate_F3_f3f3 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F3_f3f3); }
 public int Register(External.BlastEFSSMDDelegate_F3_f3f3f3 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F3_f3f3f3); }
 public int Register(External.BlastEFSSMDDelegate_F4_f4 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F4_f4); }
+public int Register(External.BlastEFSSMDDelegate_F4_f4f4 function, string name = null) { return RegisterFunction(function, name, 2, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F4_f4f4); }
+public int Register(External.BlastEFSSMDDelegate_F4_f4f4f4 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_F4_f4f4f4); }
 public int Register(External.BlastEFSSMDDelegate_b32 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_b32); }
 public int Register(External.BlastEFSSMDDelegate_B32_b32 function, string name = null) { return RegisterFunction(function, name, 1, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_B32_b32); }
 public int Register(External.BlastEFSSMDDelegate_B32_b32f4f1 function, string name = null) { return RegisterFunction(function, name, 3, false, (byte)EFDelegateType.CALL_PROC_EF_SSMD_B32_b32f4f1); }
@@ -104,36 +253,110 @@ public int Register(External.BlastEFSSMDDelegate_B32_b32f4f1 function, string na
     public enum EFDelegateType : byte
     {
         CALL_PROC_EF = 0,
-CALL_PROC_EF_F1_f1 = 1,
-CALL_PROC_EF_F1_f1f1 = 2,
-CALL_PROC_EF_F1_f1f1f1 = 3,
-CALL_PROC_EF_SHORT = 4,
-CALL_PROC_EF_SHORT_F1_f1 = 5,
-CALL_PROC_EF_SHORT_F1_f1f1 = 6,
-CALL_PROC_EF_SHORT_F1_f1f1f1 = 7,
-CALL_PROC_EF_SSMD = 8,
-CALL_PROC_EF_SSMD_F1_f1 = 9,
-CALL_PROC_EF_SSMD_F1_f1f1 = 10,
-CALL_PROC_EF_SSMD_F1_f1f1f1 = 11,
-CALL_PROC_EF_SSMD_F1_f2 = 12,
-CALL_PROC_EF_SSMD_F1_f2f2 = 13,
-CALL_PROC_EF_SSMD_F1_f2f2f2 = 14,
-CALL_PROC_EF_SSMD_F1_f3 = 15,
-CALL_PROC_EF_SSMD_F1_f3f3 = 16,
-CALL_PROC_EF_SSMD_F1_f3f3f3 = 17,
-CALL_PROC_EF_SSMD_F1_f4 = 18,
-CALL_PROC_EF_SSMD_F1_f4f4 = 19,
-CALL_PROC_EF_SSMD_F1_f4f4f4 = 20,
-CALL_PROC_EF_SSMD_F2_f2 = 21,
-CALL_PROC_EF_SSMD_F2_f2f2 = 22,
-CALL_PROC_EF_SSMD_F2_f2f2f2 = 23,
-CALL_PROC_EF_SSMD_F3_f3 = 24,
-CALL_PROC_EF_SSMD_F3_f3f3 = 25,
-CALL_PROC_EF_SSMD_F3_f3f3f3 = 26,
-CALL_PROC_EF_SSMD_F4_f4 = 27,
-CALL_PROC_EF_SSMD_b32 = 28,
-CALL_PROC_EF_SSMD_B32_b32 = 29,
-CALL_PROC_EF_SSMD_B32_b32f4f1 = 30,
+CALL_PROC_EF_F1 = 1,
+CALL_PROC_EF_F2 = 2,
+CALL_PROC_EF_F3 = 3,
+CALL_PROC_EF_F4 = 4,
+CALL_PROC_EF_B32 = 5,
+CALL_PROC_EF_F1_f1 = 6,
+CALL_PROC_EF_F1_f1f1 = 7,
+CALL_PROC_EF_F1_f1f1f1 = 8,
+CALL_PROC_EF_F1_f1f1f1f1 = 9,
+CALL_PROC_EF_F1_f1f1f1f1f1 = 10,
+CALL_PROC_EF_F1_f1f1f1f1f1f1 = 11,
+CALL_PROC_EF_F1_f1f1f1f1f1f1f1 = 12,
+CALL_PROC_EF_F1_f1f1f1f1f1f1f1f1 = 13,
+CALL_PROC_EF_F1_f2 = 14,
+CALL_PROC_EF_F1_f2f2 = 15,
+CALL_PROC_EF_F1_f2f2f2 = 16,
+CALL_PROC_EF_F1_f3 = 17,
+CALL_PROC_EF_F1_f3f3 = 18,
+CALL_PROC_EF_F1_f3f3f3 = 19,
+CALL_PROC_EF_F1_f4 = 20,
+CALL_PROC_EF_F1_f4f4 = 21,
+CALL_PROC_EF_F1_f4f4f4 = 22,
+CALL_PROC_EF_F2_f2 = 23,
+CALL_PROC_EF_F2_f2f2 = 24,
+CALL_PROC_EF_F2_f2f2f2 = 25,
+CALL_PROC_EF_F3_f3 = 26,
+CALL_PROC_EF_F3_f3f3 = 27,
+CALL_PROC_EF_F3_f3f3f3 = 28,
+CALL_PROC_EF_F4_f4 = 29,
+CALL_PROC_EF_F4_f4f4 = 30,
+CALL_PROC_EF_F4_f4f4f4 = 31,
+CALL_PROC_EF_b32 = 32,
+CALL_PROC_EF_B32_b32 = 33,
+CALL_PROC_EF_B32_b32f4f1 = 34,
+CALL_PROC_EF_SHORT = 35,
+CALL_PROC_EF_SHORT_F1 = 36,
+CALL_PROC_EF_SHORT_F2 = 37,
+CALL_PROC_EF_SHORT_F3 = 38,
+CALL_PROC_EF_SHORT_F4 = 39,
+CALL_PROC_EF_SHORT_B32 = 40,
+CALL_PROC_EF_SHORT_F1_f1 = 41,
+CALL_PROC_EF_SHORT_F1_f1f1 = 42,
+CALL_PROC_EF_SHORT_F1_f1f1f1 = 43,
+CALL_PROC_EF_SHORT_F1_f1f1f1f1 = 44,
+CALL_PROC_EF_SHORT_F1_f1f1f1f1f1 = 45,
+CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1 = 46,
+CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1f1 = 47,
+CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1f1f1 = 48,
+CALL_PROC_EF_SHORT_F1_f2 = 49,
+CALL_PROC_EF_SHORT_F1_f2f2 = 50,
+CALL_PROC_EF_SHORT_F1_f2f2f2 = 51,
+CALL_PROC_EF_SHORT_F1_f3 = 52,
+CALL_PROC_EF_SHORT_F1_f3f3 = 53,
+CALL_PROC_EF_SHORT_F1_f3f3f3 = 54,
+CALL_PROC_EF_SHORT_F1_f4 = 55,
+CALL_PROC_EF_SHORT_F1_f4f4 = 56,
+CALL_PROC_EF_SHORT_F1_f4f4f4 = 57,
+CALL_PROC_EF_SHORT_F2_f2 = 58,
+CALL_PROC_EF_SHORT_F2_f2f2 = 59,
+CALL_PROC_EF_SHORT_F2_f2f2f2 = 60,
+CALL_PROC_EF_SHORT_F3_f3 = 61,
+CALL_PROC_EF_SHORT_F3_f3f3 = 62,
+CALL_PROC_EF_SHORT_F3_f3f3f3 = 63,
+CALL_PROC_EF_SHORT_F4_f4 = 64,
+CALL_PROC_EF_SHORT_F4_f4f4 = 65,
+CALL_PROC_EF_SHORT_F4_f4f4f4 = 66,
+CALL_PROC_EF_SHORT_b32 = 67,
+CALL_PROC_EF_SHORT_B32_b32 = 68,
+CALL_PROC_EF_SHORT_B32_b32f4f1 = 69,
+CALL_PROC_EF_SSMD = 70,
+CALL_PROC_EF_SSMD_F1 = 71,
+CALL_PROC_EF_SSMD_F2 = 72,
+CALL_PROC_EF_SSMD_F3 = 73,
+CALL_PROC_EF_SSMD_F4 = 74,
+CALL_PROC_EF_SSMD_B32 = 75,
+CALL_PROC_EF_SSMD_F1_f1 = 76,
+CALL_PROC_EF_SSMD_F1_f1f1 = 77,
+CALL_PROC_EF_SSMD_F1_f1f1f1 = 78,
+CALL_PROC_EF_SSMD_F1_f1f1f1f1 = 79,
+CALL_PROC_EF_SSMD_F1_f1f1f1f1f1 = 80,
+CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1 = 81,
+CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1 = 82,
+CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1f1 = 83,
+CALL_PROC_EF_SSMD_F1_f2 = 84,
+CALL_PROC_EF_SSMD_F1_f2f2 = 85,
+CALL_PROC_EF_SSMD_F1_f2f2f2 = 86,
+CALL_PROC_EF_SSMD_F1_f3 = 87,
+CALL_PROC_EF_SSMD_F1_f3f3 = 88,
+CALL_PROC_EF_SSMD_F1_f3f3f3 = 89,
+CALL_PROC_EF_SSMD_F1_f4 = 90,
+CALL_PROC_EF_SSMD_F1_f4f4 = 91,
+CALL_PROC_EF_SSMD_F1_f4f4f4 = 92,
+CALL_PROC_EF_SSMD_F2_f2 = 93,
+CALL_PROC_EF_SSMD_F2_f2f2 = 94,
+CALL_PROC_EF_SSMD_F2_f2f2f2 = 95,
+CALL_PROC_EF_SSMD_F3_f3 = 96,
+CALL_PROC_EF_SSMD_F3_f3f3 = 97,
+CALL_PROC_EF_SSMD_F3_f3f3f3 = 98,
+CALL_PROC_EF_SSMD_F4_f4 = 99,
+CALL_PROC_EF_SSMD_F4_f4f4 = 100,
+CALL_PROC_EF_SSMD_F4_f4f4f4 = 101,
+CALL_PROC_EF_SSMD_b32 = 102,
+CALL_PROC_EF_SSMD_B32_b32 = 103,
+CALL_PROC_EF_SSMD_B32_b32f4f1 = 104,
 
     }
 
@@ -151,16 +374,81 @@ namespace NSS.Blast.Interpretor
     int id = function.FunctionId;
     byte delegate_type = function.FunctionDelegateId;
 
+    float4 f4;
+    void* temp = &f4; 
+
     switch(delegate_type)
     {
         case 0: CALL_PROC_EF(ref code_pointer, id); return 0;
-        case 1: return CALL_PROC_EF_F1_f1(ref code_pointer, id); 
-        case 2: return CALL_PROC_EF_F1_f1f1(ref code_pointer, id); 
-        case 3: return CALL_PROC_EF_F1_f1f1f1(ref code_pointer, id); 
-        case 4: CALL_PROC_EF_SHORT(ref code_pointer, id); return 0;
-        case 5: return CALL_PROC_EF_SHORT_F1_f1(ref code_pointer, id); 
-        case 6: return CALL_PROC_EF_SHORT_F1_f1f1(ref code_pointer, id); 
-        case 7: return CALL_PROC_EF_SHORT_F1_f1f1f1(ref code_pointer, id); 
+        case 1: return CALL_PROC_EF_F1(ref code_pointer, id); 
+        case 2: return new float4(CALL_PROC_EF_F2(ref code_pointer, id, (float2*)temp)[0], 0, 0);
+        case 3: return new float4(CALL_PROC_EF_F3(ref code_pointer, id, (float3*)temp)[0], 0); 
+        case 4: return CALL_PROC_EF_F4(ref code_pointer, id, (float4*)temp)[0]; 
+        case 5: return new float4(CALL_PROC_EF_B32(ref code_pointer, id, (Bool32*)temp)[0].Single, 0, 0, 0);
+        case 6: return CALL_PROC_EF_F1_f1(ref code_pointer, id); 
+        case 7: return CALL_PROC_EF_F1_f1f1(ref code_pointer, id); 
+        case 8: return CALL_PROC_EF_F1_f1f1f1(ref code_pointer, id); 
+        case 9: return CALL_PROC_EF_F1_f1f1f1f1(ref code_pointer, id); 
+        case 10: return CALL_PROC_EF_F1_f1f1f1f1f1(ref code_pointer, id); 
+        case 11: return CALL_PROC_EF_F1_f1f1f1f1f1f1(ref code_pointer, id); 
+        case 12: return CALL_PROC_EF_F1_f1f1f1f1f1f1f1(ref code_pointer, id); 
+        case 13: return CALL_PROC_EF_F1_f1f1f1f1f1f1f1f1(ref code_pointer, id); 
+        case 14: return CALL_PROC_EF_F1_f2(ref code_pointer, id); 
+        case 15: return CALL_PROC_EF_F1_f2f2(ref code_pointer, id); 
+        case 16: return CALL_PROC_EF_F1_f2f2f2(ref code_pointer, id); 
+        case 17: return CALL_PROC_EF_F1_f3(ref code_pointer, id); 
+        case 18: return CALL_PROC_EF_F1_f3f3(ref code_pointer, id); 
+        case 19: return CALL_PROC_EF_F1_f3f3f3(ref code_pointer, id); 
+        case 20: return CALL_PROC_EF_F1_f4(ref code_pointer, id); 
+        case 21: return CALL_PROC_EF_F1_f4f4(ref code_pointer, id); 
+        case 22: return CALL_PROC_EF_F1_f4f4f4(ref code_pointer, id); 
+        case 23: return new float4(CALL_PROC_EF_F2_f2(ref code_pointer, id, (float2*)temp)[0], 0, 0);
+        case 24: return new float4(CALL_PROC_EF_F2_f2f2(ref code_pointer, id, (float2*)temp)[0], 0, 0);
+        case 25: return new float4(CALL_PROC_EF_F2_f2f2f2(ref code_pointer, id, (float2*)temp)[0], 0, 0);
+        case 26: return new float4(CALL_PROC_EF_F3_f3(ref code_pointer, id, (float3*)temp)[0], 0); 
+        case 27: return new float4(CALL_PROC_EF_F3_f3f3(ref code_pointer, id, (float3*)temp)[0], 0); 
+        case 28: return new float4(CALL_PROC_EF_F3_f3f3f3(ref code_pointer, id, (float3*)temp)[0], 0); 
+        case 29: return CALL_PROC_EF_F4_f4(ref code_pointer, id, (float4*)temp)[0]; 
+        case 30: return CALL_PROC_EF_F4_f4f4(ref code_pointer, id, (float4*)temp)[0]; 
+        case 31: return CALL_PROC_EF_F4_f4f4f4(ref code_pointer, id, (float4*)temp)[0]; 
+        case 32: CALL_PROC_EF_b32(ref code_pointer, id); return 0;
+        case 33: return new float4(CALL_PROC_EF_B32_b32(ref code_pointer, id, (Bool32*)temp)[0].Single, 0, 0, 0);
+        case 34: return new float4(CALL_PROC_EF_B32_b32f4f1(ref code_pointer, id, (Bool32*)temp)[0].Single, 0, 0, 0);
+        case 35: CALL_PROC_EF_SHORT(ref code_pointer, id); return 0;
+        case 36: return CALL_PROC_EF_SHORT_F1(ref code_pointer, id); 
+        case 37: return new float4(CALL_PROC_EF_SHORT_F2(ref code_pointer, id, (float2*)temp)[0], 0, 0);
+        case 38: return new float4(CALL_PROC_EF_SHORT_F3(ref code_pointer, id, (float3*)temp)[0], 0); 
+        case 39: return CALL_PROC_EF_SHORT_F4(ref code_pointer, id, (float4*)temp)[0]; 
+        case 40: return new float4(CALL_PROC_EF_SHORT_B32(ref code_pointer, id, (Bool32*)temp)[0].Single, 0, 0, 0);
+        case 41: return CALL_PROC_EF_SHORT_F1_f1(ref code_pointer, id); 
+        case 42: return CALL_PROC_EF_SHORT_F1_f1f1(ref code_pointer, id); 
+        case 43: return CALL_PROC_EF_SHORT_F1_f1f1f1(ref code_pointer, id); 
+        case 44: return CALL_PROC_EF_SHORT_F1_f1f1f1f1(ref code_pointer, id); 
+        case 45: return CALL_PROC_EF_SHORT_F1_f1f1f1f1f1(ref code_pointer, id); 
+        case 46: return CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1(ref code_pointer, id); 
+        case 47: return CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1f1(ref code_pointer, id); 
+        case 48: return CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1f1f1(ref code_pointer, id); 
+        case 49: return CALL_PROC_EF_SHORT_F1_f2(ref code_pointer, id); 
+        case 50: return CALL_PROC_EF_SHORT_F1_f2f2(ref code_pointer, id); 
+        case 51: return CALL_PROC_EF_SHORT_F1_f2f2f2(ref code_pointer, id); 
+        case 52: return CALL_PROC_EF_SHORT_F1_f3(ref code_pointer, id); 
+        case 53: return CALL_PROC_EF_SHORT_F1_f3f3(ref code_pointer, id); 
+        case 54: return CALL_PROC_EF_SHORT_F1_f3f3f3(ref code_pointer, id); 
+        case 55: return CALL_PROC_EF_SHORT_F1_f4(ref code_pointer, id); 
+        case 56: return CALL_PROC_EF_SHORT_F1_f4f4(ref code_pointer, id); 
+        case 57: return CALL_PROC_EF_SHORT_F1_f4f4f4(ref code_pointer, id); 
+        case 58: return new float4(CALL_PROC_EF_SHORT_F2_f2(ref code_pointer, id, (float2*)temp)[0], 0, 0);
+        case 59: return new float4(CALL_PROC_EF_SHORT_F2_f2f2(ref code_pointer, id, (float2*)temp)[0], 0, 0);
+        case 60: return new float4(CALL_PROC_EF_SHORT_F2_f2f2f2(ref code_pointer, id, (float2*)temp)[0], 0, 0);
+        case 61: return new float4(CALL_PROC_EF_SHORT_F3_f3(ref code_pointer, id, (float3*)temp)[0], 0); 
+        case 62: return new float4(CALL_PROC_EF_SHORT_F3_f3f3(ref code_pointer, id, (float3*)temp)[0], 0); 
+        case 63: return new float4(CALL_PROC_EF_SHORT_F3_f3f3f3(ref code_pointer, id, (float3*)temp)[0], 0); 
+        case 64: return CALL_PROC_EF_SHORT_F4_f4(ref code_pointer, id, (float4*)temp)[0]; 
+        case 65: return CALL_PROC_EF_SHORT_F4_f4f4(ref code_pointer, id, (float4*)temp)[0]; 
+        case 66: return CALL_PROC_EF_SHORT_F4_f4f4f4(ref code_pointer, id, (float4*)temp)[0]; 
+        case 67: CALL_PROC_EF_SHORT_b32(ref code_pointer, id); return 0;
+        case 68: return new float4(CALL_PROC_EF_SHORT_B32_b32(ref code_pointer, id, (Bool32*)temp)[0].Single, 0, 0, 0);
+        case 69: return new float4(CALL_PROC_EF_SHORT_B32_b32f4f1(ref code_pointer, id, (Bool32*)temp)[0].Single, 0, 0, 0);
     }
 
     return float.NaN;
@@ -185,6 +473,102 @@ internal void CALL_PROC_EF(ref int code_pointer, in int function_id)
     Debug.LogError($"Blast.interpretor.BlastEFDelegate: error calling external function with id {function_id}");
 #endif
    return;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1(ref int code_pointer, in int function_id)
+{
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float2* CALL_PROC_EF_F2(ref int code_pointer, in int function_id, float2* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F2).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F2> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F2: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float3* CALL_PROC_EF_F3(ref int code_pointer, in int function_id, float3* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F3).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F3> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F3: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_F4(ref int code_pointer, in int function_id, float4* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F4).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F4> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal Bool32* CALL_PROC_EF_B32(ref int code_pointer, in int function_id, Bool32* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_B32).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_B32> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_B32>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_B32: error calling external function with id {function_id}");
+#endif
+   return null;
 }
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float CALL_PROC_EF_F1_f1(ref int code_pointer, in int function_id)
@@ -292,6 +676,999 @@ CALLERROR:
    return float.NaN;
 }
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f1f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p4 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f1f1f1f1).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1, p2, p3, p4);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1, p2, p3, p4);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f1f1f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p4 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p5 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f1f1f1f1f1).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1, p2, p3, p4, p5);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1, p2, p3, p4, p5);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f1f1f1f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p4 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p5 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p6 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f1f1f1f1f1f1).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1, p2, p3, p4, p5, p6);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f1f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f1f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1, p2, p3, p4, p5, p6);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f1f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f1f1f1f1f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p4 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p5 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p6 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p7 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f1f1f1f1f1f1f1).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1, p2, p3, p4, p5, p6, p7);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f1f1f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f1f1f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1, p2, p3, p4, p5, p6, p7);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f1f1f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f1f1f1f1f1f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p4 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p5 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p6 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p7 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p8 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f1f1f1f1f1f1f1f1).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1, p2, p3, p4, p5, p6, p7, p8);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f1f1f1f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f1f1f1f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, p1, p2, p3, p4, p5, p6, p7, p8);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f1f1f1f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f2(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f2).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f2> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f2: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f2f2(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p2 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f2f2).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f2f2> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f2f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f2f2: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f2f2f2(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p2 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p3 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f2f2f2).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f2f2f2> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f2f2f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f2f2f2: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f3(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f3).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f3> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f3: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f3f3(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p2 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f3f3).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f3f3> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f3f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f3f3: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f3f3f3(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p2 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p3 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f3f3f3).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f3f3f3> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f3f3f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f3f3f3: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f4(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f4).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f4> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f4: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f4f4(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p2 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f4f4).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f4f4> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f4f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f4f4: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_F1_f4f4f4(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p2 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p3 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F1_f4f4f4).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F1_f4f4f4> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F1_f4f4f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F1_f4f4f4: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float2* CALL_PROC_EF_F2_f2(ref int code_pointer, in int function_id, float2* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F2_f2).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F2_f2> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F2_f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F2_f2: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float2* CALL_PROC_EF_F2_f2f2(ref int code_pointer, in int function_id, float2* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p2 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F2_f2f2).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F2_f2f2> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F2_f2f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F2_f2f2: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float2* CALL_PROC_EF_F2_f2f2f2(ref int code_pointer, in int function_id, float2* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p2 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p3 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F2_f2f2f2).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F2_f2f2f2> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F2_f2f2f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F2_f2f2f2: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float3* CALL_PROC_EF_F3_f3(ref int code_pointer, in int function_id, float3* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F3_f3).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F3_f3> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F3_f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F3_f3: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float3* CALL_PROC_EF_F3_f3f3(ref int code_pointer, in int function_id, float3* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p2 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F3_f3f3).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F3_f3f3> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F3_f3f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F3_f3f3: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float3* CALL_PROC_EF_F3_f3f3f3(ref int code_pointer, in int function_id, float3* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p2 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p3 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F3_f3f3f3).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F3_f3f3f3> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F3_f3f3f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F3_f3f3f3: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_F4_f4(ref int code_pointer, in int function_id, float4* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F4_f4).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F4_f4> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F4_f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F4_f4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_F4_f4f4(ref int code_pointer, in int function_id, float4* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p2 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F4_f4f4).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F4_f4f4> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F4_f4f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F4_f4f4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_F4_f4f4f4(ref int code_pointer, in int function_id, float4* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p2 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p3 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_F4_f4f4f4).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_F4_f4f4f4> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_F4_f4f4f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_F4_f4f4f4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal void CALL_PROC_EF_b32(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   Bool32 p1 = Bool32.From(math.select(((Bool32*)vdata)[0].Unsigned, ~((Bool32*)vdata)[0].Unsigned, is_negated));
+#if STANDALONE_VSBUILD
+  (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_b32).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1);
+   return;
+#else
+   FunctionPointer<External.BlastEFDelegate_b32> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_b32>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, &p1);
+       return;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_b32: error calling external function with id {function_id}");
+#endif
+   return;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal Bool32* CALL_PROC_EF_B32_b32(ref int code_pointer, in int function_id, Bool32* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   Bool32 p1 = Bool32.From(math.select(((Bool32*)vdata)[0].Unsigned, ~((Bool32*)vdata)[0].Unsigned, is_negated));
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_B32_b32).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_B32_b32> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_B32_b32>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_B32_b32: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal Bool32* CALL_PROC_EF_B32_b32f4f1(ref int code_pointer, in int function_id, Bool32* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   Bool32 p1 = Bool32.From(math.select(((Bool32*)vdata)[0].Unsigned, ~((Bool32*)vdata)[0].Unsigned, is_negated));
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p2 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFDelegate_B32_b32f4f1).Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2, p3);
+   return result;
+#else
+   FunctionPointer<External.BlastEFDelegate_B32_b32f4f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFDelegate_B32_b32f4f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, caller_ptr, result, &p1, &p2, p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFDelegate_B32_b32f4f1: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal void CALL_PROC_EF_SHORT(ref int code_pointer, in int function_id)
 {
 #if STANDALONE_VSBUILD
@@ -309,6 +1686,102 @@ internal void CALL_PROC_EF_SHORT(ref int code_pointer, in int function_id)
     Debug.LogError($"Blast.interpretor.BSEFDelegate: error calling external function with id {function_id}");
 #endif
    return;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1(ref int code_pointer, in int function_id)
+{
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1).Invoke();
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke();
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float2* CALL_PROC_EF_SHORT_F2(ref int code_pointer, in int function_id, float2* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F2).Invoke(result);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F2> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F2: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float3* CALL_PROC_EF_SHORT_F3(ref int code_pointer, in int function_id, float3* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F3).Invoke(result);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F3> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F3: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_SHORT_F4(ref int code_pointer, in int function_id, float4* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F4).Invoke(result);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F4> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal Bool32* CALL_PROC_EF_SHORT_B32(ref int code_pointer, in int function_id, Bool32* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_B32).Invoke(result);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_B32> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_B32>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_B32: error calling external function with id {function_id}");
+#endif
+   return null;
 }
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float CALL_PROC_EF_SHORT_F1_f1(ref int code_pointer, in int function_id)
@@ -415,6 +1888,999 @@ CALLERROR:
 #endif
    return float.NaN;
 }
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f1f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p4 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f1f1f1f1).Invoke(p1, p2, p3, p4);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(p1, p2, p3, p4);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f1f1f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p4 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p5 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f1f1f1f1f1).Invoke(p1, p2, p3, p4, p5);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(p1, p2, p3, p4, p5);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p4 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p5 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p6 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f1f1f1f1f1f1).Invoke(p1, p2, p3, p4, p5, p6);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f1f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f1f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(p1, p2, p3, p4, p5, p6);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f1f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p4 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p5 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p6 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p7 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f1f1f1f1f1f1f1).Invoke(p1, p2, p3, p4, p5, p6, p7);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f1f1f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f1f1f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(p1, p2, p3, p4, p5, p6, p7);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f1f1f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f1f1f1f1f1f1f1f1(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p1 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p2 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p4 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p5 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p6 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p7 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p8 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f1f1f1f1f1f1f1f1).Invoke(p1, p2, p3, p4, p5, p6, p7, p8);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f1f1f1f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f1f1f1f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(p1, p2, p3, p4, p5, p6, p7, p8);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f1f1f1f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f2(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f2).Invoke(&p1);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f2> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(&p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f2: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f2f2(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p2 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f2f2).Invoke(&p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f2f2> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f2f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(&p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f2f2: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f2f2f2(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p2 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p3 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f2f2f2).Invoke(&p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f2f2f2> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f2f2f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(&p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f2f2f2: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f3(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f3).Invoke(&p1);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f3> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(&p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f3: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f3f3(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p2 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f3f3).Invoke(&p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f3f3> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f3f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(&p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f3f3: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f3f3f3(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p2 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p3 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f3f3f3).Invoke(&p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f3f3f3> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f3f3f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(&p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f3f3f3: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f4(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f4).Invoke(&p1);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f4> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(&p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f4: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f4f4(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p2 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f4f4).Invoke(&p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f4f4> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f4f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(&p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f4f4: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float CALL_PROC_EF_SHORT_F1_f4f4f4(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p2 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p3 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   float result;
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F1_f4f4f4).Invoke(&p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F1_f4f4f4> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F1_f4f4f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(&p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F1_f4f4f4: error calling external function with id {function_id}");
+#endif
+   return float.NaN;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float2* CALL_PROC_EF_SHORT_F2_f2(ref int code_pointer, in int function_id, float2* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F2_f2).Invoke(result, &p1);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F2_f2> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F2_f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F2_f2: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float2* CALL_PROC_EF_SHORT_F2_f2f2(ref int code_pointer, in int function_id, float2* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p2 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F2_f2f2).Invoke(result, &p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F2_f2f2> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F2_f2f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F2_f2f2: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float2* CALL_PROC_EF_SHORT_F2_f2f2f2(ref int code_pointer, in int function_id, float2* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p1 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p2 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 2) goto CALLERROR;
+#endif
+   float2 p3 = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F2_f2f2f2).Invoke(result, &p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F2_f2f2f2> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F2_f2f2f2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F2_f2f2f2: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float3* CALL_PROC_EF_SHORT_F3_f3(ref int code_pointer, in int function_id, float3* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F3_f3).Invoke(result, &p1);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F3_f3> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F3_f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F3_f3: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float3* CALL_PROC_EF_SHORT_F3_f3f3(ref int code_pointer, in int function_id, float3* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p2 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F3_f3f3).Invoke(result, &p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F3_f3f3> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F3_f3f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F3_f3f3: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float3* CALL_PROC_EF_SHORT_F3_f3f3f3(ref int code_pointer, in int function_id, float3* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p1 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p2 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 3) goto CALLERROR;
+#endif
+   float3 p3 = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F3_f3f3f3).Invoke(result, &p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F3_f3f3f3> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F3_f3f3f3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F3_f3f3f3: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_SHORT_F4_f4(ref int code_pointer, in int function_id, float4* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F4_f4).Invoke(result, &p1);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F4_f4> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F4_f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F4_f4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_SHORT_F4_f4f4(ref int code_pointer, in int function_id, float4* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p2 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F4_f4f4).Invoke(result, &p1, &p2);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F4_f4f4> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F4_f4f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1, &p2);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F4_f4f4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_SHORT_F4_f4f4f4(ref int code_pointer, in int function_id, float4* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p1 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p2 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p3 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_F4_f4f4f4).Invoke(result, &p1, &p2, &p3);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_F4_f4f4f4> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_F4_f4f4f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1, &p2, &p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_F4_f4f4f4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal void CALL_PROC_EF_SHORT_b32(ref int code_pointer, in int function_id)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   Bool32 p1 = Bool32.From(math.select(((Bool32*)vdata)[0].Unsigned, ~((Bool32*)vdata)[0].Unsigned, is_negated));
+#if STANDALONE_VSBUILD
+  (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_b32).Invoke(&p1);
+   return;
+#else
+   FunctionPointer<External.BSEFDelegate_b32> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_b32>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       fp.Invoke(&p1);
+       return;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_b32: error calling external function with id {function_id}");
+#endif
+   return;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal Bool32* CALL_PROC_EF_SHORT_B32_b32(ref int code_pointer, in int function_id, Bool32* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   Bool32 p1 = Bool32.From(math.select(((Bool32*)vdata)[0].Unsigned, ~((Bool32*)vdata)[0].Unsigned, is_negated));
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_B32_b32).Invoke(result, &p1);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_B32_b32> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_B32_b32>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_B32_b32: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal Bool32* CALL_PROC_EF_SHORT_B32_b32f4f1(ref int code_pointer, in int function_id, Bool32* result)
+{
+   byte vector_size;
+   bool is_negated;
+   BlastVariableDataType vtype;
+  void* vdata;
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   Bool32 p1 = Bool32.From(math.select(((Bool32*)vdata)[0].Unsigned, ~((Bool32*)vdata)[0].Unsigned, is_negated));
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 4) goto CALLERROR;
+#endif
+   float4 p2 = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);
+   vdata = (void*)pop_p_info(ref code_pointer, out vtype, out vector_size, out is_negated);
+#if TRACE
+   if (vector_size != 1) goto CALLERROR;
+#endif
+   float p3 = math.select(((float*)vdata)[0], -((float*)vdata)[0], is_negated);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BSEFDelegate_B32_b32f4f1).Invoke(result, &p1, &p2, p3);
+   return result;
+#else
+   FunctionPointer<External.BSEFDelegate_B32_b32f4f1> fp = engine_ptr->Functions[function_id].Generic<External.BSEFDelegate_B32_b32f4f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke(result, &p1, &p2, p3);
+       return result;
+    }
+#endif
+CALLERROR:
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BSEFDelegate_B32_b32f4f1: error calling external function with id {function_id}");
+#endif
+   return null;
+}
 
     }   
 
@@ -435,29 +2901,41 @@ namespace NSS.Blast.SSMD
 
     switch(delegate_type)
     {
-        case 8: CALL_PROC_EF_SSMD(ref code_pointer, id); return null;
-        case 9: return CALL_PROC_EF_SSMD_F1_f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 10: return CALL_PROC_EF_SSMD_F1_f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 11: return CALL_PROC_EF_SSMD_F1_f1f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 12: return CALL_PROC_EF_SSMD_F1_f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 13: return CALL_PROC_EF_SSMD_F1_f2f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 14: return CALL_PROC_EF_SSMD_F1_f2f2f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 15: return CALL_PROC_EF_SSMD_F1_f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 16: return CALL_PROC_EF_SSMD_F1_f3f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 17: return CALL_PROC_EF_SSMD_F1_f3f3f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 18: return CALL_PROC_EF_SSMD_F1_f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 19: return CALL_PROC_EF_SSMD_F1_f4f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 20: return CALL_PROC_EF_SSMD_F1_f4f4f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
-        case 21: return CALL_PROC_EF_SSMD_F2_f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
-        case 22: return CALL_PROC_EF_SSMD_F2_f2f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
-        case 23: return CALL_PROC_EF_SSMD_F2_f2f2f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
-        case 24: return CALL_PROC_EF_SSMD_F3_f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
-        case 25: return CALL_PROC_EF_SSMD_F3_f3f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
-        case 26: return CALL_PROC_EF_SSMD_F3_f3f3f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
-        case 27: return CALL_PROC_EF_SSMD_F4_f4(ref code_pointer, id, ssmd_datacount, (float4*)temp); 
-        case 28: CALL_PROC_EF_SSMD_b32(ref code_pointer, id, ssmd_datacount); return null;
-        case 29: return CALL_PROC_EF_SSMD_B32_b32(ref code_pointer, id, ssmd_datacount, (Bool32*)temp); 
-        case 30: return CALL_PROC_EF_SSMD_B32_b32f4f1(ref code_pointer, id, ssmd_datacount, (Bool32*)temp); 
+        case 70: CALL_PROC_EF_SSMD(ref code_pointer, id); return null;
+        case 71: return CALL_PROC_EF_SSMD_F1(ref code_pointer, id, (float*)temp); 
+        case 72: return CALL_PROC_EF_SSMD_F2(ref code_pointer, id, (float2*)temp);
+        case 73: return CALL_PROC_EF_SSMD_F3(ref code_pointer, id, (float3*)temp); 
+        case 74: return CALL_PROC_EF_SSMD_F4(ref code_pointer, id, (float4*)temp); 
+        case 75: return CALL_PROC_EF_SSMD_B32(ref code_pointer, id, (Bool32*)temp); 
+        case 76: return CALL_PROC_EF_SSMD_F1_f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 77: return CALL_PROC_EF_SSMD_F1_f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 78: return CALL_PROC_EF_SSMD_F1_f1f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 79: return CALL_PROC_EF_SSMD_F1_f1f1f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 80: return CALL_PROC_EF_SSMD_F1_f1f1f1f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 81: return CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 82: return CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 83: return CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1f1(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 84: return CALL_PROC_EF_SSMD_F1_f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 85: return CALL_PROC_EF_SSMD_F1_f2f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 86: return CALL_PROC_EF_SSMD_F1_f2f2f2(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 87: return CALL_PROC_EF_SSMD_F1_f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 88: return CALL_PROC_EF_SSMD_F1_f3f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 89: return CALL_PROC_EF_SSMD_F1_f3f3f3(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 90: return CALL_PROC_EF_SSMD_F1_f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 91: return CALL_PROC_EF_SSMD_F1_f4f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 92: return CALL_PROC_EF_SSMD_F1_f4f4f4(ref code_pointer, id, ssmd_datacount, (float*)temp); 
+        case 93: return CALL_PROC_EF_SSMD_F2_f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
+        case 94: return CALL_PROC_EF_SSMD_F2_f2f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
+        case 95: return CALL_PROC_EF_SSMD_F2_f2f2f2(ref code_pointer, id, ssmd_datacount, (float2*)temp);
+        case 96: return CALL_PROC_EF_SSMD_F3_f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
+        case 97: return CALL_PROC_EF_SSMD_F3_f3f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
+        case 98: return CALL_PROC_EF_SSMD_F3_f3f3f3(ref code_pointer, id, ssmd_datacount, (float3*)temp); 
+        case 99: return CALL_PROC_EF_SSMD_F4_f4(ref code_pointer, id, ssmd_datacount, (float4*)temp); 
+        case 100: return CALL_PROC_EF_SSMD_F4_f4f4(ref code_pointer, id, ssmd_datacount, (float4*)temp); 
+        case 101: return CALL_PROC_EF_SSMD_F4_f4f4f4(ref code_pointer, id, ssmd_datacount, (float4*)temp); 
+        case 102: CALL_PROC_EF_SSMD_b32(ref code_pointer, id, ssmd_datacount); return null;
+        case 103: return CALL_PROC_EF_SSMD_B32_b32(ref code_pointer, id, ssmd_datacount, (Bool32*)temp); 
+        case 104: return CALL_PROC_EF_SSMD_B32_b32f4f1(ref code_pointer, id, ssmd_datacount, (Bool32*)temp); 
     }
 
     return null;
@@ -482,6 +2960,101 @@ internal void CALL_PROC_EF_SSMD(ref int code_pointer, in int function_id)
     Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate: error calling external function with id {function_id}");
 #endif
    return;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float* CALL_PROC_EF_SSMD_F1(ref int code_pointer, in int function_id, float* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F1).Invoke((IntPtr)engine_ptr, environment_ptr, result, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F1: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float2* CALL_PROC_EF_SSMD_F2(ref int code_pointer, in int function_id, float2* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F2).Invoke((IntPtr)engine_ptr, environment_ptr, result, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F2> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F2>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F2: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float3* CALL_PROC_EF_SSMD_F3(ref int code_pointer, in int function_id, float3* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F3).Invoke((IntPtr)engine_ptr, environment_ptr, result, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F3> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F3>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F3: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_SSMD_F4(ref int code_pointer, in int function_id, float4* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F4).Invoke((IntPtr)engine_ptr, environment_ptr, result, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F4> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal Bool32* CALL_PROC_EF_SSMD_B32(ref int code_pointer, in int function_id, Bool32* result)
+{
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_B32).Invoke((IntPtr)engine_ptr, environment_ptr, result, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_B32> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_B32>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_B32: error calling external function with id {function_id}");
+#endif
+   return null;
 }
 [MethodImpl(MethodImplOptions.AggressiveInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
@@ -549,6 +3122,161 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1(ref int code_pointer, in int functio
 #endif
 #if TRACE
     Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F1_f1f1f1: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
+{
+   float* p1 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p1);
+   float* p2 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p2);
+   float* p3 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p3);
+   float* p4 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p4);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F1_f1f1f1f1).Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, p4, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F1_f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F1_f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, p4, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F1_f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
+{
+   float* p1 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p1);
+   float* p2 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p2);
+   float* p3 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p3);
+   float* p4 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p4);
+   float* p5 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p5);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F1_f1f1f1f1f1).Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, p4, p5, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F1_f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F1_f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, p4, p5, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F1_f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
+{
+   float* p1 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p1);
+   float* p2 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p2);
+   float* p3 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p3);
+   float* p4 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p4);
+   float* p5 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p5);
+   float* p6 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p6);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1).Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, p4, p5, p6, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, p4, p5, p6, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
+{
+   float* p1 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p1);
+   float* p2 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p2);
+   float* p3 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p3);
+   float* p4 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p4);
+   float* p5 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p5);
+   float* p6 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p6);
+   float* p7 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p7);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1).Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, p4, p5, p6, p7, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, p4, p5, p6, p7, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
+{
+   float* p1 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p1);
+   float* p2 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p2);
+   float* p3 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p3);
+   float* p4 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p4);
+   float* p5 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p5);
+   float* p6 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p6);
+   float* p7 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p7);
+   float* p8 = stackalloc float[ssmd_datacount];
+   pop_fx_into_ref<float>(ref code_pointer, p8);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1f1).Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, p4, p5, p6, p7, p8, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1f1> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1f1>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, p4, p5, p6, p7, p8, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F1_f1f1f1f1f1f1f1f1: error calling external function with id {function_id}");
 #endif
    return null;
 }
@@ -915,6 +3643,54 @@ internal float4* CALL_PROC_EF_SSMD_F4_f4(ref int code_pointer, in int function_i
 #endif
 #if TRACE
     Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F4_f4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_SSMD_F4_f4f4(ref int code_pointer, in int function_id, int ssmd_datacount, float4* result)
+{
+   float4* p1 = stackalloc float4[ssmd_datacount];
+   pop_fx_into_ref<float4>(ref code_pointer, p1);
+   float4* p2 = stackalloc float4[ssmd_datacount];
+   pop_fx_into_ref<float4>(ref code_pointer, p2);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F4_f4f4).Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F4_f4f4> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F4_f4f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F4_f4f4: error calling external function with id {function_id}");
+#endif
+   return null;
+}
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+internal float4* CALL_PROC_EF_SSMD_F4_f4f4f4(ref int code_pointer, in int function_id, int ssmd_datacount, float4* result)
+{
+   float4* p1 = stackalloc float4[ssmd_datacount];
+   pop_fx_into_ref<float4>(ref code_pointer, p1);
+   float4* p2 = stackalloc float4[ssmd_datacount];
+   pop_fx_into_ref<float4>(ref code_pointer, p2);
+   float4* p3 = stackalloc float4[ssmd_datacount];
+   pop_fx_into_ref<float4>(ref code_pointer, p3);
+#if STANDALONE_VSBUILD
+   result = (Blast.Instance.API.FunctionInfo[function_id].FunctionDelegate as External.BlastEFSSMDDelegate_F4_f4f4f4).Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, ssmd_datacount);
+   return result;
+#else
+   FunctionPointer<External.BlastEFSSMDDelegate_F4_f4f4f4> fp = engine_ptr->Functions[function_id].Generic<External.BlastEFSSMDDelegate_F4_f4f4f4>();
+    if (fp.IsCreated && fp.Value != IntPtr.Zero)
+    {
+       result = fp.Invoke((IntPtr)engine_ptr, environment_ptr, result, p1, p2, p3, ssmd_datacount);
+       return result;
+    }
+#endif
+#if TRACE
+    Debug.LogError($"Blast.interpretor.BlastEFSSMDDelegate_F4_f4f4f4: error calling external function with id {function_id}");
 #endif
    return null;
 }

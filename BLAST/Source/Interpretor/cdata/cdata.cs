@@ -4,11 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
 //                                                                                                                     (__)  #
 //############################################################################################################################
+#pragma warning disable CS1591
+#pragma warning disable CS0162
 
 #if STANDALONE_VSBUILD
 using NSS.Blast.Standalone;
 #else
-    using UnityEngine;
+using UnityEngine;
     using Unity.Burst.CompilerServices;
 #endif
 
@@ -218,6 +220,107 @@ namespace NSS.Blast.Interpretor
                 case CDATAEncodingType.i32_i32: return true; 
             }
             return false;
+        }
+
+        /// <summary>
+        /// write a float to a cdata index according to cdata encoding 
+        /// </summary>
+        /// <param name="code">code segment pointer</param>
+        /// <param name="cdata_reference">the index of the initial reference</param>
+        /// <param name="index">the element index into the cdata array</param>
+        /// <param name="constant">the constant float value to set</param>
+        /// <returns></returns>
+        static public BlastError WriteCDATA([NoAlias]byte* code,  int cdata_reference, int index, float constant)
+        {
+            CDATAEncodingType encoding = (CDATAEncodingType)code[cdata_reference]; 
+
+            switch (encoding)
+            {
+                case CDATAEncodingType.CDATA:
+                case CDATAEncodingType.ASCII: return BlastError.error_cdata_datatype_mismatch;
+
+                case CDATAEncodingType.fp16_fp32:
+                case CDATAEncodingType.fp32_fp32:
+                case CDATAEncodingType.fp8_fp32:
+                case CDATAEncodingType.u8_fp32:
+                case CDATAEncodingType.s8_fp32:
+
+                case CDATAEncodingType.bool32:
+
+                case CDATAEncodingType.i8_i32: return BlastError.error_cdata_datatype_mismatch;
+                case CDATAEncodingType.i16_i32: return BlastError.error_cdata_datatype_mismatch;
+                case CDATAEncodingType.i32_i32: return BlastError.error_cdata_datatype_mismatch;
+
+            }
+            return BlastError.error_failed_to_read_cdata_reference;
+        }
+
+
+        /// <summary>
+        /// write an int32 to a cdata index according to cdata encoding 
+        /// </summary>
+        /// <param name="code">code segment pointer</param>
+        /// <param name="cdata_reference">the index of the initial reference</param>
+        /// <param name="index">the element index into the cdata array</param>
+        /// <param name="constant">the constant integer value to set</param>
+        /// <returns></returns>
+        static public BlastError WriteCDATA([NoAlias] byte* code, int cdata_reference, int index, int constant)
+        {
+            CDATAEncodingType encoding = (CDATAEncodingType)code[cdata_reference];
+
+            switch (encoding)
+            {
+                case CDATAEncodingType.CDATA:
+                case CDATAEncodingType.ASCII:
+
+                case CDATAEncodingType.fp16_fp32:
+                case CDATAEncodingType.fp32_fp32:
+                case CDATAEncodingType.fp8_fp32:
+                case CDATAEncodingType.u8_fp32:
+                case CDATAEncodingType.s8_fp32:
+
+                case CDATAEncodingType.bool32:
+
+                case CDATAEncodingType.i8_i32:
+                case CDATAEncodingType.i16_i32:
+                case CDATAEncodingType.i32_i32: return BlastError.error_cdata_datatype_mismatch;
+
+            }
+            return BlastError.error_failed_to_read_cdata_reference;
+        }
+
+
+        /// <summary>
+        /// write a byte to a cdata index according to cdata encoding 
+        /// </summary>
+        /// <param name="code">code segment pointer</param>
+        /// <param name="cdata_reference">the index of the initial reference</param>
+        /// <param name="index">the element index into the cdata array</param>
+        /// <param name="constant">the constant byte value to set</param>
+        /// <returns></returns>
+        static public BlastError WriteCDATA([NoAlias] byte* code, int cdata_reference, int index, byte constant)
+        {
+            CDATAEncodingType encoding = (CDATAEncodingType)code[cdata_reference];
+
+            switch (encoding)
+            {
+                case CDATAEncodingType.CDATA:
+                case CDATAEncodingType.ASCII:
+
+                case CDATAEncodingType.fp16_fp32:
+                case CDATAEncodingType.fp32_fp32:
+                case CDATAEncodingType.fp8_fp32:
+                case CDATAEncodingType.u8_fp32:
+                case CDATAEncodingType.s8_fp32:
+
+                case CDATAEncodingType.bool32:
+
+                case CDATAEncodingType.i8_i32:
+                case CDATAEncodingType.i16_i32:
+                case CDATAEncodingType.i32_i32: return BlastError.error_cdata_datatype_mismatch;
+
+            }
+            return BlastError.error_failed_to_read_cdata_reference;
         }
 
 
@@ -565,3 +668,4 @@ namespace NSS.Blast.Interpretor
 
 
 }
+#pragma warning restore CS1591

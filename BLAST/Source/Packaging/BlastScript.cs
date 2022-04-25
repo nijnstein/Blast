@@ -132,6 +132,8 @@ namespace NSS.Blast
             };
         }
 
+
+        #region Prepare (+overloads)
         /// <summary>
         /// Prepare the script for execution
         /// </summary>
@@ -226,6 +228,11 @@ namespace NSS.Blast
             }
         }
 
+        #endregion
+
+        #region Execute (+overloads)
+
+
         /// <summary>
         /// execute the script in the given environment with the supplied data
         /// </summary>
@@ -305,6 +312,7 @@ namespace NSS.Blast
             return Package.Execute(Blast.Instance.Engine, IntPtr.Zero, IntPtr.Zero, data);
         }
 
+        #endregion 
 
         /// <summary>
         /// Run (execute) the script 
@@ -1709,7 +1717,7 @@ namespace NSS.Blast
         #endregion
 
 
-        #region CompileAST | Compile into an ast so we can see what the compiler is doing 
+        #region CompilerDATA|AST | Compile into an ast so we can see what the compiler is doing 
         public node CompileAST(BlastCompilerOptions options)
         {
             return CompileAST(Blast.Instance, options); 
@@ -1721,17 +1729,31 @@ namespace NSS.Blast
 
         public node CompileAST(Blast blast, BlastCompilerOptions options)
         {
+            var cdata = CompilerData(blast, options);
+            return cdata == null ? null : cdata.AST; 
+        }
+
+        public CompilationData CompilerData(BlastCompilerOptions options)
+        {
+            return CompilerData(Blast.Instance, options);
+        }
+        public CompilationData CompilerData(bool ssmd)
+        {
+            return CompilerData(Blast.Instance, ssmd ? BlastCompilerOptions.SSMD : BlastCompilerOptions.Default);
+        }
+
+        public CompilationData CompilerData(Blast blast, BlastCompilerOptions options)
+        {
             IBlastCompilationData cdata = BlastCompiler.Compile(blast.Engine, this.Code, options);
             if (cdata != null)
             {
-                return cdata.AST;
+                return cdata as CompilationData; 
             }
-            else 
+            else
             {
                 return null;
             }
         }
-
 
         #endregion 
 

@@ -143,6 +143,10 @@ namespace NSS.Blast.SSMD
             }
         }
 
+
+        /// <summary>
+        /// dest[][].xy = source[].xy
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_f4_array_to_indexed_data_as_f2([NoAlias] void** indexbuffer, int index_rowsize, bool is_aligned, int index, [NoAlias] float4* f4, int ssmd_datacount)
         {
