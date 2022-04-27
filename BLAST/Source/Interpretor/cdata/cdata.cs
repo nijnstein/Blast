@@ -7,6 +7,7 @@
 #pragma warning disable CS1591
 #pragma warning disable CS0162
 
+ 
 #if STANDALONE_VSBUILD
 using NSS.Blast.Standalone;
 #else
@@ -19,6 +20,7 @@ using Unity.Burst;
 using Unity.Mathematics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
 
 namespace NSS.Blast.Interpretor
 {
@@ -93,9 +95,104 @@ namespace NSS.Blast.Interpretor
     }
 
 
+    public struct CDATAREC
+    {
+        public ushort index;
+        public ushort length;
+        public ushort id; 
+        public CDATAEncodingType encoding;
+    }
+
 
     unsafe public partial struct BlastInterpretor
     {
+
+
+        /// <summary>
+        /// enumerate cdata records from bytecode, the returned data needs to be freed
+        /// </summary>
+        /// <param name="code">code bytes</param>
+        /// <param name="codelength">lenght of code in bytes</param>
+        /// <param name="allocator">allocator to use for returned data</param>
+        /// <param name="cdata_count">the number of cdatarecords found</param>
+        /// <param name="cdata_records">the actual cdatarecords information in native memory</param>
+        /// <returns></returns>
+        static public BlastError EnumerateCDATA([NoAlias] byte* code, int codelength, Allocator allocator, out int cdata_count, out CDATAREC* cdata_records)
+        {
+            cdata_count = 0;
+            cdata_records = null;
+
+            if (code == null) return BlastError.error; // null code -> error
+            if (codelength < 4) return BlastError.success; // code too small to contain any cdata reference
+
+            // if there is cdata the script starts with a jump over them
+            int i = 0;
+            int max = codelength;
+            switch ((blast_operation)code[i])
+            {
+
+                case blast_operation.jump: max = code[i + 1]; i += 2; break; 
+                case blast_operation.long_jump: max = (code[i + 1] << 8) + code[i + 2]; i += 3; break;
+                default:
+                    {
+                        // any other instruction means that there is no cdata. As an unconditional jump at script 
+                        // start would be useless to compile this should be a fact
+                        //
+                        // if a small jump is used here, all cdata records could be encoded using 1 byte for length
+                        // the interpretors would need to track it t
+                        // 
+                        return BlastError.success; 
+                    }
+            }
+
+            // if max > codelength then that is wierd 
+            if (max >= codelength)
+            {
+                return BlastError.error;
+            }
+
+            // count the number of cdata records 
+            int j = i;
+            int c = 0;
+            while (j < max)
+            {
+                if (!IsValidCDATAStart(code[j]))
+                {
+                    return BlastError.error;
+                }
+                int length = (code[j + 1] << 8) + code[j + 2];
+                j = j + length + 3;
+                c++;
+            }
+            // we should end directly after max 
+            if (j != max + 1)
+            {
+                return BlastError.error; 
+            }
+
+            // alloc memory for a description of each 
+            cdata_count = c;
+            cdata_records = (CDATAREC*)UnsafeUtils.Malloc(sizeof(CDATAREC) * cdata_count, 8, allocator);
+
+            // get information for each cdata section and return it 
+            j = i;
+            c = 0; 
+            while (j < max)
+            {
+                int length = (code[j + 1] << 8) + code[j + 2];
+
+                cdata_records[c].encoding = (CDATAEncodingType)code[j];
+                cdata_records[c].length = (ushort)length;
+                cdata_records[c].id = (ushort)c;
+                cdata_records[c].index = (ushort)j;
+
+                j = j + length + 3;
+                c++; 
+            }
+
+            return BlastError.success; 
+        }
+
 
         /// <summary>
         /// follow a cdata reference to its offset in the codesegment. its length is checked or ignored depending on defines 
@@ -164,14 +261,12 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static internal float map_cdata_16_float32([NoAlias] byte* code, in int offset_into_codebuffer)
         {
-            float f = default;
+            half f = default;
             byte* p = (byte*)(void*)&f;
 
-            p[0] = 0;
-            p[1] = 0;
-            p[2] = code[offset_into_codebuffer + 0];
-            p[3] = code[offset_into_codebuffer + 1];
-            return f;
+            p[0] = code[offset_into_codebuffer + 0];
+            p[1] = code[offset_into_codebuffer + 1];
+            return (float)f;
         }
 
 
@@ -190,8 +285,9 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static internal float map_cdata_fp8_float32([NoAlias] byte* code, in int offset_into_codebuffer)
         {
-            sbyte* p = (sbyte*)(void*)code;
-            return (float)code[offset_into_codebuffer];
+            byte b = code[offset_into_codebuffer];
+            sbyte s = ((sbyte*)(void*)&b)[0];
+            return (float)(s / 10f);
         }
 
 
@@ -202,7 +298,11 @@ namespace NSS.Blast.Interpretor
         /// <returns></returns>
         static internal bool IsValidCDATAStart(byte code)
         {
-            switch ((CDATAEncodingType)code)
+            return IsValidCDATAStart((CDATAEncodingType)code); 
+        }
+        static internal bool IsValidCDATAStart(CDATAEncodingType code)
+        {
+            switch (code)
             {
                 case CDATAEncodingType.CDATA:
                 case CDATAEncodingType.ASCII: 
@@ -236,23 +336,36 @@ namespace NSS.Blast.Interpretor
 
             switch (encoding)
             {
-                case CDATAEncodingType.CDATA:
-                case CDATAEncodingType.ASCII: return BlastError.error_cdata_datatype_mismatch;
 
                 case CDATAEncodingType.fp16_fp32:
                 case CDATAEncodingType.fp32_fp32:
                 case CDATAEncodingType.fp8_fp32:
                 case CDATAEncodingType.u8_fp32:
-                case CDATAEncodingType.s8_fp32:
+                case CDATAEncodingType.s8_fp32: break;
 
+                default: 
                 case CDATAEncodingType.bool32:
-
-                case CDATAEncodingType.i8_i32: return BlastError.error_cdata_datatype_mismatch;
-                case CDATAEncodingType.i16_i32: return BlastError.error_cdata_datatype_mismatch;
-                case CDATAEncodingType.i32_i32: return BlastError.error_cdata_datatype_mismatch;
-
+                case CDATAEncodingType.i8_i32: 
+                case CDATAEncodingType.i16_i32: 
+                case CDATAEncodingType.i32_i32: 
+                case CDATAEncodingType.ASCII:
+                case CDATAEncodingType.CDATA:  return BlastError.error_cdata_datatype_mismatch; 
             }
-            return BlastError.error_failed_to_read_cdata_reference;
+
+            // get length, validate it
+            int size = GetCDATAElementCount(code, cdata_reference); 
+            if (index >= size)
+            {
+                if (IsTrace)
+                {
+                    Debug.LogError($"blast.cdata.write_cdata(float): failed to read cdata at {cdata_reference}, index {index} is out of bounds, cdata bytesize = {size}, elementcount = {GetCDATAContentByteSize(code, cdata_reference)}");
+                }
+                return BlastError.error_cdata_indexer_out_of_bounds;
+            }
+
+            set_cdata_float(code, cdata_reference, index, constant);
+
+            return BlastError.success;
         }
 
 
@@ -270,23 +383,36 @@ namespace NSS.Blast.Interpretor
 
             switch (encoding)
             {
-                case CDATAEncodingType.CDATA:
-                case CDATAEncodingType.ASCII:
 
+                case CDATAEncodingType.ASCII:
+                case CDATAEncodingType.CDATA:
                 case CDATAEncodingType.fp16_fp32:
                 case CDATAEncodingType.fp32_fp32:
                 case CDATAEncodingType.fp8_fp32:
                 case CDATAEncodingType.u8_fp32:
-                case CDATAEncodingType.s8_fp32:
+                case CDATAEncodingType.s8_fp32: 
+                default:  return BlastError.error_cdata_datatype_mismatch; 
 
                 case CDATAEncodingType.bool32:
-
                 case CDATAEncodingType.i8_i32:
                 case CDATAEncodingType.i16_i32:
-                case CDATAEncodingType.i32_i32: return BlastError.error_cdata_datatype_mismatch;
-
+                case CDATAEncodingType.i32_i32: break;
             }
-            return BlastError.error_failed_to_read_cdata_reference;
+
+            // get length, validate it
+            int size = GetCDATAElementCount(code, cdata_reference);
+            if (index >= size)
+            {
+                if (IsTrace)
+                {
+                    Debug.LogError($"blast.cdata.write_cdata(int): failed to read cdata at {cdata_reference}, index {index} is out of bounds, cdata bytesize = {size}, elementcount = {GetCDATAContentByteSize(code, cdata_reference)}");
+                }
+                return BlastError.error_cdata_indexer_out_of_bounds;
+            }
+
+            set_cdata_int(code, cdata_reference, index, constant);
+
+            return BlastError.success;
         }
 
 
@@ -298,29 +424,48 @@ namespace NSS.Blast.Interpretor
         /// <param name="index">the element index into the cdata array</param>
         /// <param name="constant">the constant byte value to set</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public BlastError WriteCDATA([NoAlias] byte* code, int cdata_reference, int index, byte constant)
         {
             CDATAEncodingType encoding = (CDATAEncodingType)code[cdata_reference];
-
+           
+            // check we find a valid encoding
             switch (encoding)
             {
                 case CDATAEncodingType.CDATA:
                 case CDATAEncodingType.ASCII:
-
                 case CDATAEncodingType.fp16_fp32:
                 case CDATAEncodingType.fp32_fp32:
                 case CDATAEncodingType.fp8_fp32:
                 case CDATAEncodingType.u8_fp32:
                 case CDATAEncodingType.s8_fp32:
-
                 case CDATAEncodingType.bool32:
-
                 case CDATAEncodingType.i8_i32:
                 case CDATAEncodingType.i16_i32:
-                case CDATAEncodingType.i32_i32: return BlastError.error_cdata_datatype_mismatch;
-
+                case CDATAEncodingType.i32_i32: break; // ok
+                default:
+                    if (IsTrace)
+                    {
+                        Debug.LogError($"blast.cdata: failed to read cdata reference at {cdata_reference}");
+                    }
+                    return BlastError.error_failed_to_read_cdata_reference;
             }
-            return BlastError.error_failed_to_read_cdata_reference;
+
+            // get byte length, validate it
+            int size = GetCDATAContentByteSize(code, cdata_reference);
+            if (index >= size)
+            {
+                if (IsTrace)
+                {
+                    Debug.LogError($"blast.cdata.write_cdata(byte): failed to read cdata at {cdata_reference}, index {index} is out of bounds, cdata bytesize = {size}");
+                }
+                return BlastError.error_cdata_indexer_out_of_bounds;
+            }
+
+            // set it 
+            set_cdata_byte(code, cdata_reference, index, constant);
+
+            return BlastError.success;
         }
 
 
@@ -387,8 +532,10 @@ namespace NSS.Blast.Interpretor
             {
                 // float 32 and its backing types 
                 case "fp16fp32":
+                case "half":
                 case "fp16_fp32": return CDATAEncodingType.fp16_fp32;
                 case "fp32fp32":
+                case "float":
                 case "fp32_fp32": return CDATAEncodingType.fp32_fp32;
                 case "fp8fp32":
                 case "fp8_fp32": return CDATAEncodingType.fp8_fp32;
@@ -400,10 +547,14 @@ namespace NSS.Blast.Interpretor
 
                 // int 32 and its backing
                 case "i8i32":
+                case "byte":
                 case "i8_i32": return CDATAEncodingType.i8_i32;
                 case "i16i32":
+                case "short":
                 case "i16_i32": return CDATAEncodingType.i16_i32;
+                case "id":
                 case "i32i32":
+                case "int":
                 case "i32_i32": return CDATAEncodingType.i32_i32;
 
                 case "bool32":
@@ -519,6 +670,11 @@ namespace NSS.Blast.Interpretor
             return float.NaN;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal void set_cdata_byte([NoAlias] byte* code, in int offset_into_codebuffer, int index, byte b)
+        {
+            code[offset_into_codebuffer + index + 3] = b;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static internal void set_cdata_float([NoAlias] byte* code, in int offset_into_codebuffer, int index, float f)
@@ -563,7 +719,7 @@ namespace NSS.Blast.Interpretor
                 case CDATAEncodingType.fp8_fp32:
                     {
                         // 1 byte float, needs work to be usefull.. 
-                        sbyte s = (sbyte)f;
+                        sbyte s = (sbyte)(f * 10f);
                         int offset = offset_into_codebuffer + index + 3; // 1 byte/element 
                         code[offset + 0] = ((byte*)(void*)&s)[0];
                     }
@@ -572,10 +728,11 @@ namespace NSS.Blast.Interpretor
                 case CDATAEncodingType.fp16_fp32:
                     {
                         // float16 backed set with float
-                        byte* p = (byte*)(void*)&f;
+                        half h = new half(f); 
+                        byte* p = (byte*)(void*)&h;
                         int offset = offset_into_codebuffer + (index * 2) + 3; // half == 2 bytes 
-                        code[offset + 0] = p[2];
-                        code[offset + 1] = p[3];
+                        code[offset + 0] = p[0];
+                        code[offset + 1] = p[1];
                     }
                     return;
             }
@@ -657,12 +814,61 @@ namespace NSS.Blast.Interpretor
         }
 
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal void set_cdata_int([NoAlias] byte* code, in int offset_into_codebuffer, int index, int i)
+        {
+            CDATAEncodingType encoding = (CDATAEncodingType)code[offset_into_codebuffer];
+            switch (encoding)
+            {
+                case CDATAEncodingType.CDATA:  // we force any cdata reaching here to map to 32 bit integers 
+
+                case CDATAEncodingType.i32_i32:
+                    {
+                        // cdata, int32 backed
+                        byte* p = (byte*)(void*)&i;
+                        int offset = offset_into_codebuffer + (index * 4) + 3; // float == 4 bytes 
+
+                        code[offset + 0] = p[0];
+                        code[offset + 1] = p[1];
+                        code[offset + 2] = p[2];
+                        code[offset + 3] = p[3];
+                    }
+                    return;
+
+                case CDATAEncodingType.i8_i32:
+                    {
+                        // unsigned byte as backing: 0 through 255
+                        byte b = (byte)i;
+                        int offset = offset_into_codebuffer + index + 3; // 1 byte/element 
+                        code[offset + 0] = b;
+                    }
+                    return;
+
+                    // backed by signed short
+                case CDATAEncodingType.i16_i32:
+                    {
+                        short s = (short)i; 
+                        byte* p = (byte*)(void*)&s;
+                        int offset = offset_into_codebuffer + (index * 2) + 3; // short == 4 bytes 
+
+                        code[offset + 0] = p[0];
+                        code[offset + 1] = p[1];
+                    }
+                    return;
+            }
+
+            if (IsTrace)
+            {
+                Debug.LogError($"Blast.Interpretor.set_cdata_float: failed to identify backing type ({encoding}) of cdata object at {offset_into_codebuffer}, indexed at {index}");
+            }
+        }
+
+
+
+
+
+
     }
-
-
-
-
-
 
 
 

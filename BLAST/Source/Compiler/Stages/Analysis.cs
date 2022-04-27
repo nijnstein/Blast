@@ -515,10 +515,10 @@ namespace NSS.Blast.Compiler.Stage
                 n.variable.ConstantDataEncoding == Interpretor.CDATAEncodingType.CDATA)
             {
                 // attempt repackaging  
-                bool all_16 = true;
-                bool all_8 = true;
                 bool u8 = true;
-                bool s8 = true; 
+                bool s8 = true;
+                bool s16 = true; 
+                bool has_fraction = false;
 
                 byte[] a = n.variable.ConstantData;
 
@@ -532,91 +532,56 @@ namespace NSS.Blast.Compiler.Stage
                     p[1] = a[i + 1];
                     p[2] = a[i + 2];
                     p[3] = a[i + 3];
-
-                    all_16 = all_16 && a[i] == 0 && a[i + 1] == 0;
-                    all_8 = all_16 && a[i + 2] == 0;
-
+                    
                     float fraction = math.abs(math.frac(fp32));
-                    fraction = math.select(fraction, 1 - fraction, fraction > 0.5); 
+                    fraction = math.select(fraction, 1 - fraction, fraction > 0.5);
+
+                    has_fraction = has_fraction || (fraction > data.CompilerOptions.ConstantEpsilon);
+
                     u8 = u8 && fp32 >= 0 && fp32 <= 255 && (fraction < data.CompilerOptions.ConstantEpsilon);
-                    s8 = s8 && fp32 >= -128 && fp32 <= 127 && (fraction < data.CompilerOptions.ConstantEpsilon); 
+                    s8 = s8 && fp32 >= -128 && fp32 <= 127 && (fraction < data.CompilerOptions.ConstantEpsilon);
+
+                    s16 = fp32 >= short.MinValue && fp32 <= short.MaxValue && !has_fraction; 
                 }
 
-                // prefer byte over sbyte 
-                if (u8)
+                if (has_fraction)
                 {
-                    // unsigned 8 bit integer: 0..255
-                    n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.u8_fp32;
-
-                    byte[] b = new byte[n.variable.ConstantData.Length / 4];
-                    int c = 0;
-                    for (int i = 0; i < a.Length; i += 4)
+                    // encode as float
+                    if (u8)
                     {
-                        float fp32 = 0;
-                        byte* p = (byte*)(void*)&fp32;
-
-                        p[0] = a[i];
-                        p[1] = a[i + 1];
-                        p[2] = a[i + 2];
-                        p[3] = a[i + 3];
-
-
-                        b[c] = (byte)fp32; 
-                        c++;
+                        // unsigned 8 bit integer: 0..255
+                        n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.u8_fp32;
                     }
-                    n.variable.ConstantData = b;
+                    else
+                    if (s8)
+                    {
+                        // signed 8 bit integer: -128 .. 127
+                        n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.s8_fp32;
+                    }
+                    else
+                    {
+                        // todo -> determine max precision
+                        n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.fp32_fp32;
+                    }
                 }
                 else
-                if (s8)
                 {
-                    // signed 8 bit integer: -128 .. 127
-                    n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.s8_fp32;
-
-                    byte[] b = new byte[n.variable.ConstantData.Length / 4];
-                    int c = 0;
-                    for (int i = 0; i < a.Length; i += 4)
+                    // encode as int 
+                    if (u8 || s16)
                     {
-                        float fp32 = 0;
-                        byte* p = (byte*)(void*)&fp32;
-
-                        p[0] = a[i];
-                        p[1] = a[i + 1];
-                        p[2] = a[i + 2];
-                        p[3] = a[i + 3];
-
-                        sbyte sb = (sbyte)fp32;
-
-                        b[c] = ((byte*)(void*)&sb)[0];
-                        c++;
+                        // unsigned 8 bit integer: 0..255
+                        n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.i16_i32;
                     }
-                    n.variable.ConstantData = b;
-                }
-                else
-                if (all_8)
-                {
-                    n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.fp8_fp32;
-
-                    byte[] b = new byte[n.variable.ConstantData.Length / 4];
-                    int c = 0;
-                    for (int i = 3; i < a.Length; i++)
+                    else
+                    if (s8)
                     {
-                        b[c] = a[i]; c++;
+                        // signed 8 bit integer: -128 .. 127
+                        n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.i8_i32;
                     }
-                    n.variable.ConstantData = b;
-                }
-                else
-                if (all_16)
-                {
-                    n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.fp16_fp32;
-
-                    byte[] b = new byte[n.variable.ConstantData.Length / 2];
-                    int c = 0;
-                    for (int i = 0; i < a.Length; i += 2)
+                    else
                     {
-                        b[c] = a[i + 2]; c++;
-                        b[c] = a[i + 3]; c++;
+                        n.variable.ConstantDataEncoding = Interpretor.CDATAEncodingType.i32_i32;
                     }
-                    n.variable.ConstantData = b;
                 }
             }
         }

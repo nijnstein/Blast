@@ -8,6 +8,7 @@
 using System;
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
@@ -18,6 +19,17 @@ namespace NSS.Blast
 
     public static class CodeUtils
     {
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public Tout ReInterpret<Tin, Tout>(Tin value) where Tin : unmanaged where Tout : unmanaged
+        {
+            unsafe
+            {
+                return ((Tout*)(void*)&value)[0];
+            }
+        }
+
+
         public static float AsFloat(this string s)
         {
             float f = float.NaN;

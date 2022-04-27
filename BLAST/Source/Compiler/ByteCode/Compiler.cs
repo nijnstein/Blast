@@ -9,6 +9,7 @@ using NSS.Blast.Interpretor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Unity.Mathematics;
 using UnityEngine.Assertions;
@@ -884,6 +885,17 @@ namespace NSS.Blast.Compiler.Stage
             }
         }
 
+        static void WarnUnusedCData(CompilationData data, node n)
+        {
+            if (n != null && data != null)
+            {
+                if (data.CompilerOptions.TraceLogging || data.CompilerOptions.VerboseLogging)
+                {
+                    data.LogWarning($"blast.compiler: skipped compilation of unused cdata node: <{n}>");
+                }
+            }
+        }
+
         /// <summary>
         /// compile constant cdata nodes into the code stream as:
         /// jump [jump-over-offset] cdata length data |jumplabel|
@@ -917,40 +929,72 @@ namespace NSS.Blast.Compiler.Stage
                         if (v.ReferenceCount > 0)
                         {
                             constant_cdata_count++;
-                            total_cdata_size += v.ConstantData.Length;   // size of data in bytes 
+
+                            switch (v.ConstantDataEncoding)
+                            {
+                                case CDATAEncodingType.u8_fp32: 
+                                case CDATAEncodingType.s8_fp32:
+                                case CDATAEncodingType.fp8_fp32:
+                                case CDATAEncodingType.i8_i32:
+                                    total_cdata_size += v.ConstantData.Length / 4; 
+                                    break;
+
+                                case CDATAEncodingType.fp16_fp32:
+                                case CDATAEncodingType.i16_i32:
+                                    total_cdata_size += v.ConstantData.Length / 2; 
+                                    break;
+
+                                default:
+                                case CDATAEncodingType.None:
+                                case CDATAEncodingType.fp32_fp32:
+                                case CDATAEncodingType.i32_i32:
+                                case CDATAEncodingType.bool32:
+                                case CDATAEncodingType.ASCII:
+                                case CDATAEncodingType.CDATA:
+                                    total_cdata_size += v.ConstantData.Length;  
+                                    break; 
+                            }
+
+
                             total_cdata_size += 3;                       // size of length 16bit == 2 bytes + cdata op
                         }
                         else
                         {
                             not_referenced++; 
                         }
-                    }   
+                    }
                 }
 
-                if(constant_cdata_count == 0)
+                if (constant_cdata_count == 0)
                 {
-                    // there should be no cdata node in root 
-                    if(ast_node.HasChild(nodetype.cdata))
+                    // skip compilation of unused cdata nodes 
+                    foreach (node n in ast_node.GetChildren(nodetype.cdata))
                     {
-                        // but only error if they werent dereferenced 
-                        if (not_referenced != ast_node.CountChildren(nodetype.cdata))
+                        if (n != null)
                         {
-                            data.LogError($"CompileCDataNode: failed to compile cdata nodes, found cdata nodes without variables", (int)BlastError.error_failed_to_compile_cdata_node);
-                            return BlastError.error;
-                        }
-                        else
-                        {
-                            // the dereferenced nodes should be skipped
-                            foreach (node n in ast_node.GetChildren(nodetype.cdata))
-                            {
-                                n.SkipCompilation();
-                            }
-                            return BlastError.success; 
+                            n.SkipCompilation();
+                            WarnUnusedCData(data, n);
                         }
                     }
-                    else
+                    return BlastError.success;
+                }
+                else
+                {
+                    // skip only the dereferenced cdata nodes 
+                    foreach (node n in ast_node.GetChildren(nodetype.cdata))
                     {
-                        return BlastError.success; 
+                        if (n != null)
+                        {
+                            if (n.HasVariable && n.variable.ReferenceCount > 0)
+                            {
+                                // keep it, it is used 
+                            }
+                            else
+                            {
+                                n.SkipCompilation();
+                                WarnUnusedCData(data, n);
+                            }
+                        }
                     }
                 }
 
@@ -973,7 +1017,7 @@ namespace NSS.Blast.Compiler.Stage
                 // encode the data
                 foreach (node n in ast_node.children)
                 {
-                    if (n.IsCData)
+                    if (!n.skip_compilation && n.IsCData)
                     {
                         Assert.IsTrue(n.variable != null && n.variable.IsCData && n.variable.IsConstant && n.variable.ConstantData != null && n.variable.ConstantData.Length > 0);
                         BlastVariable v = n.variable;
@@ -992,31 +1036,194 @@ namespace NSS.Blast.Compiler.Stage
                             }
                             else
                             {
+                                // could overload encoding to force short length reference (saves byte.., possibly many if many values)  todo someday
                                 code.Add((byte)v.ConstantDataEncoding, label);
                             }
 
 
-                            // encode data size 
-                            code.Add((byte)(v.ConstantData.Length >> 8));
-                            code.Add((byte)(v.ConstantData.Length & 0b1111_1111));
 
                             // encode the data 
-                            for (int i = 0; i < v.ConstantData.Length; i++)
+                            // - format depends on encoding 
+                            switch (v.ConstantDataEncoding)
                             {
-                                code.Add(v.ConstantData[i]);
+                                // in these encodings data can be directly copied, in others we need top encode it
+                                case CDATAEncodingType.None:
+                                case CDATAEncodingType.bool32:
+                                case CDATAEncodingType.ASCII:
+                                case CDATAEncodingType.CDATA:
+                                case CDATAEncodingType.i32_i32:
+                                case CDATAEncodingType.fp32_fp32:
+                                    // encode data size (in bytes)
+                                    code.Add((byte)(v.ConstantData.Length >> 8));
+                                    code.Add((byte)(v.ConstantData.Length & 0b1111_1111));
+
+                                    // cdata contains a direct image of the data to write to the codestream (no encoding step)
+                                    for (int i = 0; i < v.ConstantData.Length; i++)
+                                    {
+                                        code.Add(v.ConstantData[i]);
+                                    }
+                                    break; 
+
+                                case CDATAEncodingType.u8_fp32:
+                                    // each float is encoded as 8 bit unsigned 
+                                    unsafe 
+                                    {
+                                        // encode data size (in bytes)  1 byte / value
+                                        int l = v.ConstantData.Length / 4; 
+                                        code.Add((byte)(l >> 8));        
+                                        code.Add((byte)(l & 0b1111_1111));
+
+                                        for (int i = 0; i < v.ConstantData.Length; i += 4)
+                                        {
+                                            float f = default;
+                                            byte* pf = (byte*)(void*)&f;
+                                            pf[0] = v.ConstantData[i + 0];
+                                            pf[1] = v.ConstantData[i + 1];
+                                            pf[2] = v.ConstantData[i + 2];
+                                            pf[3] = v.ConstantData[i + 3];
+                                            byte b = (byte)math.min(255, math.max(0, f));
+                                            code.Add(b); 
+                                        }
+                                    }
+                                    break;
+
+
+                                case CDATAEncodingType.s8_fp32:
+                                    // each float is encoded as 8 bit unsigned 
+                                    unsafe
+                                    {
+                                        // encode data size (in bytes)  1 byte / value
+                                        int l = v.ConstantData.Length / 4;
+                                        code.Add((byte)(l >> 8));
+                                        code.Add((byte)(l & 0b1111_1111));
+
+                                        for (int i = 0; i < v.ConstantData.Length; i += 4)
+                                        {
+                                            float f = default;
+                                            byte* pf = (byte*)(void*)&f;
+                                            pf[0] = v.ConstantData[i + 0];
+                                            pf[1] = v.ConstantData[i + 1];
+                                            pf[2] = v.ConstantData[i + 2];
+                                            pf[3] = v.ConstantData[i + 3];
+                                            sbyte b = (sbyte)math.min(127, math.max(-128, f));
+                                            code.Add( CodeUtils.ReInterpret<sbyte, byte>(b) );
+                                        }
+                                    }
+                                    break; 
+
+                                case CDATAEncodingType.fp8_fp32:
+                                    // currently this is just a sbyte div 10
+                                    unsafe
+                                    {
+                                        // encode data size (in bytes)  1 byte / value
+                                        int l = v.ConstantData.Length / 4;
+                                        code.Add((byte)(l >> 8));
+                                        code.Add((byte)(l & 0b1111_1111));
+
+                                        for (int i = 0; i < v.ConstantData.Length; i += 4)
+                                        {
+                                            float f = default;
+                                            byte* pf = (byte*)(void*)&f;
+                                            pf[0] = v.ConstantData[i + 0];
+                                            pf[1] = v.ConstantData[i + 1];
+                                            pf[2] = v.ConstantData[i + 2];
+                                            pf[3] = v.ConstantData[i + 3];
+                                            // multiply f by 10, giving a range of -12.7 to 12.8
+                                            sbyte b = (sbyte)math.min(127f, math.max(-128f, f * 10f));
+                                            code.Add(CodeUtils.ReInterpret<sbyte, byte>(b));
+                                        }
+                                    }
+                                    break;
+                                    
+
+                                case CDATAEncodingType.fp16_fp32:
+                                    // encode as half 
+                                    unsafe
+                                    {
+                                        // encode data size (in bytes)  1 byte / value
+                                        int l = v.ConstantData.Length / 2;
+                                        code.Add((byte)(l >> 8));
+                                        code.Add((byte)(l & 0b1111_1111));
+
+                                        for (int i = 0; i < v.ConstantData.Length; i += 4)
+                                        {
+                                            float f = default;
+                                            byte* pf = (byte*)(void*)&f;
+                                            pf[0] = v.ConstantData[i + 0];
+                                            pf[1] = v.ConstantData[i + 1];
+                                            pf[2] = v.ConstantData[i + 2];
+                                            pf[3] = v.ConstantData[i + 3];
+
+                                            // convert to half
+                                            half h = new half(f); 
+                                            pf = (byte*)(void*)&h;
+
+                                            // write its bytes
+                                            code.Add(pf[0]);
+                                            code.Add(pf[1]);
+                                        }
+                                    }
+                                    break;
+
+                                case CDATAEncodingType.i8_i32:
+                                    unsafe
+                                    {
+                                        // encode data size (in bytes)  1 byte / value
+                                        int l = v.ConstantData.Length / 4;
+                                        code.Add((byte)(l >> 8));
+                                        code.Add((byte)(l & 0b1111_1111));
+
+                                        for (int i = 0; i < v.ConstantData.Length; i += 4)
+                                        {
+                                            int i32 = default;
+                                            byte* pf = (byte*)(void*)&i32;
+                                            pf[0] = v.ConstantData[i + 0];
+                                            pf[1] = v.ConstantData[i + 1];
+                                            pf[2] = v.ConstantData[i + 2];
+                                            pf[3] = v.ConstantData[i + 3];
+                                            sbyte b = (sbyte)math.min(127, math.max(-128, i32));
+                                            code.Add(CodeUtils.ReInterpret<sbyte, byte>(b));
+                                        }
+                                    }
+                                    break;
+
+                                case CDATAEncodingType.i16_i32:
+                                    unsafe
+                                    {
+                                        // encode data size (in bytes)  1 byte / value
+                                        int l = v.ConstantData.Length / 2;
+                                        code.Add((byte)(l >> 8));
+                                        code.Add((byte)(l & 0b1111_1111));
+
+                                        for (int i = 0; i < v.ConstantData.Length; i += 4)
+                                        {
+                                            int i32 = default;
+                                            byte* pf = (byte*)(void*)&i32;
+                                            pf[0] = v.ConstantData[i + 0];
+                                            pf[1] = v.ConstantData[i + 1];
+                                            pf[2] = v.ConstantData[i + 2];
+                                            pf[3] = v.ConstantData[i + 3];
+                                            short s = (short)math.min(short.MaxValue, math.max(short.MinValue, i32));
+                                            pf = (byte*)(void*)&s;
+                                            code.Add(pf[0]);
+                                            code.Add(pf[1]);
+                                        }
+                                    }
+                                    break;
                             }
                         }
 
                         // skip the node in further steps 
-                        n.SkipCompilation(); 
+                        n.SkipCompilation();
                     }
-                }            
+                }
             }
 
-            return BlastError.success; 
+            return BlastError.success;
         }
 
-        #endregion 
+        #endregion
+
 
 
         /// <summary>
@@ -1583,6 +1790,14 @@ namespace NSS.Blast.Compiler.Stage
                         return null;
                     }
                     break;
+
+                case nodetype.cdata: 
+                    if (ast_node.HasVariable && ast_node.variable.ReferenceCount == 0)
+                    {
+                        // only if not referenced a cdata node might end up here
+                        break;
+                    }
+                    else goto case default; 
 
                 // unexpected node types: something is wrong 
                 default:

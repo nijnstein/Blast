@@ -1199,12 +1199,10 @@ namespace NSS.Blast.Interpretor
                     return &((float*)stack)[stack_offset];
 
 
+                // No inlined constants in normal interpretation 
                 case blast_operation.constant_f1:
-                    break;
                 case blast_operation.constant_f1_h:
-                    break;
                 case blast_operation.constant_short_ref:
-                    break;
                 case blast_operation.constant_long_ref:
                     break;
 
@@ -1291,6 +1289,10 @@ namespace NSS.Blast.Interpretor
                     return &((float*)data)[c - opt_id];
 
             }
+
+#if TRACE
+            Debug.LogError($"blast.interpretor.pop_p_info: expected data at {code_pointer}"); 
+#endif 
 
             // should never reach here
             vector_size = 0;
@@ -2238,13 +2240,16 @@ namespace NSS.Blast.Interpretor
             int index = code_pointer - jump_offset + 1;
             code_pointer += 2;
 
+            CDATAEncodingType encoding = (CDATAEncodingType)code[index];
+
 #if TRACE || DEVELOPMENT_BUILD
-            if (blast_operation.cdata != (blast_operation)code[index])
+            if (!IsValidCDATAStart(encoding))
             {
-                Debug.LogError($"Blast.Interpretor.Handle_DebugData_CData: expected cdata op at {index} as jumped to from cdataref at {code_pointer}");
+                Debug.LogError($"Blast.Interpretor.Handle_DebugData_CData: expected cdata encoding at {index} as jumped to from cdataref at {code_pointer}");
                 return;
             }
 #endif
+            
             // should be cdata TODO validate in debug 
             int length = (code[index + 1] << 8) + code[index + 2];
             int data_start = index + 3;
@@ -2260,8 +2265,9 @@ namespace NSS.Blast.Interpretor
                 {
 
                     // set from 8 bit...
-                    ch[i] = (char)code[i];
-                    ascii = ascii && (char.IsLetterOrDigit(ch[i]) || char.IsWhiteSpace(ch[i]));
+                    int j = i - data_start; 
+                    ch[j] = (char)code[i];
+                    ascii = ascii && (char.IsLetterOrDigit(ch[j]) || char.IsWhiteSpace(ch[j]));
                 }
 
                 if (ascii)
@@ -2274,6 +2280,7 @@ namespace NSS.Blast.Interpretor
                 {
                     // show as bytes 
                     System.Text.StringBuilder sb = StringBuilderCache.Acquire();
+                    sb.Append($"DEBUG codepointer: {code_pointer} <CDATA>[{length}] at index {data_start}: "); 
                     for (int i = data_start; i < data_start + length; i++)
                     {
                         sb.Append(code[i].ToString().PadLeft(3, '0'));
@@ -2282,7 +2289,7 @@ namespace NSS.Blast.Interpretor
                     Debug.Log(StringBuilderCache.GetStringAndRelease(ref sb));
 #else
                 {
-                    Debug.Log($"Blast.Debug - codepointer: {code_pointer}  <CDATA>[{length}] at index {data_start}");
+                    Debug.Log($"DEBUG codepointer: {code_pointer} <CDATA>[{length}] at index {data_start}");
 #endif 
                 }
             }
@@ -8762,7 +8769,7 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.long_jump:
                         {
                             short offset = (short)((code[code_pointer] << 8) + code[code_pointer + 1]);
-                            code_pointer = code_pointer - offset;
+                            code_pointer = code_pointer + offset;
                             break;
                         }
 
