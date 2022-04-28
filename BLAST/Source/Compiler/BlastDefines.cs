@@ -5,6 +5,14 @@
 //                                                                                                                     (__)  #
 //############################################################################################################################
 
+#if STANDALONE_VSBUILD
+    using NSS.Blast.Standalone;
+#else
+    using UnityEngine;
+    using Unity.Burst.CompilerServices;
+#endif
+
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -142,26 +150,16 @@ namespace NSS.Blast
         /// float datatype
         /// </summary>
         Numeric = 0,
-
-        /// <summary>
-        /// double datatype 
-        /// </summary>
-        Numeric64 = 1,
-
+    
         /// <summary>
         /// integer datatype 
         /// </summary>
-        ID = 2,
-
-        /// <summary>
-        /// long datatype 
-        /// </summary>
-        ID64 = 3,
+        ID = 1,
 
         /// <summary>
         /// each data element is to be interpreted as 32 boolean flags 
         /// </summary>
-        Bool32 = 4 ,
+        Bool32 = 2,
 
         /// <summary>
         /// constant data blob, unless typed on access it holds a blob or a float array 
@@ -169,7 +167,71 @@ namespace NSS.Blast
         /// - or just float data:  #input msg cdata numeric 1 2 3 4 5 6 7; alert(msg); 
         /// - or other data:  #input msg cdata Bool32 1111..0 111..11 11...11; alert(msg); 
         /// </summary>
-        CData = 5
+        CData = 3, 
+        // max n = 7 // 3 bits 
+    }
+
+    public static class BlastVariableDataTypeExtensions
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsValidOnStack(this BlastVariableDataType datatype)
+        {
+            return (datatype == BlastVariableDataType.Numeric) || (datatype == BlastVariableDataType.ID) || (datatype == BlastVariableDataType.Bool32);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsValidOnStack(this BlastVariableDataType datatype, byte vectorsize)
+        {
+            switch (datatype)
+            {
+                case BlastVariableDataType.ID:
+                case BlastVariableDataType.Bool32: 
+                case BlastVariableDataType.Numeric: return vectorsize > 0 && vectorsize <= 4;
+                case BlastVariableDataType.CData: return vectorsize == 1; 
+            }
+            return false;
+        }
+    }
+
+
+    public static class BlastVectorTypeExtensions
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static BlastVectorType Combine(this BlastVariableDataType datatype, byte vectorsize, bool negate_or_not)
+        {
+#if TRACE
+            if (vectorsize == 0) Debug.LogError("BlastVectorType.Combine: null vectorsize"); 
+#endif 
+
+            return (BlastVectorType)(negate_or_not ? 0b1000_0000 : 0b0000_0000) + (byte)((byte)datatype << 4) + vectorsize; 
+        }
+    }
+
+
+    public enum BlastVectorType : byte
+    {
+        unknown = 0,
+
+        float1   = ((byte)BlastVariableDataType.Numeric << 4) + 1,
+        float2   = ((byte)BlastVariableDataType.Numeric << 4) + 2,
+        float3   = ((byte)BlastVariableDataType.Numeric << 4) + 3,
+        float4   = ((byte)BlastVariableDataType.Numeric << 4) + 4,
+        bool32   = ((byte)BlastVariableDataType.Bool32  << 4) + 0,
+        int1     = ((byte)BlastVariableDataType.ID      << 4) + 1,
+        int2     = ((byte)BlastVariableDataType.ID      << 4) + 2,
+        int3     = ((byte)BlastVariableDataType.ID      << 4) + 3,
+        int4     = ((byte)BlastVariableDataType.ID      << 4) + 4,
+
+        float1_n = ((byte)BlastVariableDataType.Numeric << 4) + 1 + 0b1000_0000,
+        float2_n = ((byte)BlastVariableDataType.Numeric << 4) + 2 + 0b1000_0000,
+        float3_n = ((byte)BlastVariableDataType.Numeric << 4) + 3 + 0b1000_0000,
+        float4_n = ((byte)BlastVariableDataType.Numeric << 4) + 4 + 0b1000_0000,
+        bool32_n = ((byte)BlastVariableDataType.Bool32  << 4) + 0 + 0b1000_0000,
+        int1_n   = ((byte)BlastVariableDataType.ID      << 5) + 1 + 0b1000_0000,
+        int2_n   = ((byte)BlastVariableDataType.ID      << 5) + 2 + 0b1000_0000,
+        int3_n   = ((byte)BlastVariableDataType.ID      << 5) + 3 + 0b1000_0000,
+        int4_n   = ((byte)BlastVariableDataType.ID      << 5) + 4 + 0b1000_0000,
+
     }
 
 
@@ -1107,30 +1169,31 @@ namespace NSS.Blast
         log10,
         logn,
         log2,
-        cross,
-        dot,
+        cross,  //
+        dot,      //
         sqrt,
         rsqrt,
-        pow,
+        pow,      //
 
 
         sin,
         cos,
         tan,
         atan,
-        atan2,
+        atan2,   //
         cosh,
         sinh,
 
         degrees,
         radians,
 
-        lerp,
-        slerp,
-        nlerp,
-        saturate,         //   return clamp(x, new float3(0.0f), new float3(1.0f));
-        clamp,
+        lerp,       //
+        slerp,      //
+        nlerp,        //
+        saturate,  
+        clamp,        //
         normalize,
+
         ceil,
         floor,
         frac,
@@ -1139,12 +1202,12 @@ namespace NSS.Blast
         /// <summary>
         /// remap e from range a-b to c-d  
         /// </summary>
-        remap,
+        remap,              //
 
         /// <summary>
         /// normalize x to range a-b |  (x - a) / (b - a).
         /// </summary>
-        unlerp,
+        unlerp,               //
 
         /// <summary>
         /// get log2 ceiling of value
@@ -2020,11 +2083,19 @@ namespace NSS.Blast
         /// <summary>
         /// the referenced codesegment is null  
         /// </summary>
-        error_codesegment_null = 102,
+        error_codesegment_null = -102,
         /// <summary>
         /// attempting to assing a datatype to a cdata index of a different datatype 
         /// </summary>
-        error_cdata_datatype_mismatch = 103
+        error_cdata_datatype_mismatch = -103,
+        /// <summary>
+        /// encountered an unsupported encoding for the format of the constant data buffer encoded in the code stream
+        /// </summary>
+        error_unsupported_cdata_encoding = -104,
+        /// <summary>
+        /// unable to decode cdata as request value
+        /// </summary>
+        error_failed_to_decode_cdata = -104
     }
 
 }

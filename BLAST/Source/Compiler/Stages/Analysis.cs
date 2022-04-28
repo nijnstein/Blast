@@ -566,6 +566,28 @@ namespace NSS.Blast.Compiler.Stage
                 }
                 else
                 {
+                    //
+                    // if the type was determined to be integer then we have to update the backing memory to be in int32 type (this sucks, but its most natural to start on floats) 
+                    //
+
+                    for (int i = 0; i < n.variable.ConstantData.Length; i += 4)
+                    {
+                        // read float 
+                        float f;
+                        byte* p = ((byte*)(void*)&f);
+                        p[0] = n.variable.ConstantData[i + 0];
+                        p[1] = n.variable.ConstantData[i + 1];
+                        p[2] = n.variable.ConstantData[i + 2];
+                        p[3] = n.variable.ConstantData[i + 3];
+                        // cast to int and write back
+                        int i32 = (int)f;
+                        p = ((byte*)(void*)&i32);
+                        n.variable.ConstantData[i + 0] = p[0];
+                        n.variable.ConstantData[i + 1] = p[1];
+                        n.variable.ConstantData[i + 2] = p[2];
+                        n.variable.ConstantData[i + 3] = p[3];
+                    }
+
                     // encode as int 
                     if (u8 || s16)
                     {

@@ -65,18 +65,18 @@ namespace NSS.Blast.Interpretor
         /// <summary>
         /// encoded as sbyte, typed as int32
         /// </summary>
-        i8_i32 = 10, 
+        i8_i32 = 10,
 
         /// <summary>
         /// encoded as short, typed as int32
         /// </summary>
-        i16_i32 = 11, 
+        i16_i32 = 11,
 
         /// <summary>
         /// encoded as int32, type as int32
         /// </summary>
-        i32_i32 = 12, 
-        
+        i32_i32 = 12,
+
 
         /// <summary>
         /// bool32 - 32 bit boolean flag, backed with 32bits 
@@ -86,7 +86,7 @@ namespace NSS.Blast.Interpretor
         /// <summary>
         /// ascii encoded string data 
         /// </summary>
-        ASCII  = 21, 
+        ASCII = 21,
 
         /// <summary>
         /// the untyped CDATA 
@@ -94,7 +94,17 @@ namespace NSS.Blast.Interpretor
         CDATA = (byte)blast_operation.cdata
     }
 
+    [BurstCompile]
+    public static class CDATAEncodingTypeExtensions
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsIntegerType(this CDATAEncodingType encoding)
+        {
+            return (encoding == CDATAEncodingType.i8_i32) || (encoding == CDATAEncodingType.i16_i32) || (encoding == CDATAEncodingType.i32_i32);
+        }
+    }
 
+    [BurstCompatible]
     public struct CDATAREC
     {
         public ushort index;
@@ -259,6 +269,40 @@ namespace NSS.Blast.Interpretor
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal int map_cdata_int([NoAlias] byte* code, in int offset_into_codebuffer)
+        {
+            int i = default;
+            byte* p = (byte*)(void*)&i;
+
+            p[0] = code[offset_into_codebuffer + 0];
+            p[1] = code[offset_into_codebuffer + 1];
+            p[2] = code[offset_into_codebuffer + 2];
+            p[3] = code[offset_into_codebuffer + 3];
+
+            return i;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal int map_cdata_int32([NoAlias] byte* code, in int offset_into_codebuffer)
+        {
+            return map_cdata_int(code, offset_into_codebuffer);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal int map_cdata_16_int32([NoAlias] byte* code, in int offset_into_codebuffer)
+        {                  
+            short s = default;
+            byte* p = (byte*)(void*)&s;
+
+            p[0] = code[offset_into_codebuffer + 0];
+            p[1] = code[offset_into_codebuffer + 1];
+            return (int)s;
+        }
+
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static internal float map_cdata_16_float32([NoAlias] byte* code, in int offset_into_codebuffer)
         {
             half f = default;
@@ -280,6 +324,13 @@ namespace NSS.Blast.Interpretor
         static internal float map_cdata_s8_float32([NoAlias] byte* code, in int offset_into_codebuffer)
         {
             return (float)((sbyte*)(void*)&code[offset_into_codebuffer])[0];
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal int map_cdata_s8_int32([NoAlias] byte* code, in int offset_into_codebuffer)
+        {
+            return (int)((sbyte*)(void*)&code[offset_into_codebuffer])[0];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -596,6 +647,170 @@ namespace NSS.Blast.Interpretor
         }
 
 
+        static internal BlastError reinterpret_cdata(byte* code, int offset, int index, int byte_length, ref float4 f4_backing_field, out BlastVariableDataType datatype, out byte vector_size)
+        {
+            // read cdata value and fill backing memory in bitform of type:   float or int|bool
+            int bytes_per_element;
+            int max_i = offset + 3 + byte_length;
+
+            CDATAEncodingType type = (CDATAEncodingType)code[offset];
+            switch (type)
+            {
+                case CDATAEncodingType.ASCII: 
+                default:
+#if TRACE
+                    Debug.LogError($"blast.cdata.reinterpret_cdata: unsupported encoding type accessing cdata at offset: {offset}, index: {index}, length: {byte_length}, encoding: {type}");
+#endif 
+                    datatype = BlastVariableDataType.Numeric;
+                    vector_size = 0; 
+                    return BlastError.error_unsupported_cdata_encoding;
+
+                case CDATAEncodingType.fp32_fp32:
+                    {
+                        bytes_per_element = 4;
+
+                        // calc index                         
+                        int i = offset + 3 + index * bytes_per_element;
+
+                        // check bounds 
+                        if (IsTrace)
+                            if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) goto OUT_OF_BOUNDS;
+
+                        f4_backing_field.x = map_cdata_float32(code, i);
+                        vector_size = 1;
+                        datatype = BlastVariableDataType.Numeric;
+                    }
+                    return BlastError.success;
+
+                case CDATAEncodingType.fp16_fp32:
+                    {
+                        bytes_per_element = 2;
+                        int i = offset + 3 + index * bytes_per_element;
+
+                        if (IsTrace)
+                            if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) goto OUT_OF_BOUNDS;
+
+                        f4_backing_field.x = map_cdata_16_float32(code, i);
+                        vector_size = 1;
+                        datatype = BlastVariableDataType.Numeric; 
+                    }
+                    return BlastError.success;
+
+                case CDATAEncodingType.fp8_fp32:
+                    {
+                        bytes_per_element = 1;
+                        int i = offset + 3 + index * bytes_per_element;
+
+                        if (IsTrace)
+                            if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) goto OUT_OF_BOUNDS;
+
+                        f4_backing_field.x = map_cdata_fp8_float32(code, i);
+                        vector_size = 1;
+                        datatype = BlastVariableDataType.Numeric;
+                    }
+                    return BlastError.success;
+                                
+
+                case CDATAEncodingType.u8_fp32:
+                    {
+                        bytes_per_element = 1;
+                        int i = offset + 3 + index * bytes_per_element;
+
+                        if (IsTrace)
+                            if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) goto OUT_OF_BOUNDS;
+                        
+                        f4_backing_field.x = map_cdata_u8_float32(code, i);
+                        vector_size = 1;
+                        datatype = BlastVariableDataType.Numeric;
+                    }
+                    return BlastError.success;
+
+                case CDATAEncodingType.s8_fp32:
+                    {
+                        bytes_per_element = 1;
+                        int i = offset + 3 + index * bytes_per_element;
+
+                        if (IsTrace)
+                            if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) goto OUT_OF_BOUNDS;
+                        
+                        f4_backing_field.x = map_cdata_s8_float32(code, i);
+                        vector_size = 1;
+                        datatype = BlastVariableDataType.Numeric;
+                    }
+                    return BlastError.success;
+
+                case CDATAEncodingType.i32_i32:
+                    {
+                        bytes_per_element = 4;
+                        int i = offset + 3 + index * bytes_per_element;
+
+                        if (IsTrace)
+                            if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) goto OUT_OF_BOUNDS;
+
+                        unsafe
+                        {
+                            fixed (float4* p4 = &f4_backing_field)
+                            {
+                                ((int*)(void*)p4)[0] = map_cdata_int32(code, i);
+                            }
+                        }
+                        vector_size = 1;
+                        datatype = BlastVariableDataType.ID;
+                    }
+                    return BlastError.success;
+
+                case CDATAEncodingType.i16_i32:
+                    {
+                        bytes_per_element = 2;
+                        int i = offset + 3 + index * bytes_per_element;
+
+                        if (IsTrace)
+                            if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) goto OUT_OF_BOUNDS;
+                                                 // 1 nul teveel?
+                        unsafe
+                        {
+                            fixed (float4* p4 = &f4_backing_field)
+                            {
+                                ((int*)(void*)p4)[0] = map_cdata_16_int32(code, i);
+                            }
+                        }
+                        vector_size = 1;
+                        datatype = BlastVariableDataType.ID;
+                    }
+                    return BlastError.success;
+
+                case CDATAEncodingType.i8_i32:
+                    {
+                        bytes_per_element = 1;
+                        int i = offset + 3 + index * bytes_per_element;
+
+                        if (IsTrace)
+                            if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) goto OUT_OF_BOUNDS;
+
+                        unsafe
+                        {
+                            fixed (float4* p4 = &f4_backing_field)
+                            {
+                                ((int*)(void*)p4)[0] = map_cdata_s8_int32(code, i);
+                            }
+                        }
+                        vector_size = 1;
+                        datatype = BlastVariableDataType.ID;
+                    }
+                    return BlastError.success;
+            }
+
+        OUT_OF_BOUNDS:
+            datatype = BlastVariableDataType.Numeric;
+            vector_size = 0;
+            if (IsTrace)
+            {
+                Debug.LogError($"blast.cdata.reinterpret_cdata: cdata index out of bounds at offset: {offset}, index: {index}, length: {byte_length}, encoding: {type}");
+            }
+            return BlastError.error_cdata_indexer_out_of_bounds; 
+        }
+
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static internal float index_cdata_f1([NoAlias] byte* code, in int offset, in int index, in int byte_length)
@@ -606,7 +821,11 @@ namespace NSS.Blast.Interpretor
             CDATAEncodingType type = (CDATAEncodingType)code[offset];
             switch (type)
             {
-                default: 
+                default:
+#if TRACE
+                    Debug.LogError($"blast.cdata.index_cdata_f1: unsupported encoding type accessing cdata as float[1] at offset: {offset}, index: {index}, length: {byte_length}, encoding: {type}");
+                    break;
+#endif 
 
                 case CDATAEncodingType.None:
                 case CDATAEncodingType.fp32_fp32:

@@ -435,7 +435,7 @@ namespace NSS.Blast.Compiler.Stage
 
             //#####################################################################################################
             // anything else is assumed to be a list of numerics || bool32
-            return ReadCDATAArray(data, comment, a, current_i);
+            return ReadCDATAArray(data, comment, a, current_i, cdata_encoding.IsIntegerType());
         }
 
         /// <summary>
@@ -456,6 +456,8 @@ namespace NSS.Blast.Compiler.Stage
             int offset_for_datatype = 0;
             CDATAEncodingType encoding = CDATAEncodingType.None;
 
+            bool is_integer_typed = false;
+
             switch(possible_datatype.ToLowerInvariant())
             {
                 // default to numerics
@@ -471,12 +473,16 @@ namespace NSS.Blast.Compiler.Stage
                 case "s8fp32": encoding = CDATAEncodingType.s8_fp32; offset_for_datatype = 1; break;
                 case "u8_fp32":
                 case "u8fp32": encoding = CDATAEncodingType.u8_fp32; offset_for_datatype = 1; break;
-                case "i32_i32":
-                case "int": encoding = CDATAEncodingType.i32_i32; offset_for_datatype = 1; break;
 
-                case "i16_i32": encoding = CDATAEncodingType.i16_i32; offset_for_datatype = 1; break;
-                case "i8_i32": encoding = CDATAEncodingType.i8_i32; offset_for_datatype = 1; break;
-                case "short": encoding = CDATAEncodingType.i16_i32; offset_for_datatype = 1; break;
+                case "i32_i32":
+                case "i32i32":
+                case "int": encoding = CDATAEncodingType.i32_i32; offset_for_datatype = 1; is_integer_typed = true; break;
+
+                case "i16i32":
+                case "i16_i32": encoding = CDATAEncodingType.i16_i32; offset_for_datatype = 1; is_integer_typed = true; break;
+                case "i8i32":
+                case "i8_i32": encoding = CDATAEncodingType.i8_i32; offset_for_datatype = 1; is_integer_typed = true; break;
+                case "short": encoding = CDATAEncodingType.i16_i32; offset_for_datatype = 1; is_integer_typed = true; break;
 
                 case "bool32": encoding = CDATAEncodingType.bool32; offset_for_datatype = 1; break;
                 case "ascii":
@@ -520,12 +526,13 @@ namespace NSS.Blast.Compiler.Stage
             else
             {
                 // anything else is assumed to be a list of numerics || bool32
-                constant_data = ReadCDATAArray(data, comment, a, 2 + offset_for_datatype);
+                constant_data = ReadCDATAArray(data, comment, a, 2 + offset_for_datatype, is_integer_typed);
                 if (constant_data == null) return false;
             }
 
-
+            //
             // create a variable, the name MUST be unique at this point 
+            // 
             string name = a[1];
 
             BlastVariable v = (data as CompilationData).CreateVariable(name, BlastVariableDataType.CData, 0, false, false);
@@ -536,12 +543,17 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // setup
-            v.DataType = BlastVariableDataType.CData;
-            v.ConstantData = constant_data;
-            v.ConstantDataEncoding = encoding;
-            v.VectorSize = constant_data == null ? 0 : constant_data.Length / 4;
-            v.ReferenceCount = 0; // 0 references 
-            v.IsConstant = true;  // this is a constant data object added by input and thus resides in the datasegment
+            // 
+            // - encoding none:  DATA IS IN ARRAY AS Singles
+            // - integer encoding: data in array as Int32 
+            // 
+
+            v.DataType              = BlastVariableDataType.CData;
+            v.ConstantData          = constant_data;
+            v.ConstantDataEncoding  = encoding;
+            v.VectorSize            = constant_data == null ? 0 : constant_data.Length / 4;
+            v.ReferenceCount        = 0;        // 0 references 
+            v.IsConstant            = true;     // this is a constant data object added by input and thus resides in the datasegment
 
             return true;
         }
@@ -551,7 +563,7 @@ namespace NSS.Blast.Compiler.Stage
         /// <summary>
         /// read an array of numerics, we have to assume we get numerics from input 
         /// </summary>
-        static byte[] ReadCDATAArray(IBlastCompilationData data, string comment, string[] a, int offset)
+        static byte[] ReadCDATAArray(IBlastCompilationData data, string comment, string[] a, int offset, bool is_integer_typed)
         {
             Assert.IsNotNull(data);
             Assert.IsTrue(a != null && a.Length >= offset);
@@ -559,25 +571,49 @@ namespace NSS.Blast.Compiler.Stage
             byte[] bytes = new byte[(a.Length - offset) * 4];
             int c = 0;
 
-            for (int i = offset; i < a.Length; i++)
+            if (is_integer_typed)
             {
-                float f = a[i].Trim().AsFloat();
-                if (math.isnan(f))
+                for (int i = offset; i < a.Length; i++)
                 {
-                    data.LogError($"Blast.Tokenizer.ReadCDATAArray: encountered invalid numeric '{a[i]}' in cdata define: {comment}", (int)BlastError.error_tokenizer_invalid_cdata_array);
-                    return null;
-                }
-                unsafe
-                {
-                    byte* p = (byte*)(void*)&f;
-                    Assert.IsTrue(c <= (bytes.Length - 4));
-                    bytes[c++] = p[0];
-                    bytes[c++] = p[1];
-                    bytes[c++] = p[2];
-                    bytes[c++] = p[3];
+                    int i32;
+                    if (!int.TryParse(a[i].Trim(), out i32))
+                    {
+                        data.LogError($"Blast.Tokenizer.ReadCDATAArray: encountered invalid integer '{a[i]}' in cdata define: {comment}", (int)BlastError.error_tokenizer_invalid_cdata_array);
+                        return null;
+                    }
+                    unsafe
+                    {
+                        byte* p = (byte*)(void*)&i32;
+                        Assert.IsTrue(c <= (bytes.Length - 4));
+                        bytes[c++] = p[0];
+                        bytes[c++] = p[1];
+                        bytes[c++] = p[2];
+                        bytes[c++] = p[3];
+                    }
                 }
             }
-
+            else
+            {
+                // assuming numerics
+                for (int i = offset; i < a.Length; i++)
+                {
+                    float f = a[i].Trim().AsFloat();
+                    if (math.isnan(f))
+                    {
+                        data.LogError($"Blast.Tokenizer.ReadCDATAArray: encountered invalid numeric '{a[i]}' in cdata define: {comment}", (int)BlastError.error_tokenizer_invalid_cdata_array);
+                        return null;
+                    }
+                    unsafe
+                    {
+                        byte* p = (byte*)(void*)&f;
+                        Assert.IsTrue(c <= (bytes.Length - 4));
+                        bytes[c++] = p[0];
+                        bytes[c++] = p[1];
+                        bytes[c++] = p[2];
+                        bytes[c++] = p[3];
+                    }
+                }
+            }
             return bytes;
         }
 

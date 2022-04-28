@@ -1051,7 +1051,6 @@ namespace NSS.Blast.Compiler.Stage
                                 case CDATAEncodingType.bool32:
                                 case CDATAEncodingType.ASCII:
                                 case CDATAEncodingType.CDATA:
-                                case CDATAEncodingType.i32_i32:
                                 case CDATAEncodingType.fp32_fp32:
                                     // encode data size (in bytes)
                                     code.Add((byte)(v.ConstantData.Length >> 8));
@@ -1197,7 +1196,7 @@ namespace NSS.Blast.Compiler.Stage
 
                                         for (int i = 0; i < v.ConstantData.Length; i += 4)
                                         {
-                                            int i32 = default;
+                                            int i32 = default; 
                                             byte* pf = (byte*)(void*)&i32;
                                             pf[0] = v.ConstantData[i + 0];
                                             pf[1] = v.ConstantData[i + 1];
@@ -1210,6 +1209,24 @@ namespace NSS.Blast.Compiler.Stage
                                         }
                                     }
                                     break;
+
+                                case CDATAEncodingType.i32_i32:
+                                    unsafe
+                                    {
+                                        // encode data size (in bytes)  4 byte / value
+                                        int l = v.ConstantData.Length;
+                                        code.Add((byte)(l >> 8));
+                                        code.Add((byte)(l & 0b1111_1111));
+                                        for (int i = 0; i < v.ConstantData.Length; i += 4)
+                                        {
+                                            code.Add(v.ConstantData[i + 0]);
+                                            code.Add(v.ConstantData[i + 1]);
+                                            code.Add(v.ConstantData[i + 2]);
+                                            code.Add(v.ConstantData[i + 3]);
+                                        }
+                                    }
+                                    break;
+
                             }
                         }
 
