@@ -240,6 +240,21 @@ namespace NSS.Blast.Compiler.Stage
                         }
                         break;
 
+                    case BlastVariableDataType.ID:
+                        {
+                            for (int i = 0; i < vector_size; i++)
+                            {
+                                int i32; 
+                                if (!int.TryParse(a[3+i], out i32))
+                                {
+                                    data.LogError($"tokenizer.read_input_output_mapping: failed to parse default[{i}] as integer, variable: {input_variable_id}, type: {datatype}, vectorsize: {vector_size}, bytesize: {byte_size}, data = {a[3 + i]}", (int)BlastError.error_input_ouput_invalid_default);
+                                    return null;
+                                }                                      
+                                variable_default[i] = CodeUtils.ReInterpret<int, float>(i32); 
+                            }
+                        }
+                        break; 
+
                     case BlastVariableDataType.Bool32:
                         {
                             // vectorsize can only be 1
@@ -249,7 +264,7 @@ namespace NSS.Blast.Compiler.Stage
                                 uint* b32 = (uint*)(void*)&f;
                                 if (CodeUtils.TryAsBool32(a[3], true, out uint ui32))
                                 {
-                                    b32[0] = ui32;
+                                    variable_default[0] = CodeUtils.ReInterpret<uint, float>(ui32);
                                 }
                                 else
                                 {
@@ -257,7 +272,6 @@ namespace NSS.Blast.Compiler.Stage
                                     return null;
                                 }
                             }
-                            variable_default[0] = f;
                         }
                         break;
 
@@ -352,6 +366,8 @@ namespace NSS.Blast.Compiler.Stage
             return mapping;
         }
 
+
+        #region CDATA
 
         /// <summary>
         /// read cdata data from mapping
@@ -720,6 +736,8 @@ namespace NSS.Blast.Compiler.Stage
             return bytes.ToArray();
 
         }
+
+        #endregion 
 
 
         static BlastError TokenizeMapping(IBlastCompilationData data, string comment, List<Tuple<BlastScriptToken, string>> tokens, bool is_input = true)

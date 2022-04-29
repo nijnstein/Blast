@@ -10,7 +10,6 @@
 #if STANDALONE_VSBUILD
     using NSS.Blast.Standalone;
     using System.Reflection;
-using System.Runtime.CompilerServices;
 #else
     using UnityEngine;
     using Unity.Burst.CompilerServices;
@@ -19,6 +18,7 @@ using System.Runtime.CompilerServices;
 
 using Unity.Burst;
 using Unity.Mathematics;
+using System.Runtime.CompilerServices;
 
 namespace NSS.Blast.SSMD
 {

@@ -104,7 +104,6 @@ namespace NSS.Blast.Interpretor
         }
     }
 
-    [BurstCompatible]
     public struct CDATAREC
     {
         public ushort index;

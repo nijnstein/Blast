@@ -231,7 +231,6 @@ namespace NSS.Blast
         int2_n   = ((byte)BlastVariableDataType.ID      << 5) + 2 + 0b1000_0000,
         int3_n   = ((byte)BlastVariableDataType.ID      << 5) + 3 + 0b1000_0000,
         int4_n   = ((byte)BlastVariableDataType.ID      << 5) + 4 + 0b1000_0000,
-
     }
 
 

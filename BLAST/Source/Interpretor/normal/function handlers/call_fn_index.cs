@@ -4,9 +4,9 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
 //                                                                                                                     (__)  #
 //############################################################################################################################
-
+#pragma warning disable CS1591
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone;
+using NSS.Blast.Standalone;
     using System.Reflection;
 #else
     using UnityEngine;
@@ -26,10 +26,77 @@ namespace NSS.Blast.Interpretor
 {
     unsafe public partial struct BlastInterpretor
     {
-        void CALL_FN_INDEX(ref int code_pointer, ref BlastVariableDataType datatype, ref byte vector_size, out float4 f4, in byte offset)
+        void CALL_FN_SIZE(ref int code_pointer, ref BlastVariableDataType datatype, ref byte vector_size, ref V4 f4)
+        {
+            code_pointer++;
+            byte op = code[code_pointer];
+
+            // either points to a variable or cdata 
+            if (op == (byte)blast_operation.cdataref)
+            {
+                // compiler could fill in a constant if that constant directly maps to an operand to save space as CData is of constant size 
+                int offset = (code[code_pointer + 1] << 8) + code[code_pointer + 2];
+                int index = code_pointer - offset + 1;
+
+#if DEVELOPMENT_BUILD || TRACE
+                // should end up at cdata
+                if (!IsValidCDATAStart(code[index]))  // at some point we probably replace cdata with a datatype cdata_float etc.. 
+                {
+                    Debug.LogError($"Blast.Interpretor.Size: error in cdata reference at {code_pointer}");
+                    vector_size = 0;
+                    f4 = float.NaN;
+                    return;
+                }
+#endif
+                // TODO when supporting integers, this should return integer data 
+                f4.x = CodeUtils.ReInterpret<int, V1>(GetCDATAElementCount(code, index));
+
+                datatype = BlastVariableDataType.ID;
+                vector_size = 1;
+                code_pointer = code_pointer + 3;
+            }
+            else
+            {
+                bool is_negated;
+
+
+                void* p = pop_p_info(ref code_pointer, out datatype, out vector_size, out is_negated);
+
+                switch (datatype.Combine(1, is_negated))
+                {
+                    case BlastVectorType.float1:
+                    case BlastVectorType.int1:
+                    case BlastVectorType.bool32:
+                        f4.x = CodeUtils.ReInterpret<int, V1>(vector_size);
+                        vector_size = 1;
+                        datatype = BlastVariableDataType.ID;
+                        break;
+
+                    case BlastVectorType.float1_n:
+                    case BlastVectorType.int1_n:
+                    case BlastVectorType.bool32_n:
+                        f4.x = CodeUtils.ReInterpret<int, V1>(-vector_size);
+                        vector_size = 1;
+                        datatype = BlastVariableDataType.ID;
+                        break;
+
+
+                    default:
+                        f4 = float.NaN;
+                        vector_size = 0;
+                        if (IsTrace)
+                        {
+                            Debug.LogError($"Blast.Interpretor.Size: datatype {datatype} not implemented at reference at {code_pointer}");
+                        }
+                        return;
+                }
+            }
+        }
+
+
+        void CALL_FN_INDEX(ref int code_pointer, ref BlastVariableDataType datatype, ref byte vector_size, ref float4 f4, in byte offset)
         {
             code_pointer += 1;
-            f4 = float.NaN;
 
             if (code[code_pointer] == (byte)blast_operation.cdataref)
             {
@@ -40,7 +107,7 @@ namespace NSS.Blast.Interpretor
 #if DEVELOPMENT_BUILD || TRACE
                 if (!follow_cdataref(code, code_pointer, out cdata_offset, out length, out encoding))
                 {
-                    return;
+                    goto ON_ERROR;
                 }
 #else
                 follow_cdataref(code, code_pointer, out cdata_offset, out length, out encoding);
@@ -49,10 +116,7 @@ namespace NSS.Blast.Interpretor
                 /*BlastError res = */
                 reinterpret_cdata(code, cdata_offset, offset, length, ref f4, out datatype, out vector_size);
 
-                // f4.x = index_cdata_f1(code, cdata_offset, offset, length);
-
                 code_pointer += 3;
-                return;
             }
             else
             {
@@ -61,45 +125,62 @@ namespace NSS.Blast.Interpretor
 
 
 #if DEVELOPMENT_BUILD || TRACE
-                if (datatype == BlastVariableDataType.ID)
+                if (datatype == BlastVariableDataType.Bool32)
                 {
-                    Debug.LogError($"ID datatype in index[{offset}] not yet implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
-                    return;
+                    Debug.LogError($"index[{offset}] on Bool32 not implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
+                    goto ON_ERROR; 
                 }
                 if (math.select(vector_size, 4, vector_size == 0) < offset + 1)
                 {
                     Debug.LogError($"index[{offset}] Invalid indexing component {offset} for vectorsize {vector_size}, codepointer: {code_pointer} = > {code[code_pointer]}");
-                    return;
+                    goto ON_ERROR;
                 }
-#endif
+#endif                                                                                   
 
-                switch ((BlastVectorSizes)vector_size)
+                switch (datatype.Combine(vector_size, is_negated))
                 {
-                    // result is always the same regardless.. could raise errors on this condition as compiler could do better then waste precious bytes
-                    case BlastVectorSizes.float1: f4.x = ((float*)fdata)[0]; vector_size = 1; break;
-                    case BlastVectorSizes.float2: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
-                    case BlastVectorSizes.float3: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
-                    case 0:
-                    case BlastVectorSizes.float4: f4.x = ((float*)fdata)[offset]; vector_size = 1; break;
+                    case BlastVectorType.float1: f4.x = ((float*)fdata)[0]; break;
+                    case BlastVectorType.float2: f4.x = ((float*)fdata)[offset]; break;
+                    case BlastVectorType.float3: f4.x = ((float*)fdata)[offset]; break;
+                    case BlastVectorType.float4: f4.x = ((float*)fdata)[offset]; break;
+
+                    case BlastVectorType.int1: f4.x = ((float*)fdata)[0]; break;
+                    case BlastVectorType.int2: f4.x = ((float*)fdata)[offset]; break;
+                    case BlastVectorType.int3: f4.x = ((float*)fdata)[offset]; break;
+                    case BlastVectorType.int4: f4.x = ((float*)fdata)[offset]; break;
+
+                    case BlastVectorType.float1_n: f4.x = -((float*)fdata)[0]; break;
+                    case BlastVectorType.float2_n: f4.x = -((float*)fdata)[offset]; break;
+                    case BlastVectorType.float3_n: f4.x = -((float*)fdata)[offset]; break;
+                    case BlastVectorType.float4_n: f4.x = -((float*)fdata)[offset]; break;
+
+                    case BlastVectorType.int1_n: f4.x = -((float*)fdata)[0]; break;
+                    case BlastVectorType.int2_n: f4.x = -((float*)fdata)[offset]; break;
+                    case BlastVectorType.int3_n: f4.x = -((float*)fdata)[offset]; break;
+                    case BlastVectorType.int4_n: f4.x = -((float*)fdata)[offset]; break;
+
 #if DEVELOPMENT_BUILD || TRACE
                     default:
                         {
-                            Debug.LogError($"Index[{offset}]: NUMERIC({vector_size}) vectorsize '{vector_size}' not supported");
-                            break;
+                            Debug.LogError($"Index[{offset}]: datatype {datatype}, vectorsize {vector_size} not supported");
+                            goto ON_ERROR;
                         }
 #endif
                 }
-
-                f4.x = math.select(f4.x, -f4.x, is_negated);
+                vector_size = 1; 
             }
+
+            return;
+
+        ON_ERROR:
+            vector_size = 0;
+            f4 = float.NaN;
         }
 
 
-        void CALL_FN_INDEX_N(ref int code_pointer, ref BlastVariableDataType datatype, ref byte vector_size, out float4 f4)
+        void CALL_FN_INDEX_N(ref int code_pointer, ref BlastVariableDataType datatype, ref byte vector_size, ref float4 f4)
         {
             code_pointer += 1;
-            f4 = float.NaN;
-
             byte op = code[code_pointer];
 
             switch (op)
@@ -139,25 +220,34 @@ namespace NSS.Blast.Interpretor
                 // default parameter handling, the first could be of any type 
                 default:
                     {
-                        // for now, handle all cases normally 
-
-
-
                         byte size;
                         bool is_negated;
 
                         float* fdata = (float*)pop_p_info(ref code_pointer, out datatype, out size, out is_negated);
 
                         // if cdata -> get length and start of data 
-
-                        bool is_negated2;
-                        float* findex = (float*)pop_p_info(ref code_pointer, out datatype, out vector_size, out is_negated2);
-
-                        int index = (int)findex[0];
-                        index = math.select(index, -index, is_negated2);
+                        int index = pop_as_i1(ref code_pointer);
 
                         // this will change when handling multiple datatypes 
-                        f4.x = math.select(fdata[index], -fdata[index], is_negated2);
+                        switch (datatype.Combine(1, is_negated))
+                        {
+                            case BlastVectorType.float1: f4.x = fdata[index]; break;
+                            case BlastVectorType.float1_n: f4.x = -fdata[index]; break;
+                            case BlastVectorType.int1: f4.x = fdata[index]; break;
+                            case BlastVectorType.int1_n: f4.x = CodeUtils.ReInterpret<int, float>(-CodeUtils.ReInterpret<float, int>(fdata[index])); break;
+
+#if DEVELOPMENT_BUILD || TRACE
+                            default:
+                                {
+                                    Debug.LogError($"Index[{index}]: datatype {datatype}, vectorsize {size} not supported");
+                                    f4 = float.NaN; 
+                                    break;
+                                }
+#endif
+                        }
+
+
+                        vector_size = 1; 
                     }
                     break;
             }
