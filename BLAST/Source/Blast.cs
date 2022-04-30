@@ -2020,24 +2020,29 @@ namespace NSS.Blast
 
                     case "int":
                     case "int1":
+                    case "id":
+                    case "id1":
                         datatype = BlastVariableDataType.ID;
                         vector_size = 1;
                         byte_size = 4;
                         return true;
 
                     case "int2":
+                    case "id2":
                         datatype = BlastVariableDataType.ID;
                         vector_size = 2;
                         byte_size = 8;
                         return true;
 
                     case "int3":
+                    case "id3":
                         datatype = BlastVariableDataType.ID;
                         vector_size = 3;
                         byte_size = 12;
                         return true;
 
                     case "int4":
+                    case "id4":
                         datatype = BlastVariableDataType.ID;
                         vector_size = 4;
                         byte_size = 16;

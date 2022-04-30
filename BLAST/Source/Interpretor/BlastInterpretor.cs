@@ -651,506 +651,7 @@ namespace NSS.Blast.Interpretor
 
 
         #endregion
-
-        #region Operations Handlers 
-
-
-        /// <summary>
-        /// handle an operation between 2 values in the form: <c>a = a + b;</c>
-        /// </summary>
-        /// <param name="op"></param>
-        /// <param name="current"></param>
-        /// <param name="previous"></param>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="vector_size"></param>
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float4 b, ref byte vector_size)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop:
-                    {
-                        a = b;
-                    }
-                    return;
-
-                case blast_operation.add: a = a + b; return;
-                case blast_operation.substract: a = a - b; return;
-                case blast_operation.multiply: a = a * b; return;
-                case blast_operation.divide: a = a / b; return;
-
-                case blast_operation.and: a = math.select(0f, 1f, math.all(a) && math.all(b)); return;
-                case blast_operation.or: a = math.select(0f, 1f, math.any(a) || math.any(b)); return;
-                case blast_operation.xor: a = math.select(0f, 1f, math.any(a) ^ math.any(b)); return;
-
-                case blast_operation.greater: a = math.select(0f, 1f, a > b); return;
-                case blast_operation.smaller: a = math.select(0f, 1f, a < b); return;
-                case blast_operation.smaller_equals: a = math.select(0f, 1f, a <= b); return;
-                case blast_operation.greater_equals: a = math.select(0f, 1f, a >= b); return;
-                case blast_operation.equals: a = math.select(0f, 1f, a == b); return;
-                case blast_operation.not_equals: a = math.select(0f, 1f, a != b); return;
-
-                case blast_operation.not: a = math.select(0f, 1f, b == 0); return;
-            }
-        }
-
-
-        /// <summary>
-        /// handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
-        /// </summary>
-        /// <param name="op">operation to take</param>
-        /// <param name="a">operand a</param>
-        /// <param name="b">operand b</param>
-        /// <returns>result of operation</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static float handle_op(in blast_operation op, in float a, in float b)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop: return b;
-                case blast_operation.add: return a + b;
-                case blast_operation.substract: return a - b;
-                case blast_operation.multiply: return a * b;
-                case blast_operation.divide: return a / b;
-
-                case blast_operation.and: return math.select(0f, 1f, a != 0 && b != 0);
-                case blast_operation.or: return math.select(0f, 1f, a != 0 || b != 0);
-                case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ b != 0);
-
-                case blast_operation.greater: return math.select(0f, 1f, a > b);
-                case blast_operation.smaller: return math.select(0f, 1f, a < b);
-                case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
-                case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
-                case blast_operation.equals: return math.select(0f, 1f, a == b);
-                case blast_operation.not_equals: return math.select(0f, 1f, a != b);
-
-                case blast_operation.not: return math.select(0f, 1f, b == 0);
-            }
-        }
-
-
-        /// <summary>
-        /// handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
-        /// </summary>
-        /// <param name="op">operation to take</param>
-        /// <param name="a">operand a</param>
-        /// <param name="b">operand b</param>
-        /// <returns>result of operation</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static float2 handle_op(in blast_operation op, in float2 a, in float b)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop: return b;
-                case blast_operation.add: return a + b;
-                case blast_operation.substract: return a - b;
-                case blast_operation.multiply: return a * b;
-                case blast_operation.divide: return a / b;
-
-                case blast_operation.and: return math.select(0f, 1f, math.any(a) && b != 0);
-                case blast_operation.or: return math.select(0f, 1f, math.any(a) || b != 0);
-                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ b != 0);  // this isnt really correct but then xor on 3 operands is wierd.. 
-
-                case blast_operation.greater: return math.select(0f, 1f, a > b);
-                case blast_operation.smaller: return math.select(0f, 1f, a < b);
-                case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
-                case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
-                case blast_operation.equals: return math.select(0f, 1f, a == b);
-                case blast_operation.not_equals: return math.select(0f, 1f, a != b);
-
-                case blast_operation.not:
-                    return math.select(0f, 1f, b == 0);
-            }
-        }
-
-
-        /// <summary>
-        /// handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
-        /// </summary>
-        /// <param name="op">operation to take</param>
-        /// <param name="a">operand a</param>
-        /// <param name="b">operand b</param>
-        /// <returns>result of operation</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static float3 handle_op(in blast_operation op, in float3 a, in float b)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop: return b;
-                case blast_operation.add: return a + b;
-                case blast_operation.substract: return a - b;
-                case blast_operation.multiply: return a * b;
-                case blast_operation.divide: return a / b;
-
-                case blast_operation.and: return math.select(0f, 1f, math.any(a) && b != 0);
-                case blast_operation.or: return math.select(0f, 1f, math.any(a) || b != 0);
-                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ b != 0);  // this isnt really correct but then xor on 3 operands is wierd.. 
-
-                case blast_operation.greater: return math.select(0f, 1f, a > b);
-                case blast_operation.smaller: return math.select(0f, 1f, a < b);
-                case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
-                case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
-                case blast_operation.equals: return math.select(0f, 1f, a == b);
-                case blast_operation.not_equals: return math.select(0f, 1f, a != b);
-
-                case blast_operation.not:
-                    return math.select(0f, 1f, b == 0);
-            }
-        }
-
-        /// <summary>
-        /// handle operation between 2 singles of vectorsize 1, handles in the form: <c>result = a + b;</c>
-        /// </summary>
-        /// <param name="op">operation to take</param>
-        /// <param name="a">operand a</param>
-        /// <param name="b">operand b</param>
-        /// <returns>result of operation</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static float4 handle_op(in blast_operation op, in float4 a, in float b)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop: return b;
-                case blast_operation.add: return a + b;
-                case blast_operation.substract: return a - b;
-                case blast_operation.multiply: return a * b;
-                case blast_operation.divide: return a / b;
-
-                case blast_operation.and: return math.select(0f, 1f, math.any(a) && b != 0);
-                case blast_operation.or: return math.select(0f, 1f, math.any(a) || b != 0);
-                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ b != 0);  // this isnt really correct but then xor on 3 operands is wierd.. 
-
-                case blast_operation.greater: return math.select(0f, 1f, a > b);
-                case blast_operation.smaller: return math.select(0f, 1f, a < b);
-                case blast_operation.smaller_equals: return math.select(0f, 1f, a <= b);
-                case blast_operation.greater_equals: return math.select(0f, 1f, a >= b);
-                case blast_operation.equals: return math.select(0f, 1f, a == b);
-                case blast_operation.not_equals: return math.select(0f, 1f, a != b);
-
-                case blast_operation.not:
-                    return math.select(0f, 1f, b == 0);
-            }
-        }
-
-        /// <summary>
-        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
-        /// </summary>
-        /// <param name="op">the operation to take</param>
-        /// <param name="a">left operand</param>
-        /// <param name="b">right operand</param>
-        /// <returns>returns result of operation</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static float2 handle_op(in blast_operation op, in float a, in float2 b)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop: return b;
-                case blast_operation.add: return a + b;
-                case blast_operation.substract: return a - b;
-                case blast_operation.multiply: return a * b;
-                case blast_operation.divide: return a / b;
-
-                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.any(b));
-                case blast_operation.or: return math.select(0f, 1f, a != 0 || math.any(b));
-                case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ math.any(b));
-
-                case blast_operation.greater: return (float2)(a > b);
-                case blast_operation.smaller: return (float2)(a < b);
-                case blast_operation.smaller_equals: return (float2)(a <= b);
-                case blast_operation.greater_equals: return (float2)(a >= b);
-                case blast_operation.equals: return (float2)(a == b);
-                case blast_operation.not_equals: return (float2)(a != b);
-
-                case blast_operation.not:
-                    return math.select(0f, 1f, b == 0);
-            }
-        }
-
-        /// <summary>
-        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
-        /// </summary>
-        /// <param name="op">the operation to take</param>
-        /// <param name="a">left operand</param>
-        /// <param name="b">right operand</param>
-        /// <returns>returns result of operation</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static float2 handle_op(in blast_operation op, in float2 a, in float2 b)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop: return b;
-                case blast_operation.add: return a + b;
-                case blast_operation.substract: return a - b;
-                case blast_operation.multiply: return a * b;
-                case blast_operation.divide: return a / b;
-
-                case blast_operation.and: return math.select(0f, 1f, math.any(a) && math.any(b));
-                case blast_operation.or: return math.select(0f, 1f, math.any(a) || math.any(b));
-                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ math.any(b));
-
-                case blast_operation.greater: return (float2)(a > b);
-                case blast_operation.smaller: return (float2)(a < b);
-                case blast_operation.smaller_equals: return (float2)(a <= b);
-                case blast_operation.greater_equals: return (float2)(a >= b);
-                case blast_operation.equals: return (float2)(a == b);
-                case blast_operation.not_equals: return (float2)(a != b);
-
-                case blast_operation.not:
-                    return math.select(0f, 1f, b == 0);
-            }
-        }
-
-        /// <summary>
-        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
-        /// </summary>
-        /// <param name="op">the operation to take</param>
-        /// <param name="a">left operand</param>
-        /// <param name="b">right operand</param>
-        /// <returns>returns result of operation</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static float3 handle_op(in blast_operation op, in float a, in float3 b)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop: return b;
-                case blast_operation.add: return a + b;
-                case blast_operation.substract: return a - b;
-                case blast_operation.multiply: return a * b;
-                case blast_operation.divide: return a / b;
-
-                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.any(b));
-                case blast_operation.or: return math.select(0f, 1f, a != 0 || math.any(b));
-                case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ math.any(b));
-
-                case blast_operation.greater: return (float3)(a > b);
-                case blast_operation.smaller: return (float3)(a < b);
-                case blast_operation.smaller_equals: return (float3)(a <= b);
-                case blast_operation.greater_equals: return (float3)(a >= b);
-                case blast_operation.equals: return (float3)(a == b);
-                case blast_operation.not_equals: return (float3)(a != b);
-
-                case blast_operation.not:
-                    return math.select(0f, 1f, b == 0);
-            }
-        }
-
-
-        /// <summary>
-        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
-        /// </summary>
-        /// <param name="op">the operation to take</param>
-        /// <param name="a">left operand</param>
-        /// <param name="b">right operand</param>
-        /// <returns>returns result of operation</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static float3 handle_op(in blast_operation op, in float3 a, in float3 b)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop: return b;
-                case blast_operation.add: return a + b;
-                case blast_operation.substract: return a - b;
-                case blast_operation.multiply: return a * b;
-                case blast_operation.divide: return a / b;
-
-                case blast_operation.and: return math.select(0f, 1f, math.any(a) && math.any(b));
-                case blast_operation.or: return math.select(0f, 1f, math.any(a) || math.any(b));
-                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ math.any(b));
-
-                case blast_operation.greater: return (float3)(a > b);
-                case blast_operation.smaller: return (float3)(a < b);
-                case blast_operation.smaller_equals: return (float3)(a <= b);
-                case blast_operation.greater_equals: return (float3)(a >= b);
-                case blast_operation.equals: return (float3)(a == b);
-                case blast_operation.not_equals: return (float3)(a != b);
-
-                case blast_operation.not:
-                    return math.select(0f, 1f, b == 0);
-            }
-        }
-
-        /// <summary>
-        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
-        /// </summary>
-        /// <param name="op">the operation to take</param>
-        /// <param name="a">left operand</param>
-        /// <param name="b">right operand</param>
-        /// <returns>returns result of operation</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static float4 handle_op(in blast_operation op, in float a, in float4 b)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop: return b;
-                case blast_operation.add: return a + b;
-                case blast_operation.substract: return a - b;
-                case blast_operation.multiply: return a * b;
-                case blast_operation.divide: return a / b;
-
-                case blast_operation.and: return math.select(0f, 1f, a != 0 && math.any(b));
-                case blast_operation.or: return math.select(0f, 1f, a != 0 || math.any(b));
-                case blast_operation.xor: return math.select(0f, 1f, a != 0 ^ math.any(b));
-
-                case blast_operation.greater: return (float4)(a > b);
-                case blast_operation.smaller: return (float4)(a < b);
-                case blast_operation.smaller_equals: return (float4)(a <= b);
-                case blast_operation.greater_equals: return (float4)(a >= b);
-                case blast_operation.equals: return (float4)(a == b);
-                case blast_operation.not_equals: return (float4)(a != b);
-
-                case blast_operation.not:
-                    return math.select(0f, 1f, b == 0);
-            }
-        }
-
-
-        /// <summary>
-        /// handle operation between 2 floats of differing vectorsize, resulting vectorisize is the largest of the 2, handles in the form: <c>result = a + b;</c>
-        /// </summary>
-        /// <param name="op">the operation to take</param>
-        /// <param name="a">left operand</param>
-        /// <param name="b">right operand</param>
-        /// <returns>returns result of operation</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static float4 handle_op(in blast_operation op, in float4 a, in float4 b)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop: return b;
-                case blast_operation.add: return a + b;
-                case blast_operation.substract: return a - b;
-                case blast_operation.multiply: return a * b;
-                case blast_operation.divide: return a / b;
-
-                case blast_operation.and: return math.select(0f, 1f, math.any(a) && math.any(b));
-                case blast_operation.or: return math.select(0f, 1f, math.any(a) || math.any(b));
-                case blast_operation.xor: return math.select(0f, 1f, math.any(a) ^ math.any(b));
-
-                case blast_operation.greater: return (float4)(a > b);
-                case blast_operation.smaller: return (float4)(a < b);
-                case blast_operation.smaller_equals: return (float4)(a <= b);
-                case blast_operation.greater_equals: return (float4)(a >= b);
-                case blast_operation.equals: return (float4)(a == b);
-                case blast_operation.not_equals: return (float4)(a != b);
-
-                case blast_operation.not:
-                    return math.select(0f, 1f, b == 0);
-            }
-        }
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float3 b, ref byte vector_size)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop:
-                    {
-                        a.xyz = b;
-                    }
-                    return;
-
-                case blast_operation.add: a.xyz = a.xyz + b; return;
-                case blast_operation.substract: a.xyz = a.xyz - b; return;
-                case blast_operation.multiply: a.xyz = a.xyz * b; return;
-                case blast_operation.divide: a.xyz = a.xyz / b; return;
-
-                case blast_operation.and: a.xyz = math.select(0f, 1f, math.any(a.xyz) && math.any(b)); return;
-                case blast_operation.or: a.xyz = math.select(0f, 1f, math.any(a.xyz) || math.any(b)); return;
-                case blast_operation.xor: a.xyz = math.select(0f, 1f, math.any(a.xyz) ^ math.any(b)); return;
-
-                case blast_operation.greater: a.xyz = math.select(0f, 1f, a.xyz > b); return;
-                case blast_operation.smaller: a.xyz = math.select(0f, 1f, a.xyz < b); return;
-                case blast_operation.smaller_equals: a.xyz = math.select(0f, 1f, a.xyz <= b); return;
-                case blast_operation.greater_equals: a.xyz = math.select(0f, 1f, a.xyz >= b); return;
-                case blast_operation.equals: a.xyz = math.select(0f, 1f, a.xyz == b); return;
-                case blast_operation.not_equals: a.xyz = (float3)(a.xyz != b); return;
-
-                case blast_operation.not: a.xyz = math.select(0f, 1f, b == 0); return;
-            }
-        }
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float4 a, in float2 b, ref byte vector_size)
-        {
-            switch (op)
-            {
-                default:
-                case blast_operation.nop:
-                    {
-                        a.xy = b;
-                    }
-                    return;
-
-                case blast_operation.add: a.xy = a.xy + b; return;
-                case blast_operation.substract: a.xy = a.xy - b; return;
-                case blast_operation.multiply: a.xy = a.xy * b; return;
-                case blast_operation.divide: a.xy = a.xy / b; return;
-
-                case blast_operation.and: a.xy = math.select(0, 1, math.any(a.xy) && math.any(b)); return;
-                case blast_operation.or: a.xy = math.select(0, 1, math.any(a.xy) || math.any(b)); return;
-                case blast_operation.xor: a.xy = math.select(0, 1, math.any(a.xy) ^ math.any(b)); return;
-
-                case blast_operation.greater: a.xy = math.select(0f, 1f, a.xy > b); return;
-                case blast_operation.smaller: a.xy = math.select(0f, 1f, a.xy < b); return;
-                case blast_operation.smaller_equals: a.xy = math.select(0f, 1f, a.xy <= b); return;
-                case blast_operation.greater_equals: a.xy = math.select(0f, 1f, a.xy >= b); return;
-                case blast_operation.equals: a.xy = math.select(0f, 1f, a.xy == b); return;
-                case blast_operation.not_equals: a.xy = (float2)(a.xy != b); return;
-
-                case blast_operation.not:
-                    a.xy = math.select(0f, 1f, b == 0); return;
-            }
-        }
-
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        static void handle_op(in blast_operation op, in byte current, in byte previous, ref float a, in float b, ref byte vector_size)
-        {
-            switch (op)
-            {
-                default: return;
-                case blast_operation.nop:
-                    {
-                        a = b;
-                    }
-                    return;
-
-                case blast_operation.add: a = a + b; return;
-                case blast_operation.substract: a = a - b; return;
-                case blast_operation.multiply: a = a * b; return;
-                case blast_operation.divide: a = a / b; return;
-
-                case blast_operation.and: a = math.select(0, 1, a != 0 && b != 0); return;
-                case blast_operation.or: a = math.select(0, 1, a != 0 || b != 0); return;
-                case blast_operation.xor: a = math.select(0, 1, a != 0 ^ b != 0); return;
-
-                case blast_operation.greater: a = math.select(0f, 1f, a > b); return;
-                case blast_operation.smaller: a = math.select(0f, 1f, a < b); return;
-                case blast_operation.smaller_equals: a = math.select(0f, 1f, a <= b); return;
-                case blast_operation.greater_equals: a = math.select(0f, 1f, a >= b); return;
-                case blast_operation.equals: a = math.select(0f, 1f, a == b); return;
-                case blast_operation.not_equals: a = math.select(0f, 1f, a != b); return;
-
-                case blast_operation.not:
-                    a = math.select(0f, 1f, b == 0); return;
-            }
-        }
-
-        #endregion
-
+ 
         #region Debug Data
         /// <summary>
         /// handle command to show the given field in debug    (debug skips negation)
@@ -3049,6 +2550,7 @@ namespace NSS.Blast.Interpretor
 
             vector_size = 1; // vectors dont shrink in normal operations 
 
+            BlastVariableDataType current_datatype = BlastVariableDataType.Numeric;
             byte current_vector_size = 1;
             byte nesting_level = 0;
 
@@ -3500,77 +3002,58 @@ namespace NSS.Blast.Interpretor
                         code_pointer--;                           
                         break;
 
-                    case blast_operation.pi: f4 = math.PI; break;
-                    case blast_operation.inv_pi: f4 =  1f / math.PI; break;
-                    case blast_operation.epsilon: f4 =  math.EPSILON; break;
-                    case blast_operation.infinity: f4 =  math.INFINITY; break;
-                    case blast_operation.negative_infinity: f4 =  -math.INFINITY; break;
-                    case blast_operation.nan: f4 =  math.NAN; break;
-                    case blast_operation.min_value: f4 =  math.FLT_MIN_NORMAL; break;
-                    case blast_operation.value_0: f4 = 0f; break;
-                    case blast_operation.value_1: f4 = 1f; break;
-                    case blast_operation.value_2: f4 = 2f; break;
-                    case blast_operation.value_3: f4 = 3f; break;
-                    case blast_operation.value_4: f4 = 4f; break;
-                    case blast_operation.value_8: f4 = 8f; break;
-                    case blast_operation.value_10: f4 = 10f; break;
-                    case blast_operation.value_16: f4 = 16f; break;
-                    case blast_operation.value_24: f4 = 24f; break;
-                    case blast_operation.value_32: f4 = 32f; break;
-                    case blast_operation.value_64: f4 = 64f; break;
-                    case blast_operation.value_100: f4 = 100f; break;
-                    case blast_operation.value_128: f4 = 128f; break;
-                    case blast_operation.value_256: f4 = 256f; break;
-                    case blast_operation.value_512: f4 = 512f; break;
-                    case blast_operation.value_1000: f4 = 1000f; break;
-                    case blast_operation.value_1024: f4 = 1024f; break;
-                    case blast_operation.value_30: f4 = 30f; break;
-                    case blast_operation.value_45: f4 = 45f; break;
-                    case blast_operation.value_90: f4 = 90f; break;
-                    case blast_operation.value_180: f4 = 180f; break;
-                    case blast_operation.value_270: f4 = 270f; break;
-                    case blast_operation.value_360: f4 = 360f; break;
-                    case blast_operation.inv_value_2: f4 = 1 / 2f; break;
-                    case blast_operation.inv_value_3: f4 = 1 / 3f; break;
-                    case blast_operation.inv_value_4: f4 = 1 / 4f; break;
-                    case blast_operation.inv_value_8: f4 = 1 / 8f; break;
-                    case blast_operation.inv_value_10: f4 = 1 / 10f; break;
-                    case blast_operation.inv_value_16: f4 = 1 / 16f; break;
-                    case blast_operation.inv_value_24: f4 = 1 / 24f; break;
-                    case blast_operation.inv_value_32: f4 = 1 / 32f; break;
-                    case blast_operation.inv_value_64: f4 = 1 / 64f; break;
-                    case blast_operation.inv_value_100: f4 = 1 / 100f; break;
-                    case blast_operation.inv_value_128: f4 = 1 / 128f; break;
-                    case blast_operation.inv_value_256: f4 = 1 / 256f; break;
-                    case blast_operation.inv_value_512: f4 = 1 / 512f; break;
-                    case blast_operation.inv_value_1000: f4 = 1 / 1000f; break;
-                    case blast_operation.inv_value_1024: f4 = 1 / 1024f; break;
-                    case blast_operation.inv_value_30: f4 = 1 / 30f; break;
-                    case blast_operation.framecount: f4 = engine_ptr->constants[(byte)blast_operation.framecount]; break;
-                    case blast_operation.fixedtime: f4 = engine_ptr->constants[(byte)blast_operation.fixedtime]; break;
-                    case blast_operation.time: f4 = engine_ptr->constants[(byte)blast_operation.time]; break;
-                    case blast_operation.fixeddeltatime: f4 = engine_ptr->constants[(byte)blast_operation.fixeddeltatime]; break;
-                    case blast_operation.deltatime: f4 = engine_ptr->constants[(byte)blast_operation.deltatime]; break;
-                    /*   
-                     *  INSTEAD OF SWITCHING ON EACH CONSTANT: just fill vector, its faster 
-                     *   
-                     *   return engine_ptr->constants[(byte)blast_operation.deltatime];
-                           {
-                               // read value
-                               switch ((BlastVectorSizes)vector_size)
-                               {
-                                   case BlastVectorSizes.float1: f4.x = engine_ptr->constants[op]; break;
-                                   case BlastVectorSizes.float2: f4.xy = engine_ptr->constants[op]; break;
-                                   case BlastVectorSizes.float3: f4.xyz = engine_ptr->constants[op]; break;
-                                   case BlastVectorSizes.float4: f4.xyzw = engine_ptr->constants[op]; break;
-                                   default:
-   #if DEVELOPMENT_BUILD || TRACE
-                                       Debug.LogError($"BlastInterpretor.get_sequence_result: codepointer: {code_pointer} => {code[code_pointer]}, error: unsupported vectorsize for setting result from constant");
-   #endif
-                                       break;
-                               }
-                           }
-                           break;*/
+                    case blast_operation.pi:                    f4 = math.PI;                   datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_pi:                f4 = 1f / math.PI;              datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.epsilon:               f4 = math.EPSILON;              datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.infinity:              f4 = math.INFINITY;             datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.negative_infinity:     f4 = -math.INFINITY;            datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.nan:                   f4 = math.NAN;                  datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.min_value:             f4 =  math.FLT_MIN_NORMAL;      datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_1:               f4 = 1f;                        datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_2:               f4 = 2f;                        datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_3:               f4 = 3f;                        datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_4:               f4 = 4f;                        datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_8:               f4 = 8f;                        datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_0:               f4 = 0f;                        datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_10:              f4 = 10f;                       datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_16:              f4 = 16f;                       datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_24:              f4 = 24f;                       datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_32:              f4 = 32f;                       datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_64:              f4 = 64f;                       datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_100:             f4 = 100f;                      datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_128:             f4 = 128f;                      datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_256:             f4 = 256f;                      datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_512:             f4 = 512f;                      datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_1000:            f4 = 1000f;                     datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_1024:            f4 = 1024f;                     datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_30:              f4 = 30f;                       datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_45:              f4 = 45f;                       datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_90:              f4 = 90f;                       datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_180:             f4 = 180f;                      datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_270:             f4 = 270f;                      datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.value_360:             f4 = 360f;                      datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_2:           f4 = 1 / 2f;                    datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_3:           f4 = 1 / 3f;                    datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_4:           f4 = 1 / 4f;                    datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_8:           f4 = 1 / 8f;                    datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_10:          f4 = 1 / 10f;                   datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_16:          f4 = 1 / 16f;                   datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_24:          f4 = 1 / 24f;                   datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_32:          f4 = 1 / 32f;                   datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_64:          f4 = 1 / 64f;                   datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_100:         f4 = 1 / 100f;                  datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_128:         f4 = 1 / 128f;                  datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_256:         f4 = 1 / 256f;                  datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_512:         f4 = 1 / 512f;                  datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_1000:        f4 = 1 / 1000f;                 datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_1024:        f4 = 1 / 1024f;                 datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.inv_value_30:          f4 = 1 / 30f;                   datatype = BlastVariableDataType.Numeric; break;
+
+                    case blast_operation.framecount:            f4 = engine_ptr->constants[(byte)blast_operation.framecount];       datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.fixedtime:             f4 = engine_ptr->constants[(byte)blast_operation.fixedtime];        datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.time:                  f4 = engine_ptr->constants[(byte)blast_operation.time];             datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.fixeddeltatime:        f4 = engine_ptr->constants[(byte)blast_operation.fixeddeltatime];   datatype = BlastVariableDataType.Numeric; break;
+                    case blast_operation.deltatime:             f4 = engine_ptr->constants[(byte)blast_operation.deltatime];        datatype = BlastVariableDataType.Numeric; break;
 
 
                     // handle identifiers/variables
@@ -3597,7 +3080,7 @@ namespace NSS.Blast.Interpretor
 
                                 // grow current vector size 
 
-                                vector_size = vector_size > this_vector_size && current_op == blast_operation.nop ? vector_size : this_vector_size; // probably massively incorrect but its too late 
+                                vector_size = vector_size > this_vector_size && current_op == blast_operation.nop ? vector_size : this_vector_size; 
                             }
                             else
                             {
@@ -3619,147 +3102,157 @@ namespace NSS.Blast.Interpretor
                 }
 
                 //
-                // if not an operation overwrite result
-                //
-                // -> on first value
-                //
+                // handle value in sequenced operation 
                 //
                 if (current_op == 0 && !((minus || not) && prev_op == 0))
                 {
-                    if ((minus || not))
+                    // just set according to vector size on the first value
+                    switch ( datatype.Combine(vector_size, minus || not) )
                     {
-#if STANDALONE_VSBUILD
-                        if (minus && not)
-                        {
-                            Debug.LogError("minus and not together active: error");
-                        }
-#endif
-                        if (minus)
-                        {
-                            f4 = -f4;
-                            minus = false;
-                        }
-                        if (not)
-                        {
-                            f4 = math.select((float4)0, (float4)1, f4 == 0);
-                            not = false;
-                            // f4_result = math.select(f4_result, -f4_result, minus && !last_is_bool_or_math_operation);
-                        }
-                    }
+                        case BlastVectorType.float1: f4_result.x = f4.x; current_vector_size = 1; break;
+                        case BlastVectorType.float1_n: f4_result.x = -f4.x; current_vector_size = 1; break;
+                        case BlastVectorType.float2: fixed (float4* p = &f4_result) ((float2*)(void*)p)[0] = ((float2*)(void*)&f4)[0]; current_vector_size = 2; break;
+                        case BlastVectorType.float2_n: fixed (float4* p = &f4_result) ((float2*)(void*)p)[0] = -((float2*)(void*)&f4)[0]; current_vector_size = 2; break;
+                        case BlastVectorType.float3: fixed (float4* p = &f4_result) ((float3*)(void*)p)[0] = ((float3*)(void*)&f4)[0]; current_vector_size = 3; break;
+                        case BlastVectorType.float3_n: fixed (float4* p = &f4_result) ((float3*)(void*)p)[0] = -((float3*)(void*)&f4)[0]; current_vector_size = 3; break;
+                        case BlastVectorType.float4: f4_result = f4; current_vector_size = 4; break;
+                        case BlastVectorType.float4_n: f4_result = -f4; current_vector_size = 4; break;
+                        
+                        // for id, as its the first we copy it and set datatype 
+                        case BlastVectorType.int1: f4_result.x = f4.x; current_vector_size = 1; current_datatype = BlastVariableDataType.ID; break;
+                        case BlastVectorType.int2: fixed (float4* p = &f4_result) ((float2*)(void*)p)[0] = ((float2*)(void*)&f4)[0]; current_vector_size = 2; current_datatype = BlastVariableDataType.ID; break;
+                        case BlastVectorType.int3: fixed (float4* p = &f4_result) ((float3*)(void*)p)[0] = ((float3*)(void*)&f4)[0]; current_vector_size = 3; current_datatype = BlastVariableDataType.ID; break;
+                        case BlastVectorType.int4: f4_result = f4; current_vector_size = 4; current_datatype = BlastVariableDataType.ID; break;
 
-                    // just set according to vector size
-                    switch ((BlastVectorSizes)vector_size)
-                    {
-                        case BlastVectorSizes.float1: f4_result.x = f4.x; current_vector_size = 1; break;
-                        case BlastVectorSizes.float2: fixed (float4* p = &f4_result) ((float2*)(void*)p)[0] = ((float2*)(void*)&f4)[0]; current_vector_size = 2; break;
-                        case BlastVectorSizes.float3: fixed (float4* p = &f4_result) ((float3*)(void*)p)[0] = ((float3*)(void*)&f4)[0]; current_vector_size = 3; break;
-                        case 0:
-                        case BlastVectorSizes.float4: f4_result = f4; current_vector_size = 4; break;
+                        // negations need a conversion inlined to perform the negation correctly on the int backed in float memory 
+                        case BlastVectorType.int1_n: f4_result.x = CodeUtils.ReInterpret<int, float>(-CodeUtils.ReInterpret<float, int>(f4.x)); current_vector_size = 1; current_datatype = BlastVariableDataType.ID; break;
+                        case BlastVectorType.int2_n: fixed (float4* p = &f4_result) ((float2*)(void*)p)[0] = CodeUtils.ReInterpret<int2, float2>(-CodeUtils.ReInterpret<float2, int2>(((float2*)(void*)&f4)[0])); current_vector_size = 2; current_datatype = BlastVariableDataType.ID; break;
+                        case BlastVectorType.int3_n: fixed (float4* p = &f4_result) ((float3*)(void*)p)[0] = CodeUtils.ReInterpret<int3, float3>(-CodeUtils.ReInterpret<float3, int3>(((float3*)(void*)&f4)[0])); current_vector_size = 3; current_datatype = BlastVariableDataType.ID; break;
+                        case BlastVectorType.int4_n: f4_result = CodeUtils.ReInterpret<int4, float4>(-CodeUtils.ReInterpret<float4, int4>(f4)); current_vector_size = 4; current_datatype = BlastVariableDataType.ID; break;
+
+                        // bool32 requires a conversion for not to be correct 
+                        case BlastVectorType.bool32: f4_result.x = f4.x; current_vector_size = 1; current_datatype = BlastVariableDataType.Bool32; break; 
+                        case BlastVectorType.bool32_n: f4_result.x = CodeUtils.ReInterpret<uint, float>(~CodeUtils.ReInterpret<float, uint>(f4.x)); current_vector_size = 1; current_datatype = BlastVariableDataType.Bool32; break;
+
+                        default: goto NO_SUPPORT;
                     }
                 }
                 else
                 {
                     if (!last_is_bool_or_math_operation)
                     {
-                        if ((minus || not))
+                        switch(current_datatype.Combine(current_vector_size, false))
                         {
-#if STANDALONE_VSBUILD
-                            if (minus && not)
-                            {
-                                Debug.LogError("minus and not together active: error");
-                            }
-#endif
-                            if (minus)
-                            {
-                                f4 = -f4;
-                                minus = false;
-                            }
-                            if (not)
-                            {
-                                f4 = math.select((float4)0, (float4)1, f4 == 0);
-                                not = false;
-                                // f4_result = math.select(f4_result, -f4_result, minus && !last_is_bool_or_math_operation);
-                            }
-                        }
-
-
-                        switch ((BlastVectorSizes)current_vector_size)
-                        {
-                            case BlastVectorSizes.float1:
-
-                                switch ((BlastVectorSizes)vector_size)
+                            case BlastVectorType.float1:
                                 {
-                                    // v1 = v1 + v1 -> no change in vectorsize 
-                                    case BlastVectorSizes.float1: f4_result.x = BlastInterpretor.handle_op(current_op, f4_result.x, f4.x); break;
-                                    case BlastVectorSizes.float2: f4_result.xy = BlastInterpretor.handle_op(current_op, f4_result.x, f4.xy); current_vector_size = 2; break;
-                                    case BlastVectorSizes.float3: f4_result.xyz = BlastInterpretor.handle_op(current_op, f4_result.x, f4.xyz); current_vector_size = 3; break;
-                                    case 0:
-                                    case BlastVectorSizes.float4: f4_result = BlastInterpretor.handle_op(current_op, f4_result.x, f4); current_vector_size = 4; break;
-#if DEVELOPMENT_BUILD || TRACE
-                                    default:
-                                        Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
-                                        break;
-#endif
+                                    // the operation starts as a float -> end as a float 
+                                    switch(datatype.Combine(vector_size, minus || not))
+                                    {
+                                        // f1result = f1a + f1b
+                                        case BlastVectorType.float1:    BlastInterpretor.handle_op_f1f1(current_op, ref f4_result.x, f4.x); break;
+                                        case BlastVectorType.int1:      BlastInterpretor.handle_op_f1i1(current_op, ref f4_result.x, f4.x); break;
+                                        case BlastVectorType.bool32:    BlastInterpretor.handle_op_f1i1(current_op, ref f4_result.x, f4.x); break;
+
+                                        // f1result = f1a + -f1b
+                                        case BlastVectorType.float1_n:  BlastInterpretor.handle_op_f1f1(current_op, ref f4_result.x, -f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.int1_n:    BlastInterpretor.handle_op_f1i1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.bool32_n:  BlastInterpretor.handle_op_f1b1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
+
+                                        // f2result = f1a op [-]f2b (f4 is referenced where x is read and xy is written as result 
+                                        case BlastVectorType.float2:    BlastInterpretor.handle_op_f1f2(current_op, ref f4_result, f4.xy); current_vector_size = 2; break;
+                                        case BlastVectorType.float2_n:  BlastInterpretor.handle_op_f1f2(current_op, ref f4_result, -f4.xy); current_vector_size = 2; minus = false; not = false; break;
+
+                                        // f3result = f1a op [-]f3b 
+                                        case BlastVectorType.float3:    BlastInterpretor.handle_op_f1f3(current_op, ref f4_result, f4.xyz); current_vector_size = 3; break;
+                                        case BlastVectorType.float3_n:  BlastInterpretor.handle_op_f1f3(current_op, ref f4_result, -f4.xyz); current_vector_size = 3; minus = false; not = false; break;
+
+                                        // f4result = f1a op [-]f4b 
+                                        case BlastVectorType.float4:    BlastInterpretor.handle_op_f1f4(current_op, ref f4_result, f4); current_vector_size = 4; break;
+                                        case BlastVectorType.float4_n:  BlastInterpretor.handle_op_f1f4(current_op, ref f4_result, -f4); current_vector_size = 4; minus = false; not = false; break;
+
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP;
+                                    }
                                 }
                                 break;
 
-                            case BlastVectorSizes.float2:
-
-                                switch ((BlastVectorSizes)vector_size)
+                            case BlastVectorType.bool32:
+                            case BlastVectorType.int1:
                                 {
-                                    // adding a float1 to a float2 operation -> results in float2 
-                                    case BlastVectorSizes.float1: f4_result.xy = BlastInterpretor.handle_op(current_op, f4_result.xy, f4.x); vector_size = 2; break;
-                                    case BlastVectorSizes.float2: f4_result.xy = BlastInterpretor.handle_op(current_op, f4_result.xy, f4.xy); break;
+                                    // the operation starts with an integer, if we handle against a float, update of datatype is needed
+                                    switch (datatype.Combine(vector_size, minus || not))
+                                    {
+                                        case BlastVectorType.bool32:
+                                        case BlastVectorType.int1:      BlastInterpretor.handle_op_i1i1(current_op, ref f4_result.x, f4.x); break;
+                                        case BlastVectorType.bool32_n:  BlastInterpretor.handle_op_i1b1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.int1_n:    BlastInterpretor.handle_op_i1i1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.int2:      BlastInterpretor.handle_op_i1i2(current_op, ref f4_result, f4.xy); current_vector_size = 2; break;
+                                        case BlastVectorType.int2_n:    BlastInterpretor.handle_op_i1i2_n(current_op, ref f4_result, f4.xy); current_vector_size = 2; minus = false; not = false; break;
+                                        case BlastVectorType.int3:      BlastInterpretor.handle_op_i1i3(current_op, ref f4_result, f4.xyz); current_vector_size = 3; break;
+                                        case BlastVectorType.int3_n:    BlastInterpretor.handle_op_i1i3_n(current_op, ref f4_result, f4.xyz); current_vector_size = 3; minus = false; not = false; break;
+                                        case BlastVectorType.int4:      BlastInterpretor.handle_op_i1i4(current_op, ref f4_result, f4); current_vector_size = 4; break;
+                                        case BlastVectorType.int4_n:    BlastInterpretor.handle_op_i1i4_n(current_op, ref f4_result, f4); current_vector_size = 4; minus = false; not = false; break;
+                                        case BlastVectorType.float1:    BlastInterpretor.handle_op_i1f1(current_op, ref f4_result.x, f4.x); datatype = current_datatype; break;
+                                        case BlastVectorType.float1_n:  BlastInterpretor.handle_op_i1f1(current_op, ref f4_result.x, -f4.x); datatype = current_datatype; minus = false; not = false; break;
+                                        case BlastVectorType.float2:    BlastInterpretor.handle_op_i1f2(current_op, ref f4_result, f4.xy); datatype = current_datatype; current_vector_size = 2; break;
+                                        case BlastVectorType.float2_n:  BlastInterpretor.handle_op_i1f2(current_op, ref f4_result, -f4.xy); datatype = current_datatype; current_vector_size = 2; minus = false; not = false; break;
+                                        case BlastVectorType.float3:    BlastInterpretor.handle_op_i1f3(current_op, ref f4_result, f4.xyz); datatype = current_datatype; current_vector_size = 3; break;
+                                        case BlastVectorType.float3_n:  BlastInterpretor.handle_op_i1f3(current_op, ref f4_result, -f4.xyz); datatype = current_datatype; current_vector_size = 3; minus = false; not = false; break;
+                                        case BlastVectorType.float4:    BlastInterpretor.handle_op_i1f4(current_op, ref f4_result, f4); datatype = current_datatype; current_vector_size = 4; break;
+                                        case BlastVectorType.float4_n:  BlastInterpretor.handle_op_i1f4(current_op, ref f4_result, -f4); datatype = current_datatype; current_vector_size = 4; minus = false; not = false; break;
 
-#if DEVELOPMENT_BUILD || TRACE
-                                    default:
-                                        Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
-                                        break;
-#endif
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP; 
+                                    }
+                                }
+                                break; 
+
+                            case BlastVectorType.float2:
+                                {
+                                    switch (datatype.Combine(vector_size, minus || not))
+                                    {
+                                        // f4.xy = f4.xy op [-]f1
+                                        case BlastVectorType.float1:    BlastInterpretor.handle_op_f2f1(current_op, ref f4_result, f4.x); break;
+                                        case BlastVectorType.float1_n:  BlastInterpretor.handle_op_f2f1(current_op, ref f4_result, -f4.x); minus = false; not = false; break;
+                                        // f4.xy = f4.xy op [-]f2
+                                        case BlastVectorType.float2:    BlastInterpretor.handle_op_f2f2(current_op, ref f4_result, f4.xy); vector_size = 2; break;
+                                        case BlastVectorType.float2_n:  BlastInterpretor.handle_op_f2f2(current_op, ref f4_result, -f4.xy); vector_size = 2; minus = false; not = false; break;
+
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP;
+                                    }
                                 }
                                 break;
 
-                            case BlastVectorSizes.float3:
-
-                                switch ((BlastVectorSizes)vector_size)
+                            case BlastVectorType.float3:
                                 {
-                                    case BlastVectorSizes.float1: f4_result.xyz = BlastInterpretor.handle_op(current_op, f4_result.xyz, f4.x); vector_size = 3; break;
-                                    case BlastVectorSizes.float3: f4_result.xyz = BlastInterpretor.handle_op(current_op, f4_result.xyz, f4.xyz); break;
-#if DEVELOPMENT_BUILD || TRACE
-                                    default:
-                                        Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
-                                        break;
-#endif
+                                    switch (datatype.Combine(vector_size, minus || not))
+                                    {
+                                        case BlastVectorType.float1:    BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, f4.x); vector_size = 3; break;
+                                        case BlastVectorType.float1_n:  BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, -f4.x); vector_size = 3; minus = false; not = false; break;
+
+                                        case BlastVectorType.float3:    BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, f4.xyz); break;
+                                        case BlastVectorType.float3_n:  BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, -f4.xyz); minus = false; not = false; break;
+
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP; 
+                                    }
+                                }
+                                break; 
+
+
+                            case BlastVectorType.float4:
+                                {
+                                    switch (datatype.Combine(vector_size, minus || not))
+                                    {
+                                        case BlastVectorType.float1:    BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, f4.x); vector_size = 4; break;
+                                        case BlastVectorType.float1_n:  BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, -f4.x); vector_size = 4; minus = false; not = false; break;
+
+                                        case BlastVectorType.float4:    BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, f4); break;
+                                        case BlastVectorType.float4_n:  BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, -f4); minus = false; not = false; break;
+
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP; 
+                                    }                                    
                                 }
                                 break;
 
-                            case 0:
-                            case BlastVectorSizes.float4:
-
-                                switch ((BlastVectorSizes)vector_size)
-                                {
-                                    case BlastVectorSizes.float1: f4_result = BlastInterpretor.handle_op(current_op, f4_result, f4.x); current_vector_size = 4; vector_size = 4; break;
-                                    case 0:
-                                    case BlastVectorSizes.float4: f4_result = BlastInterpretor.handle_op(current_op, f4_result, f4); current_vector_size = 4; vector_size = 4; break;
-#if DEVELOPMENT_BUILD || TRACE
-                                    default:
-                                        Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
-                                        break;
-#endif
-                                }
-                                break;
-
-
-
-
-
-#if DEVELOPMENT_BUILD || TRACE
-                            default:
-                                Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for vector of size {vector_size} -> {current_vector_size}");
-                                break;
-#endif
-
-
+                            default: goto NO_SUPPORT_FOR_HANDLE_OP;
                         }
 
                         // reset current operation 
@@ -3767,39 +3260,56 @@ namespace NSS.Blast.Interpretor
                     }
                     else
                     {
-                        // apply minus (if in sequence)...  
+                        // apply minus
                         if (minus || not)
                         {
-#if TRACE
-                            if (minus && not)
+                            switch (datatype.Combine(vector_size, true))
                             {
-                                Debug.LogError("minus and not together active: error");
+                                case BlastVectorType.float1_n:
+                                case BlastVectorType.float2_n:
+                                case BlastVectorType.float3_n:
+                                case BlastVectorType.float4_n: f4_result = -f4_result; break;
+
+                                case BlastVectorType.int1_n: f4_result.x = CodeUtils.ReInterpret<int, float>(-CodeUtils.ReInterpret<float, int>(f4_result.x)); break;
+                                case BlastVectorType.int2_n: f4_result.xy= CodeUtils.ReInterpret<int2, float2>(-CodeUtils.ReInterpret<float2, int2>(f4_result.xy)); break;
+                                case BlastVectorType.int3_n: f4_result.xyz = CodeUtils.ReInterpret<int3, float3>(-CodeUtils.ReInterpret<float3, int3>(f4_result.xyz)); break;
+                                case BlastVectorType.int4_n: f4_result.xyzw = CodeUtils.ReInterpret<int4, float4>(-CodeUtils.ReInterpret<float4, int4>(f4_result.xyzw)); break;
+
+                                case BlastVectorType.bool32_n: f4_result.x = CodeUtils.ReInterpret<uint, float>(~CodeUtils.ReInterpret<float, uint>(f4_result.x)); break;
+
+                                default: goto NO_SUPPORT_NEGATE;
                             }
-#endif
-                            if (minus)
-                            {
-                                f4_result = -f4_result;
-                                minus = false;
-                            }
-                            if (not)
-                            {
-                                f4_result = math.select((float4)0, (float4)1, f4_result == 0);
-                                not = false;
-                            }
+                            minus = false;
+                            not = false;
                         }
                     }
                 }
-
 
                 // next
                 code_pointer++;
             }
 
             return;
+
+        NO_SUPPORT_FOR_HANDLE_OP:
+#if TRACE || DEVELOPMENT_BUILD
+            Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for operation: {datatype}[{vector_size}] op {current_datatype}[{current_vector_size}]");
+#endif 
+            return;
+        NO_SUPPORT:
+#if TRACE || DEVELOPMENT_BUILD
+            Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for {datatype}[{vector_size}]");
+#endif 
+            return;
+        NO_SUPPORT_NEGATE:
+#if TRACE || DEVELOPMENT_BUILD
+            Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for negation of {datatype}[{vector_size}]");
+#endif 
+            return;
         }
 
-      
-        
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void EvalPushedJumpCondition(ref int code_pointer, ref float4 f4_register, ref byte vector_size, ref BlastVariableDataType datatype)
         {

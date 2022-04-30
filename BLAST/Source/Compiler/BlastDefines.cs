@@ -77,12 +77,7 @@ namespace NSS.Blast
     }
 
     /// <summary>
-    /// supported vectorsizes 
-    /// 
-    /// - encode vectorsize AND datatype in 1 nibble - 
-    /// 
-    /// - update to use encode44 everywhere 
-    /// 
+    /// vector types\sizes, encodes vectorsize and datatype in 1 enum 
     /// </summary>
     public enum BlastVectorSizes : byte
     {
@@ -113,10 +108,26 @@ namespace NSS.Blast
         /// </summary>
         bool32 = 5,
 
+        /// <summary>
+        /// int32
+        /// </summary>
         id1 = 6,
+
+        /// <summary>
+        /// int2
+        /// </summary>
         id2 = 7,
+
+        /// <summary>
+        /// int3
+        /// </summary>
         id3 = 8,
+
+        /// <summary>
+        /// int 4
+        /// </summary>
         id4 = 9,
+
         id64 = 10,
         half1 = 11,
         half2 = 12,

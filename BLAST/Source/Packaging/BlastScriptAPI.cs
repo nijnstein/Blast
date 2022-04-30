@@ -1689,7 +1689,7 @@ namespace NSS.Blast
             RegisterFunction("reinterpret_float32", 1, 1, 1, 0, extended_blast_operation.reinterpret_float, BlastParameterEncoding.Encode62, BlastVectorSizes.float1);
 
             RegisterFunction("send", 1, 1, 0, 0, extended_blast_operation.send, BlastParameterEncoding.Encode44, BlastVectorSizes.none);
-            RegisterFunction("size", 1, 1, 0, 1, blast_operation.size);
+            RegisterFunction("size", 1, 1, 0, 1, blast_operation.size, BlastParameterEncoding.Encode62, BlastVectorSizes.id1);
 
             RegisterFunction("length", 1, 1, 0, 1, extended_blast_operation.length);
             RegisterFunction("lengthsq", 1, 1, 0, 1, extended_blast_operation.lengthsq);
@@ -1736,6 +1736,10 @@ namespace NSS.Blast
             CreateExternalProfile(BlastVectorSizes.float2, false, false);
             CreateExternalProfile(BlastVectorSizes.float3, false, false);
             CreateExternalProfile(BlastVectorSizes.float4, false, false);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, false);
+            CreateExternalProfile(BlastVectorSizes.id2,    false, false);
+            CreateExternalProfile(BlastVectorSizes.id3,    false, false);
+            CreateExternalProfile(BlastVectorSizes.id4,    false, false);
             CreateExternalProfile(BlastVectorSizes.bool32, false, false);
 
             CreateExternalProfile(BlastVectorSizes.float1, false, false, BlastVectorSizes.float1);
@@ -1767,6 +1771,15 @@ namespace NSS.Blast
             CreateExternalProfile(BlastVectorSizes.none,   false, false, BlastVectorSizes.bool32);
             CreateExternalProfile(BlastVectorSizes.bool32, false, false, BlastVectorSizes.bool32);
             CreateExternalProfile(BlastVectorSizes.bool32, false, false, BlastVectorSizes.bool32, BlastVectorSizes.float4, BlastVectorSizes.float1);
+
+            CreateExternalProfile(BlastVectorSizes.none,   false, false, BlastVectorSizes.id1);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, false, BlastVectorSizes.id1);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, false, BlastVectorSizes.id1, BlastVectorSizes.id1);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, false, BlastVectorSizes.id1, BlastVectorSizes.id1, BlastVectorSizes.id1);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, false, BlastVectorSizes.id1, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, false, BlastVectorSizes.id1, BlastVectorSizes.float3, BlastVectorSizes.float4, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.bool32, false, false, BlastVectorSizes.id1, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.bool32, false, false, BlastVectorSizes.id1, BlastVectorSizes.float3, BlastVectorSizes.float4, BlastVectorSizes.float3);
 
             // short parameterset default external profiles 
             CreateExternalProfile(BlastVectorSizes.none,   false, true);
@@ -1804,6 +1817,15 @@ namespace NSS.Blast
             CreateExternalProfile(BlastVectorSizes.none,   false, true, BlastVectorSizes.bool32);
             CreateExternalProfile(BlastVectorSizes.bool32, false, true, BlastVectorSizes.bool32);
             CreateExternalProfile(BlastVectorSizes.bool32, false, true, BlastVectorSizes.bool32, BlastVectorSizes.float4, BlastVectorSizes.float1);
+
+            CreateExternalProfile(BlastVectorSizes.none,   false, true, BlastVectorSizes.id1);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, true, BlastVectorSizes.id1);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, true, BlastVectorSizes.id1, BlastVectorSizes.id1);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, true, BlastVectorSizes.id1, BlastVectorSizes.id1, BlastVectorSizes.id1);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, true, BlastVectorSizes.id1, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.id1,    false, true, BlastVectorSizes.id1, BlastVectorSizes.float3, BlastVectorSizes.float4, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.bool32, false, true, BlastVectorSizes.id1, BlastVectorSizes.float3, BlastVectorSizes.float3, BlastVectorSizes.float3);
+            CreateExternalProfile(BlastVectorSizes.bool32, false, true, BlastVectorSizes.id1, BlastVectorSizes.float3, BlastVectorSizes.float4, BlastVectorSizes.float3);
 
             // default profiles for ssmd interpretor, vectorized parameters  
             CreateExternalProfile(BlastVectorSizes.none,   true, false);

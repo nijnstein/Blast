@@ -273,10 +273,21 @@ namespace NSS.Blast.Interpretor
             int i = default;
             byte* p = (byte*)(void*)&i;
 
-            p[0] = code[offset_into_codebuffer + 0];
-            p[1] = code[offset_into_codebuffer + 1];
-            p[2] = code[offset_into_codebuffer + 2];
-            p[3] = code[offset_into_codebuffer + 3];
+            p[3] = code[offset_into_codebuffer + 0];
+            p[2] = code[offset_into_codebuffer + 1];
+            p[1] = code[offset_into_codebuffer + 2];
+            p[0] = code[offset_into_codebuffer + 3];
+
+            return i;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal short map_cdata_short([NoAlias] byte* code, in int offset_into_codebuffer)
+        {
+            short i = default;
+            byte* p = (byte*)(void*)&i;
+
+            p[1] = code[offset_into_codebuffer + 0];
+            p[0] = code[offset_into_codebuffer + 1];
 
             return i;
         }
@@ -339,6 +350,19 @@ namespace NSS.Blast.Interpretor
             sbyte s = ((sbyte*)(void*)&b)[0];
             return (float)(s / 10f);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal float map_cdata_i16_float32([NoAlias] byte* code, in int offset_into_codebuffer)
+        {
+            return (float)map_cdata_short(code, offset_into_codebuffer);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal float map_cdata_i32_float32([NoAlias] byte* code, in int offset_into_codebuffer)
+        {
+            return (float)map_cdata_int(code, offset_into_codebuffer); 
+        }
+
 
 
         /// <summary>
@@ -810,7 +834,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-
+        /// <summary>
+        /// get a float from cdata[index], raises errors on datatype mismatch 
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static internal float index_cdata_f1([NoAlias] byte* code, in int offset, in int index, in int byte_length)
         {
@@ -888,6 +914,112 @@ namespace NSS.Blast.Interpretor
             return float.NaN;
         }
 
+
+        /// <summary>
+        /// this works the same as index_cdata_f1 but also works on integer data by casting the integer into the float datatype 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static internal float index_cdata_as_f1([NoAlias] byte* code, in int offset, in int index, in int byte_length)
+        {
+            int bytes_per_element;
+            int max_i = offset + 3 + byte_length;
+
+            CDATAEncodingType type = (CDATAEncodingType)code[offset];
+            switch (type)
+            {
+                default:
+#if TRACE
+                    Debug.LogError($"blast.cdata.index_cdata_f1: unsupported encoding type accessing cdata as float[1] at offset: {offset}, index: {index}, length: {byte_length}, encoding: {type}");
+                    break;
+#endif 
+
+                case CDATAEncodingType.None:
+                case CDATAEncodingType.fp32_fp32:
+                    {
+                        bytes_per_element = 4;
+
+                        // calc index                         
+                        int i = offset + 3 + index * bytes_per_element;
+
+                        // check bounds 
+                        if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) break;  // out of bounds 
+
+                        return map_cdata_float32(code, i);
+                    }
+                    break;
+
+
+                case CDATAEncodingType.fp16_fp32:
+                    {
+                        bytes_per_element = 2;
+                        int i = offset + 3 + index * bytes_per_element;
+                        if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) break;
+                        return map_cdata_16_float32(code, i);
+                    }
+                    break;
+
+                case CDATAEncodingType.fp8_fp32:
+                    {
+                        bytes_per_element = 1;
+                        int i = offset + 3 + index * bytes_per_element;
+                        if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) break;
+                        return map_cdata_fp8_float32(code, i);
+                    }
+                    break;
+
+
+                case CDATAEncodingType.ASCII:
+                case CDATAEncodingType.u8_fp32:
+                    {
+                        bytes_per_element = 1;
+                        int i = offset + 3 + index * bytes_per_element;
+                        if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) break;
+                        return map_cdata_u8_float32(code, i);
+                    }
+                    break;
+
+                case CDATAEncodingType.s8_fp32:
+                    {
+                        bytes_per_element = 1;
+                        int i = offset + 3 + index * bytes_per_element;
+                        if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) break;
+                        return map_cdata_s8_float32(code, i);
+                    }
+
+                case CDATAEncodingType.i8_i32:
+                    {
+                        bytes_per_element = 1;
+                        int i = offset + 3 + index * bytes_per_element;
+                        if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) break;
+                        // a signed byte == i8
+                        return map_cdata_s8_float32(code, i);
+                    }
+
+                case CDATAEncodingType.i16_i32:
+                    {
+                        bytes_per_element = 1;
+                        int i = offset + 3 + index * bytes_per_element;
+                        if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) break;
+                        return map_cdata_i16_float32(code, i);
+                    }
+
+                case CDATAEncodingType.i32_i32:
+                    {
+                        bytes_per_element = 1;
+                        int i = offset + 3 + index * bytes_per_element;
+                        if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) break;
+                        return map_cdata_i32_float32(code, i);
+                    }
+            }
+
+            if (IsTrace)
+            {
+                Debug.LogError($"Blast.Interpretor.index_cdata_f1: index [{index}] out of bounds for cdata at {offset} of bytesize: {byte_length} ");
+            }
+            return float.NaN;
+        }
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static internal void set_cdata_byte([NoAlias] byte* code, in int offset_into_codebuffer, int index, byte b)
         {
@@ -915,7 +1047,8 @@ namespace NSS.Blast.Interpretor
                     return;
 
 
-                case CDATAEncodingType.ASCII: 
+                case CDATAEncodingType.ASCII:
+                case CDATAEncodingType.i8_i32:  // writes float to integer backing
                 case CDATAEncodingType.u8_fp32:
                     {
                         // unsigned byte as backing: 0 through 255
@@ -953,6 +1086,31 @@ namespace NSS.Blast.Interpretor
                         code[offset + 1] = p[1];
                     }
                     return;
+
+                case CDATAEncodingType.i16_i32:  // writes float to integer backing
+                    {
+                        // short backed set with float
+                        short s = (short)f;
+                        byte* p = (byte*)(void*)&s;
+                        int offset = offset_into_codebuffer + (index * 2) + 3; // half == 2 bytes 
+                        code[offset + 0] = p[0];
+                        code[offset + 1] = p[1];
+                    }
+                    return;
+
+                case CDATAEncodingType.i32_i32:  // writes float to integer backing
+                    {
+                        // short backed set with float
+                        int i = (int)f;
+                        byte* p = (byte*)(void*)&i;
+                        int offset = offset_into_codebuffer + (index * 4) + 3; // int = 4 bytes 
+                        code[offset + 0] = p[0];
+                        code[offset + 1] = p[1];
+                        code[offset + 2] = p[2];
+                        code[offset + 3] = p[3];
+                    }
+                    return; 
+
             }
 
             if (IsTrace)

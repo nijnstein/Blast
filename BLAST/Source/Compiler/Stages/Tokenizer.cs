@@ -480,7 +480,7 @@ namespace NSS.Blast.Compiler.Stage
                 case "float":
                 case "single":
                 case "numeric": encoding = CDATAEncodingType.None; offset_for_datatype = 1; break;
-                case "fp32":    encoding = CDATAEncodingType.None; offset_for_datatype = 1; break;
+                case "fp32":    encoding = CDATAEncodingType.fp32_fp32; offset_for_datatype = 1; break;
 
                 case "fp16fp32":
                 case "fp16_fp32": encoding = CDATAEncodingType.fp16_fp32; offset_for_datatype = 1; break;

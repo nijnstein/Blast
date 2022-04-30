@@ -109,18 +109,23 @@ namespace NSS.Blast.SSMD
 
         static string[] types = new string[]
         {
-            "float", "float2", "float3", "float4", "Bool32",
-            // "int", "int2", "int3", "int4", "half2", "half4"
+            "float", "float2", "float3", "float4", 
+            "Bool32",
+            "int", "int2", "int3", "int4"//, "half2", "half4"
         };
 
         static string[] shorts = new string[]
         {
-            "f1", "f2", "f3", "f4", "b"
+            "f1", "f2", "f3", "f4",
+            "b", 
+            "i1", "i2", "i3", "i4"
         };
 
         static int[] sizes = new int[]
         {
-            1, 2, 3, 4, 1
+            1, 2, 3, 4, 
+            1,
+            1, 2, 3, 4
         };
 
 
@@ -219,20 +224,29 @@ namespace NSS.Blast.SSMD
                             case BlastVectorSizes.none:
                                 s.AppendLine($"        case {profile.DelegateType}: {functionname}(ref code_pointer, id{ssmd_param}); return null;");
                                 break;
-
+                            case BlastVectorSizes.id1:
+                                s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id{ssmd_param}, (int*)temp); ");
+                                break;                            
                             case BlastVectorSizes.float1:
                                 s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id{ssmd_param}, (float*)temp); ");
                                 break;
-
                             case BlastVectorSizes.bool32:
                                 s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id{ssmd_param}, (Bool32*)temp); ");
                                 break;
-
+                            case BlastVectorSizes.id2:
+                                s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id{ssmd_param}, (int2*)temp);");
+                                break;                                   
                             case BlastVectorSizes.float2:
                                 s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id{ssmd_param}, (float2*)temp);");
                                 break;
+                            case BlastVectorSizes.id3:
+                                s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id{ssmd_param}, (int3*)temp); ");
+                                break;
                             case BlastVectorSizes.float3:
                                 s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id{ssmd_param}, (float3*)temp); ");
+                                break;
+                            case BlastVectorSizes.id4:
+                                s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id{ssmd_param}, (int4*)temp); ");
                                 break;
                             case BlastVectorSizes.float4:
                                 s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id{ssmd_param}, (float4*)temp); ");
@@ -246,20 +260,28 @@ namespace NSS.Blast.SSMD
                             case BlastVectorSizes.none:
                                 s.AppendLine($"        case {profile.DelegateType}: {functionname}(ref code_pointer, id); return 0;");
                                 break;
-
                             case BlastVectorSizes.bool32:
                                 // bool is a struct but should pass as float32 as value 
                                 s.AppendLine($"        case {profile.DelegateType}: return new float4({functionname}(ref code_pointer, id, (Bool32*)temp)[0].Single, 0, 0, 0);");//.Single; ");
                                 break;
-
+                            case BlastVectorSizes.id2:
+                                s.AppendLine($"        case {profile.DelegateType}: return new float4({functionname}(ref code_pointer, id, (int2*)temp)[0], 0, 0);");
+                                break;
                             case BlastVectorSizes.float2:
                                 s.AppendLine($"        case {profile.DelegateType}: return new float4({functionname}(ref code_pointer, id, (float2*)temp)[0], 0, 0);");
+                                break;
+                            case BlastVectorSizes.id3:
+                                s.AppendLine($"        case {profile.DelegateType}: return new float4({functionname}(ref code_pointer, id, (int3*)temp)[0], 0); ");
                                 break;
                             case BlastVectorSizes.float3:
                                 s.AppendLine($"        case {profile.DelegateType}: return new float4({functionname}(ref code_pointer, id, (float3*)temp)[0], 0); ");
                                 break;
+                            case BlastVectorSizes.id1:
                             case BlastVectorSizes.float1:
                                 s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id); ");
+                                break;
+                            case BlastVectorSizes.id4:
+                                s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id, (int4*)temp)[0]; ");
                                 break;
                             case BlastVectorSizes.float4:
                                 s.AppendLine($"        case {profile.DelegateType}: return {functionname}(ref code_pointer, id, (float4*)temp)[0]; ");
@@ -434,6 +456,10 @@ namespace NSS.Blast.SSMD
                             case BlastVectorSizes.float2: s.AppendLine($"   float2 p{(i + 1)} = math.select(((float2*)vdata)[0], -((float2*)vdata)[0], is_negated);"); break;
                             case BlastVectorSizes.float3: s.AppendLine($"   float3 p{(i + 1)} = math.select(((float3*)vdata)[0], -((float3*)vdata)[0], is_negated);"); break;
                             case BlastVectorSizes.float4: s.AppendLine($"   float4 p{(i + 1)} = math.select(((float4*)vdata)[0], -((float4*)vdata)[0], is_negated);"); break;
+                            case BlastVectorSizes.id1:    s.AppendLine($"   int p{(i + 1)} = ((int*)vdata)[0]; p{(i + 1)} = math.select(p{(i + 1)}, -p{(i + 1)}, is_negated);"); break;
+                            case BlastVectorSizes.id2:    s.AppendLine($"   int2 p{(i + 1)} = ((int2*)vdata)[0]; p{(i + 1)} = math.select(p{(i + 1)}, -p{(i + 1)}, is_negated);"); break;
+                            case BlastVectorSizes.id3:    s.AppendLine($"   int3 p{(i + 1)} = ((int3*)vdata)[0]; p{(i + 1)} = math.select(p{(i + 1)}, -p{(i + 1)}, is_negated);"); break;
+                            case BlastVectorSizes.id4:    s.AppendLine($"   int4 p{(i + 1)} = ((int4*)vdata)[0]; p{(i + 1)} = math.select(p{(i + 1)}, -p{(i + 1)}, is_negated);"); break;
                             case BlastVectorSizes.bool32: s.AppendLine($"   Bool32 p{(i + 1)} = Bool32.From(math.select(((Bool32*)vdata)[0].Unsigned, ~((Bool32*)vdata)[0].Unsigned, is_negated));"); break;
                         }
                     }

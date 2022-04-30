@@ -1090,9 +1090,10 @@ namespace NSS.Blast.SSMD
                 // get once, set many 
                 if (is_cdata)
                 {
-                    // need datatype support
-
-                    float f1data = BlastInterpretor.index_cdata_f1(code, offset, index, length);
+                    //
+                    // !!!!! need datatype support
+                    //
+                    float f1data = BlastInterpretor.index_cdata_as_f1(code, offset, index, length);
                     if (target.is_set)
                     {
                         // direct set on target
@@ -2063,7 +2064,7 @@ namespace NSS.Blast.SSMD
                                     else
                                     {
                                         // single index returning a constant value 
-                                        constant = BlastInterpretor.index_cdata_f1(code, offset, indexed, length);
+                                        constant = BlastInterpretor.index_cdata_as_f1(code, offset, indexed, length);
 
                                         // set the constant to destination
                                         if (destination_offset >= 0)
@@ -3948,7 +3949,7 @@ namespace NSS.Blast.SSMD
                                     else
                                     {
                                         // single index returning a constant value 
-                                        float constant = BlastInterpretor.index_cdata_f1(code, offset, indexed, length);
+                                        float constant = BlastInterpretor.index_cdata_as_f1(code, offset, indexed, length);
 
                                         // set the constant to all registers
                                         handle_single_op_constant(register, ref vector_size, ssmd_datacount, constant, op, ex_op);
