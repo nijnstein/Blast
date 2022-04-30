@@ -5,11 +5,13 @@
 //                                                                                                                     (__)  #
 //############################################################################################################################
 #pragma warning disable CS1591
+#pragma warning disable CS0162
+
 #if STANDALONE_VSBUILD
 using NSS.Blast.Standalone;
     using System.Reflection;
 #else
-    using UnityEngine;
+using UnityEngine;
     using Unity.Burst.CompilerServices;
 #endif
 

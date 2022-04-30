@@ -1090,6 +1090,8 @@ namespace NSS.Blast.SSMD
                 // get once, set many 
                 if (is_cdata)
                 {
+                    // need datatype support
+
                     float f1data = BlastInterpretor.index_cdata_f1(code, offset, index, length);
                     if (target.is_set)
                     {

@@ -210,27 +210,37 @@ namespace NSS.Blast
 
     public enum BlastVectorType : byte
     {
-        unknown = 0,
+        unknown     = 0,
 
-        float1   = ((byte)BlastVariableDataType.Numeric << 4) + 1,
-        float2   = ((byte)BlastVariableDataType.Numeric << 4) + 2,
-        float3   = ((byte)BlastVariableDataType.Numeric << 4) + 3,
-        float4   = ((byte)BlastVariableDataType.Numeric << 4) + 4,
-        bool32   = ((byte)BlastVariableDataType.Bool32  << 4) + 0,
-        int1     = ((byte)BlastVariableDataType.ID      << 4) + 1,
-        int2     = ((byte)BlastVariableDataType.ID      << 4) + 2,
-        int3     = ((byte)BlastVariableDataType.ID      << 4) + 3,
-        int4     = ((byte)BlastVariableDataType.ID      << 4) + 4,
+        float1      = ((byte)BlastVariableDataType.Numeric << 4) + 1,
+        float2      = ((byte)BlastVariableDataType.Numeric << 4) + 2,
+        float3      = ((byte)BlastVariableDataType.Numeric << 4) + 3,
+        float4      = ((byte)BlastVariableDataType.Numeric << 4) + 4,
+                    
+        bool32      = ((byte)BlastVariableDataType.Bool32  << 4) + 1,
+        bool64      = ((byte)BlastVariableDataType.Bool32  << 4) + 2,
+        bool96      = ((byte)BlastVariableDataType.Bool32  << 4) + 3,
+        bool128     = ((byte)BlastVariableDataType.Bool32  << 4) + 4,
+                    
+        int1        = ((byte)BlastVariableDataType.ID      << 4) + 1,
+        int2        = ((byte)BlastVariableDataType.ID      << 4) + 2,
+        int3        = ((byte)BlastVariableDataType.ID      << 4) + 3,
+        int4        = ((byte)BlastVariableDataType.ID      << 4) + 4,
 
-        float1_n = ((byte)BlastVariableDataType.Numeric << 4) + 1 + 0b1000_0000,
-        float2_n = ((byte)BlastVariableDataType.Numeric << 4) + 2 + 0b1000_0000,
-        float3_n = ((byte)BlastVariableDataType.Numeric << 4) + 3 + 0b1000_0000,
-        float4_n = ((byte)BlastVariableDataType.Numeric << 4) + 4 + 0b1000_0000,
-        bool32_n = ((byte)BlastVariableDataType.Bool32  << 4) + 0 + 0b1000_0000,
-        int1_n   = ((byte)BlastVariableDataType.ID      << 5) + 1 + 0b1000_0000,
-        int2_n   = ((byte)BlastVariableDataType.ID      << 5) + 2 + 0b1000_0000,
-        int3_n   = ((byte)BlastVariableDataType.ID      << 5) + 3 + 0b1000_0000,
-        int4_n   = ((byte)BlastVariableDataType.ID      << 5) + 4 + 0b1000_0000,
+        float1_n    = ((byte)BlastVariableDataType.Numeric << 4) + 1 + 0b1000_0000,
+        float2_n    = ((byte)BlastVariableDataType.Numeric << 4) + 2 + 0b1000_0000,
+        float3_n    = ((byte)BlastVariableDataType.Numeric << 4) + 3 + 0b1000_0000,
+        float4_n    = ((byte)BlastVariableDataType.Numeric << 4) + 4 + 0b1000_0000,
+
+        bool32_n    = ((byte)BlastVariableDataType.Bool32  << 4) + 1 + 0b1000_0000,
+        bool64_n    = ((byte)BlastVariableDataType.Bool32  << 4) + 2 + 0b1000_0000,
+        bool96_n    = ((byte)BlastVariableDataType.Bool32  << 4) + 3 + 0b1000_0000,
+        bool128_n   = ((byte)BlastVariableDataType.Bool32  << 4) + 4 + 0b1000_0000,
+        
+        int1_n      = ((byte)BlastVariableDataType.ID      << 4) + 1 + 0b1000_0000,
+        int2_n      = ((byte)BlastVariableDataType.ID      << 4) + 2 + 0b1000_0000,
+        int3_n      = ((byte)BlastVariableDataType.ID      << 4) + 3 + 0b1000_0000,
+        int4_n      = ((byte)BlastVariableDataType.ID      << 4) + 4 + 0b1000_0000,
     }
 
 
@@ -1227,6 +1237,77 @@ namespace NSS.Blast
         /// floating point modulus operation 
         /// </summary>
         fmod,
+
+
+// these all need SSMD updates 
+        sign,
+        length,
+        lengthsq,
+        square,
+
+        distance,
+        distancesq,
+
+        reflect, 
+        project, 
+
+        up,
+        down,
+        forward, 
+        back, 
+        left, 
+        right, 
+
+        // the quaternion -> radian angles 
+        EulerXYZ,
+        EulerXZY,
+        EulerYZX,
+        EulerYXZ,
+        EulerZXY,
+        EulerZYX,
+        Euler,
+
+        // the angles in randians to quaternion 
+        QuaternionXYZ,
+        QuaternionXZY,
+        QuaternionYZX,
+        QuaternionYXZ,
+        QuaternionZXY,
+        QuaternionZYX,
+        Quaternion,
+
+        // single param functions returning quaternions 
+        RotateX, RotateY, RotateZ, Conjugate, Inverse,
+
+        // dual v3 param functions returning quaternions 
+        LookRotation, LookRotationSafe,
+
+        /// <summary>
+        /// q4 = mul(q4, q4)
+        /// f3 = mul(q4, f3)
+        /// </summary>
+        Mul,
+        
+        /// <summary>
+        /// rotate(q4, f3)
+        /// </summary>
+        Rotate,
+        
+        /// <summary>
+        /// angle(q4, q4) 
+        /// </summary>
+        Angle,
+ //// a lot to do in ssmd mode... 
+
+
+
+
+
+
+
+
+
+
 
         /// <summary>
         /// send all data in the element to a sink defined in blast 

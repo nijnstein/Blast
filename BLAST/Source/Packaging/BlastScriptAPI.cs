@@ -1691,6 +1691,44 @@ namespace NSS.Blast
             RegisterFunction("send", 1, 1, 0, 0, extended_blast_operation.send, BlastParameterEncoding.Encode44, BlastVectorSizes.none);
             RegisterFunction("size", 1, 1, 0, 1, blast_operation.size);
 
+            RegisterFunction("length", 1, 1, 0, 1, extended_blast_operation.length);
+            RegisterFunction("lengthsq", 1, 1, 0, 1, extended_blast_operation.lengthsq);
+            RegisterFunction("square", 1, 1, 0, 1, extended_blast_operation.square);
+            RegisterFunction("distance", 2, 2, 0, 1, extended_blast_operation.distance);
+            RegisterFunction("distancesq", 2, 2, 0, 1, extended_blast_operation.distancesq);
+
+            RegisterFunction("reflect", 2, 2, 0, 0, extended_blast_operation.reflect);
+            RegisterFunction("project", 2, 2, 0, 0, extended_blast_operation.project);
+
+            RegisterFunction("up", 0, 0, 0, 3, extended_blast_operation.up);
+            RegisterFunction("down", 0, 0, 0, 3, extended_blast_operation.down);
+            RegisterFunction("forward", 0, 0, 0, 3, extended_blast_operation.forward);
+            RegisterFunction("back", 0, 0, 0, 3, extended_blast_operation.back);
+            RegisterFunction("left", 0, 0, 0, 3, extended_blast_operation.left);
+            RegisterFunction("right", 0, 0, 0, 3, extended_blast_operation.right);
+
+            RegisterFunction("eulerxyz", 1, 1, 3, 4, extended_blast_operation.EulerXYZ);
+            RegisterFunction("eulerxzy", 1, 1, 3, 4, extended_blast_operation.EulerXZY);
+            RegisterFunction("euleryxz", 1, 1, 3, 4, extended_blast_operation.EulerYXZ);
+            RegisterFunction("euleryzx", 1, 1, 3, 4, extended_blast_operation.EulerYZX);
+            RegisterFunction("eulerzxy", 1, 1, 3, 4, extended_blast_operation.EulerZXY);
+            RegisterFunction("eulerzyx", 1, 1, 3, 4, extended_blast_operation.EulerZYX);
+            RegisterFunction("euler", 2, 2, 3, 4, extended_blast_operation.Euler);
+
+            RegisterFunction("quaternionxyz", 1, 1, 4, 3, extended_blast_operation.QuaternionXYZ);
+            RegisterFunction("quaternionxzy", 1, 1, 4, 3, extended_blast_operation.QuaternionXZY);
+            RegisterFunction("quaternionyxz", 1, 1, 4, 3, extended_blast_operation.QuaternionYXZ);
+            RegisterFunction("quaternionyzx", 1, 1, 4, 3, extended_blast_operation.QuaternionYZX);
+            RegisterFunction("quaternionzxy", 1, 1, 4, 3, extended_blast_operation.QuaternionZXY);
+            RegisterFunction("quaternionzyx", 1, 1, 4, 3, extended_blast_operation.QuaternionZYX);
+            RegisterFunction("quaternion", 2, 2, 4, 3, extended_blast_operation.Quaternion);
+
+            RegisterFunction("lookrotation", 2, 2, 3, 4, extended_blast_operation.LookRotation);
+            RegisterFunction("lookrotationsafe", 2, 2, 3, 4, extended_blast_operation.LookRotationSafe);
+
+            RegisterFunction("rotate", 2, 2, 0, 3, extended_blast_operation.Rotate);
+            RegisterFunction("angle", 2, 2, 0, 4, extended_blast_operation.Angle);
+            RegisterFunction("mul", 2, 2, 0, 0, extended_blast_operation.Mul);
 
             // full parameterset default external profiles 
             CreateExternalProfile(BlastVectorSizes.none,   false, false);

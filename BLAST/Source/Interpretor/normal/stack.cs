@@ -5,11 +5,13 @@
 //                                                                                                                     (__)  #
 //############################################################################################################################
 #pragma warning disable CS1591
+#pragma warning disable CS0162
+
 #if STANDALONE_VSBUILD
 using NSS.Blast.Standalone;
     using System.Reflection;
 #else
-    using UnityEngine;
+using UnityEngine;
     using Unity.Burst.CompilerServices;
 #endif
 
@@ -50,7 +52,7 @@ namespace NSS.Blast.Interpretor
                     c = code[code_pointer];
                     code_pointer++;
 
-                    // jumping into a signed loop saves a cmov and negation on most value acces assuming most values are not negated in script 
+                    // jumping into a signed loop saves a cmov and negation on most value access assuming most values are not negated in script 
                     goto SIGNED_LOOP;
 
                 //

@@ -793,6 +793,7 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void CALL_FN_NORMALIZE(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype)
         {
+            bool negated;
             code_pointer += 1;
             void* fdata = (void*)pop_p_info(ref code_pointer, out datatype, out vector_size, out bool is_negated);
 
@@ -1182,25 +1183,25 @@ namespace NSS.Blast.Interpretor
             switch (datatype.Combine(vector_size, is_negated))
             {
 
-                case BlastVectorType.float1: v4.x     =  mathex.square(((float*)fdata)[0]);  break;
-                case BlastVectorType.float2: v4.xy    =  mathex.square(((float2*)fdata)[0]); break;
-                case BlastVectorType.float3: v4.xyz   =  mathex.square(((float3*)fdata)[0]); break;
-                case BlastVectorType.float4: v4       =  mathex.square(((float4*)fdata)[0]); break;
+                case BlastVectorType.float1: v4.x     =  math.square(((float*)fdata)[0]);  break;
+                case BlastVectorType.float2: v4.xy    =  math.square(((float2*)fdata)[0]); break;
+                case BlastVectorType.float3: v4.xyz   =  math.square(((float3*)fdata)[0]); break;
+                case BlastVectorType.float4: v4       =  math.square(((float4*)fdata)[0]); break;
 
-                case BlastVectorType.int1: v4.x       =  mathex.square(((int*)fdata)[0]);    break;
-                case BlastVectorType.int2: v4.xy      =  mathex.square(((int2*)fdata)[0]);   break;
-                case BlastVectorType.int3: v4.xyz     =  mathex.square(((int3*)fdata)[0]);   break;
-                case BlastVectorType.int4: v4         =  mathex.square(((int4*)fdata)[0]);   break;
+                case BlastVectorType.int1: v4.x       =  math.square(((int*)fdata)[0]);    break;
+                case BlastVectorType.int2: v4.xy      =  math.square(((int2*)fdata)[0]);   break;
+                case BlastVectorType.int3: v4.xyz     =  math.square(((int3*)fdata)[0]);   break;
+                case BlastVectorType.int4: v4         =  math.square(((int4*)fdata)[0]);   break;
 
-                case BlastVectorType.float1_n: v4.x   = mathex.square(-((float*)fdata)[0]);  break;
-                case BlastVectorType.float2_n: v4.xy  = mathex.square(-((float2*)fdata)[0]); break;
-                case BlastVectorType.float3_n: v4.xyz = mathex.square(-((float3*)fdata)[0]); break;
-                case BlastVectorType.float4_n: v4     = mathex.square(-((float4*)fdata)[0]); break;
+                case BlastVectorType.float1_n: v4.x   = math.square(-((float*)fdata)[0]);  break;
+                case BlastVectorType.float2_n: v4.xy  = math.square(-((float2*)fdata)[0]); break;
+                case BlastVectorType.float3_n: v4.xyz = math.square(-((float3*)fdata)[0]); break;
+                case BlastVectorType.float4_n: v4     = math.square(-((float4*)fdata)[0]); break;
 
-                case BlastVectorType.int1_n: v4.x     = mathex.square(-((int*)fdata)[0]);    break;
-                case BlastVectorType.int2_n: v4.xy    = mathex.square(-((int2*)fdata)[0]);   break;
-                case BlastVectorType.int3_n: v4.xyz   = mathex.square(-((int3*)fdata)[0]);   break;
-                case BlastVectorType.int4_n: v4       = mathex.square(-((int4*)fdata)[0]);   break;
+                case BlastVectorType.int1_n: v4.x     = math.square(-((int*)fdata)[0]);    break;
+                case BlastVectorType.int2_n: v4.xy    = math.square(-((int2*)fdata)[0]);   break;
+                case BlastVectorType.int3_n: v4.xyz   = math.square(-((int3*)fdata)[0]);   break;
+                case BlastVectorType.int4_n: v4       = math.square(-((int4*)fdata)[0]);   break;
 
 #if DEVELOPMENT_BUILD || TRACE
                 default:
@@ -1296,56 +1297,6 @@ namespace NSS.Blast.Interpretor
                 default:
                     {
                         Debug.LogError($"Blast.Interpretor.ROTATEZ: vectorsize {vector_size}, datatype {datatype} not supported");
-                        break;
-                    }
-#endif
-            }
-            vector_size = 4;            
-        }
-
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CALL_FN_CONJUGATE(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype)
-        {
-            code_pointer += 1;
-            void* fdata = (void*)pop_p_info(ref code_pointer, out datatype, out vector_size, out bool is_negated);
-
-            switch (datatype.Combine(vector_size, is_negated))
-            {
-
-                case BlastVectorType.float4: v4       = math.conjugate(((float4*)fdata)[0]).value; break;
-                case BlastVectorType.float4_n: v4     = math.conjugate(-((float4*)fdata)[0]).value; break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    {
-                        Debug.LogError($"Blast.Interpretor.CONJUGATE: vectorsize {vector_size}, datatype {datatype} not supported");
-                        break;
-                    }
-#endif
-            }
-            vector_size = 4;            
-        }
-
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CALL_FN_INVERSE(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype)
-        {
-            code_pointer += 1;
-            void* fdata = (void*)pop_p_info(ref code_pointer, out datatype, out vector_size, out bool is_negated);
-
-            switch (datatype.Combine(vector_size, is_negated))
-            {
-
-                case BlastVectorType.float4: v4       = math.inverse(((float4*)fdata)[0]).value; break;
-                case BlastVectorType.float4_n: v4     = math.inverse(-((float4*)fdata)[0]).value; break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    {
-                        Debug.LogError($"Blast.Interpretor.INVERSE: vectorsize {vector_size}, datatype {datatype} not supported");
                         break;
                     }
 #endif
