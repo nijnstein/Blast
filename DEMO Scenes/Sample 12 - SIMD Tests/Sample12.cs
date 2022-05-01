@@ -109,8 +109,15 @@ public class Sample12 : MonoBehaviour
             s.Append(FormatScore("V4 SSMD f4 512",  "a = (1 1 1 1);", bench("a = (1 1 1 1);", 512), 512));
             s.Append(FormatScore("V4 SSMD f4 4096", "a = (1 1 1 1);", bench("a = (1 1 1 1);", 4096), 4096));
             s.Append(FormatScore("V4 SSMD f4 8192", "a = (1 1 1 1);", bench("a = (1 1 1 1);", 8192), 8192));
-            
-            s.Append(FormatScore("V1 NORMAL",    "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;"), 1));
+
+            s.Append(FormatScore("V1 NORMAL f1", "a = sin(1);", bench("a = sin(1);"), 1));
+            s.Append(FormatScore("V1 SSMD f1 1", "a = sin(1);", bench("a = sin(1);", 1), 1));
+            s.Append(FormatScore("V1 SSMD f1 64", "a = sin(1);", bench("a = sin(1);", 64), 64));
+            s.Append(FormatScore("V1 SSMD f1 512", "a = sin(1);", bench("a = sin(1);", 512), 512));
+            s.Append(FormatScore("V1 SSMD f1 4096", "a = sin(1);", bench("a = sin(1);", 4096), 4096));
+            s.Append(FormatScore("V1 SSMD f1 8192", "a = sin(1);", bench("a = sin(1);", 8192), 8192));
+
+                s.Append(FormatScore("V1 NORMAL",    "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;"), 1));
             s.Append(FormatScore("V1 SSMD 1",    "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;", 1), 1));
             s.Append(FormatScore("V1 SSMD 16",   "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;", 16), 16));
             s.Append(FormatScore("V1 SSMD 32",   "a = 111 * 224 * 36 * 1.1;", bench("a = 111 * 224 * 36 * 1.1;", 32), 32));

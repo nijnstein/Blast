@@ -30,7 +30,6 @@ using V2 = Unity.Mathematics.float2;
 using V3 = Unity.Mathematics.float3;
 using V4 = Unity.Mathematics.float4;
 
-
 namespace NSS.Blast.Interpretor
 {
 
@@ -38,23 +37,28 @@ namespace NSS.Blast.Interpretor
     /// 
     /// </summary>
     [BurstCompile]
+#if ENABLE_IL2CPP
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppEagerStaticClassConstructionAttribute()]
+#endif
 
     unsafe public partial struct BlastInterpretor
     {
 
-        #region Constant Compiletime Defines 
+#region Constant Compiletime Defines 
 #if DEVELOPMENT_BUILD
         /// <summary>
         /// true if compiled in devmode 
         /// </summary>
         public const bool IsDevelopmentBuild = true;
-#else 
+#else
         /// <summary>
         /// false if compiled in releasemode 
         /// </summary>
         public const bool IsDevelopmentBuild = false;
 #endif
-#if TRACE 
+#if TRACE
         /// <summary>
         /// TRUE if compiled with TRACE define enabled
         /// </summary>
@@ -73,7 +77,7 @@ namespace NSS.Blast.Interpretor
 #else
         public const bool IsAutoExpanding = false; 
 #endif
-        #endregion
+#endregion
 
         /// <summary>
         /// >= if the opcode between opt_value and (including) opt_id then its an opcode for a constant
@@ -166,7 +170,7 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #region Reset & Set Package
+#region Reset & Set Package
 
         /// <summary>
         /// get a copy of the current package data
@@ -279,9 +283,9 @@ namespace NSS.Blast.Interpretor
             ValidationMode = validationmode;
         }
 
-        #endregion
+#endregion
 
-        #region Execute Overloads       
+#region Execute Overloads       
         /// <summary>
         /// execute bytecode
         /// </summary>
@@ -365,9 +369,9 @@ namespace NSS.Blast.Interpretor
         {
             return execute(blast.Data, IntPtr.Zero, IntPtr.Zero, true);
         }
-        #endregion
+#endregion
 
-        #region Decode 62 44 
+#region Decode 62 44 
 
 
         /// <summary>
@@ -413,9 +417,9 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #endregion
+#endregion
 
-        #region Metadata 
+#region Metadata 
 
         //
         // - the interpretor needs metadata for determining datatype and vector in some situations (example: pops to functions accepting multiple types and sizes..)
@@ -502,9 +506,9 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #endregion
+#endregion
 
-        #region Yield
+#region Yield
 
         /// <summary>
         /// yield - stacks state
@@ -531,9 +535,9 @@ namespace NSS.Blast.Interpretor
                 push((float)b);
             }
         }
-        #endregion
+#endregion
 
-        #region Static Execution Helpers
+#region Static Execution Helpers
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         float negate(in bool negate, float f) { return math.select(f, -f, negate); }
@@ -650,9 +654,9 @@ namespace NSS.Blast.Interpretor
 
 
 
-        #endregion
+#endregion
  
-        #region Debug Data
+#region Debug Data
         /// <summary>
         /// handle command to show the given field in debug    (debug skips negation)
         /// </summary>
@@ -836,7 +840,7 @@ namespace NSS.Blast.Interpretor
 #else
                 {
                     Debug.Log($"DEBUG codepointer: {code_pointer} <CDATA>[{length}] at index {data_start}");
-#endif 
+#endif
                 }
             }
         }
@@ -878,9 +882,9 @@ namespace NSS.Blast.Interpretor
 #endif
         }
 
-        #endregion
+#endregion
 
-        #region External Functionpointer calls 
+#region External Functionpointer calls 
 
 
         /// <summary>
@@ -901,9 +905,9 @@ namespace NSS.Blast.Interpretor
 #endif
                 BlastScriptFunction p = engine_ptr->Functions[id];
 
-#if TRACE 
+#if TRACE
                 Debug.Log($"call fp id: {id} {environment_ptr.ToInt64()} {caller_ptr.ToInt64()}, parameter count = {p.MinParameterCount}");
-#endif 
+#endif
 
                 f4 = CALL_EF(ref code_pointer, in p);
 
@@ -925,9 +929,9 @@ namespace NSS.Blast.Interpretor
 
         }
 
-        #endregion
+#endregion
 
-        #region Function Handlers 
+#region Function Handlers 
 
                    
 
@@ -1652,9 +1656,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
 
-        #region Reinterpret XXXX [DataIndex]
+#region Reinterpret XXXX [DataIndex]
 
         /// <summary>
         /// reinterpret the value at index as a boolean value (set metadata type to bool32)
@@ -1760,9 +1764,9 @@ namespace NSS.Blast.Interpretor
             BlastInterpretor.SetMetaData(in metadata, BlastVariableDataType.ID, 1, (byte)dataindex);
         }
 
-        #endregion
+#endregion
 
-        #region validation fuction 
+#region validation fuction 
 
         void RunValidate(ref int code_pointer)
         {
@@ -1930,9 +1934,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
 
-        #region Send Procedure
+#region Send Procedure
 
         void Handle_Send(ref int code_pointer)
         {
@@ -2089,9 +2093,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        #endregion
+#endregion
    
-        #region Push[cfv]
+#region Push[cfv]
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void pushc(ref int code_pointer, ref byte vector_size, ref BlastVariableDataType datatype, ref V4 f4_register)
@@ -2241,13 +2245,13 @@ namespace NSS.Blast.Interpretor
                     Debug.LogError($"blast.interpretor pushf error: datatype {datatype}, vectorsize {vector_size} not yet supported on stack push");
                     //  return (int)BlastError.error_variable_vector_op_not_supported;
                     break;
-#endif 
+#endif
             }
         }
 
-        #endregion
+#endregion
 
-        #region AssignV Vector 
+#region AssignV Vector 
 
         /// <summary>
         /// builds a [n] vector from [1] values 
@@ -2316,9 +2320,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
-        #endregion
+#endregion
    
-        #region ByteCode Execution
+#region ByteCode Execution
 
         /// <summary>
         /// get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
@@ -3294,17 +3298,17 @@ namespace NSS.Blast.Interpretor
         NO_SUPPORT_FOR_HANDLE_OP:
 #if TRACE || DEVELOPMENT_BUILD
             Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for operation: {datatype}[{vector_size}] op {current_datatype}[{current_vector_size}]");
-#endif 
+#endif
             return;
         NO_SUPPORT:
 #if TRACE || DEVELOPMENT_BUILD
             Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for {datatype}[{vector_size}]");
-#endif 
+#endif
             return;
         NO_SUPPORT_NEGATE:
 #if TRACE || DEVELOPMENT_BUILD
             Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for negation of {datatype}[{vector_size}]");
-#endif 
+#endif
             return;
         }
 
@@ -3471,7 +3475,7 @@ namespace NSS.Blast.Interpretor
                         yield(f4_register);
                         return (int)BlastError.yield;
 
-                    #region Stack
+#region Stack
 
                     case blast_operation.push:
                         push(ref code_pointer, ref vector_size, ref datatype, ref f4_register);
@@ -3498,9 +3502,9 @@ namespace NSS.Blast.Interpretor
                         pushc(ref code_pointer, ref vector_size, ref datatype, ref f4_register);
                         break;
 
-                    #endregion
+#endregion
 
-                    #region Index & Assingments 
+#region Index & Assingments 
 
                     //
                     // compiler should send indexed assignements here in normal packaging
@@ -3846,7 +3850,7 @@ namespace NSS.Blast.Interpretor
                                         // i2 = f2 
                                         case BlastVectorType.float2: ((float2*)(void*)&fdata[assignee])[0] = CodeUtils.ReInterpret<int2, float2>((int2)((float2*)(void*)&f4_register)[0]); break;
                                         // i2 = i2
-                                        case BlastVectorType.int2: ((float2*)(void*)&fdata[assignee])[0] =  ((float2*)(void*)&f4_register)[0]; break;
+                                        case BlastVectorType.int2: ((float2*)(void*)&fdata[assignee])[0] = ((float2*)(void*)&f4_register)[0]; break;
 
                                         default:
 #if DEVELOPMENT_BUILD || TRACE
@@ -4067,9 +4071,9 @@ namespace NSS.Blast.Interpretor
                             goto case (blast_operation)blast_operation_jumptarget.jump_assign_result;
                         }
 
-                    #endregion
+#endregion
 
-                    #region Jumps 
+#region Jumps 
 
                     //
                     // JZ Long: a condition may contain push commands that should run from the root
@@ -4166,9 +4170,9 @@ namespace NSS.Blast.Interpretor
                             break;
                         }
 
-                    #endregion
+#endregion
 
-                    #region Root Procedures
+#region Root Procedures
 
                     //    
                     // by executing these in the root we save a lot on function calls and stack operations
@@ -4180,7 +4184,7 @@ namespace NSS.Blast.Interpretor
                         code_pointer--;
                         CALL_ZERO(ref code_pointer, ref vector_size);
                         break;
-                    #endregion
+#endregion
 
 
                     //
@@ -4350,7 +4354,7 @@ namespace NSS.Blast.Interpretor
             return math.select((int)BlastError.success, (int)BlastError.error_max_iterations, iterations >= max_iterations); 
         }
 
-        #endregion
+#endregion
 
     }
 }

@@ -29,8 +29,10 @@ namespace NSS.Blast.Interpretor
         /// <param name="q">The quaternion to convert to Euler angles.</param>
         /// <param name="order">The order in which the rotations are applied.</param>
         /// <returns>The Euler angle representation of the quaternion in the specified order.</returns>
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 Euler(quaternion q, math.RotationOrder order = math.RotationOrder.Default)
+#endif
+        public static float3 Euler(float4 q, math.RotationOrder order = math.RotationOrder.Default)
         {
             switch (order)
             {
@@ -59,14 +61,15 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         /// <param name="q">The quaternion to convert to Euler angles.</param>
         /// <returns>The Euler angle representation of the quaternion in XYZ order.</returns>
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 EulerXYZ(quaternion q)
+#endif
+        public static float3 EulerXYZ(float4 qv)
         {
             const float epsilon = 1e-6f;
             const float cutoff = (1f - 2f * epsilon) * (1f - 2f * epsilon);
 
             // prepare the data
-            var qv = q.value;
             var d1 = qv * qv.wwww * math.float4(2f); //xw, yw, zw, ww
             var d2 = qv * qv.yzxw * math.float4(2f); //xy, yz, zx, ww
             var d3 = qv * qv;
@@ -99,14 +102,15 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         /// <param name="q">The quaternion to convert to Euler angles.</param>
         /// <returns>The Euler angle representation of the quaternion in XZY order.</returns>
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 EulerXZY(quaternion q)
+#endif
+        public static float3 EulerXZY(float4 qv)
         {
             const float epsilon = 1e-6f;
             const float cutoff = (1f - 2f * epsilon) * (1f - 2f * epsilon);
 
             // prepare the data
-            var qv = q.value;
             var d1 = qv * qv.wwww * math.float4(2f); //xw, yw, zw, ww
             var d2 = qv * qv.yzxw * math.float4(2f); //xy, yz, zx, ww
             var d3 = qv * qv;
@@ -139,14 +143,15 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         /// <param name="q">The quaternion to convert to Euler angles.</param>
         /// <returns>The Euler angle representation of the quaternion in YXZ order.</returns>
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 EulerYXZ(quaternion q)
+#endif
+        public static float3 EulerYXZ(float4 qv)
         {
             const float epsilon = 1e-6f;
             const float cutoff = (1f - 2f * epsilon) * (1f - 2f * epsilon);
 
             // prepare the data
-            var qv = q.value;
             var d1 = qv * qv.wwww * math.float4(2f); //xw, yw, zw, ww
             var d2 = qv * qv.yzxw * math.float4(2f); //xy, yz, zx, ww
             var d3 = qv * qv;
@@ -179,14 +184,15 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         /// <param name="q">The quaternion to convert to Euler angles.</param>
         /// <returns>The Euler angle representation of the quaternion in YZX order.</returns>
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 EulerYZX(quaternion q)
+#endif
+        public static float3 EulerYZX(float4 qv)
         {
             const float epsilon = 1e-6f;
             const float cutoff = (1f - 2f * epsilon) * (1f - 2f * epsilon);
 
             // prepare the data
-            var qv = q.value;
             var d1 = qv * qv.wwww * math.float4(2f); //xw, yw, zw, ww
             var d2 = qv * qv.yzxw * math.float4(2f); //xy, yz, zx, ww
             var d3 = qv * qv;
@@ -219,14 +225,15 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         /// <param name="q">The quaternion to convert to Euler angles.</param>
         /// <returns>The Euler angle representation of the quaternion in ZXY order.</returns>
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 EulerZXY(quaternion q)
+#endif
+        public static float3 EulerZXY(float4 qv)
         {
             const float epsilon = 1e-6f;
             const float cutoff = (1f - 2f * epsilon) * (1f - 2f * epsilon);
 
             // prepare the data
-            var qv = q.value;
             var d1 = qv * qv.wwww * math.float4(2f); //xw, yw, zw, ww
             var d2 = qv * qv.yzxw * math.float4(2f); //xy, yz, zx, ww
             var d3 = qv * qv;
@@ -259,13 +266,14 @@ namespace NSS.Blast.Interpretor
         /// </summary>
         /// <param name="q">The quaternion to convert to Euler angles.</param>
         /// <returns>The Euler angle representation of the quaternion in ZYX order.</returns>
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 EulerZYX(quaternion q)
+#endif
+        public static float3 EulerZYX(float4 qv)
         {
             const float epsilon = 1e-6f;
             const float cutoff = (1f - 2f * epsilon) * (1f - 2f * epsilon);
 
-            var qv = q.value;
             var d1 = qv * qv.wwww * math.float4(2f); //xw, yw, zw, ww
             var d2 = qv * qv.yzxw * math.float4(2f); //xy, yz, zx, ww
             var d3 = qv * qv;
@@ -298,9 +306,9 @@ namespace NSS.Blast.Interpretor
         /// <param name="q2">The second quaternion.</param>
         /// <returns>The angle between two unit quaternions.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float angle(quaternion q1, quaternion q2)
+        public static float angle(float4 q1, float4 q2)
         {
-            float diff = math.asin(math.length(math.normalize(math.mul(math.conjugate(q1), q2)).value.xyz));
+            float diff = math.asin(math.length(math.normalize(math.mul(math.conjugate(new quaternion(q1)), new quaternion(q2))).value.xyz));
             return diff + diff;
         }
 

@@ -34,6 +34,11 @@ namespace NSS.Blast.SSMD
     /// The SSMD Interpretor 
     /// </summary>
     [BurstCompile]
+#if ENABLE_IL2CPP
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppEagerStaticClassConstructionAttribute()]
+#endif
     unsafe public partial struct BlastSSMDInterpretor
     {
         #region Constant Compiletime Defines 

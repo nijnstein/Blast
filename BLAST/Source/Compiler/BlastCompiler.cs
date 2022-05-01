@@ -1270,8 +1270,15 @@ namespace NSS.Blast.Compiler
             if (result.HasErrors || options.TraceLogging)
             {
 #if TRACE || STANDALONE_VSBUILD
-                Debug.Log(result.AST.ToNodeTreeString());
-                switch(result.CompilerOptions.Language)
+                if (result.HasErrors)
+                {
+                    Debug.LogError("error compiling: " + result.CompileErrorMessage() + "\n\n" + result.AST.ToNodeTreeString());
+                }
+                else
+                {
+                    Debug.Log(result.AST.ToNodeTreeString());
+                }
+                switch (result.CompilerOptions.Language)
                 {
                     case BlastLanguageVersion.BS1:
                     case BlastLanguageVersion.BSSMD1:

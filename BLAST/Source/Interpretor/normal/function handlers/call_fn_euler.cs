@@ -29,7 +29,9 @@ namespace NSS.Blast.Interpretor
     {
 
 
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         void CALL_FN_EULER(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype, math.RotationOrder rotation_order = math.RotationOrder.XYZ)
         {
             code_pointer += 1;
@@ -55,7 +57,9 @@ namespace NSS.Blast.Interpretor
 
 
 
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         void CALL_FN_EULER(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype)
         {
             code_pointer += 1;
@@ -93,7 +97,9 @@ namespace NSS.Blast.Interpretor
 
 
 
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         void CALL_FN_QUATERNION(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype, math.RotationOrder rotation_order = math.RotationOrder.XYZ)
         {
             code_pointer += 1;
@@ -101,8 +107,8 @@ namespace NSS.Blast.Interpretor
 
             switch (datatype.Combine(vector_size, is_negated))
             {
-                case BlastVectorType.float3: v4 = quaternion.Euler(((float3*)fdata)[0], rotation_order).value; break;
-                case BlastVectorType.float3_n: v4 = quaternion.Euler(-((float3*)fdata)[0], rotation_order).value; break;
+               case BlastVectorType.float3: v4 = quaternion.Euler(((float3*)fdata)[0], rotation_order).value; break;
+               case BlastVectorType.float3_n: v4 = quaternion.Euler(-((float3*)fdata)[0], rotation_order).value; break;
 
 #if DEVELOPMENT_BUILD || TRACE
                 default:
@@ -119,7 +125,9 @@ namespace NSS.Blast.Interpretor
 
 
 
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         void CALL_FN_QUATERNION(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype)
         {
             bool is_negated;
@@ -159,7 +167,9 @@ namespace NSS.Blast.Interpretor
 
 
 
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         void CALL_FN_MUL(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype)
         {
             code_pointer += 1;
@@ -198,7 +208,9 @@ namespace NSS.Blast.Interpretor
 
 
 
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         void CALL_FN_ROTATE(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype, math.RotationOrder rotation_order = math.RotationOrder.XYZ)
         {
             code_pointer += 1;
@@ -221,7 +233,9 @@ namespace NSS.Blast.Interpretor
         }
 
 
+#if STANDALONE_VSBUILD || ENABLE_IL2CPP
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         void CALL_FN_ANGLE(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype, math.RotationOrder rotation_order = math.RotationOrder.XYZ)
         {
             code_pointer += 1;
@@ -229,8 +243,8 @@ namespace NSS.Blast.Interpretor
 
             switch (datatype.Combine(vector_size, is_negated))
             {
-                case BlastVectorType.float4: v4 = mathex.angle(new quaternion(((float4*)fdata)[0]), new quaternion(pop_as_f4(ref code_pointer))); break;
-                case BlastVectorType.float4_n: v4 = mathex.angle(new quaternion(-((float4*)fdata)[0]), new quaternion(pop_as_f4(ref code_pointer))); break;
+                case BlastVectorType.float4: v4 = mathex.angle(((float4*)fdata)[0], pop_as_f4(ref code_pointer)); break;
+                case BlastVectorType.float4_n: v4 = mathex.angle(-((float4*)fdata)[0], pop_as_f4(ref code_pointer)); break;
 
 #if DEVELOPMENT_BUILD || TRACE
                 default:
