@@ -402,6 +402,11 @@ namespace NSS.Blast.SSMD
             // if there are parameters dont inline the function 
             if (profile.IsSSMD && profile.ParameterCount > 0)
             {
+                // dont zero memory of buffers
+                s.AppendLine("#if !STANDALONE_VSBUILD");
+                s.AppendLine("   [Unity.Burst.CompilerServices.SkipLocalsInit]");
+                s.AppendLine("#endif");
+
                 // dont inline stackallocs they are unconditional
                 s.AppendLine("[MethodImpl(MethodImplOptions.NoInlining)]");
             }

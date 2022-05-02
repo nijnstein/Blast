@@ -995,6 +995,8 @@ namespace NSS.Blast.Compiler
                 node.LastChild.IsSingleValueOrPop();
         }
 
+
+
         /// <summary>
         /// 
         /// </summary>

@@ -34,13 +34,15 @@ namespace NSS.Blast.Interpretor
 {
 
     /// <summary>
-    /// 
+    /// The normal interpretor 
     /// </summary>
-    [BurstCompile]
 #if ENABLE_IL2CPP
+    [BurstCompile(FloatPrecision.Medium, FloatMode.Fast)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppEagerStaticClassConstructionAttribute()]
+#else
+    [BurstCompile]
 #endif
 
     unsafe public partial struct BlastInterpretor
@@ -933,130 +935,7 @@ namespace NSS.Blast.Interpretor
 
 #region Function Handlers 
 
-                   
-
-
-
-        /// <summary>
-        /// get dot product of 2 paramaters 
-        /// - 2 inputs
-        /// - inputvector size = any
-        /// - output vectorsize == 1
-        /// </summary>
-        void get_dot_result(ref int code_pointer, ref byte vector_size, out float4 f4)
-        {
-            f4 = float.NaN;
-            BlastVariableDataType datatype;
-            bool neg1;
-
-            code_pointer++;
-            float* d1 = (float*)pop_p_info(ref code_pointer, out datatype, out vector_size, out neg1);
-
-#if DEVELOPMENT_BUILD || TRACE
-            BlastVariableDataType datatype_2;
-            byte vector_size_2;
-            bool neg2;
-
-            float* d2 = (float*)pop_p_info(ref code_pointer, out datatype_2, out vector_size_2, out neg2);
-
-            if (datatype == BlastVariableDataType.ID)
-            {
-                Debug.LogError($"ID datatype in dot not implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
-                return;
-            }
-            if (datatype != datatype_2 || vector_size != vector_size_2)
-            {
-                Debug.LogError($"dot: input parameter datatype|vector_size mismatch, these must be equal. p1 = {datatype}.{vector_size}, p2 = {datatype_2}.{vector_size_2}");
-                return;
-            }
-#endif
-
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case 0:
-#if DEVELOPMENT_BUILD || TRACE
-                case BlastVectorSizes.float4: f4.x = math.dot(negate(neg1, ((float4*)d1)[0]), negate(neg1, ((float4*)d2)[0])); break;
-                case BlastVectorSizes.float1: f4.x = math.dot(negate(neg1, ((float*)d1)[0]), negate(neg1, ((float*)d2)[0])); break;
-                case BlastVectorSizes.float2: f4.x = math.dot(negate(neg1, ((float2*)d1)[0]), negate(neg1, ((float2*)d2)[0])); break;
-                case BlastVectorSizes.float3: f4.x = math.dot(negate(neg1, ((float3*)d1)[0]), negate(neg1, ((float3*)d2)[0])); break;
-#else
-                // in release build we dont need information on the second parameter 
-                case BlastVectorSizes.float4: f4.x = math.dot(negate(neg1, ((float4*)d1)[0]), pop_as_f4(ref code_pointer)); break;
-                case BlastVectorSizes.float1: f4.x = math.dot(negate(neg1, ((float*)d1)[0]),  pop_as_f1(ref code_pointer)); break;
-                case BlastVectorSizes.float2: f4.x = math.dot(negate(neg1, ((float2*)d1)[0]), pop_as_f2(ref code_pointer)); break;
-                case BlastVectorSizes.float3: f4.x = math.dot(negate(neg1, ((float3*)d1)[0]), pop_as_f3(ref code_pointer)); break;
-#endif
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    {
-                        Debug.LogError($"dot: {datatype} vector size '{vector_size}' not supported ");
-                        break;
-                    }
-#endif
-            }
-
-            code_pointer += 2;
-            vector_size = 1;
-        }
-
-
-        /// <summary>
-        /// cross product of 2 inputs 
-        /// - 2 input parameters 
-        /// - input vectorsize == 3
-        /// - output vectorsize == 3
-        /// </summary>
-        void get_cross_result(ref int code_pointer, ref byte vector_size, out float4 f4)
-        {
-            f4 = float.NaN;
-            BlastVariableDataType datatype;
-            bool neg1;
-
-            code_pointer++;
-            float* d1 = (float*)pop_p_info(ref code_pointer, out datatype, out vector_size, out neg1);
-
-#if DEVELOPMENT_BUILD || TRACE
-            BlastVariableDataType datatype_2;
-            byte vector_size_2;
-            bool neg2;
-
-            float* d2 = (float*)pop_p_info(ref code_pointer, out datatype_2, out vector_size_2, out neg2);
-
-            if (datatype == BlastVariableDataType.ID)
-            {
-                Debug.LogError($"ID datatype in cross not implemented, codepointer: {code_pointer} = > {code[code_pointer]}");
-                return;
-            }
-            if (datatype != datatype_2 || vector_size != vector_size_2)
-            {
-                Debug.LogError($"cross: input parameter datatype|vector_size mismatch, these must be equal. p1 = {datatype}.{vector_size}, p2 = {datatype_2}.{vector_size_2}");
-                return;
-            }
-#endif
-
-            switch ((BlastVectorSizes)vector_size)
-            {
-#if DEVELOPMENT_BUILD || TRACE
-                case BlastVectorSizes.float3: f4.xyz = math.cross(negate(neg1, ((float3*)d1)[0]), negate(neg2, ((float3*)d2)[0])); break;
-#else
-                // in release build we dont need information on the second parameter 
-                case BlastVectorSizes.float3: f4.xyz = math.cross(negate(neg1, ((float3*)d1)[0]), pop_as_f3(ref code_pointer)); break;
-#endif
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    {
-                        Debug.LogError($"cross: {datatype} vector size '{vector_size}' not supported ");
-                        break;
-                    }
-#endif
-            }
-
-            code_pointer += 2;
-        }
-               
- 
+    
         /// <summary>
         /// fused multiply add 
         /// - 3 float params: m1 * m2 + a1
@@ -1065,11 +944,8 @@ namespace NSS.Blast.Interpretor
 #if !DEBUG
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        void get_fma_result(ref int code_pointer, ref byte vector_size, out float4 f4)
+        void CALL_FN_FMA(ref int code_pointer, ref V4 f4, out byte vector_size, out BlastVariableDataType datatype)
         {
-            BlastVariableDataType datatype = default;
-            f4 = float.NaN;
-
             // always 3 params, input vector size == output vectorsize
 
 #if DEVELOPMENT_BUILD || TRACE
@@ -1135,526 +1011,7 @@ namespace NSS.Blast.Interpretor
         }
 
 
- 
-         /// <summary>
-        /// 3 inputs, first 2 any type, 3rd type equal or scalar bool
-        /// select(a, b, condition)
-        /// - input = outputvectorsize
-        /// - 1 output  
-        /// </summary>
-        void get_select_result(ref int code_pointer, ref byte vector_size, out float4 f4)
-        {
-            BlastVariableDataType datatype, datatype2;
-            BlastVariableDataType datatype_condition;
-            byte vsize_condition, vsize2;
-            bool neg1, neg2;
 
-
-            code_pointer++;
-            void* p1 = pop_p_info(ref code_pointer, out datatype, out vector_size, out neg1);
-
-            // we cant skip popping the second with information on release builds because our stackpointer could stray
-            void* p2 = pop_p_info(ref code_pointer, out datatype2, out vsize2, out neg2);
-
-            void* pcondition = pop_p_info(ref code_pointer, out datatype_condition, out vsize_condition, out bool neg3);// dont care -1 = stil true
-
-            // instead of init to NaN we init to float p1 (even if its wrong)
-            f4 = ((float*)p1)[0];
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (datatype != datatype2 || vector_size != vsize2)
-            {
-                Debug.LogError($"get_select_result: parameter type mismatch, p1 = {datatype}.{vector_size}, p2 = {datatype_condition}.{vsize_condition} at codepointer {code_pointer}");
-                return;
-            }
-            if (datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"get_select_result: datatype mismatch, only numerics are supported at codepointer {code_pointer}");
-                return;
-            }
-            if (vector_size != vsize_condition && vsize_condition != 1)
-            {
-                Debug.LogError($"get_select_result: condition parameter type mismatch, p1 = {datatype}.{vector_size}, p2 = {datatype_condition}.{vsize_condition} at codepointer {code_pointer}, vectorsizes must be equal or conditional must have size 1");
-                return;
-            }
-#endif
-
-            if (vsize_condition == 1)
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.select(negate(neg1, ((float4*)p1)[0]), negate(neg2, ((float4*)p2)[0]), ((float*)pcondition)[0] != 0); vector_size = 4; break;
-                    case BlastVectorSizes.float3: f4.xyz = math.select(negate(neg1, ((float3*)p1)[0]), negate(neg2, ((float3*)p2)[0]), ((float*)pcondition)[0] != 0); break;
-                    case BlastVectorSizes.float2: f4.xy = math.select(negate(neg1, ((float2*)p1)[0]), negate(neg2, ((float2*)p2)[0]), ((float*)pcondition)[0] != 0); break;
-                    case BlastVectorSizes.float1: f4.x = math.select(negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0]), ((float*)pcondition)[0] != 0); break;
-
-                    default:
-                        {
-#if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"select: vector size '{vector_size}' not supported ");
-#endif
-                            break;
-                        }
-                }
-            }
-            else
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.select(negate(neg1, ((float4*)p1)[0]), negate(neg2, ((float4*)p2)[0]), ((float4*)pcondition)[0] != 0); vector_size = 4; break;
-                    case BlastVectorSizes.float3: f4.xyz = math.select(negate(neg1, ((float3*)p1)[0]), negate(neg2, ((float3*)p2)[0]), ((float3*)pcondition)[0] != 0); break;
-                    case BlastVectorSizes.float2: f4.xy = math.select(negate(neg1, ((float2*)p1)[0]), negate(neg2, ((float2*)p2)[0]), ((float2*)pcondition)[0] != 0); break;
-                    case BlastVectorSizes.float1: f4.x = math.select(negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0]), ((float*)pcondition)[0] != 0); break;
-
-                    default:
-                        {
-#if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"select: vector size '{vector_size}' not supported ");
-#endif
-                            break;
-                        }
-                }
-            }
-        }
-
-        /// <summary>
-        /// clamp a value between 2 others: math.clamp(a, min, max) 
-        /// - 3 parameters - equal vectorsize or min-max == 1 and a > 1
-        /// - input = output vectorsize 
-        /// </summary>
-        void get_clamp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
-        {
-            BlastVariableDataType datatype_a;
-            f4 = float.NaN;
-            byte vector_size_mm;
-            BlastVariableDataType datatype_mm;
-            bool neg1, neg2, neg3;
-
-            code_pointer += 1;
-            void* pa = pop_p_info(ref code_pointer, out datatype_a, out vector_size, out neg3);
-            void* p1 = pop_p_info(ref code_pointer, out datatype_mm, out vector_size_mm, out neg1);
-            void* p2 = pop_p_info(ref code_pointer, out datatype_a, out vector_size, out neg2);       // could optimize this to pop_fx in release but not much win
-
-#if DEVELOPMENT_BUILD || TRACE
-
-            if (datatype_mm != datatype_a || vector_size_mm != vector_size)
-            {
-                Debug.LogError($"get_clamp_result: parameter type mismatch, p1 = {datatype_mm}.{vector_size_mm}, p2 = {datatype_a}.{vector_size} at codepointer {code_pointer}");
-                return;
-            }
-            if (datatype_mm != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"get_clamp_result: datatype mismatch, only numerics are supported at codepointer {code_pointer}");
-                return;
-            }
-#endif
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (vector_size_mm != vector_size && vector_size_mm != 1)
-            {
-                Debug.LogError($"clamp: parameter type mismatch, min/max = {datatype_mm}.{vector_size_mm}, value = {datatype_a}.{vector_size} at codepointer {code_pointer}, vectorsizes must be equal or minmax must have size 1");
-                return;
-            }
-#endif
-
-            // vectorsize of minmax range => either equal or 1 
-            if (vector_size_mm == 1)
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.clamp(negate(neg3, ((float4*)pa)[0]), negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0])); vector_size_mm = 4; break;
-                    case BlastVectorSizes.float3: f4.xyz = math.clamp(negate(neg3, ((float3*)pa)[0]), negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0])); break;
-                    case BlastVectorSizes.float2: f4.xy = math.clamp(negate(neg3, ((float2*)pa)[0]), negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0])); break;
-                    case BlastVectorSizes.float1: f4.x = math.clamp(negate(neg3, ((float*)pa)[0]), negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0])); break;
-                    default:
-                        {
-#if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"clamp: value vector size '{vector_size}' not supported ");
-#endif
-                            break;
-                        }
-                }
-            }
-            else
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.clamp(negate(neg3, ((float4*)pa)[0]), negate(neg1, ((float4*)p1)[0]), negate(neg2, ((float4*)p2)[0])); vector_size_mm = 4; break;
-                    case BlastVectorSizes.float3: f4.xyz = math.clamp(negate(neg3, ((float3*)pa)[0]), negate(neg1, ((float3*)p1)[0]), negate(neg2, ((float3*)p2)[0])); break;
-                    case BlastVectorSizes.float2: f4.xy = math.clamp(negate(neg3, ((float2*)pa)[0]), negate(neg1, ((float2*)p1)[0]), negate(neg2, ((float2*)p2)[0])); break;
-                    case BlastVectorSizes.float1: f4.x = math.clamp(negate(neg3, ((float*)pa)[0]), negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0])); break;
-
-                    default:
-                        {
-#if DEVELOPMENT_BUILD || TRACE
-                            Debug.LogError($"clamp: value vector size '{vector_size}' not supported ");
-#endif
-                            break;
-                        }
-                }
-            }
-        }
-
-        /// <summary>
-        /// linear interpolation from a to b at step c 
-        /// 
-        /// - 3 inputs:   3 vectors equal size or first 2 equal and last = 1 
-        /// - only numeric input
-        /// 
-        /// - lerp((1 2), (10 20), 0.5); 
-        /// - lerp((1 2), (10 20), (0.5 0.1)); 
-        /// 
-        /// returns vector size of input values 
-        /// </summary>
-        void get_lerp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
-        {
-            BlastVariableDataType p1_datatype;
-            BlastVariableDataType p2_datatype; byte p2_vector_size;
-            BlastVariableDataType p3_datatype; byte p3_vector_size;
-            bool neg1, neg2, neg3;
-
-            code_pointer++;
-            void* p1 = pop_p_info(ref code_pointer, out p1_datatype, out vector_size, out neg1);
-            void* p2 = pop_p_info(ref code_pointer, out p2_datatype, out p2_vector_size, out neg2);
-            void* p3 = pop_p_info(ref code_pointer, out p3_datatype, out p3_vector_size, out neg3);
-
-            f4 = float.NaN;
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (p1_datatype != p2_datatype || vector_size != p2_vector_size)
-            {
-                Debug.LogError($"lerp: parameter type mismatch, min = {p1_datatype}.{vector_size}, max = {p2_datatype}.{p2_vector_size} at codepointer {code_pointer}, min/max vectorsizes must be equal");
-                return;
-            }
-            if (p1_datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"lerp: ID datatype not supported");
-                return;
-            }
-            if (vector_size != p3_vector_size && p3_vector_size != 1)
-            {
-                Debug.LogError($"lerp: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, c = {p3_datatype}.{p3_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
-                return;
-            }
-#endif
-
-            if (p3_vector_size == 1)
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.lerp(negate(neg1, ((float4*)p1)[0]), negate(neg2, ((float4*)p2)[0]), negate(neg3, ((float*)p3)[0])); vector_size = 4; break;
-                    case BlastVectorSizes.float1: f4.x = math.lerp(negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0]), negate(neg3, ((float*)p3)[0])); break;
-                    case BlastVectorSizes.float2: f4.xy = math.lerp(negate(neg1, ((float2*)p1)[0]), negate(neg2, ((float2*)p2)[0]), negate(neg3, ((float*)p3)[0])); break;
-                    case BlastVectorSizes.float3: f4.xyz = math.lerp(negate(neg1, ((float3*)p1)[0]), negate(neg2, ((float3*)p2)[0]), negate(neg3, ((float*)p3)[0])); break;
-#if DEVELOPMENT_BUILD || TRACE
-                    default:
-                        Debug.LogError($"lerp: vector_size {vector_size} not supported");
-                        break;
-#endif
-                }
-            }
-            else
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.lerp(negate(neg1, ((float4*)p1)[0]), negate(neg2, ((float4*)p2)[0]), negate(neg3, ((float4*)p3)[0])); vector_size = 4; break;
-                    case BlastVectorSizes.float1: f4.x = math.lerp(negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0]), negate(neg3, ((float*)p3)[0])); break;
-                    case BlastVectorSizes.float2: f4.xy = math.lerp(negate(neg1, ((float2*)p1)[0]), negate(neg2, ((float2*)p2)[0]), negate(neg3, ((float2*)p3)[0])); break;
-                    case BlastVectorSizes.float3: f4.xyz = math.lerp(negate(neg1, ((float3*)p1)[0]), negate(neg2, ((float3*)p2)[0]), negate(neg3, ((float3*)p3)[0])); break;
-#if DEVELOPMENT_BUILD || TRACE
-                    default:
-                        Debug.LogError($"lerp: vector_size {vector_size} not supported");
-                        break;
-#endif
-                }
-            }
-        }
-
-        /// <summary>
-        /// spherical linear interpolation 
-        /// - 2 quaternion + float in
-        /// returns float4/quaternion
-        /// </summary>
-        void get_slerp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
-        {
-            BlastVariableDataType p1_datatype;
-            BlastVariableDataType p2_datatype; byte p2_vector_size;
-            BlastVariableDataType p3_datatype; byte p3_vector_size;
-            bool neg1, neg2, neg3;
-
-            code_pointer++;
-            void* p1 = pop_p_info(ref code_pointer, out p1_datatype, out vector_size, out neg1);
-            void* p2 = pop_p_info(ref code_pointer, out p2_datatype, out p2_vector_size, out neg2);
-            void* p3 = pop_p_info(ref code_pointer, out p3_datatype, out p3_vector_size, out neg3);
-
-            f4 = float.NaN;
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (p1_datatype != p2_datatype || vector_size != p2_vector_size)
-            {
-                Debug.LogError($"slerp: parameter type mismatch, min = {p1_datatype}.{vector_size}, max = {p2_datatype}.{p2_vector_size} at codepointer {code_pointer}, only float4/quaternions are supported in slerp");
-                return;
-            }
-            if (p1_datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"slerp: ID datatype not supported");
-                return;
-            }
-            if (vector_size != p3_vector_size && p3_vector_size != 1)
-            {
-                Debug.LogError($"slerp: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, c = {p3_datatype}.{p3_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
-                return;
-            }
-            if (neg1 || neg2)
-            {
-                Debug.LogError($"slerp: negation of quaternions, min/max = {p1_datatype}.{vector_size}, c = {p3_datatype}.{p3_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
-                return;
-            }
-
-#endif
-
-            if (p3_vector_size == 1)
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.slerp(((quaternion*)p1)[0], ((quaternion*)p2)[0], negate(neg3, ((float*)p3)[0])).value; vector_size = 4; break;
-#if DEVELOPMENT_BUILD || TRACE
-                    default:
-                        Debug.LogError($"slerp: vector_size {vector_size} not supported");
-                        break;
-#endif
-                }
-            }
-            else
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.slerp(((quaternion*)p1)[0], ((quaternion*)p2)[0], negate(neg3, ((float*)p3)[0])).value; vector_size = 4; break;
-#if DEVELOPMENT_BUILD || TRACE
-                    default:
-                        Debug.LogError($"slerp: vector_size {vector_size} not supported");
-                        break;
-#endif
-                }
-            }
-        }
-
-        /// <summary>
-        /// normalized linear interpolation 
-        /// - 2 quaternion + float in
-        /// returns float4/quaternion
-        /// </summary>
-        void get_nlerp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
-        {
-            BlastVariableDataType p1_datatype;
-            BlastVariableDataType p2_datatype; byte p2_vector_size;
-            BlastVariableDataType p3_datatype; byte p3_vector_size;
-            bool neg1, neg2, neg3;
-
-            code_pointer++;
-            void* p1 = pop_p_info(ref code_pointer, out p1_datatype, out vector_size, out neg1);
-            void* p2 = pop_p_info(ref code_pointer, out p2_datatype, out p2_vector_size, out neg2);
-            void* p3 = pop_p_info(ref code_pointer, out p3_datatype, out p3_vector_size, out neg3);
-
-            f4 = float.NaN;
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (p1_datatype != p2_datatype || vector_size != p2_vector_size)
-            {
-                Debug.LogError($"nlerp: parameter type mismatch, min = {p1_datatype}.{vector_size}, max = {p2_datatype}.{p2_vector_size} at codepointer {code_pointer}, only float4/quaternions are supported in slerp");
-                return;
-            }
-            if (p1_datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"nlerp: ID datatype not supported");
-                return;
-            }
-            if (vector_size != p3_vector_size && p3_vector_size != 1)
-            {
-                Debug.LogError($"nlerp: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, c = {p3_datatype}.{p3_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
-                return;
-            }
-#endif
-
-            if (p3_vector_size == 1)
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.nlerp(((quaternion*)p1)[0], ((quaternion*)p2)[0], ((float*)p3)[0]).value; vector_size = 4; break;
-#if DEVELOPMENT_BUILD || TRACE
-                    default:
-                        Debug.LogError($"nlerp: vector_size {vector_size} not supported");
-                        break;
-#endif
-                }
-            }
-            else
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.nlerp(((quaternion*)p1)[0], ((quaternion*)p2)[0], ((float*)p3)[0]).value; vector_size = 4; break;
-#if DEVELOPMENT_BUILD || TRACE
-                    default:
-                        Debug.LogError($"nlerp: vector_size {vector_size} not supported");
-                        break;
-#endif
-                }
-            }
-        }
-
-
-
-        /// <summary>
-        /// normalize between minmax -> undo lerp
-        /// 
-        /// - 3 inputs:   3 vectors equal size or first 2 equal and last = 1 
-        /// - only numeric input
-        /// 
-        /// - ulerp((1 2), (10 20), 0.5); 
-        /// - ulerp((1 2), (10 20), (0.5 0.1)); 
-        /// 
-        /// returns vector size of input values 
-        /// </summary>
-        void get_unlerp_result(ref int code_pointer, ref byte vector_size, out float4 f4)
-        {
-            BlastVariableDataType p1_datatype;
-            BlastVariableDataType p2_datatype; byte p2_vector_size;
-            BlastVariableDataType p3_datatype; byte p3_vector_size;
-            bool neg1, neg2, neg3;
-
-            code_pointer++;
-            void* p1 = pop_p_info(ref code_pointer, out p1_datatype, out vector_size, out neg1);
-            void* p2 = pop_p_info(ref code_pointer, out p2_datatype, out p2_vector_size, out neg2);
-            void* p3 = pop_p_info(ref code_pointer, out p3_datatype, out p3_vector_size, out neg3);
-
-            f4 = float.NaN;
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (p1_datatype != p2_datatype || vector_size != p2_vector_size)
-            {
-                Debug.LogError($"unlerp: parameter type mismatch, min = {p1_datatype}.{vector_size}, max = {p2_datatype}.{p2_vector_size} at codepointer {code_pointer}, min/max vectorsizes must be equal");
-                return;
-            }
-            if (p1_datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"unlerp: ID datatype not supported");
-                return;
-            }
-            if (vector_size != p3_vector_size && p3_vector_size != 1)
-            {
-                Debug.LogError($"unlerp: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, c = {p3_datatype}.{p3_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
-                return;
-            }
-#endif
-
-            if (p3_vector_size == 1)
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.unlerp(negate(neg1, ((float4*)p1)[0]), negate(neg2, ((float4*)p2)[0]), negate(neg3, ((float*)p3)[0])); vector_size = 4; break;
-                    case BlastVectorSizes.float1: f4.x = math.unlerp(negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0]), negate(neg3, ((float*)p3)[0])); break;
-                    case BlastVectorSizes.float2: f4.xy = math.unlerp(negate(neg1, ((float2*)p1)[0]), negate(neg2, ((float2*)p2)[0]), negate(neg3, ((float*)p3)[0])); break;
-                    case BlastVectorSizes.float3: f4.xyz = math.unlerp(negate(neg1, ((float3*)p1)[0]), negate(neg2, ((float3*)p2)[0]), negate(neg3, ((float*)p3)[0])); break;
-#if DEVELOPMENT_BUILD || TRACE
-                    default:
-                        Debug.LogError($"unlerp: vector_size {vector_size} not supported");
-                        break;
-#endif
-                }
-            }
-            else
-            {
-                switch ((BlastVectorSizes)vector_size)
-                {
-                    case 0:
-                    case BlastVectorSizes.float4: f4 = math.unlerp(negate(neg1, ((float4*)p1)[0]), negate(neg2, ((float4*)p2)[0]), negate(neg3, ((float4*)p3)[0])); vector_size = 4; break;
-                    case BlastVectorSizes.float1: f4.x = math.unlerp(negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0]), negate(neg3, ((float*)p3)[0])); break;
-                    case BlastVectorSizes.float2: f4.xy = math.unlerp(negate(neg1, ((float2*)p1)[0]), negate(neg2, ((float2*)p2)[0]), negate(neg3, ((float2*)p3)[0])); break;
-                    case BlastVectorSizes.float3: f4.xyz = math.unlerp(negate(neg1, ((float3*)p1)[0]), negate(neg2, ((float3*)p2)[0]), negate(neg3, ((float3*)p3)[0])); break;
-#if DEVELOPMENT_BUILD || TRACE
-                    default:
-                        Debug.LogError($"unlerp: vector_size {vector_size} not supported");
-                        break;
-#endif
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// math.remap - remap(a, b, c, d, e)   => remap e from range ab to cd
-        /// </summary>
-        void get_remap_result(ref int code_pointer, ref byte vector_size, out float4 f4)
-        {
-            BlastVariableDataType p1_datatype;
-            BlastVariableDataType p2_datatype; byte p2_vector_size;
-            BlastVariableDataType p3_datatype; byte p3_vector_size;
-            BlastVariableDataType p4_datatype; byte p4_vector_size;
-            BlastVariableDataType p5_datatype; byte p5_vector_size;
-            bool neg1, neg2, neg3, neg4, neg5;
-
-            code_pointer++;
-            void* p1 = pop_p_info(ref code_pointer, out p1_datatype, out vector_size, out neg1);
-            void* p2 = pop_p_info(ref code_pointer, out p2_datatype, out p2_vector_size, out neg2);
-            void* p3 = pop_p_info(ref code_pointer, out p3_datatype, out p3_vector_size, out neg3);
-            void* p4 = pop_p_info(ref code_pointer, out p4_datatype, out p4_vector_size, out neg4);
-            void* p5 = pop_p_info(ref code_pointer, out p5_datatype, out p5_vector_size, out neg5);
-
-            f4 = float.NaN;
-
-#if DEVELOPMENT_BUILD || TRACE
-            if (p1_datatype != p2_datatype || vector_size != p2_vector_size)
-            {
-                Debug.LogError($"last.interpretor.remap: parameter type mismatch, min = {p1_datatype}.{vector_size}, max = {p2_datatype}.{p2_vector_size} at codepointer {code_pointer}, min/max vectorsizes must be equal");
-                return;
-            }
-            if (p1_datatype != BlastVariableDataType.Numeric)
-            {
-                Debug.LogError($"last.interpretor.remap: ID datatype not supported");
-                return;
-            }
-            if (vector_size != p3_vector_size)
-            {
-                Debug.LogError($"last.interpretor.remap: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, c = {p3_datatype}.{p3_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
-                return;
-            }
-            if (vector_size != p4_vector_size)
-            {
-                Debug.LogError($"last.interpretor.remap: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, d = {p4_datatype}.{p4_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
-                return;
-            }
-            if (vector_size != p5_vector_size)
-            {
-                Debug.LogError($"blast.interpretor.remap: parameter type mismatch, min/max = {p1_datatype}.{vector_size}, e = {p5_datatype}.{p5_vector_size} at codepointer {code_pointer}, if position is not a scalar then min/max vectorsize must be equal to position vectorsize");
-                return;
-            }
-#endif
-
-            switch ((BlastVectorSizes)vector_size)
-            {
-                case 0:
-                case BlastVectorSizes.float4: f4 = math.remap(negate(neg1, ((float4*)p1)[0]), negate(neg2, ((float4*)p2)[0]), negate(neg3, ((float4*)p3)[0]), negate(neg4, ((float4*)p4)[0]), negate(neg5, ((float4*)p5)[0])); vector_size = 4; break;
-                case BlastVectorSizes.float1: f4.x = math.remap(negate(neg1, ((float*)p1)[0]), negate(neg2, ((float*)p2)[0]), negate(neg3, ((float*)p3)[0]), negate(neg4, ((float*)p4)[0]), negate(neg5, ((float*)p5)[0])); break;
-                case BlastVectorSizes.float2: f4.xy = math.remap(negate(neg1, ((float2*)p1)[0]), negate(neg2, ((float2*)p2)[0]), negate(neg3, ((float2*)p3)[0]), negate(neg4, ((float2*)p4)[0]), negate(neg5, ((float2*)p5)[0])); break;
-                case BlastVectorSizes.float3: f4.xyz = math.remap(negate(neg1, ((float3*)p1)[0]), negate(neg2, ((float3*)p2)[0]), negate(neg3, ((float3*)p3)[0]), negate(neg4, ((float3*)p5)[0]), negate(neg5, ((float3*)p5)[0])); break;
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    Debug.LogError($"blast.interpretor.remap: vector_size {vector_size} not supported");
-                    break;
-#endif
-            }
-        }
 
 #endregion
 
@@ -2352,8 +1709,8 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.min:   CALL_FN_MIN   (ref code_pointer, ref vector_size, ref datatype, ref f4_result); break;
 
                 // math utils 
-                case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4_result); break;
-                case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4_result); break;
+                case blast_operation.select: CALL_FN_SELECT(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                case blast_operation.fma: CALL_FN_FMA(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
 
                 // mul|a family
                 case blast_operation.mula: CALL_FN_MULA(ref code_pointer, ref vector_size, ref datatype, ref f4_result); break;
@@ -2441,7 +1798,9 @@ namespace NSS.Blast.Interpretor
 
                             case extended_blast_operation.sign: CALL_FN_SIGN(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
                             case extended_blast_operation.length: CALL_FN_LENGTH(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                            case extended_blast_operation.lengthsq: CALL_FN_LENGTHSQ(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
                             case extended_blast_operation.square: CALL_FN_SQUARE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                          
                             case extended_blast_operation.distance: CALL_FN_DISTANCE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
                             case extended_blast_operation.distancesq: CALL_FN_DISTANCESQ(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
                             case extended_blast_operation.reflect: CALL_FN_REFLECT(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
@@ -2483,14 +1842,15 @@ namespace NSS.Blast.Interpretor
                             case extended_blast_operation.Rotate: CALL_FN_ROTATE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
                             case extended_blast_operation.Angle: CALL_FN_ANGLE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
 
-                            case extended_blast_operation.dot:   get_dot_result(ref code_pointer, ref vector_size, out f4_result); break;
-                            case extended_blast_operation.cross: get_cross_result(ref code_pointer, ref vector_size, out f4_result); break;
-                            case extended_blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                            case extended_blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                            case extended_blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                            case extended_blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4_result); break;
-                            case extended_blast_operation.remap: get_remap_result(ref code_pointer, ref vector_size, out f4_result); break;
-                            case extended_blast_operation.unlerp: get_unlerp_result(ref code_pointer, ref vector_size, out f4_result); break;
+                            case extended_blast_operation.dot: CALL_FN_DOT(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                            case extended_blast_operation.cross: CALL_FN_CROSS(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                            
+                            case extended_blast_operation.clamp:  CALL_FN_CLAMP(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                            case extended_blast_operation.lerp:   CALL_FN_LERP(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                            case extended_blast_operation.slerp:  CALL_FN_SLERP(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                            case extended_blast_operation.nlerp:  CALL_FN_NLERP(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                            case extended_blast_operation.remap:  CALL_FN_REMAP(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                            case extended_blast_operation.unlerp: CALL_FN_UNLERP(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
 
                             case extended_blast_operation.set_bit: get_setbit_result(ref code_pointer, ref vector_size); f4_result = 0; break;
                             case extended_blast_operation.set_bits: get_setbits_result(ref code_pointer, ref vector_size); f4_result = 0; break;
@@ -2840,13 +2200,13 @@ namespace NSS.Blast.Interpretor
                     case blast_operation.mina: CALL_FN_CMIN(ref code_pointer, ref datatype, ref vector_size, ref f4); code_pointer--; break;
                     case blast_operation.csum: CALL_FN_CSUM(ref code_pointer, ref datatype, ref vector_size, ref f4); code_pointer--; break;
 
-                    case blast_operation.max:   CALL_FN_MAX(ref code_pointer, ref vector_size, ref datatype, ref f4_result); break;
-                    case blast_operation.min:   CALL_FN_MIN(ref code_pointer, ref vector_size, ref datatype, ref f4_result); break;
+                    case blast_operation.max:   CALL_FN_MAX(ref code_pointer, ref vector_size, ref datatype, ref f4); code_pointer--; break;
+                    case blast_operation.min:   CALL_FN_MIN(ref code_pointer, ref vector_size, ref datatype, ref f4); code_pointer--; break;
                     case blast_operation.trunc: CALL_FN_TRUNC(ref code_pointer, ref f4, out vector_size, out datatype); code_pointer--; break;
 
                     // math utils 
-                    case blast_operation.select: get_select_result(ref code_pointer, ref vector_size, out f4); code_pointer--; break;
-                    case blast_operation.fma: get_fma_result(ref code_pointer, ref vector_size, out f4); code_pointer--; break;
+                    case blast_operation.select: CALL_FN_SELECT(ref code_pointer, ref f4, out vector_size, out datatype); code_pointer--; break;
+                    case blast_operation.fma: CALL_FN_FMA(ref code_pointer, ref f4, out vector_size, out datatype); code_pointer--; break;
 
                     // mula family
                     case blast_operation.mula: CALL_FN_MULA(ref code_pointer, ref vector_size, ref datatype, ref f4); code_pointer--; break;
@@ -2883,126 +2243,122 @@ namespace NSS.Blast.Interpretor
                             code_pointer++;
                             extended_blast_operation exop = (extended_blast_operation)code[code_pointer];
 
-                            if (exop == extended_blast_operation.call)
+                            switch (exop)
                             {
-                                // call external function 
-                                CallExternalFunction(ref code_pointer, ref vector_size, out f4);
-                            }
-                            else
-                            {
-                                switch (exop)
-                                {
-                                    case extended_blast_operation.logn: CALL_FN_LOGN(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.log10: CALL_FN_LOG10(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.exp10: CALL_FN_EXP10(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.exp: CALL_FN_EXP(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.log2: CALL_FN_LOG2(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.sqrt: CALL_FN_SQRT(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.rsqrt: CALL_FN_RSQRT(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                     case extended_blast_operation.sin: CALL_FN_SIN(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.cos: CALL_FN_COS(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.tan: CALL_FN_TAN(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.sinh: CALL_FN_SINH(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.cosh: CALL_FN_COSH(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.atan: CALL_FN_ATAN(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.degrees: CALL_FN_DEGREES(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.radians: CALL_FN_RADIANS(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.call: CallExternalFunction(ref code_pointer, ref vector_size, out f4); break;
 
-                                    case extended_blast_operation.normalize: CALL_FN_NORMALIZE(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.saturate: CALL_FN_SATURATE(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.logn: CALL_FN_LOGN(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.log10: CALL_FN_LOG10(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.exp10: CALL_FN_EXP10(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.exp: CALL_FN_EXP(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.log2: CALL_FN_LOG2(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.sqrt: CALL_FN_SQRT(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.rsqrt: CALL_FN_RSQRT(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.sin: CALL_FN_SIN(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.cos: CALL_FN_COS(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.tan: CALL_FN_TAN(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.sinh: CALL_FN_SINH(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.cosh: CALL_FN_COSH(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.atan: CALL_FN_ATAN(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.degrees: CALL_FN_DEGREES(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.radians: CALL_FN_RADIANS(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.ceil: CALL_FN_CEIL(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.floor: CALL_FN_FLOOR(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.frac: CALL_FN_FRAC(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    
-                                    case extended_blast_operation.atan2: CALL_FN_ATAN2(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.fmod: CALL_FN_FMOD(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.pow: CALL_FN_POW(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.normalize: CALL_FN_NORMALIZE(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.saturate: CALL_FN_SATURATE(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.ceillog2: CALL_FN_CEILLOG2(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.ceilpow2: CALL_FN_CEILPOW2(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.floorlog2: CALL_FN_FLOORLOG2(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.ceil: CALL_FN_CEIL(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.floor: CALL_FN_FLOOR(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.frac: CALL_FN_FRAC(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.sign: CALL_FN_SIGN(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.length: CALL_FN_LENGTH(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.square: CALL_FN_SQUARE(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.distance: CALL_FN_DISTANCE(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.distancesq: CALL_FN_DISTANCESQ(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.reflect: CALL_FN_REFLECT(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.project: CALL_FN_PROJECT(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.atan2: CALL_FN_ATAN2(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.fmod: CALL_FN_FMOD(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.pow: CALL_FN_POW(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.up:       vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.up(); break;
-                                    case extended_blast_operation.down:     vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.down(); break;
-                                    case extended_blast_operation.forward:  vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.forward(); break;
-                                    case extended_blast_operation.back:     vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.back(); break;
-                                    case extended_blast_operation.left:     vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.left(); break;
-                                    case extended_blast_operation.right:    vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.right(); break;
+                                case extended_blast_operation.ceillog2: CALL_FN_CEILLOG2(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.ceilpow2: CALL_FN_CEILPOW2(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.floorlog2: CALL_FN_FLOORLOG2(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.EulerXYZ: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.XYZ); break;
-                                    case extended_blast_operation.EulerXZY: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.XZY); break;
-                                    case extended_blast_operation.EulerYXZ: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.YXZ); break;
-                                    case extended_blast_operation.EulerYZX: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.YZX); break;
-                                    case extended_blast_operation.EulerZXY: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.ZXY); break;
-                                    case extended_blast_operation.EulerZYX: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.ZYX); break;
-                                    case extended_blast_operation.Euler: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.sign: CALL_FN_SIGN(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.length: CALL_FN_LENGTH(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.lengthsq: CALL_FN_LENGTHSQ(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.square: CALL_FN_SQUARE(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.distance: CALL_FN_DISTANCE(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.distancesq: CALL_FN_DISTANCESQ(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.reflect: CALL_FN_REFLECT(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.project: CALL_FN_PROJECT(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.QuaternionXYZ: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.XYZ); break;
-                                    case extended_blast_operation.QuaternionXZY: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.XZY); break;
-                                    case extended_blast_operation.QuaternionYXZ: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.YXZ); break;
-                                    case extended_blast_operation.QuaternionYZX: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.YZX); break;
-                                    case extended_blast_operation.QuaternionZXY: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.ZXY); break;
-                                    case extended_blast_operation.QuaternionZYX: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.ZYX); break;
-                                    case extended_blast_operation.Quaternion:    CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.up: vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.up(); break;
+                                case extended_blast_operation.down: vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.down(); break;
+                                case extended_blast_operation.forward: vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.forward(); break;
+                                case extended_blast_operation.back: vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.back(); break;
+                                case extended_blast_operation.left: vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.left(); break;
+                                case extended_blast_operation.right: vector_size = 3; datatype = BlastVariableDataType.Numeric; f4.xyz = math.right(); break;
 
-                                    case extended_blast_operation.Conjugate: CALL_FN_CONJUGATE(ref code_pointer, ref f4, out vector_size, out datatype); break;
-                                    case extended_blast_operation.Inverse: CALL_FN_INVERSE(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.EulerXYZ: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.XYZ); break;
+                                case extended_blast_operation.EulerXZY: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.XZY); break;
+                                case extended_blast_operation.EulerYXZ: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.YXZ); break;
+                                case extended_blast_operation.EulerYZX: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.YZX); break;
+                                case extended_blast_operation.EulerZXY: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.ZXY); break;
+                                case extended_blast_operation.EulerZYX: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.ZYX); break;
+                                case extended_blast_operation.Euler: CALL_FN_EULER(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.RotateX: CALL_FN_ROTATEX(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
-                                    case extended_blast_operation.RotateY: CALL_FN_ROTATEY(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
-                                    case extended_blast_operation.RotateZ: CALL_FN_ROTATEZ(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
-                                    case extended_blast_operation.LookRotation: CALL_FN_LOOKROTATION(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
-                                    case extended_blast_operation.LookRotationSafe: CALL_FN_LOOKROTATIONSAFE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                                case extended_blast_operation.QuaternionXYZ: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.XYZ); break;
+                                case extended_blast_operation.QuaternionXZY: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.XZY); break;
+                                case extended_blast_operation.QuaternionYXZ: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.YXZ); break;
+                                case extended_blast_operation.QuaternionYZX: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.YZX); break;
+                                case extended_blast_operation.QuaternionZXY: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.ZXY); break;
+                                case extended_blast_operation.QuaternionZYX: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype, math.RotationOrder.ZYX); break;
+                                case extended_blast_operation.Quaternion: CALL_FN_QUATERNION(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.Mul: CALL_FN_MUL(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
-                                    case extended_blast_operation.Rotate: CALL_FN_ROTATE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
-                                    case extended_blast_operation.Angle: CALL_FN_ANGLE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                                case extended_blast_operation.Conjugate: CALL_FN_CONJUGATE(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.Inverse: CALL_FN_INVERSE(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.cross: get_cross_result(ref code_pointer, ref vector_size, out f4); break;
-                                    case extended_blast_operation.dot: get_dot_result(ref code_pointer, ref vector_size, out f4); break;
+                                case extended_blast_operation.RotateX: CALL_FN_ROTATEX(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.RotateY: CALL_FN_ROTATEY(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.RotateZ: CALL_FN_ROTATEZ(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.LookRotation: CALL_FN_LOOKROTATION(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.LookRotationSafe: CALL_FN_LOOKROTATIONSAFE(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.clamp: get_clamp_result(ref code_pointer, ref vector_size, out f4); break;
-                                    case extended_blast_operation.lerp: get_lerp_result(ref code_pointer, ref vector_size, out f4); break;
-                                    case extended_blast_operation.slerp: get_slerp_result(ref code_pointer, ref vector_size, out f4); break;
-                                    case extended_blast_operation.nlerp: get_nlerp_result(ref code_pointer, ref vector_size, out f4); break;
-                                    case extended_blast_operation.remap: get_remap_result(ref code_pointer, ref vector_size, out f4); break;
-                                    case extended_blast_operation.unlerp: get_unlerp_result(ref code_pointer, ref vector_size, out f4); break;
+                                case extended_blast_operation.Mul: CALL_FN_MUL(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.Rotate: CALL_FN_ROTATE(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.Angle: CALL_FN_ANGLE(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.set_bit: get_setbit_result(ref code_pointer, ref vector_size); code_pointer--; break;
-                                    case extended_blast_operation.set_bits: get_setbits_result(ref code_pointer, ref vector_size); code_pointer--; break;
-                                    case extended_blast_operation.get_bit: get_getbit_result(ref code_pointer, ref vector_size, out f4); code_pointer--; break;
-                                    case extended_blast_operation.get_bits: get_getbits_result(ref code_pointer, ref vector_size, out f4); code_pointer--; break;
-                                    case extended_blast_operation.count_bits: get_countbits_result(ref code_pointer, ref vector_size, out f4); break;
-                                    case extended_blast_operation.reverse_bits: get_reversebits_result(ref code_pointer, ref vector_size); break;
-                                    case extended_blast_operation.lzcnt: get_lzcnt_result(ref code_pointer, ref vector_size, out f4); break;
-                                    case extended_blast_operation.tzcnt: get_tzcnt_result(ref code_pointer, ref vector_size, out f4); break;
-                                    case extended_blast_operation.ror: get_ror_result(ref code_pointer, ref vector_size); break;
-                                    case extended_blast_operation.rol: get_rol_result(ref code_pointer, ref vector_size); break;
-                                    case extended_blast_operation.shl: get_shl_result(ref code_pointer, ref vector_size); break;
-                                    case extended_blast_operation.shr: get_shr_result(ref code_pointer, ref vector_size); break;
+                                case extended_blast_operation.dot: CALL_FN_DOT(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.cross: CALL_FN_CROSS(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
-                                    case extended_blast_operation.reinterpret_bool32: reinterpret_bool32(ref code_pointer, ref vector_size); break;
-                                    case extended_blast_operation.reinterpret_float: reinterpret_float(ref code_pointer, ref vector_size); break;
-                                    case extended_blast_operation.reinterpret_int32: reinterpret_int32(ref code_pointer, ref vector_size); break;
+                                case extended_blast_operation.clamp: CALL_FN_CLAMP(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.lerp: CALL_FN_LERP(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.slerp: CALL_FN_SLERP(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.nlerp: CALL_FN_NLERP(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.remap: CALL_FN_REMAP(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.unlerp: CALL_FN_UNLERP(ref code_pointer, ref f4, out vector_size, out datatype); break;
+
+                                case extended_blast_operation.set_bit: get_setbit_result(ref code_pointer, ref vector_size); code_pointer--; break;
+                                case extended_blast_operation.set_bits: get_setbits_result(ref code_pointer, ref vector_size); code_pointer--; break;
+                                case extended_blast_operation.get_bit: get_getbit_result(ref code_pointer, ref vector_size, out f4); code_pointer--; break;
+                                case extended_blast_operation.get_bits: get_getbits_result(ref code_pointer, ref vector_size, out f4); code_pointer--; break;
+                                case extended_blast_operation.count_bits: get_countbits_result(ref code_pointer, ref vector_size, out f4); break;
+
+                                case extended_blast_operation.reverse_bits: get_reversebits_result(ref code_pointer, ref vector_size); break;
+                                case extended_blast_operation.lzcnt: get_lzcnt_result(ref code_pointer, ref vector_size, out f4); break;
+                                case extended_blast_operation.tzcnt: get_tzcnt_result(ref code_pointer, ref vector_size, out f4); break;
+                                case extended_blast_operation.ror: get_ror_result(ref code_pointer, ref vector_size); break;
+                                case extended_blast_operation.rol: get_rol_result(ref code_pointer, ref vector_size); break;
+                                case extended_blast_operation.shl: get_shl_result(ref code_pointer, ref vector_size); break;
+                                case extended_blast_operation.shr: get_shr_result(ref code_pointer, ref vector_size); break;
+
+                                case extended_blast_operation.reinterpret_bool32: reinterpret_bool32(ref code_pointer, ref vector_size); break;
+                                case extended_blast_operation.reinterpret_float: reinterpret_float(ref code_pointer, ref vector_size); break;
+                                case extended_blast_operation.reinterpret_int32: reinterpret_int32(ref code_pointer, ref vector_size); break;
 
 
 #if DEVELOPMENT_BUILD || TRACE
-                                    default:
-                                        Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
-                                        break;
+                                default:
+                                    Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, extended operation {exop} not handled");
+                                    break;
 #endif
-                                }
                             }
-                        }
+                        }   
                         code_pointer--;                           
                         break;
 
@@ -3091,14 +2447,7 @@ namespace NSS.Blast.Interpretor
                                 // we receive an operation while expecting a value 
                                 //
                                 // if we predict this at the compiler we could use the opcodes value as value constant
-                                //
-#if DEVELOPMENT_BUILD || TRACE
-                                Debug.LogError($"codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(blast_operation)op}");
-#endif
-
-                                // this should royally screw stuff up 
-                                f4_result = float.NaN;
-                                return;
+                                goto ERROR_EXPECTING_VALUE;
                             }
                         }
 
@@ -3111,16 +2460,19 @@ namespace NSS.Blast.Interpretor
                 if (current_op == 0 && !((minus || not) && prev_op == 0))
                 {
                     // just set according to vector size on the first value
+                    // 
+                    // - compiler should only allow not on booleans  
+                    // 
                     switch ( datatype.Combine(vector_size, minus || not) )
                     {
                         case BlastVectorType.float1: f4_result.x = f4.x; current_vector_size = 1; break;
-                        case BlastVectorType.float1_n: f4_result.x = -f4.x; current_vector_size = 1; break;
+                        case BlastVectorType.float1_n: f4_result.x = -f4.x; current_vector_size = 1; minus = false; not = false; break;
                         case BlastVectorType.float2: fixed (float4* p = &f4_result) ((float2*)(void*)p)[0] = ((float2*)(void*)&f4)[0]; current_vector_size = 2; break;
-                        case BlastVectorType.float2_n: fixed (float4* p = &f4_result) ((float2*)(void*)p)[0] = -((float2*)(void*)&f4)[0]; current_vector_size = 2; break;
+                        case BlastVectorType.float2_n: fixed (float4* p = &f4_result) ((float2*)(void*)p)[0] = -((float2*)(void*)&f4)[0]; current_vector_size = 2; minus = false; not = false; break;
                         case BlastVectorType.float3: fixed (float4* p = &f4_result) ((float3*)(void*)p)[0] = ((float3*)(void*)&f4)[0]; current_vector_size = 3; break;
-                        case BlastVectorType.float3_n: fixed (float4* p = &f4_result) ((float3*)(void*)p)[0] = -((float3*)(void*)&f4)[0]; current_vector_size = 3; break;
+                        case BlastVectorType.float3_n: fixed (float4* p = &f4_result) ((float3*)(void*)p)[0] = -((float3*)(void*)&f4)[0]; current_vector_size = 3; minus = false; not = false; break;
                         case BlastVectorType.float4: f4_result = f4; current_vector_size = 4; break;
-                        case BlastVectorType.float4_n: f4_result = -f4; current_vector_size = 4; break;
+                        case BlastVectorType.float4_n: f4_result = -f4; current_vector_size = 4; minus = false; not = false; break;
                         
                         // for id, as its the first we copy it and set datatype 
                         case BlastVectorType.int1: f4_result.x = f4.x; current_vector_size = 1; current_datatype = BlastVariableDataType.ID; break;
@@ -3129,14 +2481,14 @@ namespace NSS.Blast.Interpretor
                         case BlastVectorType.int4: f4_result = f4; current_vector_size = 4; current_datatype = BlastVariableDataType.ID; break;
 
                         // negations need a conversion inlined to perform the negation correctly on the int backed in float memory 
-                        case BlastVectorType.int1_n: f4_result.x = CodeUtils.ReInterpret<int, float>(-CodeUtils.ReInterpret<float, int>(f4.x)); current_vector_size = 1; current_datatype = BlastVariableDataType.ID; break;
-                        case BlastVectorType.int2_n: fixed (float4* p = &f4_result) ((float2*)(void*)p)[0] = CodeUtils.ReInterpret<int2, float2>(-CodeUtils.ReInterpret<float2, int2>(((float2*)(void*)&f4)[0])); current_vector_size = 2; current_datatype = BlastVariableDataType.ID; break;
-                        case BlastVectorType.int3_n: fixed (float4* p = &f4_result) ((float3*)(void*)p)[0] = CodeUtils.ReInterpret<int3, float3>(-CodeUtils.ReInterpret<float3, int3>(((float3*)(void*)&f4)[0])); current_vector_size = 3; current_datatype = BlastVariableDataType.ID; break;
-                        case BlastVectorType.int4_n: f4_result = CodeUtils.ReInterpret<int4, float4>(-CodeUtils.ReInterpret<float4, int4>(f4)); current_vector_size = 4; current_datatype = BlastVariableDataType.ID; break;
+                        case BlastVectorType.int1_n: f4_result.x = CodeUtils.ReInterpret<int, float>(-CodeUtils.ReInterpret<float, int>(f4.x)); current_vector_size = 1; current_datatype = BlastVariableDataType.ID; minus = false; not = false; break;
+                        case BlastVectorType.int2_n: fixed (float4* p = &f4_result) ((float2*)(void*)p)[0] = CodeUtils.ReInterpret<int2, float2>(-CodeUtils.ReInterpret<float2, int2>(((float2*)(void*)&f4)[0])); current_vector_size = 2; current_datatype = BlastVariableDataType.ID; minus = false; not = false; break;
+                        case BlastVectorType.int3_n: fixed (float4* p = &f4_result) ((float3*)(void*)p)[0] = CodeUtils.ReInterpret<int3, float3>(-CodeUtils.ReInterpret<float3, int3>(((float3*)(void*)&f4)[0])); current_vector_size = 3; current_datatype = BlastVariableDataType.ID; minus = false; not = false; break;
+                        case BlastVectorType.int4_n: f4_result = CodeUtils.ReInterpret<int4, float4>(-CodeUtils.ReInterpret<float4, int4>(f4)); current_vector_size = 4; current_datatype = BlastVariableDataType.ID; minus = false; not = false; break;
 
                         // bool32 requires a conversion for not to be correct 
                         case BlastVectorType.bool32: f4_result.x = f4.x; current_vector_size = 1; current_datatype = BlastVariableDataType.Bool32; break; 
-                        case BlastVectorType.bool32_n: f4_result.x = CodeUtils.ReInterpret<uint, float>(~CodeUtils.ReInterpret<float, uint>(f4.x)); current_vector_size = 1; current_datatype = BlastVariableDataType.Bool32; break;
+                        case BlastVectorType.bool32_n: f4_result.x = CodeUtils.ReInterpret<uint, float>(~CodeUtils.ReInterpret<float, uint>(f4.x)); current_vector_size = 1; current_datatype = BlastVariableDataType.Bool32; minus = false; not = false; break;
 
                         default: goto NO_SUPPORT;
                     }
@@ -3145,34 +2497,34 @@ namespace NSS.Blast.Interpretor
                 {
                     if (!last_is_bool_or_math_operation)
                     {
-                        switch(current_datatype.Combine(current_vector_size, false))
+                        switch (current_datatype.Combine(current_vector_size, false))
                         {
                             case BlastVectorType.float1:
                                 {
                                     // the operation starts as a float -> end as a float 
-                                    switch(datatype.Combine(vector_size, minus || not))
+                                    switch (datatype.Combine(vector_size, minus || not))
                                     {
                                         // f1result = f1a + f1b
-                                        case BlastVectorType.float1:    BlastInterpretor.handle_op_f1f1(current_op, ref f4_result.x, f4.x); break;
-                                        case BlastVectorType.int1:      BlastInterpretor.handle_op_f1i1(current_op, ref f4_result.x, f4.x); break;
-                                        case BlastVectorType.bool32:    BlastInterpretor.handle_op_f1i1(current_op, ref f4_result.x, f4.x); break;
+                                        case BlastVectorType.float1: BlastInterpretor.handle_op_f1f1(current_op, ref f4_result.x, f4.x); break;
+                                        case BlastVectorType.int1: BlastInterpretor.handle_op_f1i1(current_op, ref f4_result.x, f4.x); break;
+                                        case BlastVectorType.bool32: BlastInterpretor.handle_op_f1i1(current_op, ref f4_result.x, f4.x); break;
 
                                         // f1result = f1a + -f1b
-                                        case BlastVectorType.float1_n:  BlastInterpretor.handle_op_f1f1(current_op, ref f4_result.x, -f4.x); minus = false; not = false; break;
-                                        case BlastVectorType.int1_n:    BlastInterpretor.handle_op_f1i1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
-                                        case BlastVectorType.bool32_n:  BlastInterpretor.handle_op_f1b1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.float1_n: BlastInterpretor.handle_op_f1f1(current_op, ref f4_result.x, -f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.int1_n: BlastInterpretor.handle_op_f1i1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.bool32_n: BlastInterpretor.handle_op_f1b1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
 
                                         // f2result = f1a op [-]f2b (f4 is referenced where x is read and xy is written as result 
-                                        case BlastVectorType.float2:    BlastInterpretor.handle_op_f1f2(current_op, ref f4_result, f4.xy); current_vector_size = 2; break;
-                                        case BlastVectorType.float2_n:  BlastInterpretor.handle_op_f1f2(current_op, ref f4_result, -f4.xy); current_vector_size = 2; minus = false; not = false; break;
+                                        case BlastVectorType.float2: BlastInterpretor.handle_op_f1f2(current_op, ref f4_result, f4.xy); current_vector_size = 2; break;
+                                        case BlastVectorType.float2_n: BlastInterpretor.handle_op_f1f2(current_op, ref f4_result, -f4.xy); current_vector_size = 2; minus = false; not = false; break;
 
                                         // f3result = f1a op [-]f3b 
-                                        case BlastVectorType.float3:    BlastInterpretor.handle_op_f1f3(current_op, ref f4_result, f4.xyz); current_vector_size = 3; break;
-                                        case BlastVectorType.float3_n:  BlastInterpretor.handle_op_f1f3(current_op, ref f4_result, -f4.xyz); current_vector_size = 3; minus = false; not = false; break;
+                                        case BlastVectorType.float3: BlastInterpretor.handle_op_f1f3(current_op, ref f4_result, f4.xyz); current_vector_size = 3; break;
+                                        case BlastVectorType.float3_n: BlastInterpretor.handle_op_f1f3(current_op, ref f4_result, -f4.xyz); current_vector_size = 3; minus = false; not = false; break;
 
                                         // f4result = f1a op [-]f4b 
-                                        case BlastVectorType.float4:    BlastInterpretor.handle_op_f1f4(current_op, ref f4_result, f4); current_vector_size = 4; break;
-                                        case BlastVectorType.float4_n:  BlastInterpretor.handle_op_f1f4(current_op, ref f4_result, -f4); current_vector_size = 4; minus = false; not = false; break;
+                                        case BlastVectorType.float4: BlastInterpretor.handle_op_f1f4(current_op, ref f4_result, f4); current_vector_size = 4; break;
+                                        case BlastVectorType.float4_n: BlastInterpretor.handle_op_f1f4(current_op, ref f4_result, -f4); current_vector_size = 4; minus = false; not = false; break;
 
                                         default: goto NO_SUPPORT_FOR_HANDLE_OP;
                                     }
@@ -3186,39 +2538,39 @@ namespace NSS.Blast.Interpretor
                                     switch (datatype.Combine(vector_size, minus || not))
                                     {
                                         case BlastVectorType.bool32:
-                                        case BlastVectorType.int1:      BlastInterpretor.handle_op_i1i1(current_op, ref f4_result.x, f4.x); break;
-                                        case BlastVectorType.bool32_n:  BlastInterpretor.handle_op_i1b1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
-                                        case BlastVectorType.int1_n:    BlastInterpretor.handle_op_i1i1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
-                                        case BlastVectorType.int2:      BlastInterpretor.handle_op_i1i2(current_op, ref f4_result, f4.xy); current_vector_size = 2; break;
-                                        case BlastVectorType.int2_n:    BlastInterpretor.handle_op_i1i2_n(current_op, ref f4_result, f4.xy); current_vector_size = 2; minus = false; not = false; break;
-                                        case BlastVectorType.int3:      BlastInterpretor.handle_op_i1i3(current_op, ref f4_result, f4.xyz); current_vector_size = 3; break;
-                                        case BlastVectorType.int3_n:    BlastInterpretor.handle_op_i1i3_n(current_op, ref f4_result, f4.xyz); current_vector_size = 3; minus = false; not = false; break;
-                                        case BlastVectorType.int4:      BlastInterpretor.handle_op_i1i4(current_op, ref f4_result, f4); current_vector_size = 4; break;
-                                        case BlastVectorType.int4_n:    BlastInterpretor.handle_op_i1i4_n(current_op, ref f4_result, f4); current_vector_size = 4; minus = false; not = false; break;
-                                        case BlastVectorType.float1:    BlastInterpretor.handle_op_i1f1(current_op, ref f4_result.x, f4.x); datatype = current_datatype; break;
-                                        case BlastVectorType.float1_n:  BlastInterpretor.handle_op_i1f1(current_op, ref f4_result.x, -f4.x); datatype = current_datatype; minus = false; not = false; break;
-                                        case BlastVectorType.float2:    BlastInterpretor.handle_op_i1f2(current_op, ref f4_result, f4.xy); datatype = current_datatype; current_vector_size = 2; break;
-                                        case BlastVectorType.float2_n:  BlastInterpretor.handle_op_i1f2(current_op, ref f4_result, -f4.xy); datatype = current_datatype; current_vector_size = 2; minus = false; not = false; break;
-                                        case BlastVectorType.float3:    BlastInterpretor.handle_op_i1f3(current_op, ref f4_result, f4.xyz); datatype = current_datatype; current_vector_size = 3; break;
-                                        case BlastVectorType.float3_n:  BlastInterpretor.handle_op_i1f3(current_op, ref f4_result, -f4.xyz); datatype = current_datatype; current_vector_size = 3; minus = false; not = false; break;
-                                        case BlastVectorType.float4:    BlastInterpretor.handle_op_i1f4(current_op, ref f4_result, f4); datatype = current_datatype; current_vector_size = 4; break;
-                                        case BlastVectorType.float4_n:  BlastInterpretor.handle_op_i1f4(current_op, ref f4_result, -f4); datatype = current_datatype; current_vector_size = 4; minus = false; not = false; break;
+                                        case BlastVectorType.int1: BlastInterpretor.handle_op_i1i1(current_op, ref f4_result.x, f4.x); break;
+                                        case BlastVectorType.bool32_n: BlastInterpretor.handle_op_i1b1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.int1_n: BlastInterpretor.handle_op_i1i1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.int2: BlastInterpretor.handle_op_i1i2(current_op, ref f4_result, f4.xy); current_vector_size = 2; break;
+                                        case BlastVectorType.int2_n: BlastInterpretor.handle_op_i1i2_n(current_op, ref f4_result, f4.xy); current_vector_size = 2; minus = false; not = false; break;
+                                        case BlastVectorType.int3: BlastInterpretor.handle_op_i1i3(current_op, ref f4_result, f4.xyz); current_vector_size = 3; break;
+                                        case BlastVectorType.int3_n: BlastInterpretor.handle_op_i1i3_n(current_op, ref f4_result, f4.xyz); current_vector_size = 3; minus = false; not = false; break;
+                                        case BlastVectorType.int4: BlastInterpretor.handle_op_i1i4(current_op, ref f4_result, f4); current_vector_size = 4; break;
+                                        case BlastVectorType.int4_n: BlastInterpretor.handle_op_i1i4_n(current_op, ref f4_result, f4); current_vector_size = 4; minus = false; not = false; break;
+                                        case BlastVectorType.float1: BlastInterpretor.handle_op_i1f1(current_op, ref f4_result.x, f4.x); datatype = current_datatype; break;
+                                        case BlastVectorType.float1_n: BlastInterpretor.handle_op_i1f1(current_op, ref f4_result.x, -f4.x); datatype = current_datatype; minus = false; not = false; break;
+                                        case BlastVectorType.float2: BlastInterpretor.handle_op_i1f2(current_op, ref f4_result, f4.xy); datatype = current_datatype; current_vector_size = 2; break;
+                                        case BlastVectorType.float2_n: BlastInterpretor.handle_op_i1f2(current_op, ref f4_result, -f4.xy); datatype = current_datatype; current_vector_size = 2; minus = false; not = false; break;
+                                        case BlastVectorType.float3: BlastInterpretor.handle_op_i1f3(current_op, ref f4_result, f4.xyz); datatype = current_datatype; current_vector_size = 3; break;
+                                        case BlastVectorType.float3_n: BlastInterpretor.handle_op_i1f3(current_op, ref f4_result, -f4.xyz); datatype = current_datatype; current_vector_size = 3; minus = false; not = false; break;
+                                        case BlastVectorType.float4: BlastInterpretor.handle_op_i1f4(current_op, ref f4_result, f4); datatype = current_datatype; current_vector_size = 4; break;
+                                        case BlastVectorType.float4_n: BlastInterpretor.handle_op_i1f4(current_op, ref f4_result, -f4); datatype = current_datatype; current_vector_size = 4; minus = false; not = false; break;
 
-                                        default: goto NO_SUPPORT_FOR_HANDLE_OP; 
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP;
                                     }
                                 }
-                                break; 
+                                break;
 
                             case BlastVectorType.float2:
                                 {
                                     switch (datatype.Combine(vector_size, minus || not))
                                     {
                                         // f4.xy = f4.xy op [-]f1
-                                        case BlastVectorType.float1:    BlastInterpretor.handle_op_f2f1(current_op, ref f4_result, f4.x); break;
-                                        case BlastVectorType.float1_n:  BlastInterpretor.handle_op_f2f1(current_op, ref f4_result, -f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.float1: BlastInterpretor.handle_op_f2f1(current_op, ref f4_result, f4.x); break;
+                                        case BlastVectorType.float1_n: BlastInterpretor.handle_op_f2f1(current_op, ref f4_result, -f4.x); minus = false; not = false; break;
                                         // f4.xy = f4.xy op [-]f2
-                                        case BlastVectorType.float2:    BlastInterpretor.handle_op_f2f2(current_op, ref f4_result, f4.xy); vector_size = 2; break;
-                                        case BlastVectorType.float2_n:  BlastInterpretor.handle_op_f2f2(current_op, ref f4_result, -f4.xy); vector_size = 2; minus = false; not = false; break;
+                                        case BlastVectorType.float2: BlastInterpretor.handle_op_f2f2(current_op, ref f4_result, f4.xy); vector_size = 2; break;
+                                        case BlastVectorType.float2_n: BlastInterpretor.handle_op_f2f2(current_op, ref f4_result, -f4.xy); vector_size = 2; minus = false; not = false; break;
 
                                         default: goto NO_SUPPORT_FOR_HANDLE_OP;
                                     }
@@ -3229,30 +2581,30 @@ namespace NSS.Blast.Interpretor
                                 {
                                     switch (datatype.Combine(vector_size, minus || not))
                                     {
-                                        case BlastVectorType.float1:    BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, f4.x); vector_size = 3; break;
-                                        case BlastVectorType.float1_n:  BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, -f4.x); vector_size = 3; minus = false; not = false; break;
+                                        case BlastVectorType.float1: BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, f4.x); vector_size = 3; break;
+                                        case BlastVectorType.float1_n: BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, -f4.x); vector_size = 3; minus = false; not = false; break;
 
-                                        case BlastVectorType.float3:    BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, f4.xyz); break;
-                                        case BlastVectorType.float3_n:  BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, -f4.xyz); minus = false; not = false; break;
+                                        case BlastVectorType.float3: BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, f4.xyz); break;
+                                        case BlastVectorType.float3_n: BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, -f4.xyz); minus = false; not = false; break;
 
-                                        default: goto NO_SUPPORT_FOR_HANDLE_OP; 
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP;
                                     }
                                 }
-                                break; 
+                                break;
 
 
                             case BlastVectorType.float4:
                                 {
                                     switch (datatype.Combine(vector_size, minus || not))
                                     {
-                                        case BlastVectorType.float1:    BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, f4.x); vector_size = 4; break;
-                                        case BlastVectorType.float1_n:  BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, -f4.x); vector_size = 4; minus = false; not = false; break;
+                                        case BlastVectorType.float1: BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, f4.x); vector_size = 4; break;
+                                        case BlastVectorType.float1_n: BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, -f4.x); vector_size = 4; minus = false; not = false; break;
 
-                                        case BlastVectorType.float4:    BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, f4); break;
-                                        case BlastVectorType.float4_n:  BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, -f4); minus = false; not = false; break;
+                                        case BlastVectorType.float4: BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, f4); break;
+                                        case BlastVectorType.float4_n: BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, -f4); minus = false; not = false; break;
 
-                                        default: goto NO_SUPPORT_FOR_HANDLE_OP; 
-                                    }                                    
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP;
+                                    }
                                 }
                                 break;
 
@@ -3264,27 +2616,22 @@ namespace NSS.Blast.Interpretor
                     }
                     else
                     {
-                        // apply minus
-                        if (minus || not)
+                        // apply minus if applicable (combined with the switch, save another branch) 
+                        switch (datatype.Combine(vector_size, minus || not))
                         {
-                            switch (datatype.Combine(vector_size, true))
-                            {
-                                case BlastVectorType.float1_n:
-                                case BlastVectorType.float2_n:
-                                case BlastVectorType.float3_n:
-                                case BlastVectorType.float4_n: f4_result = -f4_result; break;
+                            case BlastVectorType.float1_n:
+                            case BlastVectorType.float2_n:
+                            case BlastVectorType.float3_n:
+                            case BlastVectorType.float4_n: f4_result = -f4_result; minus = false; not = false; break;
 
-                                case BlastVectorType.int1_n: f4_result.x = CodeUtils.ReInterpret<int, float>(-CodeUtils.ReInterpret<float, int>(f4_result.x)); break;
-                                case BlastVectorType.int2_n: f4_result.xy= CodeUtils.ReInterpret<int2, float2>(-CodeUtils.ReInterpret<float2, int2>(f4_result.xy)); break;
-                                case BlastVectorType.int3_n: f4_result.xyz = CodeUtils.ReInterpret<int3, float3>(-CodeUtils.ReInterpret<float3, int3>(f4_result.xyz)); break;
-                                case BlastVectorType.int4_n: f4_result.xyzw = CodeUtils.ReInterpret<int4, float4>(-CodeUtils.ReInterpret<float4, int4>(f4_result.xyzw)); break;
+                            case BlastVectorType.int1_n: f4_result.x = CodeUtils.ReInterpret<int, float>(-CodeUtils.ReInterpret<float, int>(f4_result.x)); minus = false; not = false; break;
+                            case BlastVectorType.int2_n: f4_result.xy = CodeUtils.ReInterpret<int2, float2>(-CodeUtils.ReInterpret<float2, int2>(f4_result.xy)); minus = false; not = false; break;
+                            case BlastVectorType.int3_n: f4_result.xyz = CodeUtils.ReInterpret<int3, float3>(-CodeUtils.ReInterpret<float3, int3>(f4_result.xyz)); minus = false; not = false; break;
+                            case BlastVectorType.int4_n: f4_result.xyzw = CodeUtils.ReInterpret<int4, float4>(-CodeUtils.ReInterpret<float4, int4>(f4_result.xyzw)); minus = false; not = false; break;
 
-                                case BlastVectorType.bool32_n: f4_result.x = CodeUtils.ReInterpret<uint, float>(~CodeUtils.ReInterpret<float, uint>(f4_result.x)); break;
+                            case BlastVectorType.bool32_n: f4_result.x = CodeUtils.ReInterpret<uint, float>(~CodeUtils.ReInterpret<float, uint>(f4_result.x)); minus = false; not = false; break;
 
-                                default: goto NO_SUPPORT_NEGATE;
-                            }
-                            minus = false;
-                            not = false;
+                            default: goto NO_SUPPORT_NEGATE;
                         }
                     }
                 }
@@ -3297,18 +2644,31 @@ namespace NSS.Blast.Interpretor
 
         NO_SUPPORT_FOR_HANDLE_OP:
 #if TRACE || DEVELOPMENT_BUILD
-            Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for operation: {datatype}[{vector_size}] op {current_datatype}[{current_vector_size}]");
+            Debug.LogError($"Blast.Interpretor.execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for operation: {datatype}[{vector_size}] op {current_datatype}[{current_vector_size}]");
 #endif
+            f4_result = float.NaN;
             return;
+
         NO_SUPPORT:
 #if TRACE || DEVELOPMENT_BUILD
-            Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for {datatype}[{vector_size}]");
+            Debug.LogError($"Blast.Interpretor.execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for {datatype}[{vector_size}]");
 #endif
+            f4_result = float.NaN;
             return;
+
         NO_SUPPORT_NEGATE:
 #if TRACE || DEVELOPMENT_BUILD
-            Debug.LogError($"execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for negation of {datatype}[{vector_size}]");
+            Debug.LogError($"Blast.Interpretor.execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, no support for negation of {datatype}[{vector_size}]");
 #endif
+            f4_result = float.NaN;
+            return; 
+
+        ERROR_EXPECTING_VALUE:
+#if DEVELOPMENT_BUILD || TRACE
+            Debug.LogError($"Blast.Interpretor.execute-sequence: codepointer: {code_pointer} => {code[code_pointer]}, encountered unknown op {(blast_operation)op}");
+#endif
+            // this should royally screw stuff up 
+            f4_result = float.NaN;
             return;
         }
 
@@ -3394,6 +2754,72 @@ namespace NSS.Blast.Interpretor
 
 
         /// <summary>
+        /// assign a data index directly from constant data 
+        /// - expects ID opcode direclty after data with 8th bit indicating negation
+        /// 
+        /// using direct assignments for normal resulted in a 4x speedup of assigning a constant to something as it saves a lot on branches 
+        /// 
+        /// 
+        /// a = 1;   takes 12 ns.... that is about 10x faster then lua-jit
+        /// 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void AssignDataFromConstant(ref int code_pointer, in float value)
+        {
+            byte offset = (byte)code[code_pointer];
+            code_pointer++;
+
+            // the negation is combined into the offset
+            // - we need to substract it from the offset on indexing the target in each negated switch case 
+
+            GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
+            switch (dtype.CombineSafe(vsize, offset >= 0b1000_0000))
+            {
+                case BlastVectorType.float1: ((float*)data)[offset] = value; break;
+                case BlastVectorType.float2: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] = value; break;
+                case BlastVectorType.float3: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] = value; break;
+                case BlastVectorType.float4: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] = value; break;
+
+                case BlastVectorType.float1_n: ((float*)data)[offset - 0b1000_0000] = -value; break;
+                case BlastVectorType.float2_n: CodeUtils.ReCast<float, float2>(&((float*)data)[offset - 0b1000_0000])[0] = -value; break;
+                case BlastVectorType.float3_n: CodeUtils.ReCast<float, float3>(&((float*)data)[offset - 0b1000_0000])[0] = -value; break;
+                case BlastVectorType.float4_n: CodeUtils.ReCast<float, float4>(&((float*)data)[offset - 0b1000_0000])[0] = -value; break;
+
+                case BlastVectorType.bool32: ((uint*)data)[offset] = (uint)value; break;
+                case BlastVectorType.bool32_n: ((uint*)data)[offset - 0b1000_0000] = ~(uint)value; break;
+
+                case BlastVectorType.int1: ((int*)data)[offset] = (int)value; break;
+                case BlastVectorType.int2: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] = (int)value; break;
+                case BlastVectorType.int3: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] = (int)value; break;
+                case BlastVectorType.int4: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] = (int)value; break;
+
+                case BlastVectorType.int1_n: ((int*)data)[offset] = -(int)value; break;
+                case BlastVectorType.int2_n: CodeUtils.ReCast<int, int2>(&((int*)data)[offset - 0b1000_0000])[0] = -(int)value; break;
+                case BlastVectorType.int3_n: CodeUtils.ReCast<int, int3>(&((int*)data)[offset - 0b1000_0000])[0] = -(int)value; break;
+                case BlastVectorType.int4_n: CodeUtils.ReCast<int, int4>(&((int*)data)[offset - 0b1000_0000])[0] = -(int)value; break;
+            }
+        }
+
+
+
+
+
+        /// <summary>
+        /// Execute the blast script package in the given environment 
+        /// 
+        /// 
+        ///                                 _.-^^---....,,--      
+        ///                             _--                  --_  
+        ///                            <                        >)
+        ///     ____                   |         BOOM !!         |
+        ///    '-..-'                   \._                   _./  
+        ///   __ ||___                      ```--. . , ; .--'''                      
+        ///  /_______/|                           | |   | 
+        ///  |       ||                        .-=|| |  |=-. 
+        ///  |       ||                        `-=#$%&%$#=-'       
+        ///  |       ||                           | ;  :|   
+        ///  |       |/................. _____.,-#%&$@%#&#~,._____
+        ///  '-------'               
         /// 
         /// 
         /// </summary>
@@ -3475,7 +2901,7 @@ namespace NSS.Blast.Interpretor
                         yield(f4_register);
                         return (int)BlastError.yield;
 
-#region Stack
+                    #region Stack
 
                     case blast_operation.push:
                         push(ref code_pointer, ref vector_size, ref datatype, ref f4_register);
@@ -3502,9 +2928,67 @@ namespace NSS.Blast.Interpretor
                         pushc(ref code_pointer, ref vector_size, ref datatype, ref f4_register);
                         break;
 
-#endregion
+                    #endregion
 
-#region Index & Assingments 
+                    #region Direct Constant Value Assignments 
+
+                    // any constant that is compiled into root is only allowed when it is directly assigned to a data[ID]
+                    // the next index is ALWAYS and index into the datasegment and as such we set it directly 
+                    case blast_operation.pi: AssignDataFromConstant(ref code_pointer, math.PI); break; 
+                    case blast_operation.inv_pi: AssignDataFromConstant(ref code_pointer, 1f / math.PI); break;
+                    case blast_operation.epsilon: AssignDataFromConstant(ref code_pointer, math.EPSILON); break; 
+                    case blast_operation.infinity: AssignDataFromConstant(ref code_pointer, math.INFINITY); break; 
+                    case blast_operation.negative_infinity: AssignDataFromConstant(ref code_pointer, -math.INFINITY); break;
+                    case blast_operation.nan: AssignDataFromConstant(ref code_pointer, math.NAN); break;
+                    case blast_operation.min_value: AssignDataFromConstant(ref code_pointer, math.FLT_MIN_NORMAL); break;
+                    case blast_operation.value_0: AssignDataFromConstant(ref code_pointer, 0f); break;
+                    case blast_operation.value_1: AssignDataFromConstant(ref code_pointer, 1f); break;
+                    case blast_operation.value_2: AssignDataFromConstant(ref code_pointer, 2f); break;
+                    case blast_operation.value_3: AssignDataFromConstant(ref code_pointer, 3f); break;
+                    case blast_operation.value_4: AssignDataFromConstant(ref code_pointer, 4f); break;
+                    case blast_operation.value_8: AssignDataFromConstant(ref code_pointer, 8f); break;
+                    case blast_operation.value_10: AssignDataFromConstant(ref code_pointer, 10f); break;
+                    case blast_operation.value_16: AssignDataFromConstant(ref code_pointer, 16f); break;
+                    case blast_operation.value_24: AssignDataFromConstant(ref code_pointer, 24f); break;
+                    case blast_operation.value_32: AssignDataFromConstant(ref code_pointer, 32f); break;
+                    case blast_operation.value_64: AssignDataFromConstant(ref code_pointer, 64f); break;
+                    case blast_operation.value_100: AssignDataFromConstant(ref code_pointer, 100f); break;
+                    case blast_operation.value_128: AssignDataFromConstant(ref code_pointer, 128f); break;
+                    case blast_operation.value_256: AssignDataFromConstant(ref code_pointer, 256f); break;
+                    case blast_operation.value_512: AssignDataFromConstant(ref code_pointer, 512f); break;
+                    case blast_operation.value_1000: AssignDataFromConstant(ref code_pointer, 1000f); break;
+                    case blast_operation.value_1024: AssignDataFromConstant(ref code_pointer, 1024f); break;
+                    case blast_operation.value_30: AssignDataFromConstant(ref code_pointer, 30f); break;
+                    case blast_operation.value_45: AssignDataFromConstant(ref code_pointer, 45f); break;
+                    case blast_operation.value_90: AssignDataFromConstant(ref code_pointer, 90f); break;
+                    case blast_operation.value_180: AssignDataFromConstant(ref code_pointer, 180f); break;
+                    case blast_operation.value_270: AssignDataFromConstant(ref code_pointer, 270f); break;
+                    case blast_operation.value_360: AssignDataFromConstant(ref code_pointer, 360f); break;
+                    case blast_operation.inv_value_2: AssignDataFromConstant(ref code_pointer, 1f / 2f); break;
+                    case blast_operation.inv_value_3: AssignDataFromConstant(ref code_pointer, 1f / 3f); break; 
+                    case blast_operation.inv_value_4: AssignDataFromConstant(ref code_pointer, 1f / 4f); break;
+                    case blast_operation.inv_value_8: AssignDataFromConstant(ref code_pointer, 1 / 8f); break;
+                    case blast_operation.inv_value_10: AssignDataFromConstant(ref code_pointer, 1 / 10f); break;
+                    case blast_operation.inv_value_16: AssignDataFromConstant(ref code_pointer, 1 / 16f); break;
+                    case blast_operation.inv_value_24: AssignDataFromConstant(ref code_pointer, 1 / 24f); break;
+                    case blast_operation.inv_value_32: AssignDataFromConstant(ref code_pointer, 1 / 32f); break;
+                    case blast_operation.inv_value_64: AssignDataFromConstant(ref code_pointer, 1 / 64f); break;
+                    case blast_operation.inv_value_100: AssignDataFromConstant(ref code_pointer, 1 / 100f); break;
+                    case blast_operation.inv_value_128: AssignDataFromConstant(ref code_pointer, 1 / 128f); break;
+                    case blast_operation.inv_value_256: AssignDataFromConstant(ref code_pointer, 1 / 256f); break;
+                    case blast_operation.inv_value_512: AssignDataFromConstant(ref code_pointer, 1 / 512f); break;
+                    case blast_operation.inv_value_1000: AssignDataFromConstant(ref code_pointer, 1 / 1000f); break;
+                    case blast_operation.inv_value_1024: AssignDataFromConstant(ref code_pointer, 1 / 1024f); break;
+                    case blast_operation.inv_value_30: AssignDataFromConstant(ref code_pointer, 1 / 30f); break;
+                    case blast_operation.framecount: AssignDataFromConstant(ref code_pointer, engine_ptr->constants[(byte)blast_operation.framecount]); break;
+                    case blast_operation.fixedtime: AssignDataFromConstant(ref code_pointer, engine_ptr->constants[(byte)blast_operation.fixedtime]); break;
+                    case blast_operation.time: AssignDataFromConstant(ref code_pointer, engine_ptr->constants[(byte)blast_operation.time]); break;
+                    case blast_operation.fixeddeltatime: AssignDataFromConstant(ref code_pointer, engine_ptr->constants[(byte)blast_operation.fixeddeltatime]); break;
+                    case blast_operation.deltatime: AssignDataFromConstant(ref code_pointer, engine_ptr->constants[(byte)blast_operation.deltatime]); break;
+
+                    #endregion 
+
+                    #region Index & Assingments 
 
                     //
                     // compiler should send indexed assignements here in normal packaging
@@ -3656,10 +3140,10 @@ namespace NSS.Blast.Interpretor
                     LABEL_JUMP_ASSIGNS:
                         {
                             // and pop the source (which might be indexed) 
-                            BlastVariableDataType datatype_datasource;
+                            // BlastVariableDataType datatype_datasource;
 
                             code_pointer++;
-                            f4_register = ((float*)pop_with_info_indexed(ref code_pointer, out datatype_datasource, out vector_size))[0];
+                            f4_register = ((float*)pop_with_info_indexed(ref code_pointer, out datatype/*_datasource*/, out vector_size))[0];
 
 #if DEVELOPMENT_BUILD || TRACE
                             // the compiler should have cought this, if it didt wel that would be noticed before going in release
@@ -3695,6 +3179,9 @@ namespace NSS.Blast.Interpretor
                                         // while added in integersupport this at the same time reduces the branche count by 1 (even while supporting more datatypes)
                                         //
                                         // 
+#if STANDALONE_VSBUILD && TRACE
+                                        if (s_assignee == 0) { /* debugging hook */ }
+#endif 
 
                                         switch (datatype.Combine(s_assignee, index >= 0))
                                         {
@@ -4177,14 +3664,10 @@ namespace NSS.Blast.Interpretor
                     //    
                     // by executing these in the root we save a lot on function calls and stack operations
                     // 
-
-
-
                     case blast_operation.zero:
                         code_pointer--;
                         CALL_ZERO(ref code_pointer, ref vector_size);
                         break;
-#endregion
 
 
                     //
@@ -4337,8 +3820,60 @@ namespace NSS.Blast.Interpretor
                             break;
                         }
 
+#endregion
+                    
                     default:
                         {
+
+                            // if in release then compiler is assumed to be always correct so no check is needed: it is always an id
+#if TRACE 
+                            if (op >= blast_operation.id)
+                            {
+#endif
+                                // if this is an id >= blast_operation.id && < ex_op
+                                // then handle the direct assignment path of it with the constant handler
+                                // - in contrary to constant, ids can point to vectors  
+
+                                byte offset = (byte)(op - blast_operation.id);
+                                GetMetaData(metadata, offset, out vector_size, out BlastVariableDataType data_type);
+
+                                // get metadata on destination 
+                                assignee = code[code_pointer];
+                                code_pointer++;
+
+                                bool substract = assignee >= 0b1000_0000;
+                                assignee = (byte)math.select(assignee, assignee - 0b1000_0000, substract);
+
+                                // handle substraction in the same branch as the vectorsize
+                                switch ((byte)math.select(vector_size, vector_size + 100, substract))
+                                {
+                                    case 0:
+                                    case 4: f4_register = ((float4*)(void*)&fdata[offset])[0]; vector_size = 4; break;
+                                    case 1: f4_register.x = fdata[offset]; break;
+                                    case 2: f4_register.xy= ((float2*)(void*)&fdata[offset])[0]; break;
+                                    case 3: f4_register.xyz = ((float3*)(void*)&fdata[offset])[0]; break;
+
+                                    case 100:
+                                    case 104: f4_register = -((float4*)(void*)&fdata[offset])[0]; vector_size = 4; break;
+                                    case 101: f4_register.x = -fdata[offset]; break;
+                                    case 102: f4_register.xy = -((float2*)(void*)&fdata[offset])[0]; break;
+                                    case 103: f4_register.xyz = -((float3*)(void*)&fdata[offset])[0]; break;
+
+                                    default: goto ERROR_UNSUPPORTED_TYPE_OR_VECTORSIZE; 
+                                }
+
+                                // get assignee metadata 
+                                BlastInterpretor.GetMetaData(in metadata, in assignee, out s_assignee, out assignee_type);
+                                s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0); 
+
+                                // now re-route flow through assign-result 
+                                goto case (blast_operation)blast_operation_jumptarget.jump_assign_result;
+#if TRACE
+                            }
+#endif 
+
+
+                            // anything else results in an error 
 #if DEVELOPMENT_BUILD || TRACE
                             Debug.LogError($"blast: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
 #endif
@@ -4351,7 +3886,10 @@ namespace NSS.Blast.Interpretor
             ValidateOnce = false;
 
             // by combining iterations with the success state and codeindex check we save a brach each main loop 
-            return math.select((int)BlastError.success, (int)BlastError.error_max_iterations, iterations >= max_iterations); 
+            return math.select((int)BlastError.success, (int)BlastError.error_max_iterations, iterations >= max_iterations);
+
+        ERROR_UNSUPPORTED_TYPE_OR_VECTORSIZE:
+            return (int)BlastError.ssmd_error_unsupported_vector_size;
         }
 
 #endregion

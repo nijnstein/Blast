@@ -21,6 +21,13 @@ namespace NSS.Blast
     {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        unsafe static public Tout* ReCast<Tin, Tout>(Tin* value) where Tin : unmanaged where Tout : unmanaged
+        {
+            return (Tout*)(void*)value;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public Tout ReInterpret<Tin, Tout>(Tin value) where Tin : unmanaged where Tout : unmanaged
         {
             unsafe

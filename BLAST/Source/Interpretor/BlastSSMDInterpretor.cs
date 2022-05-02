@@ -33,11 +33,14 @@ namespace NSS.Blast.SSMD
     /// <summary>
     /// The SSMD Interpretor 
     /// </summary>
-    [BurstCompile]
+
 #if ENABLE_IL2CPP
+    [BurstCompile(FloatPrecision.Medium, FloatMode.Fast)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
     [Unity.IL2CPP.CompilerServices.Il2CppEagerStaticClassConstructionAttribute()]
+#else
+    [BurstCompile]
 #endif
     unsafe public partial struct BlastSSMDInterpretor
     {
@@ -1808,6 +1811,9 @@ namespace NSS.Blast.SSMD
         /// pop a float[1|2|3|4] value form stack data or constant source and put it in destination 
         /// </summary>
         /// <returns>true if the value returned is a constant</returns>
+#if !STANDALONE_VSBUILD
+            [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         bool pop_fx_into_ref<T>(ref int code_pointer, [NoAlias] T* destination = null, void** destination_data = null, int destination_offset = -1, bool is_aligned = false, int stride = 0, int input_ssmd_datacount = -1, bool copy_only_the_first_if_constant = false) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || TRACE
@@ -3389,6 +3395,9 @@ namespace NSS.Blast.SSMD
 
         }
 
+#if !STANDALONE_VSBUILD
+            [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         void pop_fx_with_op_into_fx_ref<Tin, Tout>(ref int code_pointer, [NoAlias] Tin* buffer, [NoAlias] Tout* output, blast_operation op, BlastVariableDataType datatype = BlastVariableDataType.Numeric, bool autoexpand = false)
             where Tin : unmanaged
             where Tout : unmanaged
@@ -3698,9 +3707,9 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
 
-        #region set_data_from_register_fx
+#region set_data_from_register_fx
 
         /// <summary>
         /// set a float1 data location from register location  
@@ -3805,9 +3814,9 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
 
-        #region op_a | op_a_component | get_sigle_op
+#region op_a | op_a_component | get_sigle_op
 
 
 
@@ -4318,9 +4327,9 @@ namespace NSS.Blast.SSMD
             vector_size = 1;
         }
 
-        #endregion
+#endregion
 
-        #region Reinterpret XXXX [DataIndex]
+#region Reinterpret XXXX [DataIndex]
 
         /// <summary>
         /// reinterpret the value at index as a different datatype (set metadata type to datatype)
@@ -4350,9 +4359,9 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
 
-        #region External Function Handler 
+#region External Function Handler 
 
 #if !STANDALONE_VSBUILD
         [SkipLocalsInit]
@@ -4424,10 +4433,9 @@ namespace NSS.Blast.SSMD
                 Debug.LogError($"blast.ssmd.interpretor.call-external: failed to call function pointer with id: {id}");
             }
         }
-        #endregion
+#endregion
 
-        #region GetFunction|Sequence and Execute (privates)
-
+#region GetFunction|Sequence and Execute (privates)
 
 
         /// <summary>
@@ -4438,6 +4446,9 @@ namespace NSS.Blast.SSMD
         /// get the result of a function encoded in the byte code, support all fuctions in op, exop and external calls 
         /// although external calls should be directly called when possible
         /// </summary>
+#if !STANDALONE_VSBUILD
+        [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         private BlastError GetFunctionResult([NoAlias] void* temp,
 
                                                 ref int code_pointer,
@@ -4487,7 +4498,7 @@ namespace NSS.Blast.SSMD
                 case blast_operation.select: get_select_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
                 case blast_operation.fma: get_fma_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, ref f4_result); break;
 
-                case blast_operation.zero: get_zero_result(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
+                case blast_operation.zero: CALL_ZERO(temp, ref code_pointer, ref vector_size, ssmd_datacount); break;
                 case blast_operation.size: GetSizeResult(ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
 
                 case blast_operation.ex_op:
@@ -4524,6 +4535,14 @@ namespace NSS.Blast.SSMD
                             case extended_blast_operation.ceillog2: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.ceillog2); break;
                             case extended_blast_operation.ceilpow2: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.ceilpow2); break;
                             case extended_blast_operation.floorlog2: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.floorlog2); break;
+
+
+                           // case extended_blast_operation.sign: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.sign); break;
+                           // case extended_blast_operation.length: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.length); break;
+                           // case extended_blast_operation.lengthsq: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.lengthsq); break;
+                           // case extended_blast_operation.square: get_single_op_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result, blast_operation.ex_op, extended_blast_operation.square); break;
+
+
 
 
                             case extended_blast_operation.fmod: get_fmod_result(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_result); break;
@@ -5827,7 +5846,7 @@ namespace NSS.Blast.SSMD
 
 
 
-        #region Stack Operation Handlers 
+#region Stack Operation Handlers 
 
         BlastError push(ref int code_pointer, ref byte vector_size, [NoAlias] void* temp)
         {
@@ -6000,10 +6019,10 @@ namespace NSS.Blast.SSMD
             return BlastError.success;
         }
 
-        #endregion
+#endregion
 
 
-        #region Assignments
+#region Assignments
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void determine_assigned_indexer(ref int code_pointer, ref byte assignee_op, out bool is_indexed, out blast_operation indexer)
@@ -6455,7 +6474,7 @@ namespace NSS.Blast.SSMD
             return BlastError.success;
         }
 
-        #region CDATA Assignments
+#region CDATA Assignments
 
         /// <summary>
         /// Assignment to CDATA 
@@ -6843,12 +6862,12 @@ namespace NSS.Blast.SSMD
             return false;
         }
 
-        #endregion
-        #endregion
+#endregion
+#endregion
 
 
 
-        #region EvalPushedJumpCondition
+#region EvalPushedJumpCondition
 
         BlastError EvalPushedJumpCondition(ref int code_pointer, [NoAlias]float4* register, [NoAlias]void* temp, int ssmd_datacount)
         {
@@ -6921,7 +6940,7 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion 
+#endregion
 
 
 
@@ -6935,7 +6954,19 @@ namespace NSS.Blast.SSMD
 
 
         /// <summary>
-        /// main interpretor loop 
+        /// Main interpretor loop, execute the ssmd package agains a list of datarecord pointers
+        /// - checks to see if datarecords are evenly spaced|strided|aligned
+        /// 
+        /// 
+        ///                                                              c=====e
+        ///                                                                 H
+        ///      ____________                                           _,,_H__
+        ///     (__((__((___()                                         //|     |
+        ///     (__((__((___()() _____________________________________// |BLAST|
+        ///     (__((__((___()()()------------------------------------'  |_____|
+        /// 
+        /// 
+        /// 
         /// </summary>
         /// <param name="syncbuffer"></param>
         /// <param name="datastack"></param>
@@ -7309,6 +7340,6 @@ namespace NSS.Blast.SSMD
         }
 
 
-        #endregion
+#endregion
     }
 }

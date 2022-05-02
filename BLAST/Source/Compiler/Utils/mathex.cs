@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Unity.Mathematics;
+using Unity.Collections; 
 
 namespace NSS.Blast.Interpretor
 {
@@ -16,6 +17,16 @@ namespace NSS.Blast.Interpretor
     /// - square 
     /// - euler 
     /// </summary>
+#if ENABLE_IL2CPP
+    [Unity.Burst.BurstCompile(Unity.Burst.FloatPrecision.Medium, Unity.Burst.FloatMode.Fast)]
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppEagerStaticClassConstructionAttribute()]
+#elif !STANDALONE_VSBUILD
+
+    [Unity.Burst.BurstCompile]
+#endif
+
     public static class mathex
     {
 

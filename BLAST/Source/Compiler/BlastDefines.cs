@@ -207,14 +207,29 @@ namespace NSS.Blast
 
     public static class BlastVectorTypeExtensions
     {
+        /// <summary>
+        /// combine datatype, vectorsize and negation into 1 bytesized enumeration, save 2 branches when going through these in nested switches 
+        /// </summary>
+        /// <param name="vectorsize">a vectorsize of 0 is not assumed to be 4, use the safe version if this is needed</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static BlastVectorType Combine(this BlastVariableDataType datatype, byte vectorsize, bool negate_or_not)
         {
 #if TRACE
-            if (vectorsize == 0) Debug.LogError("BlastVectorType.Combine: null vectorsize"); 
-#endif 
+            if (vectorsize == 0) Debug.LogError("BlastVectorType.Combine: 0 vectorsize, if this is inteded to be an encoded size 4 use CombineSafe");
+#endif
 
-            return (BlastVectorType)(negate_or_not ? 0b1000_0000 : 0b0000_0000) + (byte)((byte)datatype << 4) + vectorsize; 
+            return (BlastVectorType)(negate_or_not ? 0b1000_0000 : 0b0000_0000) + (byte)((byte)datatype << 4) + vectorsize;
+        }
+
+
+        /// <summary>
+        /// deue to encoding vectorsize is sometimes 0 this actually means its size 4 (capped after 2 bits)
+        /// this safe version of the combine function uses a select to make sure a vectorsize 0 is treated as size 4
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static BlastVectorType CombineSafe(this BlastVariableDataType datatype, byte vectorsize, bool negate_or_not)
+        {
+            return (BlastVectorType)(negate_or_not ? 0b1000_0000 : 0b0000_0000) + (byte)((byte)datatype << 4) + (byte)math.select(vectorsize, 4, vectorsize == 0);
         }
     }
 
@@ -238,6 +253,7 @@ namespace NSS.Blast
         int3        = ((byte)BlastVariableDataType.ID      << 4) + 3,
         int4        = ((byte)BlastVariableDataType.ID      << 4) + 4,
 
+        // negated 
         float1_n    = ((byte)BlastVariableDataType.Numeric << 4) + 1 + 0b1000_0000,
         float2_n    = ((byte)BlastVariableDataType.Numeric << 4) + 2 + 0b1000_0000,
         float3_n    = ((byte)BlastVariableDataType.Numeric << 4) + 3 + 0b1000_0000,
@@ -255,31 +271,8 @@ namespace NSS.Blast
     }
 
 
-    /// <summary>
-    /// when encoding xxx xxy etc:
-    /// 
-    /// byte: 00112233
-    /// 
-    /// </summary>
-    public enum vector_index : byte
-    {
-        x = 0, y = 1, z = 2, w = 3
-    }
-
-    /// <summary>
-    /// combination of vectorsize and datatype 
-    /// </summary>
-    public enum floatindex : byte
-    {
-       float4 = 0, // float 4 base 
-       float1 = 1, // float 1 base 
-       float2 = 2, // float 2 base 
-       float3 = 3, // float 3 base 
-
-       float4x, float4y, float4z, float4w,
-       float3x, float3y, float3w,
-       float2x, float2y
-    }
+ 
+   
 
 
     /// <summary>
@@ -553,21 +546,22 @@ namespace NSS.Blast
     }
 
     /// <summary>
-    /// blast_operation jumptargets, in loops we use these to override flow with cases not used in that flow
+    /// blast_operation jumptargets, in loops w e use these to override flow with cases not used in that flow
     /// giving them a different name makes it a little more readable
     /// </summary>
 
     public enum blast_operation_jumptarget : byte
     {
-        jump_assign_indexed = blast_operation.id,
-        jump_assign_result = blast_operation.id + 1,
-        jump_assigns = blast_operation.id + 2,
-        jump_assignf = blast_operation.id + 3,
-        jump_assignfn = blast_operation.id + 4,
-        jump_assignfe = blast_operation.id + 5,
-        jump_assignfen = blast_operation.id + 6,
+        jump_assign_indexed = blast_operation.ex_op - 2,
+        jump_assign_result = blast_operation.ex_op - 3,
+        jump_assigns = blast_operation.ex_op - 4,
+        jump_assignf = blast_operation.ex_op - 5,
+        jump_assignfn = blast_operation.ex_op - 6,
+        jump_assignfe = blast_operation.ex_op - 7,
+        jump_assignfen = blast_operation.ex_op - 8,
+        jump_ct_jz_eval = blast_operation.ex_op - 9,
 
-        jump_ct_jz_eval = blast_operation.id + 7
+        max_id_for_direct_assign = blast_operation.ex_op - 20 
     }
 
     /// <summary>
@@ -1189,29 +1183,29 @@ namespace NSS.Blast
         log10,
         logn,
         log2,
-        cross,  //
-        dot,      //
+        cross,   
+        dot,       
         sqrt,
         rsqrt,
-        pow,      //
+        pow,       
 
 
         sin,
         cos,
         tan,
         atan,
-        atan2,   //
+        atan2,    
         cosh,
         sinh,
 
         degrees,
         radians,
 
-        lerp,       //
-        slerp,      //
-        nlerp,        //
+        lerp,     
+        slerp,    
+        nlerp,        
         saturate,  
-        clamp,        //
+        clamp,        
         normalize,
 
         ceil,
@@ -1222,12 +1216,12 @@ namespace NSS.Blast
         /// <summary>
         /// remap e from range a-b to c-d  
         /// </summary>
-        remap,              //
+        remap,              
 
         /// <summary>
         /// normalize x to range a-b |  (x - a) / (b - a).
         /// </summary>
-        unlerp,               //
+        unlerp,              
 
         /// <summary>
         /// get log2 ceiling of value
@@ -1387,7 +1381,7 @@ namespace NSS.Blast
         /// <summary>
         /// reverse bits 
         /// </summary>
-        reverse_bits,     // == 42 
+        reverse_bits,   
 
         /// <summary>
         /// set(variable, mask, value[0|1])

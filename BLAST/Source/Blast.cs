@@ -300,7 +300,10 @@ namespace NSS.Blast
     }
 
     /// <summary>
-    /// Blast Engine
+    /// The blast engine
+    /// - maintains script api 
+    /// - maintains function pointers
+    /// - maintains constant references (deltatime etc.)
     /// </summary>
     unsafe public class Blast : IDisposable
     {

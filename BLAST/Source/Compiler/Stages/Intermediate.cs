@@ -642,6 +642,8 @@ namespace NSS.Blast.Compiler
                     Blast.blaster.SetPackage(package, pcode, pdata, pmetadata, initial_stack_offset);
                     Blast.blaster.SetValidationMode(validation_run);
 
+                    // would be nice to validate the metadata from the compiler automatically.. 
+
                     // run it 
                     int exitcode = Blast.blaster.Execute(blast);
                     if (exitcode != (int)BlastError.success) return exitcode;

@@ -1405,17 +1405,40 @@ namespace NSS.Blast.Compiler.Stage
             // the index-x y z w n operations all have a lower byte value that the interpretor can check 
             //
 
+            // the fastest case: assign a constant to a dataindex, possibly negated 
+            // only for NORMAL
+            // a = 1
+            // a = -1
+            // a = (-1)
+            if (IsDirectConstantAssignmentForNormalPackager(data, ast_node, is_constant_cdata_assignment, is_indexed_assignment))
+            {
+                // encode the constant first, then the ID of the data element followed by a possible negation 
+                // - this will provide the normal interpretor with a fast lane setting constants
+                // - this also sets a vectors components to equal values (zero not really needed for normal interpretor with this)
+                // - this is faster then assignV but less general, assign v should also compile this pattern if:
+                // => the vector assigned has the same constant value operation (only ops) for each component 
+                // => the element assigned is in the datasegment 
+                CompileDirectConstantAssignmentForNormalPackager(ast_node, code, assignee);
+            }
+            else
+            if (IsDirectIDAssignmentForNormalPackager(data, ast_node, is_constant_cdata_assignment, is_indexed_assignment))
+            {
+                // same story as with the constant, only now we encode assigning a non-indexed datapoint with another
+                // - constant initializing in normal happens from constant data in the datasegment (the data has to come from somewere on reset)
+                CompileDirectIDAssignmentForNormalPackager(ast_node, code, assignee);
+            }
+            else
             // assigning a single value or pop?  
             if (ast_node.ChildCount == 1 && node.IsSingleValueOrPop(ast_node.FirstChild))
             {
                 // ASSIGNS | op.sets 
                 // encode assigns instead of assign, this saves a trip through get_compound and 1 byte closing that compound
 
-                if(CompileIndexedAssignmentTarget(data, ast_node, assignee, code, blast_operation.assigns, is_indexed_assignment, op_indexer, is_constant_cdata_assignment) == null)
+                if (CompileIndexedAssignmentTarget(data, ast_node, assignee, code, blast_operation.assigns, is_indexed_assignment, op_indexer, is_constant_cdata_assignment) == null)
                 {
-                    return null; 
+                    return null;
                 }
-                
+
 
                 // encode variable, constant value or pop instruction 
                 if (!CompileParameter(data, ast_node.FirstChild, code, true))
@@ -1473,37 +1496,44 @@ namespace NSS.Blast.Compiler.Stage
             if (ast_node.is_vector && ast_node.IsSimplexVectorDefinition())
             {
                 // this should never be indexed 
-                if(is_indexed_assignment)
+                if (is_indexed_assignment)
                 {
                     data.LogError($"Blast.CompileAssignmentNode: error compiling node <{ast_node.parent}>.<{ast_node}>, cannot set a component index with a vector", (int)BlastError.error_assign_component_from_vector);
                     return null;
                 }
 
-                if (CompileIndexedAssignmentTarget(data, ast_node, assignee, code, blast_operation.assignv, is_indexed_assignment, op_indexer, is_constant_cdata_assignment) == null)
+                //if (IsDirectSingleConstantVectorAssignmentForNormalPackager(data, ast_node, is_constant_cdata_assignment))
+                //{
+                // assignment of 1 constant to vector in data[index]
+                // the interpretor will get metadata on data[index] and knows to assign a vector
+                // if there is 1 constant to set, equal for each vector component then we use the same construct as in directconstant assignments 
+                //}
+                //else
                 {
-                    return null;
+                    if (CompileIndexedAssignmentTarget(data, ast_node, assignee, code, blast_operation.assignv, is_indexed_assignment, op_indexer, is_constant_cdata_assignment) == null)
+                    {
+                        return null;
+                    }
+
+                    // assingv deduces vectorsize and parametercount at interpretation and assumes compiler has generated correct code 
+                    // code.Add((byte)node.encode44(ast_node, (byte)ast_node.ChildCount));
+
+                    if (!CompileSimplexFunctionParameterList(data, ast_node, ast_node.children, code))
+                    {
+                        data.LogError($"Blast.CompileAssignmentNode: error compiling {ast_node.function.ScriptOp} parameters for node <{ast_node.parent}>.<{ast_node}>");
+                        return null;
+                    }
+
+                    // 
+                    // assignV allows the minus symbol directly in the vector definition..... 
+                    // because we flattened that away it cant easily use that feature here 
+                    // 
+                    // TODO: update flattener, allow it to leave the minus in this case 
+                    //       IsSimplexVectorDefinition should then also allow the -compounds 
+                    //       CompileSimplexfunctionParameterList must then also write these in only this situatiion 
+                    //
+                    // 
                 }
-
-                // assingv deduces vectorsize and parametercount at interpretation and assumes compiler has generated correct code 
-                // code.Add((byte)node.encode44(ast_node, (byte)ast_node.ChildCount));
-
-                if (!CompileSimplexFunctionParameterList(data, ast_node, ast_node.children, code))
-                {
-                    data.LogError($"Blast.CompileAssignmentNode: error compiling {ast_node.function.ScriptOp} parameters for node <{ast_node.parent}>.<{ast_node}>");
-                    return null;
-                }
-
-                // 
-                // assignV allows the minus symbol directly in the vector definition..... 
-                // because we flattened that away it cant easily use that feature here 
-                // 
-                // TODO: update flattener, allow it to leave the minus in this case 
-                //       IsSimplexVectorDefinition should then also allow the -compounds 
-                //       CompileSimplexfunctionParameterList must then also write these in only this situatiion 
-                //
-                // 
-
-
             }
             // default compound assignment 
             else
@@ -1583,6 +1613,132 @@ namespace NSS.Blast.Compiler.Stage
 
             return code;
         }
+
+
+        /// <summary>
+        /// NORMAL MODE ONLY - Direct constant -> data[ID] 
+        /// 
+        /// checks if a constant is assigned to data, possibly negated
+        /// a = 1; 
+        /// a = (-1);
+        /// a = -1;
+        /// 
+        /// </summary>
+        private static bool IsDirectConstantAssignmentForNormalPackager(CompilationData data, node ast_node, bool is_constant_cdata_assignment, bool is_indexed_assignment)
+        {
+            return !is_constant_cdata_assignment &&
+                    !is_indexed_assignment &&
+                    data.CompilerOptions.PackageMode == BlastPackageMode.Normal
+                    &&
+                     (
+                         (ast_node.ChildCount == 1 && ast_node.FirstChild.IsConstantValue) ||
+                         (ast_node.ChildCount == 2 && ast_node.FirstChild.token == BlastScriptToken.Substract && ast_node.LastChild.IsConstantValue) ||
+                         (ast_node.ChildCount == 1 && ast_node.FirstChild.IsCompound && ast_node.FirstChild.ChildCount == 2 && ast_node.FirstChild.FirstChild.token == BlastScriptToken.Substract && ast_node.FirstChild.LastChild.IsConstantValue)
+                     );
+        }
+
+
+        /// <summary>
+        /// the direct assignment of an id - see IsDirectConstantAssignmentForNormalPackager for more information 
+        /// -> important: this is not allowed for variable ids > (byte)blast_operation_jumptarget.max_id_for_direct_assign, these opcodes can be used for other things and have double meaning
+        ///               - any assignment from an id >= (byte)blast_operation_jumptarget.max_id_for_direct_assign has to go trough the longer route
+        /// </summary>
+        private static bool IsDirectIDAssignmentForNormalPackager(CompilationData data, node ast_node, bool is_constant_cdata_assignment, bool is_indexed_assignment)
+        {
+            byte maxid = (byte)blast_operation_jumptarget.max_id_for_direct_assign - (byte)blast_operation.id;
+            return !is_constant_cdata_assignment &&
+                    !is_indexed_assignment &&
+                    data.CompilerOptions.PackageMode == BlastPackageMode.Normal
+                    &&
+                     (
+                         (ast_node.ChildCount == 1 && ast_node.FirstChild.IsScriptVariable && ast_node.variable.Id < maxid) ||
+                         (ast_node.ChildCount == 2 && ast_node.FirstChild.token == BlastScriptToken.Substract && ast_node.LastChild.IsScriptVariable && ast_node.LastChild.variable.Id < maxid) ||
+                         (ast_node.ChildCount == 1 && ast_node.FirstChild.IsCompound && ast_node.FirstChild.ChildCount == 2 && ast_node.FirstChild.FirstChild.token == BlastScriptToken.Substract && ast_node.FirstChild.LastChild.IsScriptVariable && ast_node.FirstChild.LastChild.variable.Id < maxid)
+                     );
+        }
+
+
+        /// <summary>
+        /// NORMAL MODE ONLY - Direct constant -> data[ID] 
+        /// 
+        /// a = 1; 
+        /// a = (-1);
+        /// a = -1;
+        /// 
+        /// encode the constant first, then the ID of the data element with the 8bit encoding the boolean substract
+        /// - this will provide the normal interpretor with a fast lane setting constants
+        /// - this could also set a vectors components to equal values of the same constant -> needs further compiler updates
+        /// - this is faster then assignV but less general, assign v should also compile this pattern if:
+        /// => the vector assigned has the same constant value operation (only ops) for each component 
+        /// => the element assigned is in the datasegment 
+        /// 
+        /// - saves 1-2 bytes of code, 1 for encoding the assign, and 1 for a possible negation.
+        /// - saves a lot more on branches during interpretation:
+        /// ==> a = 1; used to take 40-50 ns , now it takes 12 ns as this is a very common operation it makes sence to do this
+        /// </summary>
+        private static void CompileDirectConstantAssignmentForNormalPackager(node ast_node, IMByteCodeList code, BlastVariable assignee)
+        {
+            if (ast_node.ChildCount == 1)
+            {
+                if (ast_node.FirstChild.IsCompound)
+                {
+                    // (- constant)
+                    code.Add(ast_node.FirstChild.LastChild.constant_op);
+        
+                    //the id uses 7 bits, use the 8th for the minus sign 
+                    code.Add((byte)((byte)assignee.Id + 0b1000_0000));
+                }
+                else
+                {
+                    // single constant 
+                    code.Add(ast_node.FirstChild.constant_op);
+                    code.Add((byte)assignee.Id);
+                }
+            }
+            else
+            {
+                // - constant 
+                code.Add(ast_node.LastChild.constant_op);
+                //the id uses 7 bits, use the 8th for the minus sign 
+                code.Add((byte)((byte)assignee.Id + 0b1000_0000));
+            }
+        }
+
+        /// <summary>
+        /// see CompileDirectConstantAssignmentForNormalPackager but then for variables 
+        /// 
+        /// -> important: this is not allowed for variable ids > (byte)blast_operation_jumptarget.max_id_for_direct_assign, these opcodes can be used for other things and have double meaning
+        ///               - any assignment from an id > (byte)blast_operation_jumptarget.max_id_for_direct_assign has to go trough the longer route
+        /// 
+        /// </summary>
+        private static void CompileDirectIDAssignmentForNormalPackager(node ast_node, IMByteCodeList code, BlastVariable assignee)
+        {
+            if (ast_node.ChildCount == 1)
+            {
+                if (ast_node.FirstChild.IsCompound)
+                {
+                    // (- constant)
+                    code.Add((byte)(ast_node.FirstChild.LastChild.variable.Id + (byte)blast_operation.id));
+
+                    //the id uses 7 bits, use the 8th for the minus sign 
+                    code.Add((byte)((byte)assignee.Id + 0b1000_0000));
+                }
+                else
+                {
+                    // single constant 
+                    code.Add((byte)(ast_node.FirstChild.variable.Id + (byte)blast_operation.id));
+                    code.Add((byte)assignee.Id);
+                }
+            }
+            else
+            {
+                // - constant 
+                code.Add((byte)(ast_node.FirstChild.LastChild.variable.Id + (byte)blast_operation.id));
+                //the id uses 7 bits, use the 8th for the minus sign 
+                code.Add((byte)((byte)assignee.Id + 0b1000_0000));
+            }
+        }
+
 
         private static IMByteCodeList CompileIndexedAssignmentTarget(CompilationData data, node ast_node, BlastVariable assignee, IMByteCodeList code, blast_operation assignment_op, bool is_indexed_assignment, blast_operation op_indexer, bool is_constant_cdata_assignment)
         {

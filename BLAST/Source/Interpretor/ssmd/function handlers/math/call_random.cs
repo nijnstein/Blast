@@ -65,6 +65,10 @@ namespace NSS.Blast.SSMD
             }
         }
 
+
+#if !STANDALONE_VSBUILD
+        [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         [MethodImpl(MethodImplOptions.NoInlining)]
         void CALL_RANDOM_F1_f1(ref int code_pointer, int ssmd_datacount, [NoAlias] float4* register)
         {
@@ -78,6 +82,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
+#if !STANDALONE_VSBUILD
+        [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         [MethodImpl(MethodImplOptions.NoInlining)]
         void CALL_RANDOM_F2_f2(ref int code_pointer, int ssmd_datacount, [NoAlias] float4* register)
         {
@@ -91,6 +98,10 @@ namespace NSS.Blast.SSMD
                 register[i].y = random.NextFloat(0, fpa[i].y);
             }
         }
+
+#if !STANDALONE_VSBUILD
+        [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         [MethodImpl(MethodImplOptions.NoInlining)]
         void CALL_RANDOM_F3_f3(ref int code_pointer, int ssmd_datacount, [NoAlias] float4* register)
         {
@@ -106,6 +117,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
+#if !STANDALONE_VSBUILD
+        [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         [MethodImpl(MethodImplOptions.NoInlining)]
         void CALL_RANDOM_F4_f4(ref int code_pointer, int ssmd_datacount, [NoAlias] float4* register)
         {
@@ -122,6 +136,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
+#if !STANDALONE_VSBUILD
+        [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         [MethodImpl(MethodImplOptions.NoInlining)]
         void CALL_RANDOM_F1_f1f1(ref int code_pointer, int ssmd_datacount, [NoAlias] float4* register)
         {
@@ -137,6 +154,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
+#if !STANDALONE_VSBUILD
+        [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         [MethodImpl(MethodImplOptions.NoInlining)]
         void CALL_RANDOM_F2_f2f2(ref int code_pointer, int ssmd_datacount, [NoAlias] float4* register)
         {
@@ -153,6 +173,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
+#if !STANDALONE_VSBUILD
+        [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         [MethodImpl(MethodImplOptions.NoInlining)]
         void CALL_RANDOM_F3_f3f3(ref int code_pointer, int ssmd_datacount, [NoAlias] float4* register)
         {
@@ -170,6 +193,9 @@ namespace NSS.Blast.SSMD
             }
         }
 
+#if !STANDALONE_VSBUILD
+        [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
         [MethodImpl(MethodImplOptions.NoInlining)]
         void CALL_RANDOM_F4_f4f4(ref int code_pointer, int ssmd_datacount, [NoAlias] float4* register)
         {                                              

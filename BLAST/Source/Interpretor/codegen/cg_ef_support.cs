@@ -3836,6 +3836,9 @@ internal Bool32* CALL_PROC_EF_SSMD_B32(ref int code_pointer, in int function_id,
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -3857,6 +3860,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f1(ref int code_pointer, in int function_id
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -3880,6 +3886,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1(ref int code_pointer, in int function_
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -3905,6 +3914,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1(ref int code_pointer, in int functio
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -3932,6 +3944,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1(ref int code_pointer, in int funct
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -3961,6 +3976,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1(ref int code_pointer, in int fun
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -3992,6 +4010,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1(ref int code_pointer, in int f
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4025,6 +4046,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1(ref int code_pointer, in int
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1f1(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4060,6 +4084,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f1f1f1f1f1f1f1f1(ref int code_pointer, in i
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f2(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4081,6 +4108,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f2(ref int code_pointer, in int function_id
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f2f2(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4104,6 +4134,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f2f2(ref int code_pointer, in int function_
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f2f2f2(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4129,6 +4162,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f2f2f2(ref int code_pointer, in int functio
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f3(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4150,6 +4186,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f3(ref int code_pointer, in int function_id
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f3f3(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4173,6 +4212,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f3f3(ref int code_pointer, in int function_
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f3f3f3(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4198,6 +4240,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f3f3f3(ref int code_pointer, in int functio
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f4(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4219,6 +4264,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f4(ref int code_pointer, in int function_id
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f4f4(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4242,6 +4290,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f4f4(ref int code_pointer, in int function_
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float* CALL_PROC_EF_SSMD_F1_f4f4f4(ref int code_pointer, in int function_id, int ssmd_datacount, float* result)
 {
@@ -4267,6 +4318,9 @@ internal float* CALL_PROC_EF_SSMD_F1_f4f4f4(ref int code_pointer, in int functio
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float2* CALL_PROC_EF_SSMD_F2_f2(ref int code_pointer, in int function_id, int ssmd_datacount, float2* result)
 {
@@ -4288,6 +4342,9 @@ internal float2* CALL_PROC_EF_SSMD_F2_f2(ref int code_pointer, in int function_i
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float2* CALL_PROC_EF_SSMD_F2_f2f2(ref int code_pointer, in int function_id, int ssmd_datacount, float2* result)
 {
@@ -4311,6 +4368,9 @@ internal float2* CALL_PROC_EF_SSMD_F2_f2f2(ref int code_pointer, in int function
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float2* CALL_PROC_EF_SSMD_F2_f2f2f2(ref int code_pointer, in int function_id, int ssmd_datacount, float2* result)
 {
@@ -4336,6 +4396,9 @@ internal float2* CALL_PROC_EF_SSMD_F2_f2f2f2(ref int code_pointer, in int functi
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float3* CALL_PROC_EF_SSMD_F3_f3(ref int code_pointer, in int function_id, int ssmd_datacount, float3* result)
 {
@@ -4357,6 +4420,9 @@ internal float3* CALL_PROC_EF_SSMD_F3_f3(ref int code_pointer, in int function_i
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float3* CALL_PROC_EF_SSMD_F3_f3f3(ref int code_pointer, in int function_id, int ssmd_datacount, float3* result)
 {
@@ -4380,6 +4446,9 @@ internal float3* CALL_PROC_EF_SSMD_F3_f3f3(ref int code_pointer, in int function
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float3* CALL_PROC_EF_SSMD_F3_f3f3f3(ref int code_pointer, in int function_id, int ssmd_datacount, float3* result)
 {
@@ -4405,6 +4474,9 @@ internal float3* CALL_PROC_EF_SSMD_F3_f3f3f3(ref int code_pointer, in int functi
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float4* CALL_PROC_EF_SSMD_F4_f4(ref int code_pointer, in int function_id, int ssmd_datacount, float4* result)
 {
@@ -4426,6 +4498,9 @@ internal float4* CALL_PROC_EF_SSMD_F4_f4(ref int code_pointer, in int function_i
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float4* CALL_PROC_EF_SSMD_F4_f4f4(ref int code_pointer, in int function_id, int ssmd_datacount, float4* result)
 {
@@ -4449,6 +4524,9 @@ internal float4* CALL_PROC_EF_SSMD_F4_f4f4(ref int code_pointer, in int function
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal float4* CALL_PROC_EF_SSMD_F4_f4f4f4(ref int code_pointer, in int function_id, int ssmd_datacount, float4* result)
 {
@@ -4474,6 +4552,9 @@ internal float4* CALL_PROC_EF_SSMD_F4_f4f4f4(ref int code_pointer, in int functi
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal void CALL_PROC_EF_SSMD_b32(ref int code_pointer, in int function_id, int ssmd_datacount)
 {
@@ -4495,6 +4576,9 @@ internal void CALL_PROC_EF_SSMD_b32(ref int code_pointer, in int function_id, in
 #endif
    return;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal Bool32* CALL_PROC_EF_SSMD_B32_b32(ref int code_pointer, in int function_id, int ssmd_datacount, Bool32* result)
 {
@@ -4516,6 +4600,9 @@ internal Bool32* CALL_PROC_EF_SSMD_B32_b32(ref int code_pointer, in int function
 #endif
    return null;
 }
+#if !STANDALONE_VSBUILD
+   [Unity.Burst.CompilerServices.SkipLocalsInit]
+#endif
 [MethodImpl(MethodImplOptions.NoInlining)]
 internal Bool32* CALL_PROC_EF_SSMD_B32_b32f4f1(ref int code_pointer, in int function_id, int ssmd_datacount, Bool32* result)
 {

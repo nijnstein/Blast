@@ -4,9 +4,11 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
 //                                                                                                                     (__)  #
 //############################################################################################################################
+#pragma warning disable CS1591
+#pragma warning disable CS0162
 
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone;
+using NSS.Blast.Standalone;
     using System.Reflection;
 #else
     using UnityEngine;
@@ -25,7 +27,7 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// set zero to given index
         /// </summary>
-        BlastError get_zero_result([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, int ssmd_datacount)
+        BlastError CALL_ZERO([NoAlias] void* temp, ref int code_pointer, ref byte vector_size, int ssmd_datacount)
         {
             // index would be the same for each ssmd record
             int dataindex = code[code_pointer] - BlastInterpretor.opt_id;
@@ -35,10 +37,14 @@ namespace NSS.Blast.SSMD
             {
                 if (IsTrace)
                 {
-                    Debug.LogError($"ssmd.zero: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                    Debug.LogError($"Blast.Interpretor.ssmd.zero: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
                 }
                 return BlastError.ssmd_parameter_must_be_variable;
             }
+
+            // 
+            // ZERO is 0 for any datatype, so we dont need to check 
+            //
 
             switch (BlastInterpretor.GetMetaDataSize(in metadata, (byte)dataindex))
             {
@@ -57,6 +63,13 @@ namespace NSS.Blast.SSMD
                 case 0:
                     simd.move_f1_constant_to_indexed_data_as_f4(data, data_rowsize, data_is_aligned, dataindex, 0, ssmd_datacount);
                     break;
+
+                default:
+                    if (IsTrace)
+                    {
+                        Debug.LogError($"Blast.Interpretor.ssmd.zero: first parameter must directly point to a dataindex but its '{dataindex + BlastInterpretor.opt_id}' instead");
+                    }
+                    return BlastError.error_vector_size_not_supported;
             }
 
             return BlastError.success;

@@ -4,9 +4,10 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
 //                                                                                                                     (__)  #
 //############################################################################################################################
-
+#pragma warning disable CS1591
+#pragma warning disable CS0162
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone;
+using NSS.Blast.Standalone;
     using System.Reflection;
 #else
     using UnityEngine;
