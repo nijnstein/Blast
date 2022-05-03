@@ -1944,6 +1944,9 @@ namespace NSS.Blast.Compiler.Stage
             // [identifier][indexchain] = [sequence] ;/nop
             if (ast_node.children.Count > 1)
             {
+                //
+                // Standard assignment form:  a = b .... 
+                //
                 // first child must be a non constant parameter 
                 // the second must be an assignment operator 
                 if (ast_node.children[0].type == nodetype.parameter
@@ -1979,7 +1982,7 @@ namespace NSS.Blast.Compiler.Stage
                             // any cdata defined with data is assumed to be constant 
                             // - it can be allowed to be overwritten with compiler options 
                             //   or defines 
-                            if(param.variable.DataType != BlastVariableDataType.CData
+                            if (param.variable.DataType != BlastVariableDataType.CData
                                ||
                                (param.variable.DataType != BlastVariableDataType.CData && !data.DefinesOrConfiguresSharedCData))
                             {
@@ -1998,12 +2001,54 @@ namespace NSS.Blast.Compiler.Stage
                         // take indexers from the first child / assignee if any 
                         if (ast_node.FirstChild.HasIndexers)
                         {
-                            ast_node.indexers = ast_node.FirstChild.indexers; 
-                        }                         
+                            ast_node.indexers = ast_node.FirstChild.indexers;
+                        }
                         // remove the first 2 child nodes, these are the id = and can now be omitted
                         ast_node.children.RemoveRange(0, 2);
                     }
                 }
+                else
+                //
+                // check for the most simple patterns of increment/decrement
+                //
+                if (ast_node.ChildCount == 3)
+                {
+                    // 
+                    // Incrementor, after: a++; 
+                    //
+                    if (ast_node.ChildCount == 3 &&
+                        ast_node.children[1].token == BlastScriptToken.Add &&
+                        ast_node.children[2].token == BlastScriptToken.Add)
+                    {
+                        node id = ast_node.children[0];
+                        ast_node.children.Clear();
+                        //ast_node.SetChild(id);
+                        ast_node.CreateChild(nodetype.increment, BlastScriptToken.Increment, id.identifier);
+                    }
+                    else
+                    // 
+                    // Incrementor, after: a--; 
+                    //
+                    if (ast_node.ChildCount == 3 &&
+                        ast_node.children[1].token == BlastScriptToken.Substract &&
+                        ast_node.children[2].token == BlastScriptToken.Substract)
+                    {
+                        node id = ast_node.children[0];
+                        ast_node.children.Clear();
+                        //ast_node.SetChild(id);
+                        ast_node.CreateChild(nodetype.decrement, BlastScriptToken.Decrement, id.identifier);
+                    }
+                }
+                //else
+                //{
+
+                //}
+
+                //
+                // INCREMENTAL assignment: +=    -=
+                //
+
+
             }
 
             return data.IsOK;

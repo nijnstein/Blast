@@ -120,7 +120,15 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// a constant cdata element to be inlined into the code segment 
         /// </summary>
-        cdata
+        cdata,
+        /// <summary>
+        /// increment a data index
+        /// </summary>
+        increment,
+        /// <summary>
+        /// decrement a data index 
+        /// </summary>
+        decrement
     }
 
     /// <summary>
@@ -233,6 +241,21 @@ namespace NSS.Blast.Compiler
         /// True if this a compound node
         /// </summary>
         public bool IsCompound => type == nodetype.compound;
+
+        /// <summary>
+        /// true if node is an in- or decrementor: i++ or i--; 
+        /// </summary>
+        public bool IsIncrementOrDecrementor => type == nodetype.increment || type == nodetype.decrement;
+
+        /// <summary>
+        /// true if node is i++
+        /// </summary>
+        public bool IsIncrementor => type == nodetype.increment;
+
+        /// <summary>
+        /// true if node is i--
+        /// </summary>
+        public bool IsDecrementor => type == nodetype.decrement;
 
         /// <summary>
         /// True if this is an assignment
@@ -843,7 +866,10 @@ namespace NSS.Blast.Compiler
                     if (variable != null)
                         return $"constant cdata {variable.Name}[{variable.ConstantData.Length}]";
                     else
-                        return "constat cdata";
+                        return "constant cdata";
+
+                case nodetype.increment: return $"increment {identifier}"; 
+                case nodetype.decrement: return $"decrement {identifier}";
 
                 default: return base.ToString();
             }
@@ -1582,6 +1608,8 @@ namespace NSS.Blast.Compiler
             while (node.ChildCount == 1 && (node.FirstChild.IsCompound || node.FirstChild.IsFunction))
             {
                 node child = node.FirstChild;
+
+                // chid == nested compound 
                 if (child.IsCompound)
                 {
                     // single compound as child, need to check these children and remove the comound
@@ -2604,6 +2632,149 @@ namespace NSS.Blast.Compiler
 
             return true;
         }
+
+
+        /// <summary>
+        /// check if the children map to the match list
+        /// </summary>
+        /// <param name="match"></param>
+        /// <returns></returns>
+        public bool Is(BlastPackageMode packagemode, params NodeMatch[] match)
+        {
+            if (match == null || match.Length == 0) return false; 
+            
+            // child count must match 
+            if(ChildCount != match.Length) return false;
+
+            // match each element 
+            for (int i = 0; i < ChildCount; i++)
+            {
+                switch (match[i])
+                {
+                    case NodeMatch.ScriptVariable:
+                        {
+                            if (!children[i].IsScriptVariable || children[i].HasIndexers) return false;
+                        }
+                        break;
+
+                    case NodeMatch.ScriptVariableSelf:
+                        {
+                            if (!children[i].IsScriptVariable || children[i].HasIndexers || !this.HasVariable) return false;
+                            if (children[i].variable.Id != this.variable.Id) return false; 
+                        }
+                        break;
+
+                    case NodeMatch.Constant1:
+                        {
+                            if (!children[i].is_constant || children[i].constant_op != blast_operation.value_1) return false;
+                        }
+                        break;
+
+                    case NodeMatch.Constant0:
+                        {
+                            if (!children[i].is_constant || children[i].constant_op != blast_operation.value_0) return false;
+                        }
+                        break;
+
+                    case NodeMatch.Constant:
+                        {
+                            // this depends on package mode of the compiler
+                            // - in normal mode: its all with constant token set 
+                            // - in ssmd its all constant values, possibly encoded into the code segment
+                            if (packagemode == BlastPackageMode.Normal
+                                ||
+                                packagemode == BlastPackageMode.Compiler)
+                            {
+                                // only hit on constants encoded as operation
+                                if (children[i].is_constant && children[i].constant_op >= blast_operation.pi && children[i].constant_op < blast_operation.id)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    return false; 
+                                }
+                            }
+                            else
+                            if (packagemode == BlastPackageMode.SSMD)
+                            {
+                                if ((children[i].is_constant && children[i].constant_op >= blast_operation.pi && children[i].constant_op < blast_operation.id)
+                                    ||
+                                    (children[i].HasVariable && children[i].variable.IsConstant))
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    return false; 
+                                }
+                            }
+                        }
+                        break;
+
+                    case NodeMatch.Add:
+                        {
+                            if (children[i].token != BlastScriptToken.Add) return false;
+                        }
+                        break;
+
+                    case NodeMatch.Substract:
+                        {
+                            if (children[i].token != BlastScriptToken.Substract) return false;
+                        }
+                        break;
+
+                    // anything not checked for voids this -> false
+                    default: return false; 
+                }
+            }
+
+            // reaching here means all matched 
+            return true; 
+        }
+
+    }
+
+
+    /// <summary>
+    /// match nodes to some description, usefull to look for patterns in node trees 
+    /// </summary>
+    public enum NodeMatch
+    {
+        /// <summary>
+        /// match to a non-indexed 'a'
+        /// </summary>
+        ScriptVariable,
+
+        /// <summary>
+        /// match to a non-indexed 'a' that is also set to this node, ie:   a = a + b;  when is(a + b) then a matches to self 
+        /// </summary>
+        ScriptVariableSelf,
+
+        /// <summary>
+        /// match to constant, depends on packagemode 
+        /// </summary>
+        Constant,
+
+        /// <summary>
+        /// shortcut to match a constant 0 defined in script 
+        /// </summary>
+        Constant0,
+
+        /// <summary>
+        /// shortcut to match a constant 1 defined in script 
+        /// </summary>
+        Constant1,
+
+        /// <summary>
+        /// match to an operation token: add
+        /// </summary>
+        Add,
+
+        /// <summary>
+        /// match to an operation token: add
+        /// </summary>
+        Substract
     }
 
     /// <summary>

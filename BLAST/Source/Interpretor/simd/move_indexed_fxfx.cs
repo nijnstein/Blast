@@ -150,6 +150,14 @@ namespace NSS.Blast.SSMD
         }
 
 
+        /// <summary>
+        /// data expansion of f1 to f2 in indexed data arrays: data[][].xy = data[][].x
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_f1f2(in DATAREC target, in DATAREC source, int ssmd_datacount)
+        {
+            move_indexed_f1f2(target.data, target.row_size, target.is_aligned, target.index, source.data, source.row_size, source.is_aligned, source.index, ssmd_datacount);
+        }
 
         /// <summary>
         /// data expansion of f1 to f2 in indexed data arrays: data[][].xy = data[][].x
@@ -158,6 +166,16 @@ namespace NSS.Blast.SSMD
         static public void move_indexed_f1f2(in DATAREC destination, [NoAlias] void** source_indexbuffer, int source_index_rowsize, bool source_is_aligned, int source_index, int ssmd_datacount)
         {
             move_indexed_f1f2(destination.data, destination.row_size, destination.is_aligned, destination.index, source_indexbuffer, source_index_rowsize, source_is_aligned, source_index, ssmd_datacount);
+        }
+
+
+        /// <summary>
+        /// data expansion of f1 to f2 in indexed data arrays: data[][].xy = data[][].x
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_f1f2_negated(in DATAREC target, in DATAREC source, int ssmd_datacount)
+        {
+            move_indexed_f1f2_negated(target.data, target.row_size, target.is_aligned, target.index, source.data, source.row_size, source.is_aligned, source.index, ssmd_datacount);
         }
 
         /// <summary>
@@ -438,6 +456,16 @@ namespace NSS.Blast.SSMD
             }
         }
 
+
+        /// <summary>
+        /// data expansion of f1 to f3 in indexed data arrays: data[][].xyz = data[][].x
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_f1f3(in DATAREC target, in DATAREC source, int ssmd_datacount)
+        {
+            move_indexed_f1f3(target.data, target.row_size, target.is_aligned, target.index, source.data, source.row_size, source.is_aligned, source.index, ssmd_datacount);
+        }
+
         /// <summary>
         /// data expansion of f1 to f3 in indexed data arrays: data[][].xyz = data[][].x
         /// </summary>
@@ -446,6 +474,18 @@ namespace NSS.Blast.SSMD
         {
             move_indexed_f1f3(destination.data, destination.row_size, destination.is_aligned, destination.index, source_indexbuffer, source_index_rowsize, source_is_aligned, source_index, ssmd_datacount);
         }
+
+
+
+        /// <summary>
+        /// data expansion of f1 to f3 in indexed data arrays: data[][].xyz = -data[][].x
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_f1f3_negated(in DATAREC target, in DATAREC source, int ssmd_datacount)
+        {
+            move_indexed_f1f3_negated(target.data, target.row_size, target.is_aligned, target.index, source.data, source.row_size, source.is_aligned, source.index, ssmd_datacount);
+        }
+
 
         /// <summary>
         /// data expansion of f1 to f3 in indexed data arrays: data[][].xyz = -data[][].x
@@ -760,9 +800,27 @@ namespace NSS.Blast.SSMD
         /// data expansion of f1 to f4 in indexed data arrays: data[][].xyzw = data[][].x
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_f1f4(in DATAREC target, in DATAREC source, int ssmd_datacount)
+        {
+            move_indexed_f1f4(target.data, target.row_size, target.is_aligned, target.index, source.data, source.row_size, source.is_aligned, source.index, ssmd_datacount);
+        }
+
+        /// <summary>
+        /// data expansion of f1 to f4 in indexed data arrays: data[][].xyzw = data[][].x
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void move_indexed_f1f4(in DATAREC destination, [NoAlias] void** source_indexbuffer, int source_index_rowsize, bool source_is_aligned, int source_index, int ssmd_datacount)
         {
             move_indexed_f1f4(destination.data, destination.row_size, destination.is_aligned, destination.index, source_indexbuffer, source_index_rowsize, source_is_aligned, source_index, ssmd_datacount);
+        }
+
+        /// <summary>
+        /// data expansion of f1 to f4 in indexed data arrays: data[][].xyzw = -data[][].x
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_f1f4_negated(in DATAREC target, in DATAREC source, int ssmd_datacount)
+        {
+            move_indexed_f1f4_negated(target.data, target.row_size, target.is_aligned, target.index, source.data, source.row_size, source.is_aligned, source.index, ssmd_datacount);
         }
 
         /// <summary>
@@ -1541,6 +1599,27 @@ namespace NSS.Blast.SSMD
         #endregion
 
         #region move_indexed_fx negated
+
+
+
+        /// <summary>
+        /// target[][].x = source[][].x
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_f1_n(in DATAREC target, in DATAREC source, int ssmd_datacount)
+        {
+            move_indexed_f1_n(target.data, target.row_size, target.is_aligned, target.index, source.data, source.row_size, source.is_aligned, source.index, ssmd_datacount);
+        }
+
+        /// <summary>
+        /// data[][].x = data[][].x
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static public void move_indexed_f1_n(in DATAREC target, [NoAlias] void** source_indexbuffer, int source_index_rowsize, bool source_is_aligned, int source_index, int ssmd_datacount)
+        {
+            move_indexed_f1_n(target.data, target.row_size, target.is_aligned, target.index, source_indexbuffer, source_index_rowsize, source_is_aligned, source_index, ssmd_datacount);
+        }
+
         /// <summary>
         /// data[][].x = data[][].x
         /// </summary>

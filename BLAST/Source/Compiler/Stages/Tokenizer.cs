@@ -1026,8 +1026,10 @@ namespace NSS.Blast.Compiler.Stage
                                     case BlastScriptToken.Substract:
                                         {
                                             // -- => +
-                                            token = BlastScriptToken.Add; 
-                                            tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.Add, null);
+                                            //token = BlastScriptToken.Add; 
+                                            //tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.Add, null);
+                                            //i1++;
+                                            tokens.Add(new Tuple<BlastScriptToken, string>(token, null));
                                             i1++;
                                         }
                                         continue;
@@ -1038,6 +1040,13 @@ namespace NSS.Blast.Compiler.Stage
                                             token = BlastScriptToken.Substract;
                                             tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.Substract, null);
                                             i1++;
+                                        }
+                                        continue;
+
+                                    case BlastScriptToken.Equals:
+                                        {
+                                            // -=
+                                        
                                         }
                                         continue; 
                                 }
@@ -1060,9 +1069,18 @@ namespace NSS.Blast.Compiler.Stage
                                     case BlastScriptToken.Add:
                                         {
                                             // ++ => +
-                                            token = BlastScriptToken.Add; 
-                                            tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.Add, null);
+                                            //token = BlastScriptToken.Increment; 
+                                            //tokens[tokens.Count - 1] = new Tuple<BlastScriptToken, string>(BlastScriptToken.Add, null);
+                                            //i1++;
+                                            tokens.Add(new Tuple<BlastScriptToken, string>(token, null));
                                             i1++;
+                                        }
+                                        continue;
+                                
+                                    case BlastScriptToken.Equals:
+                                        {
+                                            // +=
+
                                         }
                                         continue;
                                 }
@@ -1261,6 +1279,13 @@ namespace NSS.Blast.Compiler.Stage
 
             return (int)BlastError.success;
         }
+
+
+
+        // untangle increment/decrement 
+
+
+
 
 
         /// <summary>

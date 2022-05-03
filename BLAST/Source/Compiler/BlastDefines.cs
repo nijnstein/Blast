@@ -1705,7 +1705,21 @@ namespace NSS.Blast
         /// <remarks>
         /// 
         /// </remarks>
-        Function
+        Function,
+
+
+        /// <summary>
+        /// inline increment: i++; 
+        /// </summary>
+        Increment,
+
+        /// <summary>
+        /// inlined decrement: i--;
+        /// </summary>
+        Decrement 
+
+
+
 
     }
 
@@ -2180,7 +2194,8 @@ namespace NSS.Blast
         /// <summary>
         /// unable to decode cdata as request value
         /// </summary>
-        error_failed_to_decode_cdata = -104
+        error_failed_to_decode_cdata = -104,
+        error_incrementor_transform = 2
     }
 
 }

@@ -1062,6 +1062,24 @@ namespace NSS.Blast.Compiler.Stage
                             flat.Add(node);
                             break;
 
+                        case nodetype.increment:
+                            flat.Add(node);
+                            break;
+
+                        case nodetype.compound:
+                            {
+                                // the only allowed compound at this point is an incrementor or decrementor 
+                                if (node.ChildCount == 1 && node.FirstChild.IsIncrementOrDecrementor)
+                                {
+                                    flat.Add(node.FirstChild);
+                                }
+                                else
+                                {
+                                    goto default;
+                                }
+                            }
+                            break;
+
                         default:
                             data.LogError($"flatten: invalid nodetype in root: <{node.parent}>.<{node}>, type = {node.type}");
                             return BlastError.error_invalid_nodetype_in_root;

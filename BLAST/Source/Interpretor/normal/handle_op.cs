@@ -553,6 +553,93 @@ namespace NSS.Blast.Interpretor
         }
 
         /// <summary>
+        /// f4.xy = f4.xy op i1 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_f2i1(in blast_operation op, ref V4 a, in int b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: a.xy = b; break;
+                case blast_operation.add: a.xy = a.xy + b; break;
+                case blast_operation.substract: a.xy = a.xy - b; break;
+                case blast_operation.multiply: a.xy = a.xy * b; break;
+                case blast_operation.divide: a.xy = a.xy / b; break;
+
+                case blast_operation.and: a.xy = math.select(0f, 1f, a.xy != 0 & b != 0); break;
+                case blast_operation.or: a.xy = math.select(0f, 1f, a.xy != 0 | b != 0); break;
+
+                case blast_operation.xor: a.xy = math.select(0f, 1f, a.xy != 0 ^ b != 0); break;
+                case blast_operation.greater: a.xy = math.select(0f, 1f, a.xy > b); break;
+                case blast_operation.smaller: a.xy = math.select(0f, 1f, a.xy < b); break;
+                case blast_operation.smaller_equals: a.xy = math.select(0f, 1f, a.xy <= b); break;
+                case blast_operation.greater_equals: a.xy = math.select(0f, 1f, a.xy >= b); break;
+                case blast_operation.equals: a.xy = math.select(0f, 1f, a.xy == b); break;
+                case blast_operation.not_equals: a.xy = math.select(0f, 1f, a.xy != b); break;
+                case blast_operation.not: a.xy = math.select(0f, 1f, b == 0); break;
+            }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_f2i1(in blast_operation op, ref V4 a, in V1 b)
+        {
+            handle_op_f2i1(in op, ref a, CodeUtils.ReInterpret<float, int>(b));
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_f2i1_n(in blast_operation op, ref V4 a, in V1 b)
+        {
+            handle_op_f2i1(in op, ref a, -CodeUtils.ReInterpret<float, int>(b));
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i2i1(in blast_operation op, ref V4 a, in V1 b)
+        {
+            int4 i = CodeUtils.ReInterpret<V4, int4>(a); 
+            handle_op_i2i1(in op, ref i, CodeUtils.ReInterpret<float, int>(b));
+            a = CodeUtils.ReInterpret<int4, V4>(i);
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i2i1_n(in blast_operation op, ref V4 a, in V1 b)
+        {
+            int4 i = CodeUtils.ReInterpret<V4, int4>(a);
+            handle_op_i2i1(in op, ref i, -CodeUtils.ReInterpret<float, int>(b));
+            a = CodeUtils.ReInterpret<int4, V4>(i);
+        }
+
+        /// <summary>
+        /// f4.xy = f4.xy op i1 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i2i1(in blast_operation op, ref int4 a, in int b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: a.xy = b; break;
+                case blast_operation.add: a.xy = a.xy + b; break;
+                case blast_operation.substract: a.xy = a.xy - b; break;
+                case blast_operation.multiply: a.xy = a.xy * b; break;
+                case blast_operation.divide: a.xy = a.xy / b; break;
+
+                case blast_operation.and: a.xy = math.select(math.int2(0), 1, a.xy != 0 & b != 0); break;
+                case blast_operation.or: a.xy = math.select(math.int2(0), 1, a.xy != 0 | b != 0); break;
+
+                case blast_operation.xor: a.xy = math.select(math.int2(0), 1, a.xy != 0 ^ b != 0); break;
+                case blast_operation.greater: a.xy = math.select(math.int2(0), 1, a.xy > b); break;
+                case blast_operation.smaller: a.xy = math.select(math.int2(0), 1, a.xy < b); break;
+                case blast_operation.smaller_equals: a.xy = math.select(math.int2(0), 1, a.xy <= b); break;
+                case blast_operation.greater_equals: a.xy = math.select(math.int2(0), 1, a.xy >= b); break;
+                case blast_operation.equals: a.xy = math.select(math.int2(0), 1, a.xy == b); break;
+                case blast_operation.not_equals: a.xy = math.select(math.int2(0), 1, a.xy != b); break;
+                case blast_operation.not: a.xy = math.select(math.int2(0), 1, b == 0); break;
+            }
+        }
+
+
+        /// <summary>
         /// f4.xy = f4.xy op f2 
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -581,7 +668,95 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        
+        /// <summary>
+        /// f4.xy = f4.xy op f2 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_f2i2(in blast_operation op, ref V4 a, in int2 b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: a.xy = b.xy; break;
+                case blast_operation.add: a.xy = a.xy + b.xy; break;
+                case blast_operation.substract: a.xy = a.xy - b.xy; break;
+                case blast_operation.multiply: a.xy = a.xy * b.xy; break;
+                case blast_operation.divide: a.xy = a.xy / b.xy; break;
+
+                case blast_operation.and: a.xy = math.select(0f, 1f, a.xy != 0 & b.xy != 0); break;
+                case blast_operation.or: a.xy = math.select(0f, 1f, a.xy != 0 | b.xy != 0); break;
+
+                case blast_operation.xor: a.xy = math.select(0f, 1f, a.xy != 0 ^ b.xy != 0); break;
+                case blast_operation.greater: a.xy = math.select(0f, 1f, a.xy > b.xy); break;
+                case blast_operation.smaller: a.xy = math.select(0f, 1f, a.xy < b.xy); break;
+                case blast_operation.smaller_equals: a.xy = math.select(0f, 1f, a.xy <= b.xy); break;
+                case blast_operation.greater_equals: a.xy = math.select(0f, 1f, a.xy >= b.xy); break;
+                case blast_operation.equals: a.xy = math.select(0f, 1f, a.xy == b.xy); break;
+                case blast_operation.not_equals: a.xy = math.select(0f, 1f, a.xy != b.xy); break;
+                case blast_operation.not: a.xy = math.select(0f, 1f, b.xy == 0); break;
+            }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_f2i2(in blast_operation op, ref V4 a, in V2 b)
+        {
+            handle_op_f2i2(in op, ref a, CodeUtils.ReInterpret<float2, int2>(b));
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_f2i2_n(in blast_operation op, ref V4 a, in V2 b)
+        {
+            handle_op_f2i2(in op, ref a, -CodeUtils.ReInterpret<float2, int2>(b));
+        }
+
+
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i2i2(in blast_operation op, ref V4 a, in V2 b)
+        {
+            int4 i = CodeUtils.ReInterpret<V4, int4>(a);
+            handle_op_i2i2(in op, ref i, CodeUtils.ReInterpret<float2, int2>(b));
+            a = CodeUtils.ReInterpret<int4, V4>(i);
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i2i2_n(in blast_operation op, ref V4 a, in V2 b)
+        {
+            int4 i = CodeUtils.ReInterpret<V4, int4>(a);
+            handle_op_i2i2(in op, ref i, -CodeUtils.ReInterpret<float2, int2>(b));
+            a = CodeUtils.ReInterpret<int4, V4>(i);
+        }
+
+        /// <summary>
+        /// f4.xy = f4.xy op f2 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i2i2(in blast_operation op, ref int4 a, in int2 b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: a.xy = b.xy; break;
+                case blast_operation.add: a.xy = a.xy + b.xy; break;
+                case blast_operation.substract: a.xy = a.xy - b.xy; break;
+                case blast_operation.multiply: a.xy = a.xy * b.xy; break;
+                case blast_operation.divide: a.xy = a.xy / b.xy; break;
+
+                case blast_operation.and: a.xy = math.select(math.int2(0), 1, a.xy != 0 & b.xy != 0); break;
+                case blast_operation.or: a.xy = math.select(math.int2(0), 1, a.xy != 0 | b.xy != 0); break;
+
+                case blast_operation.xor: a.xy = math.select(math.int2(0), 1, a.xy != 0 ^ b.xy != 0); break;
+                case blast_operation.greater: a.xy = math.select(math.int2(0), 1, a.xy > b.xy); break;
+                case blast_operation.smaller: a.xy = math.select(math.int2(0), 1, a.xy < b.xy); break;
+                case blast_operation.smaller_equals: a.xy = math.select(math.int2(0), 1, a.xy <= b.xy); break;
+                case blast_operation.greater_equals: a.xy = math.select(math.int2(0), 1, a.xy >= b.xy); break;
+                case blast_operation.equals: a.xy = math.select(math.int2(0), 1, a.xy == b.xy); break;
+                case blast_operation.not_equals: a.xy = math.select(math.int2(0), 1, a.xy != b.xy); break;
+                case blast_operation.not: a.xy = math.select(math.int2(0), 1, b.xy == 0); break;
+            }
+        }
+
+
         /// <summary>
         /// f4.xyz = f4.xyz op f1 
         /// </summary>
@@ -611,7 +786,48 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        
+        /// <summary>
+        /// i4.xyz = i4.xyz op i1 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i3i1(in blast_operation op, ref V4 a, in int b)
+        {
+            int4 i = CodeUtils.ReInterpret<V4, int4>(a);
+            handle_op_i3i1(in op, ref i, in b);
+            a = CodeUtils.ReInterpret<int4, V4>(i);
+        }
+
+        /// <summary>
+        /// i4.xyz = i4.xyz op i1 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i3i1(in blast_operation op, ref int4 a, in int b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: a.xyz = math.int3(b); break;
+                case blast_operation.add: a.xyz = a.xyz + math.int3(b); break;
+                case blast_operation.substract: a.xyz = a.xyz - b; break;
+                case blast_operation.multiply: a.xyz = a.xyz * b; break;
+                case blast_operation.divide: a.xyz = a.xyz / b; break;
+
+                case blast_operation.and: a.xyz = math.select(math.int3(0), 1, a.xyz != 0 & b != 0); break;
+                case blast_operation.or: a.xyz = math.select(math.int3(0), 1, a.xyz != 0 | b != 0); break;
+
+                case blast_operation.xor: a.xyz = math.select(math.int3(0), 1, a.xyz != 0 ^ b != 0); break;
+                case blast_operation.greater: a.xyz = math.select(math.int3(0), 1, a.xyz > b); break;
+                case blast_operation.smaller: a.xyz = math.select(math.int3(0), 1, a.xyz < b); break;
+                case blast_operation.smaller_equals: a.xyz = math.select(math.int3(0), 1, a.xyz <= b); break;
+                case blast_operation.greater_equals: a.xyz = math.select(math.int3(0), 1, a.xyz >= b); break;
+                case blast_operation.equals: a.xyz = math.select(math.int3(0), 1, a.xyz == b); break;
+                case blast_operation.not_equals: a.xyz = math.select(math.int3(0), 1, a.xyz != b); break;
+                case blast_operation.not: a.xyz = math.select(0, 1, b == 0); break;
+            }
+        }
+
+
+
         /// <summary>
         /// f4.xyz = f4.xyz op f3 
         /// </summary>
@@ -640,6 +856,48 @@ namespace NSS.Blast.Interpretor
                 case blast_operation.not:               a.xyz = math.select(0f, 1f, b.xyz == 0);                  break;
             }
         }
+
+        /// <summary>
+        /// i4.xyz = i4.xyz op i3 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i3i3(in blast_operation op, ref int4 a, in int3 b)
+        {                       
+            switch (op)
+            {
+                default:
+                case blast_operation.nop:            a.xyz = b.xyz; break;
+                case blast_operation.add:            a.xyz = a.xyz + b.xyz; break;
+                case blast_operation.substract:      a.xyz = a.xyz - b.xyz; break;
+                case blast_operation.multiply:       a.xyz = a.xyz * b.xyz; break;
+                case blast_operation.divide:         a.xyz = a.xyz / b.xyz; break;
+
+                case blast_operation.and:            a.xyz = math.select(math.int3(0), 1, a.xyz != 0 & b.xyz != 0); break;
+                case blast_operation.or:             a.xyz = math.select(math.int3(0), 1, a.xyz != 0 | b.xyz != 0); break;
+
+                case blast_operation.xor:            a.xyz = math.select(math.int3(0), 1, a.xyz != 0 ^ b.xyz != 0); break;
+                case blast_operation.greater:        a.xyz = math.select(math.int3(0), 1, a.xyz > b.xyz); break;
+                case blast_operation.smaller:        a.xyz = math.select(math.int3(0), 1, a.xyz < b.xyz); break;
+                case blast_operation.smaller_equals: a.xyz = math.select(math.int3(0), 1, a.xyz <= b.xyz); break;
+                case blast_operation.greater_equals: a.xyz = math.select(math.int3(0), 1, a.xyz >= b.xyz); break;
+                case blast_operation.equals:         a.xyz = math.select(math.int3(0), 1, a.xyz == b.xyz); break;
+                case blast_operation.not_equals:     a.xyz = math.select(math.int3(0), 1, a.xyz != b.xyz); break;
+                case blast_operation.not:            a.xyz = math.select(math.int3(0), 1, b.xyz == 0); break;
+            }
+        }
+
+
+        /// <summary>
+        /// i4.xyz = i4.xyz op i3 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i3i3(in blast_operation op, ref V4 a, in int3 b)
+        {
+            int4 i = CodeUtils.ReInterpret<V4, int4>(a);
+            handle_op_i3i3(in op, ref i, in b);
+            a = CodeUtils.ReInterpret<int4, V4>(i);
+        }
+
 
 
         /// <summary>
@@ -671,6 +929,50 @@ namespace NSS.Blast.Interpretor
             }
         }
 
+
+
+        /// <summary>
+        /// i4.xyzw = i4.xyzw op i1 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i4i1(in blast_operation op, ref int4 a, in int b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: a = b; break;
+                case blast_operation.add: a = a + b; break;
+                case blast_operation.substract: a = a - b; break;
+                case blast_operation.multiply: a = a * b; break;
+                case blast_operation.divide: a = a / b; break;
+
+                case blast_operation.and: a = math.select(int4.zero, 1, a != 0 & b != 0); break;
+                case blast_operation.or: a = math.select(int4.zero, 1, a != 0 | b != 0); break;
+
+                case blast_operation.xor: a = math.select(int4.zero, 1, a != 0 ^ b != 0); break;
+                case blast_operation.greater: a = math.select(int4.zero, 1, a > b); break;
+                case blast_operation.smaller: a = math.select(int4.zero, 1, a < b); break;
+                case blast_operation.smaller_equals: a = math.select(int4.zero, 1, a <= b); break;
+                case blast_operation.greater_equals: a = math.select(int4.zero, 1, a >= b); break;
+                case blast_operation.equals: a = math.select(int4.zero, 1, a == b); break;
+                case blast_operation.not_equals: a = math.select(int4.zero, 1, a != b); break;
+                case blast_operation.not: a = math.select(int4.zero, 1, b == 0); break;
+            }
+        }
+
+        /// <summary>
+        /// i4.xyz = i4.xyz op i1 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i4i1(in blast_operation op, ref V4 a, in int b)
+        {
+            int4 i = CodeUtils.ReInterpret<V4, int4>(a);
+            handle_op_i4i1(in op, ref i, in b);
+            a = CodeUtils.ReInterpret<int4, V4>(i);
+        }
+
+
+
         /// <summary>
         /// f4.xyzw = f4.xyzw op f4 
         /// </summary>
@@ -680,24 +982,64 @@ namespace NSS.Blast.Interpretor
             switch (op)
             {
                 default:
-                case blast_operation.nop:               a = b;                                            break;
-                case blast_operation.add:               a = a + b;                                        break;
-                case blast_operation.substract:         a = a - b;                                        break;
-                case blast_operation.multiply:          a = a * b;                                        break;
-                case blast_operation.divide:            a = a / b;                                        break;
-                                                                                                          
-                case blast_operation.and:               a = math.select(0f, 1f, a != 0 & b != 0);         break;
-                case blast_operation.or:                a = math.select(0f, 1f, a != 0 | b != 0);         break;
-                                                                                                          
-                case blast_operation.xor:               a = math.select(0f, 1f, a != 0 ^ b != 0);         break;
-                case blast_operation.greater:           a = math.select(0f, 1f, a > b);                   break;
-                case blast_operation.smaller:           a = math.select(0f, 1f, a < b);                   break;
-                case blast_operation.smaller_equals:    a = math.select(0f, 1f, a <= b);                  break;
-                case blast_operation.greater_equals:    a = math.select(0f, 1f, a >= b);                  break;
-                case blast_operation.equals:            a = math.select(0f, 1f, a == b);                  break;
-                case blast_operation.not_equals:        a = math.select(0f, 1f, a != b);                  break;
-                case blast_operation.not:               a = math.select(0f, 1f, b == 0);                  break;
+                case blast_operation.nop: a = b; break;
+                case blast_operation.add: a = a + b; break;
+                case blast_operation.substract: a = a - b; break;
+                case blast_operation.multiply: a = a * b; break;
+                case blast_operation.divide: a = a / b; break;
+
+                case blast_operation.and: a = math.select(0f, 1f, a != 0 & b != 0); break;
+                case blast_operation.or: a = math.select(0f, 1f, a != 0 | b != 0); break;
+
+                case blast_operation.xor: a = math.select(0f, 1f, a != 0 ^ b != 0); break;
+                case blast_operation.greater: a = math.select(0f, 1f, a > b); break;
+                case blast_operation.smaller: a = math.select(0f, 1f, a < b); break;
+                case blast_operation.smaller_equals: a = math.select(0f, 1f, a <= b); break;
+                case blast_operation.greater_equals: a = math.select(0f, 1f, a >= b); break;
+                case blast_operation.equals: a = math.select(0f, 1f, a == b); break;
+                case blast_operation.not_equals: a = math.select(0f, 1f, a != b); break;
+                case blast_operation.not: a = math.select(0f, 1f, b == 0); break;
             }
+        }
+        /// <summary>
+        /// i4.xyzw = i4.xyzw op i4 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i4i4(in blast_operation op, ref int4 a, in int4 b)
+        {
+            switch (op)
+            {
+                default:
+                case blast_operation.nop: a = b; break;
+                case blast_operation.add: a = a + b; break;
+                case blast_operation.substract: a = a - b; break;
+                case blast_operation.multiply: a = a * b; break;
+                case blast_operation.divide: a = a / b; break;
+
+                case blast_operation.and: a = math.select(int4.zero, 1, a != 0 & b != 0); break;
+                case blast_operation.or: a = math.select(int4.zero, 1, a != 0 | b != 0); break;
+
+                case blast_operation.xor: a = math.select(int4.zero, 1, a != 0 ^ b != 0); break;
+                case blast_operation.greater: a = math.select(int4.zero, 1, a > b); break;
+                case blast_operation.smaller: a = math.select(int4.zero, 1, a < b); break;
+                case blast_operation.smaller_equals: a = math.select(int4.zero, 1, a <= b); break;
+                case blast_operation.greater_equals: a = math.select(int4.zero, 1, a >= b); break;
+                case blast_operation.equals: a = math.select(int4.zero, 1, a == b); break;
+                case blast_operation.not_equals: a = math.select(int4.zero, 1, a != b); break;
+                case blast_operation.not: a = math.select(int4.zero, 1, b == 0); break;
+            }
+        }
+
+
+        /// <summary>
+        /// i4 = i4 op i4 
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        static void handle_op_i4i4(in blast_operation op, ref V4 a, in int4 b)
+        {
+            int4 i = CodeUtils.ReInterpret<V4, int4>(a);
+            handle_op_i4i4(in op, ref i, in b);
+            a = CodeUtils.ReInterpret<int4, V4>(i);
         }
     }
 }

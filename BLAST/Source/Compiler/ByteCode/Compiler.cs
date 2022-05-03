@@ -1428,6 +1428,27 @@ namespace NSS.Blast.Compiler.Stage
                 CompileDirectIDAssignmentForNormalPackager(ast_node, code, assignee);
             }
             else
+            //************************************************************************************************************ 
+            //************************************************************************************************************ 
+            //************************************************************************************************************ 
+            //************************************************************************************************************ 
+            //
+            //
+            //  some opcodes are stil free to use, the direct assignment of a function 
+            //  which has its id in blast_operation is another optimization in flow 
+            //  - it will also result in -every bytevalue- being used in the root, this will save yet another byte in the output
+            //
+            //  - note: be sure to not conflict ids, only functions defined in blast_operation can use this encoding 
+            //  -       this is why the most important most used function should have a non-extended opcode 
+            //
+            //
+            //   
+            // 
+            //************************************************************************************************************ 
+            //************************************************************************************************************ 
+            //************************************************************************************************************ 
+            //************************************************************************************************************ 
+
             // assigning a single value or pop?  
             if (ast_node.ChildCount == 1 && node.IsSingleValueOrPop(ast_node.FirstChild))
             {
@@ -1851,9 +1872,42 @@ namespace NSS.Blast.Compiler.Stage
             return true; 
         }
 
-        #endregion 
+        #endregion
 
-     
+        static IMByteCodeList CompileIncrement(CompilationData data, bool decrement, node ast_node, IMByteCodeList code = null)
+        {
+            Assert.IsTrue(ast_node != null && 
+                ((ast_node.type == nodetype.increment && !decrement)
+                ||
+                (ast_node.type == nodetype.decrement && decrement))); 
+
+            if (!ast_node.HasVariable)
+            {
+                data.LogError($"CompileNode.Increment|Decrement: <{ast_node}> variable not set");
+                return null;
+            }
+            if (ast_node.HasChildren)
+            {
+                // i += something 
+                code.Add(decrement ? blast_operation.suba : blast_operation.adda);
+
+                // compile the data|constant element 
+                CompileParameter(data, ast_node.FirstChild, code, false);
+
+                // then target 
+                code.Add((byte)(ast_node.variable.Id + (byte)blast_operation.id));
+            }
+            else
+            {
+                // i++
+                code.Add(decrement ? blast_operation.substract : blast_operation.add);
+                code.Add((byte)(ast_node.variable.Id + (byte)blast_operation.id));
+            }
+
+            return code; 
+        }
+
+
 
 
         /// <summary>
@@ -2304,6 +2358,22 @@ namespace NSS.Blast.Compiler.Stage
                         }
                     }
                     break;
+
+
+
+                case nodetype.increment:
+                    {
+                        if (CompileIncrement(data, false, ast_node, code) == null) return null; 
+                    }
+                    break;
+
+
+                case nodetype.decrement:
+                    {
+                        if (CompileIncrement(data, true, ast_node, code) == null) return null;
+                    }
+                    break;
+
 
             }
 

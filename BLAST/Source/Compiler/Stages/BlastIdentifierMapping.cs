@@ -437,6 +437,12 @@ namespace NSS.Blast.Compiler.Stage
                 GetOrCreateMappedVariable(cdata, ast_node);
             }
 
+            if (ast_node.IsIncrementOrDecrementor)
+            {
+                GetOrCreateMappedVariable(data as CompilationData, ast_node);
+
+            }
+
 
             // verify vectorsize of node, if its 0 we update from anything set by variable 
             if (ast_node.vector_size == 0)

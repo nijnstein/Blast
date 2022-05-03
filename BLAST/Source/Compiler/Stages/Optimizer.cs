@@ -298,8 +298,18 @@ namespace NSS.Blast.Compiler.Stage
             BlastError res; 
             switch(node.type)
             {
-                case nodetype.assignment: 
-                    if ((res = OptimizeNonVectorAssignment(data, node)) != BlastError.success) return res;
+                case nodetype.assignment:
+                    {
+                        // attempt to replace assignments with incrementors 
+                        res = BlastTransform.transform_incremental_assignments(data, node);
+                        if (res != BlastError.success) return res;
+
+                        // transform assingment made it into an increment 
+                        if (node.IsIncrementOrDecrementor) return BlastError.success;
+
+                        // try other options of optimizing the assignment    
+                        if ((res = OptimizeNonVectorAssignment(data, node)) != BlastError.success) return res;
+                    }
                     break; 
 
             }

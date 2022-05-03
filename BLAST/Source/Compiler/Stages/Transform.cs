@@ -16,6 +16,7 @@ using UnityEngine.Assertions;
 using System;
 using System.Collections.Generic;
 using NSS.Blast.Interpretor;
+using System.Linq;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -1139,6 +1140,123 @@ namespace NSS.Blast.Compiler.Stage
         }
 
 
+        /// <summary>
+        /// - should run after flatten so we take loop content and stuff too 
+        /// 
+        /// -> move to optimizer
+        /// 
+        /// scan for simple increments in several forms:
+        ///
+        /// i = i + n; 
+        /// i = i - n;
+        /// i = n - i;
+        /// i = n + i; 
+        ///
+        /// - no minus|negative|not 
+        /// - pop allowed (we can use that in combine option in normal interpretation mode) 
+        /// </summary>
+        public  static BlastError transform_incremental_assignments(IBlastCompilationData data, node n)
+        {
+            Assert.IsTrue(data != null && n != null && n.IsAssignment);
+
+            // early exit if not 3 child nodes 
+            if (n.ChildCount != 3) return BlastError.success;
+
+            //
+            // test for each form that we replace into a inc/dec sequence 
+            //
+
+            // before running the test, make sure that scriptvariable in the statement equals assignee 
+            bool b_found_assignee_in_children = n.children.Any(x => x.variable == n.variable);
+            bool b_possible = true; 
+
+            bool transform_inc_or_dec(NodeMatch add_or_substract)
+            {
+                nodetype type = add_or_substract == NodeMatch.Substract ? nodetype.decrement : nodetype.increment;
+
+                // i = i + [constant_value 1]
+                // i = [constant_value 1] + 1
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariableSelf, add_or_substract, NodeMatch.Constant1)
+                    ||
+                    n.Is(data.CompilerOptions.PackageMode, NodeMatch.Constant1, add_or_substract, NodeMatch.ScriptVariableSelf))
+                {
+                    // i++
+                    n.type = type;
+                    n.children.Clear();
+                    return true;
+                }
+                else
+                // i = [constant] + i;
+                // i = i + [constant]
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariableSelf, add_or_substract, NodeMatch.Constant))
+                {
+                    if (n.children[0].vector_size != 1)
+                    {
+                        // only for V1 as increment will expand the value
+                        return false;
+                    }
+                    n.type = type;
+                    n.children.RemoveRange(0, 2);
+                    return true;
+                }
+                else
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.Constant, add_or_substract, NodeMatch.ScriptVariableSelf))
+                {
+                    if (n.children[2].vector_size != 1)
+                    {
+                        // only for V1 as increment will expand the value
+                        return false;
+                    }
+                    n.type = type;
+                    n.children.RemoveRange(1, 2);
+
+                    return true;
+                }
+                // i = i + j
+                else
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariableSelf, add_or_substract, NodeMatch.ScriptVariable))
+                {
+                    // only for V1 as increment will expand the value
+                    if (n.children[2].vector_size != 1) return false;
+                    {
+                        return false;
+                    }       
+                    n.type = type;
+                    n.children.RemoveRange(0, 2);
+                    return true;
+                }
+                // i = j + i 
+                else
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariable, add_or_substract, NodeMatch.ScriptVariableSelf))
+                {
+                    // only for V1 as increment will expand the value
+                    if (n.children[0].vector_size != 1) return false;
+                    {
+                        return false;
+                    }                        
+                    n.type = type;
+                    n.children.RemoveRange(1, 2);
+                    return true;
+                }
+                return false; 
+            }
+
+            // test and transform allowed patterns 
+            if (transform_inc_or_dec(NodeMatch.Add)) return BlastError.success;
+            if (!b_possible) return BlastError.success; // if set no use to test other patterns 
+
+
+            if (transform_inc_or_dec(NodeMatch.Substract)) return BlastError.success; 
+
+            // 
+            // TODO 
+            // should we also match on pop? different opcodes for inc/dec with n from stack? 
+            //
+
+            // no match to any allowed pattern, thats ok 
+            return BlastError.success; 
+        }
+
 
 
         /// <summary>
@@ -1196,7 +1314,7 @@ namespace NSS.Blast.Compiler.Stage
                 case nodetype.assignment:
                     {
                         res = transform_zero_assignment(data, n);
-                        if (res != BlastError.success) return res; 
+                        if (res != BlastError.success) return res;
                     }
                     break; 
 

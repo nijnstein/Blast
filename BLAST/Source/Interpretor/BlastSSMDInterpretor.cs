@@ -4327,9 +4327,107 @@ namespace NSS.Blast.SSMD
             vector_size = 1;
         }
 
-#endregion
 
-#region Reinterpret XXXX [DataIndex]
+        /// <summary>
+        /// try to read a constant from the codestream, return false if not a constant, also returns false on CDATA references 
+        /// </summary>
+        /// <param name="op"></param>
+        /// <param name="code_pointer"></param>
+        /// <param name="constant"></param>
+        /// <returns></returns>
+        bool try_pop_constant(blast_operation op, ref int code_pointer, out float constant)
+        {
+            switch (op)
+            {
+                case blast_operation.constant_f1: constant = read_constant_f1(code, ref code_pointer); break;
+
+                case blast_operation.constant_f1_h: constant = read_constant_f1_h(code, ref code_pointer); break;
+
+                case blast_operation.constant_long_ref:
+                case blast_operation.constant_short_ref:
+                    {
+                        if (follow_constant_ref(code, ref code_pointer, out BlastVariableDataType datatype, out int reference_index, op == blast_operation.constant_short_ref))
+                        {
+                            constant = read_constant_float(code, reference_index);
+                        }
+                        else
+                        {
+                            constant = float.NaN; // todo need error handler 
+                            return false;
+                        }
+                    }
+                    break;
+
+                case blast_operation.pi:
+                case blast_operation.inv_pi:
+                case blast_operation.epsilon:
+                case blast_operation.infinity:
+                case blast_operation.negative_infinity:
+                case blast_operation.nan:
+                case blast_operation.min_value:
+                case blast_operation.value_0:
+                case blast_operation.value_1:
+                case blast_operation.value_2:
+                case blast_operation.value_3:
+                case blast_operation.value_4:
+                case blast_operation.value_8:
+                case blast_operation.value_10:
+                case blast_operation.value_16:
+                case blast_operation.value_24:
+                case blast_operation.value_32:
+                case blast_operation.value_64:
+                case blast_operation.value_100:
+                case blast_operation.value_128:
+                case blast_operation.value_256:
+                case blast_operation.value_512:
+                case blast_operation.value_1000:
+                case blast_operation.value_1024:
+                case blast_operation.value_30:
+                case blast_operation.value_45:
+                case blast_operation.value_90:
+                case blast_operation.value_180:
+                case blast_operation.value_270:
+                case blast_operation.value_360:
+                case blast_operation.inv_value_2:
+                case blast_operation.inv_value_3:
+                case blast_operation.inv_value_4:
+                case blast_operation.inv_value_8:
+                case blast_operation.inv_value_10:
+                case blast_operation.inv_value_16:
+                case blast_operation.inv_value_24:
+                case blast_operation.inv_value_32:
+                case blast_operation.inv_value_64:
+                case blast_operation.inv_value_100:
+                case blast_operation.inv_value_128:
+                case blast_operation.inv_value_256:
+                case blast_operation.inv_value_512:
+                case blast_operation.inv_value_1000:
+                case blast_operation.inv_value_1024:
+                case blast_operation.inv_value_30:
+                case blast_operation.framecount:
+                case blast_operation.fixedtime:
+                case blast_operation.time:
+                case blast_operation.fixeddeltatime:
+                case blast_operation.deltatime:
+                    {
+                        constant = engine_ptr->constants[(byte)op];
+                        code_pointer++; 
+                    }
+                    break;
+
+                default:
+                    {
+                        constant = float.NaN;
+                        return false;
+                    }
+
+            }
+            return true;
+        }
+
+        #endregion
+
+        #region Reinterpret XXXX [DataIndex]
 
         /// <summary>
         /// reinterpret the value at index as a different datatype (set metadata type to datatype)
@@ -4435,7 +4533,7 @@ namespace NSS.Blast.SSMD
         }
 #endregion
 
-#region GetFunction|Sequence and Execute (privates)
+#region GetFunction|Sequence 
 
 
         /// <summary>
@@ -6940,15 +7038,181 @@ namespace NSS.Blast.SSMD
         }
 
 
-#endregion
+        #endregion
+
+
+
+        #endregion
+
+        #region Direct Assignments & Increments of constant|ID to target 
+
+        private BlastError AssignDataFromConstant(ref int code_pointer, in float constant_value) 
+        {
+            // get id of target 
+            byte offset = (byte)code[code_pointer];
+            code_pointer++;
+
+            // the negation is combined into the offset
+            // - we need to substract it from the offset on indexing the target in each negated switch case 
+            bool substract = offset >= 0b1000_0000;
+            offset = (byte)(offset & 0b0111_1111);
+
+            BlastInterpretor.GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
+
+
+            // get the target dest
+            vsize = (byte)math.select(vsize, 4, vsize == 0); 
+            DATAREC target = IndexData(offset, vsize);
+
+            float value = math.select(constant_value, -constant_value, substract);  
+
+            switch (vsize)
+            {
+                case 1: simd.move_f1_constant_to_indexed_data_as_f1(target, value, ssmd_datacount); break;
+                case 2: simd.move_f1_constant_to_indexed_data_as_f2(target, value, ssmd_datacount); break;
+                case 3: simd.move_f1_constant_to_indexed_data_as_f3(target, value, ssmd_datacount); break;
+                case 4: simd.move_f1_constant_to_indexed_data_as_f4(target, value, ssmd_datacount); break;
+                default:
+                    return BlastError.ssmd_error_unsupported_vector_size;
+            }
+
+            return BlastError.success; 
+        }
+
+        private BlastError DirectTargetAssignment(ref int code_pointer, byte offset)
+        {
+            // setup target 
+            BlastInterpretor.GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
+            vsize = (byte)math.select(vsize, 4, vsize == 0);
+
+            bool substract = offset >= 0b1000_0000;
+            offset = (byte)(offset & 0b0111_1111);
+
+            DATAREC target = IndexData(offset, vsize);
+
+            
+            // identify source location 
+            byte source_offset = (byte)code[code_pointer];
+            code_pointer++;
+
+            // 
+            if (IsTrace)
+            {
+                BlastInterpretor.GetMetaData(in metadata, in offset, out byte vsource, out BlastVariableDataType stype);
+                if (vsource != 1)
+                {
+                    Debug.LogError("Blast.Interpretor.ssmd.DirectTargetAssignment: compiler error, assignment of non v1");
+                    return BlastError.ssmd_error_unsupported_vector_size;
+                }
+            }
+
+            DATAREC source = IndexData(source_offset, 1);
+
+            // currently compiler will only allow this on assignments of a v1 as it expands over the target 
+            switch (math.select(vsize, vsize + 100, substract))
+            {
+                case 1: simd.move_indexed_f1(in target, in source, ssmd_datacount); break; 
+                case 2: simd.move_indexed_f1f2(in target, in source, ssmd_datacount); break; 
+                case 3: simd.move_indexed_f1f3(in target, in source, ssmd_datacount); break;                  
+                case 4: simd.move_indexed_f1f4(in target, in source, ssmd_datacount); break;
+
+                case 101: simd.move_indexed_f1_n(in target, in source, ssmd_datacount); break;
+                case 102: simd.move_indexed_f1f2_negated(in target, in source, ssmd_datacount); break;
+                case 103: simd.move_indexed_f1f3_negated(in target, in source, ssmd_datacount); break;
+                case 104: simd.move_indexed_f1f4_negated(in target, in source, ssmd_datacount); break;
+
+                default:
+                    return BlastError.ssmd_error_unsupported_vector_size;
+            }
+
+            return BlastError.success; 
+        }
+
+        /// <summary>
+        /// increment id with constant value 
+        /// </summary>
+        public BlastError DirectlyIncrementData(ref int code_pointer, float constant_value)
+        {
+            byte offset = (byte)(code[code_pointer] - (byte)blast_operation.id);
+            code_pointer++;
+
+            // get target info 
+            BlastInterpretor.GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
+            vsize = (byte)math.select(vsize, 4, vsize == 0);
+            
+            DATAREC target = IndexData(offset, vsize);
+
+            switch (vsize)
+            {
+                case 1: simd.add_indexed_f1f1_constant(target, constant_value, ssmd_datacount); break; 
+                case 2: simd.add_indexed_f1f2_constant(target, constant_value, ssmd_datacount); break; 
+                case 3: simd.add_indexed_f1f3_constant(target, constant_value, ssmd_datacount); break; 
+                case 4: simd.add_indexed_f1f4_constant(target, constant_value, ssmd_datacount); break; 
+                default:
+                    return BlastError.ssmd_error_unsupported_vector_size; 
+            }
+
+            return BlastError.success; 
+        }
 
 
 
 
+        /// <summary>
+        /// increment id with datapoint 
+        /// </summary>
+        public BlastError DirectlyIncrementData(ref int code_pointer, bool decrement = false)
+        {
+            blast_operation op = (blast_operation)code[code_pointer];
+
+            if (try_pop_constant(op, ref code_pointer, out float constant))
+            {
+                return DirectlyIncrementData(ref code_pointer, math.select(constant, -constant, decrement));
+            }
+            else
+            {
+                // its a data id 
+                byte offset = (byte)(op - blast_operation.id);
+                code_pointer++;
+
+                // get target info 
+                BlastInterpretor.GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
+                vsize = (byte)math.select(vsize, 4, vsize == 0);
+
+                DATAREC target = IndexData(offset, vsize);
+
+                // get source location of inc/dec value 
+                byte source_offset = (byte)code[code_pointer];
+                code_pointer++;
+
+                // 
+                if (IsTrace)
+                {
+                    BlastInterpretor.GetMetaData(in metadata, in offset, out byte vsource, out BlastVariableDataType stype);
+                    if (vsource != 1)
+                    {
+                        Debug.LogError("Blast.Interpretor.ssmd.DirectTargetAssignment: compiler error, assignment of non v1");
+                    }
+                }
+                DATAREC source = IndexData(source_offset, 1);
+
+                switch (vsize)
+                {
+                    case 1: simd.add_indexed_f1f1(target, source, ssmd_datacount); break;
+                    case 2: simd.add_indexed_f1f2(target, source, ssmd_datacount); break;
+                    case 3: simd.add_indexed_f1f3(target, source, ssmd_datacount); break;
+                    case 4: simd.add_indexed_f1f4(target, source, ssmd_datacount); break;
+                    default:
+                        return BlastError.ssmd_error_unsupported_vector_size;
+                }
+            }
+            return BlastError.success; 
+        }
+
+        #endregion 
 
 
-
-
+        #region Execute 
 
         const bool ASSIGN_TO_TARGET = true;
 
@@ -6990,7 +7254,7 @@ namespace NSS.Blast.SSMD
 
             // init random state if needed 
             if (engine_ptr != null && random.state == 0)
-            {
+            {                   
                 random = Unity.Mathematics.Random.CreateFromIndex(engine_ptr->random.NextUInt());
             }
 
@@ -7314,23 +7578,131 @@ namespace NSS.Blast.SSMD
                             // jump if NOT zero 
                             code_pointer = math.select(code_pointer, jump_to, register[0].x == 0);
                         }
-                        break; 
+                        break;
 
 
+                    #region Direct Increment / Decrement of variable 
+
+                    //
+                    // dual use of opcodes: fastlane for the most used arithmetics: i++, i+= (i = i + 3), i--, i-=
+                    //
+
+                    //
+                    // TODO future version should add support for *=  ==  !=  and /=
+                    // - together with flatten this will hit often and saves a lot on memory copies while reducing codesize 
+                    // 
+
+                    case blast_operation.add:
+                        // add 1 to id: b++; 
+                        DirectlyIncrementData(ref code_pointer, 1f);
+                        break;
+
+                    case blast_operation.adda:
+                        // adda [value] [assignee]
+                        DirectlyIncrementData(ref code_pointer);
+                        break;
+
+
+                    case blast_operation.substract:
+                        // sub 1 from id: a--; 
+                        DirectlyIncrementData(ref code_pointer, -1f);
+                        break;
+
+                    case blast_operation.suba:
+                        // sub from id: a -= 2;
+                        DirectlyIncrementData(ref code_pointer, true);
+                        break;
+
+                    #endregion
+
+                    #region Direct Constant Value Assignments 
+
+                    //
+                    // while direct assignment gives a large gain on normal interpretation
+                    // it will be far less in ssmd as branching is much less important
+                    // for ssmd this mainly reduces code size (maybe in some cases also a copy, not sure)
+                    //
+
+                    case blast_operation.pi: AssignDataFromConstant(ref code_pointer, math.PI); break;
+                    case blast_operation.inv_pi: AssignDataFromConstant(ref code_pointer, 1f / math.PI); break;
+                    case blast_operation.epsilon: AssignDataFromConstant(ref code_pointer, math.EPSILON); break;
+                    case blast_operation.infinity: AssignDataFromConstant(ref code_pointer, math.INFINITY); break;
+                    case blast_operation.negative_infinity: AssignDataFromConstant(ref code_pointer, -math.INFINITY); break;
+                    case blast_operation.nan: AssignDataFromConstant(ref code_pointer, math.NAN); break;
+                    case blast_operation.min_value: AssignDataFromConstant(ref code_pointer, math.FLT_MIN_NORMAL); break;
+                    case blast_operation.value_0: AssignDataFromConstant(ref code_pointer, 0f); break;
+                    case blast_operation.value_1: AssignDataFromConstant(ref code_pointer, 1f); break;
+                    case blast_operation.value_2: AssignDataFromConstant(ref code_pointer, 2f); break;
+                    case blast_operation.value_3: AssignDataFromConstant(ref code_pointer, 3f); break;
+                    case blast_operation.value_4: AssignDataFromConstant(ref code_pointer, 4f); break;
+                    case blast_operation.value_8: AssignDataFromConstant(ref code_pointer, 8f); break;
+                    case blast_operation.value_10: AssignDataFromConstant(ref code_pointer, 10f); break;
+                    case blast_operation.value_16: AssignDataFromConstant(ref code_pointer, 16f); break;
+                    case blast_operation.value_24: AssignDataFromConstant(ref code_pointer, 24f); break;
+                    case blast_operation.value_32: AssignDataFromConstant(ref code_pointer, 32f); break;
+                    case blast_operation.value_64: AssignDataFromConstant(ref code_pointer, 64f); break;
+                    case blast_operation.value_100: AssignDataFromConstant(ref code_pointer, 100f); break;
+                    case blast_operation.value_128: AssignDataFromConstant(ref code_pointer, 128f); break;
+                    case blast_operation.value_256: AssignDataFromConstant(ref code_pointer, 256f); break;
+                    case blast_operation.value_512: AssignDataFromConstant(ref code_pointer, 512f); break;
+                    case blast_operation.value_1000: AssignDataFromConstant(ref code_pointer, 1000f); break;
+                    case blast_operation.value_1024: AssignDataFromConstant(ref code_pointer, 1024f); break;
+                    case blast_operation.value_30: AssignDataFromConstant(ref code_pointer, 30f); break;
+                    case blast_operation.value_45: AssignDataFromConstant(ref code_pointer, 45f); break;
+                    case blast_operation.value_90: AssignDataFromConstant(ref code_pointer, 90f); break;
+                    case blast_operation.value_180: AssignDataFromConstant(ref code_pointer, 180f); break;
+                    case blast_operation.value_270: AssignDataFromConstant(ref code_pointer, 270f); break;
+                    case blast_operation.value_360: AssignDataFromConstant(ref code_pointer, 360f); break;
+                    case blast_operation.inv_value_2: AssignDataFromConstant(ref code_pointer, 1f / 2f); break;
+                    case blast_operation.inv_value_3: AssignDataFromConstant(ref code_pointer, 1f / 3f); break;
+                    case blast_operation.inv_value_4: AssignDataFromConstant(ref code_pointer, 1f / 4f); break;
+                    case blast_operation.inv_value_8: AssignDataFromConstant(ref code_pointer, 1 / 8f); break;
+                    case blast_operation.inv_value_10: AssignDataFromConstant(ref code_pointer, 1 / 10f); break;
+                    case blast_operation.inv_value_16: AssignDataFromConstant(ref code_pointer, 1 / 16f); break;
+                    case blast_operation.inv_value_24: AssignDataFromConstant(ref code_pointer, 1 / 24f); break;
+                    case blast_operation.inv_value_32: AssignDataFromConstant(ref code_pointer, 1 / 32f); break;
+                    case blast_operation.inv_value_64: AssignDataFromConstant(ref code_pointer, 1 / 64f); break;
+                    case blast_operation.inv_value_100: AssignDataFromConstant(ref code_pointer, 1 / 100f); break;
+                    case blast_operation.inv_value_128: AssignDataFromConstant(ref code_pointer, 1 / 128f); break;
+                    case blast_operation.inv_value_256: AssignDataFromConstant(ref code_pointer, 1 / 256f); break;
+                    case blast_operation.inv_value_512: AssignDataFromConstant(ref code_pointer, 1 / 512f); break;
+                    case blast_operation.inv_value_1000: AssignDataFromConstant(ref code_pointer, 1 / 1000f); break;
+                    case blast_operation.inv_value_1024: AssignDataFromConstant(ref code_pointer, 1 / 1024f); break;
+                    case blast_operation.inv_value_30: AssignDataFromConstant(ref code_pointer, 1 / 30f); break;
+                    case blast_operation.framecount: AssignDataFromConstant(ref code_pointer, engine_ptr->constants[(byte)blast_operation.framecount]); break;
+                    case blast_operation.fixedtime: AssignDataFromConstant(ref code_pointer, engine_ptr->constants[(byte)blast_operation.fixedtime]); break;
+                    case blast_operation.time: AssignDataFromConstant(ref code_pointer, engine_ptr->constants[(byte)blast_operation.time]); break;
+                    case blast_operation.fixeddeltatime: AssignDataFromConstant(ref code_pointer, engine_ptr->constants[(byte)blast_operation.fixeddeltatime]); break;
+                    case blast_operation.deltatime: AssignDataFromConstant(ref code_pointer, engine_ptr->constants[(byte)blast_operation.deltatime]); break;
+
+                    #endregion 
 
                     default:
                         {
-                            code_pointer--;
-                            BlastError res = GetFunctionResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_register, default, false);
-                            if (res != BlastError.success)
+                            // Direct Assignment 
+                            if (op >= blast_operation.id && op < blast_operation.ex_op)
                             {
-                                // if getting here its boom
-#if DEVELOPMENT_BUILD || TRACE
-                                Debug.LogError($"blast.ssmd: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
-#endif
-                                return (int)BlastError.error_unsupported_operation_in_root;
+                                // handle the direct assignment of the datatarget pointed to by id
+                                if (DirectTargetAssignment(ref code_pointer, op - blast_operation.id) != BlastError.success)
+                                {
+                                    return (int)BlastError.error_unsupported_operation_in_root;
+                                }
                             }
-                            code_pointer++;
+                            else
+                            {
+                                // Procedure | Function Call
+                                code_pointer--;
+                                BlastError res = GetFunctionResult(temp, ref code_pointer, ref vector_size, ssmd_datacount, f4_register, default, false);
+                                if (res != BlastError.success)
+                                {
+                                    // if getting here its boom
+#if DEVELOPMENT_BUILD || TRACE
+                                    Debug.LogError($"blast.ssmd: operation {(byte)op} '{op}' not supported in root codepointer = {code_pointer}");
+#endif
+                                    return (int)BlastError.error_unsupported_operation_in_root;
+                                }
+                                code_pointer++;
+                            }
                             break;
                         }
                 }

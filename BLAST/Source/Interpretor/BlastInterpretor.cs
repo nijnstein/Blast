@@ -2538,22 +2538,22 @@ namespace NSS.Blast.Interpretor
                                     switch (datatype.Combine(vector_size, minus || not))
                                     {
                                         case BlastVectorType.bool32:
-                                        case BlastVectorType.int1: BlastInterpretor.handle_op_i1i1(current_op, ref f4_result.x, f4.x); break;
+                                        case BlastVectorType.int1:     BlastInterpretor.handle_op_i1i1(current_op, ref f4_result.x, f4.x); break;
                                         case BlastVectorType.bool32_n: BlastInterpretor.handle_op_i1b1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
-                                        case BlastVectorType.int1_n: BlastInterpretor.handle_op_i1i1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
-                                        case BlastVectorType.int2: BlastInterpretor.handle_op_i1i2(current_op, ref f4_result, f4.xy); current_vector_size = 2; break;
-                                        case BlastVectorType.int2_n: BlastInterpretor.handle_op_i1i2_n(current_op, ref f4_result, f4.xy); current_vector_size = 2; minus = false; not = false; break;
-                                        case BlastVectorType.int3: BlastInterpretor.handle_op_i1i3(current_op, ref f4_result, f4.xyz); current_vector_size = 3; break;
-                                        case BlastVectorType.int3_n: BlastInterpretor.handle_op_i1i3_n(current_op, ref f4_result, f4.xyz); current_vector_size = 3; minus = false; not = false; break;
-                                        case BlastVectorType.int4: BlastInterpretor.handle_op_i1i4(current_op, ref f4_result, f4); current_vector_size = 4; break;
-                                        case BlastVectorType.int4_n: BlastInterpretor.handle_op_i1i4_n(current_op, ref f4_result, f4); current_vector_size = 4; minus = false; not = false; break;
-                                        case BlastVectorType.float1: BlastInterpretor.handle_op_i1f1(current_op, ref f4_result.x, f4.x); datatype = current_datatype; break;
+                                        case BlastVectorType.int1_n:   BlastInterpretor.handle_op_i1i1_n(current_op, ref f4_result.x, f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.int2:     BlastInterpretor.handle_op_i1i2(current_op, ref f4_result, f4.xy); current_vector_size = 2; break;
+                                        case BlastVectorType.int2_n:   BlastInterpretor.handle_op_i1i2_n(current_op, ref f4_result, f4.xy); current_vector_size = 2; minus = false; not = false; break;
+                                        case BlastVectorType.int3:     BlastInterpretor.handle_op_i1i3(current_op, ref f4_result, f4.xyz); current_vector_size = 3; break;
+                                        case BlastVectorType.int3_n:   BlastInterpretor.handle_op_i1i3_n(current_op, ref f4_result, f4.xyz); current_vector_size = 3; minus = false; not = false; break;
+                                        case BlastVectorType.int4:     BlastInterpretor.handle_op_i1i4(current_op, ref f4_result, f4); current_vector_size = 4; break;
+                                        case BlastVectorType.int4_n:   BlastInterpretor.handle_op_i1i4_n(current_op, ref f4_result, f4); current_vector_size = 4; minus = false; not = false; break;
+                                        case BlastVectorType.float1:   BlastInterpretor.handle_op_i1f1(current_op, ref f4_result.x, f4.x); datatype = current_datatype; break;
                                         case BlastVectorType.float1_n: BlastInterpretor.handle_op_i1f1(current_op, ref f4_result.x, -f4.x); datatype = current_datatype; minus = false; not = false; break;
-                                        case BlastVectorType.float2: BlastInterpretor.handle_op_i1f2(current_op, ref f4_result, f4.xy); datatype = current_datatype; current_vector_size = 2; break;
+                                        case BlastVectorType.float2:   BlastInterpretor.handle_op_i1f2(current_op, ref f4_result, f4.xy); datatype = current_datatype; current_vector_size = 2; break;
                                         case BlastVectorType.float2_n: BlastInterpretor.handle_op_i1f2(current_op, ref f4_result, -f4.xy); datatype = current_datatype; current_vector_size = 2; minus = false; not = false; break;
-                                        case BlastVectorType.float3: BlastInterpretor.handle_op_i1f3(current_op, ref f4_result, f4.xyz); datatype = current_datatype; current_vector_size = 3; break;
+                                        case BlastVectorType.float3:   BlastInterpretor.handle_op_i1f3(current_op, ref f4_result, f4.xyz); datatype = current_datatype; current_vector_size = 3; break;
                                         case BlastVectorType.float3_n: BlastInterpretor.handle_op_i1f3(current_op, ref f4_result, -f4.xyz); datatype = current_datatype; current_vector_size = 3; minus = false; not = false; break;
-                                        case BlastVectorType.float4: BlastInterpretor.handle_op_i1f4(current_op, ref f4_result, f4); datatype = current_datatype; current_vector_size = 4; break;
+                                        case BlastVectorType.float4:   BlastInterpretor.handle_op_i1f4(current_op, ref f4_result, f4); datatype = current_datatype; current_vector_size = 4; break;
                                         case BlastVectorType.float4_n: BlastInterpretor.handle_op_i1f4(current_op, ref f4_result, -f4); datatype = current_datatype; current_vector_size = 4; minus = false; not = false; break;
 
                                         default: goto NO_SUPPORT_FOR_HANDLE_OP;
@@ -2566,26 +2566,82 @@ namespace NSS.Blast.Interpretor
                                     switch (datatype.Combine(vector_size, minus || not))
                                     {
                                         // f4.xy = f4.xy op [-]f1
-                                        case BlastVectorType.float1: BlastInterpretor.handle_op_f2f1(current_op, ref f4_result, f4.x); break;
-                                        case BlastVectorType.float1_n: BlastInterpretor.handle_op_f2f1(current_op, ref f4_result, -f4.x); minus = false; not = false; break;
+                                        case BlastVectorType.float1:   BlastInterpretor.handle_op_f2f1(current_op, ref f4_result, f4.x); vector_size = 2; break;
+                                        case BlastVectorType.float1_n: BlastInterpretor.handle_op_f2f1(current_op, ref f4_result, - f4.x); vector_size = 2; minus = false; not = false; break;
+
+                                        case BlastVectorType.int1:     BlastInterpretor.handle_op_f2i1(current_op, ref f4_result, f4.x); vector_size = 2; break;
+                                        case BlastVectorType.int1_n:   BlastInterpretor.handle_op_f2i1_n(current_op, ref f4_result, f4.x); vector_size = 2; minus = false; not = false; break;
+
                                         // f4.xy = f4.xy op [-]f2
-                                        case BlastVectorType.float2: BlastInterpretor.handle_op_f2f2(current_op, ref f4_result, f4.xy); vector_size = 2; break;
-                                        case BlastVectorType.float2_n: BlastInterpretor.handle_op_f2f2(current_op, ref f4_result, -f4.xy); vector_size = 2; minus = false; not = false; break;
+                                        case BlastVectorType.float2:   BlastInterpretor.handle_op_f2f2(current_op, ref f4_result, f4.xy); break;
+                                        case BlastVectorType.float2_n: BlastInterpretor.handle_op_f2f2(current_op, ref f4_result, -f4.xy); minus = false; not = false; break;
+
+                                        case BlastVectorType.int2:     BlastInterpretor.handle_op_f2i2(current_op, ref f4_result, f4.xy); break;
+                                        case BlastVectorType.int2_n:   BlastInterpretor.handle_op_f2i2_n(current_op, ref f4_result, f4.xy); minus = false; not = false; break;
 
                                         default: goto NO_SUPPORT_FOR_HANDLE_OP;
                                     }
                                 }
                                 break;
 
+                            case BlastVectorType.int2:
+                                {
+                                    switch (datatype.Combine(vector_size, minus || not))
+                                    {
+                                        case BlastVectorType.int1:     BlastInterpretor.handle_op_i2i1(current_op, ref f4_result, f4.x); vector_size = 2; break;
+                                        case BlastVectorType.int1_n:   BlastInterpretor.handle_op_i2i1_n(current_op, ref f4_result, f4.x); vector_size = 2;  minus = false; not = false; break;
+
+                                        case BlastVectorType.int2:     BlastInterpretor.handle_op_i2i2(current_op, ref f4_result, f4.xy); break;
+                                        case BlastVectorType.int2_n:   BlastInterpretor.handle_op_i2i2_n(current_op, ref f4_result, f4.xy); minus = false; not = false; break;
+
+                                        case BlastVectorType.float1:   BlastInterpretor.handle_op_i2i1(current_op, ref f4_result, CodeUtils.ReInterpret<float, int>(f4.x)); vector_size = 2;  break;
+                                        case BlastVectorType.float1_n: BlastInterpretor.handle_op_i2i1(current_op, ref f4_result, -CodeUtils.ReInterpret<float, int>(f4.x)); vector_size = 2; minus = false; not = false; break;
+
+                                        case BlastVectorType.float2:   BlastInterpretor.handle_op_i2i2(current_op, ref f4_result, CodeUtils.ReInterpret<float2, int2>(f4.xy)); break;
+                                        case BlastVectorType.float2_n: BlastInterpretor.handle_op_i2i2(current_op, ref f4_result, -CodeUtils.ReInterpret<float2, int2>(f4.xy)); minus = false; not = false; break;
+
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP;
+                                    }
+                                }
+                                break;
+
+
                             case BlastVectorType.float3:
                                 {
                                     switch (datatype.Combine(vector_size, minus || not))
                                     {
-                                        case BlastVectorType.float1: BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, f4.x); vector_size = 3; break;
+                                        case BlastVectorType.float1:   BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, f4.x); vector_size = 3; break;
                                         case BlastVectorType.float1_n: BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, -f4.x); vector_size = 3; minus = false; not = false; break;
 
-                                        case BlastVectorType.float3: BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, f4.xyz); break;
+                                        case BlastVectorType.int1:     BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, (float)(CodeUtils.ReInterpret<float, int>(f4.x))); vector_size = 3; break;
+                                        case BlastVectorType.int1_n:   BlastInterpretor.handle_op_f3f1(current_op, ref f4_result, (float)(-CodeUtils.ReInterpret<float, int>(f4.x))); vector_size = 3; minus = false; not = false; break;
+
+                                        case BlastVectorType.float3:   BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, f4.xyz); break;
                                         case BlastVectorType.float3_n: BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, -f4.xyz); minus = false; not = false; break;
+
+                                        case BlastVectorType.int3:     BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, (float3)(CodeUtils.ReInterpret<float3, int3>(f4.xyz))); break;
+                                        case BlastVectorType.int3_n:   BlastInterpretor.handle_op_f3f3(current_op, ref f4_result, (float3)(-CodeUtils.ReInterpret<float3, int3>(f4.xyz))); minus = false; not = false; break;
+
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP;
+                                    }
+                                }
+                                break;
+
+                            case BlastVectorType.int3:
+                                {
+                                    switch (datatype.Combine(vector_size, minus || not))
+                                    {                                
+                                        case BlastVectorType.float1:   BlastInterpretor.handle_op_i3i1(current_op, ref f4_result, (int)f4.x); vector_size = 3; break;
+                                        case BlastVectorType.float1_n: BlastInterpretor.handle_op_i3i1(current_op, ref f4_result, (int)-f4.x); vector_size = 3; minus = false; not = false; break;
+
+                                        case BlastVectorType.int1:     BlastInterpretor.handle_op_i3i1(current_op, ref f4_result, (CodeUtils.ReInterpret<float, int>(f4.x))); vector_size = 3; break;
+                                        case BlastVectorType.int1_n:   BlastInterpretor.handle_op_i3i1(current_op, ref f4_result, (-CodeUtils.ReInterpret<float, int>(f4.x))); vector_size = 3; minus = false; not = false; break;
+
+                                        case BlastVectorType.float3:   BlastInterpretor.handle_op_i3i3(current_op, ref f4_result, (int3)f4.xyz); break;
+                                        case BlastVectorType.float3_n: BlastInterpretor.handle_op_i3i3(current_op, ref f4_result, (int3)(-f4.xyz)); minus = false; not = false; break;
+
+                                        case BlastVectorType.int3:     BlastInterpretor.handle_op_i3i3(current_op, ref f4_result, (CodeUtils.ReInterpret<float3, int3>(f4.xyz))); break;
+                                        case BlastVectorType.int3_n:   BlastInterpretor.handle_op_i3i3(current_op, ref f4_result, (-CodeUtils.ReInterpret<float3, int3>(f4.xyz))); minus = false; not = false; break;
 
                                         default: goto NO_SUPPORT_FOR_HANDLE_OP;
                                     }
@@ -2597,11 +2653,39 @@ namespace NSS.Blast.Interpretor
                                 {
                                     switch (datatype.Combine(vector_size, minus || not))
                                     {
-                                        case BlastVectorType.float1: BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, f4.x); vector_size = 4; break;
+                                        case BlastVectorType.float1:   BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, f4.x); vector_size = 4; break;
                                         case BlastVectorType.float1_n: BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, -f4.x); vector_size = 4; minus = false; not = false; break;
+                                                                    
+                                        case BlastVectorType.int1:     BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, (float)(CodeUtils.ReInterpret<float, int>(f4.x))); vector_size = 4; break;
+                                        case BlastVectorType.int1_n:   BlastInterpretor.handle_op_f4f1(current_op, ref f4_result, (float)(-CodeUtils.ReInterpret<float, int>(f4.x))); vector_size = 4; minus = false; not = false; break;
 
-                                        case BlastVectorType.float4: BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, f4); break;
+                                        case BlastVectorType.float4:   BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, f4); break;
                                         case BlastVectorType.float4_n: BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, -f4); minus = false; not = false; break;
+                                        
+                                        case BlastVectorType.int4:     BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, (float4)(CodeUtils.ReInterpret<float4, int4>(f4))); break;
+                                        case BlastVectorType.int4_n:   BlastInterpretor.handle_op_f4f4(current_op, ref f4_result, (float4)(-CodeUtils.ReInterpret<float4, int4>(f4))); minus = false; not = false; break;
+
+                                        default: goto NO_SUPPORT_FOR_HANDLE_OP;
+                                    }
+                                }
+                                break;
+
+
+                            case BlastVectorType.int4:
+                                {
+                                    switch (datatype.Combine(vector_size, minus || not))
+                                    {
+                                        case BlastVectorType.float1:   BlastInterpretor.handle_op_i4i1(current_op, ref f4_result, (int)f4.x); vector_size = 4; break;
+                                        case BlastVectorType.float1_n: BlastInterpretor.handle_op_i4i1(current_op, ref f4_result, (int)(-f4.x)); vector_size = 4; minus = false; not = false; break;
+                                                                      
+                                        case BlastVectorType.int1:     BlastInterpretor.handle_op_i4i1(current_op, ref f4_result, (CodeUtils.ReInterpret<float, int>(f4.x))); vector_size = 4; break;
+                                        case BlastVectorType.int1_n:   BlastInterpretor.handle_op_i4i1(current_op, ref f4_result, (-CodeUtils.ReInterpret<float, int>(f4.x))); vector_size = 4; minus = false; not = false; break;
+
+                                        case BlastVectorType.float4:   BlastInterpretor.handle_op_i4i4(current_op, ref f4_result, (int4)f4); break;
+                                        case BlastVectorType.float4_n: BlastInterpretor.handle_op_i4i4(current_op, ref f4_result, (int4)(-f4)); minus = false; not = false; break;
+
+                                        case BlastVectorType.int4:     BlastInterpretor.handle_op_i4i4(current_op, ref f4_result, (CodeUtils.ReInterpret<float4, int4>(f4))); break;
+                                        case BlastVectorType.int4_n:   BlastInterpretor.handle_op_i4i4(current_op, ref f4_result, (-CodeUtils.ReInterpret<float4, int4>(f4))); minus = false; not = false; break;
 
                                         default: goto NO_SUPPORT_FOR_HANDLE_OP;
                                     }
@@ -2751,7 +2835,7 @@ namespace NSS.Blast.Interpretor
             get_sequence_result(ref code_pointer, ref vector_size, ref datatype, ref f4_register);
         }
 
-
+        #region AssignFrom|Increment|Decrement fastlane
 
         /// <summary>
         /// assign a data index directly from constant data 
@@ -2771,9 +2855,11 @@ namespace NSS.Blast.Interpretor
 
             // the negation is combined into the offset
             // - we need to substract it from the offset on indexing the target in each negated switch case 
+            bool decrement = offset >= 0b1000_0000;
+            offset = (byte)(offset & 0b0111_1111); 
 
             GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
-            switch (dtype.CombineSafe(vsize, offset >= 0b1000_0000))
+            switch (dtype.CombineSafe(vsize, decrement))
             {
                 case BlastVectorType.float1: ((float*)data)[offset] = value; break;
                 case BlastVectorType.float2: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] = value; break;
@@ -2800,7 +2886,171 @@ namespace NSS.Blast.Interpretor
             }
         }
 
+        /// <summary>
+        /// handle i++ and i-- on an id encoded as add id, sub id 
+        /// </summary>
+        /// <param name="code_pointer"></param>
+        /// <param name="decrement"></param>
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void IncrementOrDecrementData(ref int code_pointer, in bool decrement)
+        {
+            byte offset = (byte)(code[code_pointer] - (byte)blast_operation.id);
+            code_pointer++;
+
+            // the negation is combined into the offset
+            // - we need to substract it from the offset on indexing the target in each negated switch case 
+
+            GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
+            switch (dtype.CombineSafe(vsize, decrement))
+            {
+                case BlastVectorType.float1: ((float*)data)[offset]++; break;
+                case BlastVectorType.float2: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] += 1; break;
+                case BlastVectorType.float3: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] += 1; break;
+                case BlastVectorType.float4: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] += 1; break;
+
+                case BlastVectorType.float1_n: ((float*)data)[offset]--; break;
+                case BlastVectorType.float2_n: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] -= 1; break;
+                case BlastVectorType.float3_n: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] -= 1; break;
+                case BlastVectorType.float4_n: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] -= 1; break;
+
+                case BlastVectorType.bool32: ((uint*)data)[offset] ++; break;
+                case BlastVectorType.bool32_n: ((uint*)data)[offset] --; break;
+
+                case BlastVectorType.int1: ((int*)data)[offset]++; break;
+                case BlastVectorType.int2: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] += 1; break;
+                case BlastVectorType.int3: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] += 1; break;
+                case BlastVectorType.int4: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] += 1; break;
+
+                case BlastVectorType.int1_n: ((int*)data)[offset]--; break;
+                case BlastVectorType.int2_n: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] -= 1; break;
+                case BlastVectorType.int3_n: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] -= 1; break;
+                case BlastVectorType.int4_n: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] -= 1; break;
+            }
+        }
+
+        /// <summary>
+        /// increment or decrement a data index with a floating point value 
+        /// </summary>
+        /// <param name="code_pointer"></param>
+        /// <param name="decrement"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void IncrementOrDecrementData(ref int code_pointer, in bool decrement, in float value)
+        {
+            byte offset = (byte)(code[code_pointer] - (byte)blast_operation.id);
+            code_pointer++;
+
+            // the negation is combined into the offset
+            // - we need to substract it from the offset on indexing the target in each negated switch case 
+
+            GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
+            switch (dtype.CombineSafe(vsize, decrement))
+            {
+                case BlastVectorType.float1: ((float*)data)[offset] += value; break;
+                case BlastVectorType.float2: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] += value; break;
+                case BlastVectorType.float3: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] += value; break;
+                case BlastVectorType.float4: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] += value; break;
+
+                case BlastVectorType.float1_n: ((float*)data)[offset] -= value; break;
+                case BlastVectorType.float2_n: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] -= value; break;
+                case BlastVectorType.float3_n: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] -= value; break;
+                case BlastVectorType.float4_n: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] -= value; break;
+
+                case BlastVectorType.bool32: ((uint*)data)[offset] += CodeUtils.ReInterpret<float, uint>(value); break;
+                case BlastVectorType.bool32_n: ((uint*)data)[offset] -= CodeUtils.ReInterpret<float, uint>(value); break;
+
+                case BlastVectorType.int1: ((int*)data)[offset] += CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int2: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] += CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int3: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] += CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int4: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] += CodeUtils.ReInterpret<float, int>(value); break;
+
+                case BlastVectorType.int1_n: ((int*)data)[offset] -= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int2_n: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] -= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int3_n: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] -= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int4_n: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] -= CodeUtils.ReInterpret<float, int>(value); break;
+            }
+        }
+        /// <summary>
+        /// increment or decrement a data index with an integer value 
+        /// </summary>
+        /// <param name="code_pointer"></param>
+        /// <param name="decrement"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void IncrementOrDecrementData(ref int code_pointer, in bool decrement, in int value)
+        {
+            byte offset = (byte)(code[code_pointer] - (byte)blast_operation.id);
+            code_pointer++;
+
+            // the negation is combined into the offset
+            // - we need to substract it from the offset on indexing the target in each negated switch case 
+
+            GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
+            switch (dtype.CombineSafe(vsize, decrement))
+            {
+                case BlastVectorType.float1: ((float*)data)[offset] += value; break;
+                case BlastVectorType.float2: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] += value; break;
+                case BlastVectorType.float3: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] += value; break;
+                case BlastVectorType.float4: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] += value; break;
+
+                case BlastVectorType.float1_n: ((float*)data)[offset] -= value; break;
+                case BlastVectorType.float2_n: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] -= value; break;
+                case BlastVectorType.float3_n: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] -= value; break;
+                case BlastVectorType.float4_n: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] -= value; break;
+
+                case BlastVectorType.bool32: ((uint*)data)[offset] += CodeUtils.ReInterpret<float, uint>(value); break;
+                case BlastVectorType.bool32_n: ((uint*)data)[offset] -= CodeUtils.ReInterpret<float, uint>(value); break;
+
+                case BlastVectorType.int1: ((int*)data)[offset] += CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int2: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] += CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int3: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] += CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int4: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] += CodeUtils.ReInterpret<float, int>(value); break;
+
+                case BlastVectorType.int1_n: ((int*)data)[offset] -= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int2_n: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] -= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int3_n: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] -= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int4_n: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] -= CodeUtils.ReInterpret<float, int>(value); break;
+            }
+        }
+
+        // dont inline everything.. this would be deep with pop-p-info
+        void IncrementOrDecrementDataWith(ref int code_pointer, in bool decrement)
+        {
+            void* p = pop_p_info(ref code_pointer, out BlastVariableDataType datatype, out byte vector_size, out bool is_neg_is_not_allowed_and_thus_ignored);
+
+            //
+            // compiler will only allow this construct with vectorsize == 1 
+            // - nevertheless it does not hurt to check in trace 
+            // 
+            if (IsTrace)
+            {
+                if (vector_size != 1)
+                {
+                    Debug.LogError("Blast.Interpretor.IncrementOrDecrementDataWith: only size 1 vectorsizes are supported as operand in this construct, this is a compilation error");
+                    return;
+                }
+            }
+
+            switch (datatype)
+            {
+                case BlastVariableDataType.Numeric:
+                    {
+                        IncrementOrDecrementData(ref code_pointer, in decrement, ((float*)p)[0]);
+                    }
+                    break;
+                case BlastVariableDataType.ID:
+                    {
+                        IncrementOrDecrementData(ref code_pointer, in decrement, CodeUtils.ReInterpret<float, int>(((float*)p)[0]));
+                    }
+                    break;
+
+                case BlastVariableDataType.Bool32:
+                    {
+                        IncrementOrDecrementData(ref code_pointer, in decrement, ((int*)p)[0]);
+                    }
+                    break;
+            }
+        }
+        #endregion
 
 
 
@@ -2840,8 +3090,8 @@ namespace NSS.Blast.Interpretor
             }
 
             // pointer to datasegment and 1 register 
-            float* fdata = (float*)data;
-            float4 f4_register = 0;
+            V1* fdata = (V1*)data;
+            V4 f4_register = 0;
 
             // some variables to hold state 
             int index = -1;
@@ -3076,6 +3326,9 @@ namespace NSS.Blast.Interpretor
 
                     // *****************************************************************************************
                     // this opcode is NOT interpreted in the root and is used as jump target for other opcodes
+                    // - these jump targets are encoded as 255-target in opcode, these use up some direct encoding
+                    //   space for parameters but only those with an id higher then 100 or so which would map
+                    //   to opcode 100 + blastoperation.id == 228
                     // *****************************************************************************************
                     case (blast_operation)blast_operation_jumptarget.jump_assign_indexed:
                         {
@@ -3560,7 +3813,7 @@ namespace NSS.Blast.Interpretor
 
 #endregion
 
-#region Jumps 
+                    #region Jumps 
 
                     //
                     // JZ Long: a condition may contain push commands that should run from the root
@@ -3659,7 +3912,7 @@ namespace NSS.Blast.Interpretor
 
 #endregion
 
-#region Root Procedures
+                    #region Root Procedures
 
                     //    
                     // by executing these in the root we save a lot on function calls and stack operations
@@ -3820,8 +4073,45 @@ namespace NSS.Blast.Interpretor
                             break;
                         }
 
-#endregion
-                    
+                    #endregion
+
+                    #region Direct Increment / Decrement of variable 
+
+                    //
+                    // dual use of opcodes: fastlane for the most used arithmetics: i++, i+= (i = i + 3), i--, i-=
+                    //
+                    case blast_operation.add:
+                        // add 1 to id: b++; 
+                        IncrementOrDecrementData(ref code_pointer, false); 
+                        break;
+
+                    case blast_operation.adda:
+                        // adda [value] [assignee]
+                        IncrementOrDecrementDataWith(ref code_pointer, false);
+                        break;
+
+
+                    case blast_operation.substract:
+                        // sub 1 from id: a--; 
+                        IncrementOrDecrementData(ref code_pointer, true);
+                        break;
+
+                    case blast_operation.suba:
+                        // sub from id: a -= 2;
+                        IncrementOrDecrementDataWith(ref code_pointer, true);
+                        break;
+
+                    #endregion 
+
+                    // add *= 
+                    //
+                    // a = a == 1      a = a == 0
+                    //
+                    // the very common ops we could benifit greatly.. if we keep them general and allow compiler to transform in them when possible, it save bytecode and a lot of branches 
+                    //
+
+
+                    // direct assignment of an id, or an error if not an id 
                     default:
                         {
 
@@ -3839,7 +4129,6 @@ namespace NSS.Blast.Interpretor
 
                                 // get metadata on destination 
                                 assignee = code[code_pointer];
-                                code_pointer++;
 
                                 bool substract = assignee >= 0b1000_0000;
                                 assignee = (byte)math.select(assignee, assignee - 0b1000_0000, substract);
@@ -3864,7 +4153,7 @@ namespace NSS.Blast.Interpretor
 
                                 // get assignee metadata 
                                 BlastInterpretor.GetMetaData(in metadata, in assignee, out s_assignee, out assignee_type);
-                                s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0); 
+                                s_assignee = (byte)math.select(s_assignee, 4, s_assignee == 0);
 
                                 // now re-route flow through assign-result 
                                 goto case (blast_operation)blast_operation_jumptarget.jump_assign_result;
