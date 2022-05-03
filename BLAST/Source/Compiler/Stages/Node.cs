@@ -121,14 +121,47 @@ namespace NSS.Blast.Compiler
         /// a constant cdata element to be inlined into the code segment 
         /// </summary>
         cdata,
+
+        //
+        // Fastlanes,   expression with a single operation, directly encoded into the main interpretor loop
+        //              with optimized index <-> index operations for a small but often used set of expressions
+        // 
+        //              - reduces outputted bytecode size 
+        //              - ssmd: less buffer copies, in optimal cases only 1 instead of 3
+        //              - normal: less branching, from 42ns to 13ns on a single increment (that adds up severely in scripts)
+        //
+
         /// <summary>
         /// increment a data index
         /// </summary>
         increment,
+
         /// <summary>
         /// decrement a data index 
         /// </summary>
-        decrement
+        decrement,
+
+        /// <summary>
+        /// multiply a data index with another or a constant 
+        /// </summary>
+        multiply,
+
+        /// <summary>
+        /// divide a dataindex by another or a constant 
+        /// </summary>
+        divide,
+
+        /// <summary>
+        /// comparison of a dataindex with another dataindex or a constant
+        /// </summary>
+        compare_equals,
+        compare_not_equals,
+        compare_larger,
+        compare_smaller,
+        compare_larger_equals,
+        compare_smaller_equals 
+
+
     }
 
     /// <summary>
@@ -870,7 +903,15 @@ namespace NSS.Blast.Compiler
 
                 case nodetype.increment: return $"increment {identifier}"; 
                 case nodetype.decrement: return $"decrement {identifier}";
+                case nodetype.multiply: return $"multiply {identifier}";
+                case nodetype.divide: return $"divide {identifier}";
 
+                case nodetype.compare_equals: return $"compare == {identifier}";
+                case nodetype.compare_larger: return $"compare > {identifier}";
+                case nodetype.compare_larger_equals: return $"compare >= {identifier}";
+                case nodetype.compare_not_equals: return $"compare != {identifier}";
+                case nodetype.compare_smaller: return $"compare < {identifier}";
+                case nodetype.compare_smaller_equals: return $"compare <= {identifier}";
                 default: return base.ToString();
             }
         }
@@ -2724,6 +2765,18 @@ namespace NSS.Blast.Compiler
                         }
                         break;
 
+                    case NodeMatch.Multiply:
+                        {
+                            if (children[i].token != BlastScriptToken.Multiply) return false;
+                        }
+                        break;
+
+                    case NodeMatch.Divide:
+                        {
+                            if (children[i].token != BlastScriptToken.Divide) return false;
+                        }
+                        break;
+
                     // anything not checked for voids this -> false
                     default: return false; 
                 }
@@ -2774,7 +2827,19 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// match to an operation token: add
         /// </summary>
-        Substract
+        Substract,
+
+        /// <summary>
+        /// match to token: multiply
+        /// </summary>
+        Multiply, 
+
+        /// <summary>
+        /// match to to token: divide
+        /// </summary>
+        Divide
+            
+    
     }
 
     /// <summary>

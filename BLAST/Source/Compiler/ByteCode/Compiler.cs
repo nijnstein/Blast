@@ -1680,7 +1680,7 @@ namespace NSS.Blast.Compiler.Stage
 
 
         /// <summary>
-        /// NORMAL MODE ONLY - Direct constant -> data[ID] 
+        ///  Direct constant -> data[ID] 
         /// 
         /// a = 1; 
         /// a = (-1);
@@ -1695,7 +1695,13 @@ namespace NSS.Blast.Compiler.Stage
         /// 
         /// - saves 1-2 bytes of code, 1 for encoding the assign, and 1 for a possible negation.
         /// - saves a lot more on branches during interpretation:
-        /// ==> a = 1; used to take 40-50 ns , now it takes 12 ns as this is a very common operation it makes sence to do this
+        /// ==> a = 1; used to take 40-50 ns in normal , now it takes 12 ns as this is a very common operation it makes sence to do this
+        /// 
+        /// -> SSMD also benifits big as it will skip TWO buffer copies, one for starting the sequencer and 1 taking its result 
+        /// -> the saved memory can add up to almost 50% in optimal cases
+        /// 
+        ///  a = a + 1; -> sets a a + 1 nop;   with this ->  1 a
+        /// 
         /// </summary>
         private static void CompileDirectConstantAssignmentForNormalPackager(node ast_node, IMByteCodeList code, BlastVariable assignee)
         {
@@ -1874,22 +1880,19 @@ namespace NSS.Blast.Compiler.Stage
 
         #endregion
 
-        static IMByteCodeList CompileIncrement(CompilationData data, bool decrement, node ast_node, IMByteCodeList code = null)
+        static IMByteCodeList CompileFastLaneOperation(CompilationData data, bool decrement, node ast_node, blast_operation op, IMByteCodeList code = null)
         {
-            Assert.IsTrue(ast_node != null && 
-                ((ast_node.type == nodetype.increment && !decrement)
-                ||
-                (ast_node.type == nodetype.decrement && decrement))); 
+            Assert.IsTrue(ast_node != null);
 
             if (!ast_node.HasVariable)
             {
-                data.LogError($"CompileNode.Increment|Decrement: <{ast_node}> variable not set");
+                data.LogError($"CompileNode.CompileFastLaneOperation: <{ast_node}> variable not set");
                 return null;
             }
             if (ast_node.HasChildren)
             {
-                // i += something 
-                code.Add(decrement ? blast_operation.suba : blast_operation.adda);
+                // i [op]= something 
+                code.Add(op);
 
                 // compile the data|constant element 
                 CompileParameter(data, ast_node.FirstChild, code, false);
@@ -1900,11 +1903,11 @@ namespace NSS.Blast.Compiler.Stage
             else
             {
                 // i++
-                code.Add(decrement ? blast_operation.substract : blast_operation.add);
+                code.Add(op);
                 code.Add((byte)(ast_node.variable.Id + (byte)blast_operation.id));
             }
 
-            return code; 
+            return code;
         }
 
 
@@ -2359,25 +2362,52 @@ namespace NSS.Blast.Compiler.Stage
                     }
                     break;
 
-
-
+                // +=    ++
                 case nodetype.increment:
-                    {
-                        if (CompileIncrement(data, false, ast_node, code) == null) return null; 
-                    }
+                    if (CompileFastLaneOperation(data, false, ast_node, blast_operation.adda, code) == null) return null; 
                     break;
 
-
+                // -=    --  
                 case nodetype.decrement:
-                    {
-                        if (CompileIncrement(data, true, ast_node, code) == null) return null;
-                    }
+                    if (CompileFastLaneOperation(data, true, ast_node, blast_operation.suba, code) == null) return null;
                     break;
 
+                // *=
+                case nodetype.multiply:
+                    if (CompileFastLaneOperation(data, true, ast_node, blast_operation.multiply, code) == null) return null;
+                    break;
+
+                // /=
+                case nodetype.divide:
+                    if (CompileFastLaneOperation(data, true, ast_node, blast_operation.divide, code) == null) return null;
+                    break;
+
+                // ==  !=   >=   <=   >   < 
+                case nodetype.compare_equals:
+                    if (CompileFastLaneOperation(data, true, ast_node, blast_operation.equals, code) == null) return null;
+                    break;
+
+                case nodetype.compare_not_equals:
+                    if (CompileFastLaneOperation(data, true, ast_node, blast_operation.not_equals, code) == null) return null;
+                    break;
+
+                case nodetype.compare_larger:
+                    if (CompileFastLaneOperation(data, true, ast_node, blast_operation.greater, code) == null) return null;
+                    break;
+
+                case nodetype.compare_smaller:
+                    if (CompileFastLaneOperation(data, true, ast_node, blast_operation.smaller, code) == null) return null;
+                    break;
+
+                case nodetype.compare_larger_equals:
+                    if (CompileFastLaneOperation(data, true, ast_node, blast_operation.greater_equals, code) == null) return null;
+                    break;
+
+                case nodetype.compare_smaller_equals:
+                    if (CompileFastLaneOperation(data, true, ast_node, blast_operation.smaller_equals, code) == null) return null;
+                    break;
 
             }
-
-
             return code;
         }
 

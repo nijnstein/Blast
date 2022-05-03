@@ -303,9 +303,19 @@ namespace NSS.Blast.Compiler.Stage
                         // attempt to replace assignments with incrementors 
                         res = BlastTransform.transform_incremental_assignments(data, node);
                         if (res != BlastError.success) return res;
+                        if (!node.IsAssignment) return BlastError.success;
 
-                        // transform assingment made it into an increment 
-                        if (node.IsIncrementOrDecrementor) return BlastError.success;
+                        res = BlastTransform.transform_multiplication_assignments(data, node);
+                        if (res != BlastError.success) return res;
+                        if (!node.IsAssignment) return BlastError.success;
+
+                        res = BlastTransform.transform_division_assignments(data, node);
+                        if (res != BlastError.success) return res;
+                        if (!node.IsAssignment) return BlastError.success;
+
+                     //   res = BlastTransform.transform_comparison_assignments(data, node);
+                     //   if (res != BlastError.success) return res;
+                     //   if (!node.IsAssignment) return BlastError.success;
 
                         // try other options of optimizing the assignment    
                         if ((res = OptimizeNonVectorAssignment(data, node)) != BlastError.success) return res;

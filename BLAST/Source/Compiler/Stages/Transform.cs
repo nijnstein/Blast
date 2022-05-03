@@ -1257,6 +1257,210 @@ namespace NSS.Blast.Compiler.Stage
             return BlastError.success; 
         }
 
+        /// <summary>
+        /// all replacements have slightly differing rules, best keep them all seperate
+        /// </summary>
+        public static BlastError transform_multiplication_assignments(IBlastCompilationData data, node n)
+        {
+            Assert.IsTrue(data != null && n != null && n.IsAssignment);
+
+            // early exit if not 3 child nodes 
+            if (n.ChildCount != 3) return BlastError.success;
+
+        
+            // before running the test, make sure that scriptvariable in the statement equals assignee 
+            bool b_found_assignee_in_children = n.children.Any(x => x.variable == n.variable);
+            bool b_possible = true;
+
+            bool transform_mul()
+            {
+                nodetype type = nodetype.multiply;
+
+                // i = i * [constant_value 1]
+                // i = [constant_value 1] * 1
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariableSelf, NodeMatch.Multiply, NodeMatch.Constant1)
+                    ||
+                    n.Is(data.CompilerOptions.PackageMode, NodeMatch.Constant1, NodeMatch.Multiply, NodeMatch.ScriptVariableSelf))
+                {
+                    // i *= 1f
+                    n.type = type;
+                    n.children.Clear();
+                    n.SkipCompilation();
+                    return true;
+                }
+                else
+                // i = [constant] * i;
+                // i = i * [constant]
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariableSelf, NodeMatch.Multiply, NodeMatch.Constant))
+                {
+                    if (n.children[0].vector_size != 1)
+                    {
+                        // only for V1 as increment will expand the value
+                        return false;
+                    }
+                    n.type = type;
+                    n.children.RemoveRange(0, 2);
+                    return true;
+                }
+                else
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.Constant, NodeMatch.Multiply, NodeMatch.ScriptVariableSelf))
+                {
+                    if (n.children[2].vector_size != 1)
+                    {
+                        // only for V1 as increment will expand the value
+                        return false;
+                    }
+                    n.type = type;
+                    n.children.RemoveRange(1, 2);
+
+                    return true;
+                }
+                // i = i + j
+                else
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariableSelf, NodeMatch.Multiply, NodeMatch.ScriptVariable))
+                {
+                    // only for V1 as increment will expand the value
+                    if (n.children[2].vector_size != 1) return false;
+                    {
+                        return false;
+                    }
+                    n.type = type;
+                    n.children.RemoveRange(0, 2);
+                    return true;
+                }
+                // i = j + i 
+                else
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariable, NodeMatch.Multiply, NodeMatch.ScriptVariableSelf))
+                {
+                    // only for V1 as increment will expand the value
+                    if (n.children[0].vector_size != 1) return false;
+                    {
+                        return false;
+                    }
+                    n.type = type;
+                    n.children.RemoveRange(1, 2);
+                    return true;
+                }
+                return false;
+            }
+
+            // test and transform allowed patterns 
+            if (transform_mul()) return BlastError.success;
+
+            // no match to any allowed pattern, thats ok 
+            return BlastError.success;
+        }
+
+
+        /// <summary>
+        /// all replacements have slightly differing rules, best keep them all seperate
+        /// </summary>
+        public static BlastError transform_division_assignments(IBlastCompilationData data, node n)
+        {
+            Assert.IsTrue(data != null && n != null && n.IsAssignment);
+
+            // early exit if not 3 child nodes 
+            if (n.ChildCount != 3) return BlastError.success;
+
+
+            // before running the test, make sure that scriptvariable in the statement equals assignee 
+            bool b_found_assignee_in_children = n.children.Any(x => x.variable == n.variable);
+            bool b_possible = true;
+
+            bool transform_div()
+            {
+                nodetype type = nodetype.divide;
+
+                // i = i / [constant_value 1]
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariableSelf, NodeMatch.Divide, NodeMatch.Constant1))
+                {
+                    // i /= value1 == i => nothing happens 
+                    n.SkipCompilation();
+                    return false;  
+                }
+                else
+
+                // i = i / [constant_value 0]
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariableSelf, NodeMatch.Divide, NodeMatch.Constant0))
+                {
+                    data.LogError($"Blast.Transform.transform_division_assignments: operation would result int division by zero and is invalid! Node: <{n}>", (int)BlastError.error_compiling_div_by_zero);
+                    return false; 
+                }
+                else 
+                // i = [constant_value 1] / i
+                if(n.Is(data.CompilerOptions.PackageMode, NodeMatch.Constant1, NodeMatch.Divide, NodeMatch.ScriptVariableSelf))
+                {
+                    // => calculates inverse  
+                    if (n.children[0].vector_size != 1)
+                    {
+                        // only for V1 as increment will expand the value
+                        return false;
+                    }
+                    n.type = type;
+                    n.children.RemoveRange(1, 2);
+                    return true;
+                }
+                else
+                // i = i / value  => i /= value
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariableSelf, NodeMatch.Divide, NodeMatch.Constant))
+                {
+                    if (n.children[0].vector_size != 1)
+                    {
+                        // only for V1 as increment will expand the value
+                        return false;
+                    }
+                    n.type = type;
+                    n.children.RemoveRange(0, 2);
+                    return true;
+                }
+                else
+                // i = ccc / i
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.Constant, NodeMatch.Divide, NodeMatch.ScriptVariableSelf))
+                {
+                    // mul with inverse of ccc     i / ccc * i  => dont replace 
+                    return false;
+                }
+                // i = i / j  == i /= j;
+                else
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariableSelf, NodeMatch.Divide, NodeMatch.ScriptVariable))
+                {
+                    // only for V1 as increment will expand the value
+                    if (n.children[2].vector_size != 1) return false;
+                    {
+                        return false;
+                    }
+                    n.type = type;
+                    n.children.RemoveRange(0, 2);
+                    return true;
+                }
+                // i = j + i  => no replacement -> normally this would not happen often: assing result of division to divisor... 
+                else
+                if (n.Is(data.CompilerOptions.PackageMode, NodeMatch.ScriptVariable, NodeMatch.Divide, NodeMatch.ScriptVariableSelf))
+                {
+                    return false; 
+                }
+                return false;
+            }
+
+            // test and transform allowed patterns 
+            if (transform_div()) return BlastError.success;
+
+            // no match to any allowed pattern, thats ok 
+            return BlastError.success;
+        }
+
+        /// <summary>
+        /// same as the incrementors and mul/divide only this one replaces 6 patterns of comparisons into a hot path 
+        /// </summary>
+
+      //  public static BlastError transform_comparison_assignments(IBlastCompilationData data, node n)
+       // {
+            // test   ==    >=     <=     !=    <    >    
+            
+            
+            
+       //     asdf
+      //  }
 
 
         /// <summary>

@@ -3012,7 +3012,9 @@ namespace NSS.Blast.Interpretor
             }
         }
 
-        // dont inline everything.. this would be deep with pop-p-info
+        /// <summary>
+        ///  dont inline everything.. this would be deep with pop-p-info
+        /// </summary>
         void IncrementOrDecrementDataWith(ref int code_pointer, in bool decrement)
         {
             void* p = pop_p_info(ref code_pointer, out BlastVariableDataType datatype, out byte vector_size, out bool is_neg_is_not_allowed_and_thus_ignored);
@@ -3050,6 +3052,177 @@ namespace NSS.Blast.Interpretor
                     break;
             }
         }
+
+
+
+        /// <summary>
+        /// multiply or divide a data index with a floating point value 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void MultiplyOrDivideData(ref int code_pointer, in bool multiply, in float value)
+        {
+            byte offset = (byte)(code[code_pointer] - (byte)blast_operation.id);
+            code_pointer++;
+
+            // the negation is combined into the offset
+            // - we need to substract it from the offset on indexing the target in each negated switch case 
+
+            GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
+            switch (dtype.CombineSafe(vsize, multiply))
+            {
+                case BlastVectorType.float1: ((float*)data)[offset] /= value; break;
+                case BlastVectorType.float2: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] /= value; break;
+                case BlastVectorType.float3: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] /= value; break;
+                case BlastVectorType.float4: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] /= value; break;
+
+                case BlastVectorType.float1_n: ((float*)data)[offset] *= value; break;
+                case BlastVectorType.float2_n: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] *= value; break;
+                case BlastVectorType.float3_n: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] *= value; break;
+                case BlastVectorType.float4_n: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] *= value; break;
+
+                case BlastVectorType.bool32: ((uint*)data)[offset] /= CodeUtils.ReInterpret<float, uint>(value); break;
+                case BlastVectorType.bool32_n: ((uint*)data)[offset] *= CodeUtils.ReInterpret<float, uint>(value); break;
+
+                case BlastVectorType.int1: ((int*)data)[offset] /= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int2: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] /= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int3: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] /= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int4: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] /= CodeUtils.ReInterpret<float, int>(value); break;
+
+                case BlastVectorType.int1_n: ((int*)data)[offset] *= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int2_n: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] *= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int3_n: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] *= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int4_n: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] *= CodeUtils.ReInterpret<float, int>(value); break;
+            }
+        }
+        /// <summary>
+        /// multiply or divide a data index with an integer value 
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void MultiplyOrDivideData(ref int code_pointer, in bool multiply, in int value)
+        {
+            byte offset = (byte)(code[code_pointer] - (byte)blast_operation.id);
+            code_pointer++;
+
+            // the negation is combined into the offset
+            // - we need to substract it from the offset on indexing the target in each negated switch case 
+
+            GetMetaData(in metadata, in offset, out byte vsize, out BlastVariableDataType dtype);
+            switch (dtype.CombineSafe(vsize, multiply))
+            {
+                case BlastVectorType.float1: ((float*)data)[offset] /= value; break;
+                case BlastVectorType.float2: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] /= value; break;
+                case BlastVectorType.float3: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] /= value; break;
+                case BlastVectorType.float4: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] /= value; break;
+
+                case BlastVectorType.float1_n: ((float*)data)[offset] *= value; break;
+                case BlastVectorType.float2_n: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] *= value; break;
+                case BlastVectorType.float3_n: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] *= value; break;
+                case BlastVectorType.float4_n: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] *= value; break;
+
+                case BlastVectorType.bool32: ((uint*)data)[offset] /= CodeUtils.ReInterpret<float, uint>(value); break;
+                case BlastVectorType.bool32_n: ((uint*)data)[offset] *= CodeUtils.ReInterpret<float, uint>(value); break;
+
+                case BlastVectorType.int1: ((int*)data)[offset] /= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int2: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] /= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int3: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] /= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int4: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] /= CodeUtils.ReInterpret<float, int>(value); break;
+
+                case BlastVectorType.int1_n: ((int*)data)[offset] *= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int2_n: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] *= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int3_n: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] *= CodeUtils.ReInterpret<float, int>(value); break;
+                case BlastVectorType.int4_n: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] *= CodeUtils.ReInterpret<float, int>(value); break;
+            }
+        }
+
+
+        /// <summary>
+        /// not inlined
+        /// </summary>
+        void DirectMultiplyDataWith(ref int code_pointer)
+        {
+            // pop the value used to multiply data with, can be constant or another data index
+            void* p = pop_p_info(ref code_pointer, out BlastVariableDataType datatype, out byte vector_size, out bool is_neg_is_not_allowed_and_thus_ignored);
+
+            //
+            // compiler will only allow this construct with vectorsize == 1 
+            // - nevertheless it does not hurt to check in trace 
+            // 
+            if (IsTrace)
+            {
+                if (vector_size != 1)
+                {
+                    Debug.LogError("Blast.Interpretor.DirectMultiplyDataWith: only size 1 vectorsizes are supported as operand in this construct, this is a compilation error");
+                    return;
+                }
+            }
+
+            switch (datatype)
+            {
+                case BlastVariableDataType.Numeric:
+                    {
+                        MultiplyOrDivideData(ref code_pointer, true, ((float*)p)[0]);
+                    }
+                    break;
+                case BlastVariableDataType.ID:
+                    {
+                        MultiplyOrDivideData(ref code_pointer, true, CodeUtils.ReInterpret<float, int>(((float*)p)[0]));
+                    }
+                    break;
+
+                case BlastVariableDataType.Bool32:
+                    {
+                        MultiplyOrDivideData(ref code_pointer, true, ((int*)p)[0]);
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// not inlined
+        /// </summary>
+        void DirectDivideDataWith(ref int code_pointer)
+        {
+            // pop the value used to multiply data with, can be constant or another data index
+            void* p = pop_p_info(ref code_pointer, out BlastVariableDataType datatype, out byte vector_size, out bool is_neg_is_not_allowed_and_thus_ignored);
+
+            //
+            // compiler will only allow this construct with vectorsize == 1 
+            // - nevertheless it does not hurt to check in trace 
+            // 
+            if (IsTrace)
+            {
+                if (vector_size != 1)
+                {
+                    Debug.LogError("Blast.Interpretor.DirectDivideDataWith: only size 1 vectorsizes are supported as operand in this construct, this is a compilation error");
+                    return;
+                }
+            }
+
+            switch (datatype)
+            {
+                case BlastVariableDataType.Numeric:
+                    {
+                        MultiplyOrDivideData(ref code_pointer, false, ((float*)p)[0]);
+                    }
+                    break;
+                case BlastVariableDataType.ID:
+                    {
+                        MultiplyOrDivideData(ref code_pointer, false, CodeUtils.ReInterpret<float, int>(((float*)p)[0]));
+                    }
+                    break;
+
+                case BlastVariableDataType.Bool32:
+                    {
+                        MultiplyOrDivideData(ref code_pointer, false, ((int*)p)[0]);
+                    }
+                    break;
+            }
+        }
+
+
+
+
+
         #endregion
 
 
@@ -4078,7 +4251,7 @@ namespace NSS.Blast.Interpretor
                     #region Direct Increment / Decrement of variable 
 
                     //
-                    // dual use of opcodes: fastlane for the most used arithmetics: i++, i+= (i = i + 3), i--, i-=
+                    // dual use of opcodes: fastlane for the most used arithmetics used in a single operation : i++, i+= (i = i + 3), i--, i-=
                     //
                     case blast_operation.add:
                         // add 1 to id: b++; 
@@ -4101,7 +4274,15 @@ namespace NSS.Blast.Interpretor
                         IncrementOrDecrementDataWith(ref code_pointer, true);
                         break;
 
-                    #endregion 
+                    case blast_operation.multiply:
+                        DirectMultiplyDataWith(ref code_pointer);
+                        break;
+
+                    case blast_operation.divide:
+                        DirectDivideDataWith(ref code_pointer);
+                        break;
+
+                    #endregion
 
                     // add *= 
                     //

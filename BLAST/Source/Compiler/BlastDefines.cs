@@ -2195,7 +2195,8 @@ namespace NSS.Blast
         /// unable to decode cdata as request value
         /// </summary>
         error_failed_to_decode_cdata = -104,
-        error_incrementor_transform = 2
+        error_incrementor_transform = 2,
+        error_compiling_div_by_zero = 3
     }
 
 }
