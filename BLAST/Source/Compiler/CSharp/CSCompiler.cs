@@ -1,13 +1,25 @@
-﻿//##########################################################################################################
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31@gmail.com> All Rights Reserved  ^__^\#
-// Unauthorized copying of this file, via any medium is strictly prohibited                           (oo)\#
-// Proprietary and confidential                                                                       (__) #
-//##########################################################################################################
+﻿//############################################################################################################################
+//                                                                                                                           #
+//  ██████╗ ██╗      █████╗ ███████╗████████╗                           Copyright © 2022 Rob Lemmens | NijnStein Software    #
+//  ██╔══██╗██║     ██╔══██╗██╔════╝╚══██╔══╝                                    <rob.lemmens.s31 gmail com>                 #
+//  ██████╔╝██║     ███████║███████╗   ██║                                           All Rights Reserved                     #
+//  ██╔══██╗██║     ██╔══██║╚════██║   ██║                                                                                   #
+//  ██████╔╝███████╗██║  ██║███████║   ██║     V1.0.4e                                                                       #
+//  ╚═════╝ ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝                                                                                   #
+//                                                                                                                           #
+//############################################################################################################################
+//                                                                                                                     (__)  #
+//       Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential         (oo)  #
+//                                                                                                                     (__)  #
+//############################################################################################################################
+#pragma warning disable CS1591
+#pragma warning disable CS0162
+
 #if NET_4_6 && (UNITY_STANDALONE_VSBUILD_WIN || UNITY_EDITOR_WIN)
 #define CSC
 #endif
 #if STANDALONE_VSBUILD
-    using NSS.Blast.Standalone; 
+using NSS.Blast.Standalone; 
 #else
     using UnityEngine;    
 #endif 

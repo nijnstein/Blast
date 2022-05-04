@@ -1,13 +1,23 @@
 ﻿//############################################################################################################################
-// BLAST v1.0.4c                                                                                                             #
-// Copyright © 2022 Rob Lemmens | NijnStein Software <rob.lemmens.s31 gmail com> All Rights Reserved                   ^__^\ #
-// Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential               (oo)\ #
+//                                                                                                                           #
+//  ██████╗ ██╗      █████╗ ███████╗████████╗                           Copyright © 2022 Rob Lemmens | NijnStein Software    #
+//  ██╔══██╗██║     ██╔══██╗██╔════╝╚══██╔══╝                                    <rob.lemmens.s31 gmail com>                 #
+//  ██████╔╝██║     ███████║███████╗   ██║                                           All Rights Reserved                     #
+//  ██╔══██╗██║     ██╔══██║╚════██║   ██║                                                                                   #
+//  ██████╔╝███████╗██║  ██║███████║   ██║     V1.0.4e                                                                       #
+//  ╚═════╝ ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝                                                                                   #
+//                                                                                                                           #
+//############################################################################################################################
+//                                                                                                                     (__)  #
+//       Unauthorized copying of this file, via any medium is strictly prohibited proprietary and confidential         (oo)  #
 //                                                                                                                     (__)  #
 //############################################################################################################################
+#pragma warning disable CS1591
+#pragma warning disable CS0162
 
 #if STANDALONE_VSBUILD
-using NSS.Blast.Standalone;
-using UnityEngine.Assertions;
+    using NSS.Blast.Standalone;
+    using UnityEngine.Assertions;
 #else
     using UnityEngine;
     using UnityEngine.Assertions;

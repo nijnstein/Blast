@@ -16,7 +16,7 @@
 #pragma warning disable CS0162
 
 #if STANDALONE_VSBUILD
-using NSS.Blast.Standalone;
+    using NSS.Blast.Standalone;
     using System.Reflection;
 #else
     using UnityEngine;
