@@ -93,7 +93,7 @@ namespace NSS.Blast.Compiler
         /// estimate stack size using input, output and validation parameters 
         /// - overridden if the script defines a stack size
         /// </summary>
-        public bool EstimateStackSize = true;
+        public bool EstimateStackSize = false;
 
         /// <summary>
         /// verbose report logging, log is also blitted to unity
@@ -236,16 +236,22 @@ namespace NSS.Blast.Compiler
         }
 
         /// <summary>
-        /// set the size of the stack, if 0 is set stack is estimated during compilation 
+        /// set the size of the stack,  if 0 stack is estimated during compilation, in trace this might incur an execution of the script, during release we measure it from push pop pairs
+        /// - Set to a negative 1 (-1) to force an execution for stack estimation during release
         /// </summary>
         /// <param name="stack_size"></param>
         /// <returns>compiler options</returns>
-        public BlastCompilerOptions SetStackSize(int stack_size = 0)
+        public BlastCompilerOptions SetStackSize(int stack_size = -1)
         {
             this.DefaultStackSize = stack_size;
+#if TRACE 
             this.EstimateStackSize = stack_size <= 0 && (this.PackageMode == BlastPackageMode.Normal || this.PackageMode == BlastPackageMode.Compiler);
+#else 
+            this.EstimateStackSize = stack_size < 0;
+#endif 
             return this;
         }
+
 
         /// <summary>
         /// package without a stack segment, use stackmemory in the interpretor 
@@ -277,13 +283,18 @@ namespace NSS.Blast.Compiler
         {
             this.PackageMode = packagemode;
 
+#if TRACE
+            bool tracing = true;
+#else
+            bool tracing = false; 
+#endif 
             // in ssmd force inlined constant data 
             if(this.PackageMode == BlastPackageMode.SSMD)
             {
                 this.InlineConstantData = true;
                 this.InlineIndexers = true;
                 this.PackageStack = false;
-                this.EstimateStackSize = true;
+                this.EstimateStackSize = tracing;
             }
 
             // in normal it is not allowed (as of now... could be sometime..
@@ -292,7 +303,7 @@ namespace NSS.Blast.Compiler
                 this.InlineConstantData = false;
                 this.InlineIndexers = false;
                 this.PackageStack = true;
-                this.EstimateStackSize = true;
+                this.EstimateStackSize = tracing;
             }
 
             // entity mode should decide for itself 
@@ -446,7 +457,7 @@ namespace NSS.Blast.Compiler
             return Defines.Remove(key);
         }
 
-        #endregion
+#endregion
     }
 
 
@@ -683,7 +694,7 @@ namespace NSS.Blast.Compiler
         };
 
 
-        #region output validation 
+#region output validation 
 
         /// <summary>
         /// - Validate output using data set in script for NULL inputs 
@@ -696,7 +707,7 @@ namespace NSS.Blast.Compiler
         {
             if (!result.CompilerOptions.EstimateStackSize && !result.CanValidate)
             {
-                result.LogError($"validate: the script defines no validations, dont call validate if this was intentional");
+                result.LogError($"validate: the script defines no validations, nor is it executed to check its stack use, dont call validate if this was intentional");
                 return false;
             }
 
@@ -798,9 +809,9 @@ namespace NSS.Blast.Compiler
             return result.IsOK;
         }
 
-        #endregion
+#endregion
 
-        #region code and data packaging 
+#region code and data packaging 
 
 
         /// <summary>
@@ -823,6 +834,123 @@ namespace NSS.Blast.Compiler
             }
 
             return -1; 
+        }
+
+
+
+        /// <summary>
+        /// determine stacksize from push pop pairs
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public static int DetermineStackSize(CompilationData data)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(data.AST);
+
+            // the ast is flat but we still need to check child nodes for compound statements like while etc.
+
+            bool has_stack_ops = false;
+            int current_stack_size = 0;
+            int max_stack_size = 0;
+
+            List<node> stack = NodeListCache.Acquire();
+
+            void AddToStackReversed(List<node> nodes)
+            {
+                for (int i = nodes.Count - 1; i >= 0; i--)
+                {
+                    stack.Add(nodes[i]);
+                }
+            }                                                                       
+
+            AddToStackReversed(data.AST.children);
+
+            while (stack.TryPop(out node current))
+            {
+                if (current.skip_compilation)
+                {
+                    continue;
+                }
+
+                if (current.IsPushFunction)
+                {
+                    if (current.vector_size <= 0)
+                    {
+                        data.LogError($"Blast.Compiler: vectorsize not known in push -> compiler should know -> error, node <{current}>");
+                        return 0;                         
+                    }
+
+                    // a push may use pop commands, we need to traverse all nodes before updating with the pushed information 
+                    List<node> push_stack = new List<node>();
+                    push_stack.AddRange(current.children);
+                    while (push_stack.TryPop(out node n))
+                    {
+                        if (n.skip_compilation) continue;
+                        if (n.IsPopFunction)
+                        {
+                            handle_pop(ref current_stack_size, ref max_stack_size, n);
+                        }
+                        else
+                        {
+                            push_stack.AddRange(n.children);
+                            push_stack.AddRange(n.depends_on);
+                        }
+                    }
+                    push_stack = null; 
+
+                    current_stack_size += current.vector_size;
+                    max_stack_size = math.max(max_stack_size, current_stack_size); 
+                    has_stack_ops = true;
+
+                    // there is no level deeper -> flatten kils that 
+                    // and we pulled out the pops so 
+                    continue; 
+                }
+                else
+                if (current.IsPopFunction)
+                {
+                    has_stack_ops = handle_pop(ref current_stack_size, ref max_stack_size, current);
+                    // no kiddies 
+                    continue;
+                }
+
+                AddToStackReversed(current.children);
+                
+                // make sure that a condition is tested before the dependancy as it nested the push underneath
+                //node condition = current.GetChild(nodetype.condition);
+                //if (condition != null)
+                //{
+                    // conditions cannot push
+                
+                //}
+
+                AddToStackReversed(current.depends_on);
+            }
+
+            NodeListCache.Release(stack);
+
+
+            if (has_stack_ops)
+            {
+                if (current_stack_size != 0)
+                {
+                    data.LogError("Blast.Compiler: the scripts stack use is not balanced; stack estimated to not be empty after execution");
+                    return -1; 
+                }
+
+                // max stack size  is what we want 
+                return max_stack_size * 4; 
+            }
+
+            return 0;
+
+            static bool handle_pop(ref int current_stack_size, ref int max_stack_size, node n)
+            {
+                current_stack_size -= n.vector_size;
+                max_stack_size = math.max(max_stack_size, current_stack_size);
+                return true;
+            }
         }
 
 
@@ -876,29 +1004,42 @@ namespace NSS.Blast.Compiler
                 return idefined + reserve_yield;
             }
 
+            // precalc 
+
             // 2> estimate (this is combined with validation) 
             // during that step max_stack_size is determined if either validate or estimatestack is true
-            if(result.CompilerOptions.EstimateStackSize)
+            if (result.CompilerOptions.EstimateStackSize)
             {
                 int stack_size = result.Executable.max_stack_size * 4 + reserve_yield;
-                result.LogTrace($"BlastCompiler.EstimateStackSize: estimated a total stacksize of: {stack_size}");
-                return stack_size; 
-            }
 
-            // 3> estimate from node structure and push-pop pairs
-            int estimated_size = result.root.EstimateStackUse(0);
-            int default_size = result.CompilerOptions.DefaultStackSize; // TODO this is not documented well 
-
-            if(default_size > 0 && estimated_size < default_size)
-            {
-#if TRACE || DEVELOPMENT_BUILD
-                result.LogWarning($"BlastCompiler.EstimateStackSize: estimated size {estimated_size} smaller then non zero defaultsize, setting estimate to default: {default_size}");
+#if TRACE
+                int estimated_size = DetermineStackSize(result);
+                if (stack_size != estimated_size)
+                {
+                    result.LogError($"BlastCompiler.EstimateStackSize: mismatch calculating stacksize with different methods, execution yields: {stack_size}, while estimation from push-pop-paisrs yielded {estimated_size}");
+                    return stack_size;
+                }
 #endif 
-                estimated_size = default_size;
+                result.LogTrace($"BlastCompiler.EstimateStackSize: estimated a total stacksize of: {stack_size}");
+                return stack_size;
             }
+            else
+            {
+                // 3> estimate from node structure and push-pop pairs
+                int estimated_size = DetermineStackSize(result);
+                int default_size = result.CompilerOptions.DefaultStackSize; // TODO this is not documented well 
 
-            result.LogTrace($"BlastCompiler.EstimateStackSize: estimated from push-pop: {estimated_size} bytes, reserved for yield: {reserve_yield} bytes, total stacksize = {estimated_size + reserve_yield} bytes");
-            return estimated_size + reserve_yield;
+                if (default_size > 0 && estimated_size < default_size)
+                {
+#if TRACE || DEVELOPMENT_BUILD
+                    result.LogWarning($"BlastCompiler.EstimateStackSize: estimated size {estimated_size} smaller then non zero defaultsize, setting estimate to default: {default_size}");
+#endif
+                    estimated_size = default_size;
+                }
+
+                result.LogTrace($"BlastCompiler.EstimateStackSize: estimated from push-pop: {estimated_size} bytes, reserved for yield: {reserve_yield} bytes, total stacksize = {estimated_size + reserve_yield} bytes");
+                return estimated_size + reserve_yield;
+            }
         }
 
 
@@ -945,6 +1086,12 @@ namespace NSS.Blast.Compiler
 
             // calculate package size including alignments 
             int package_size = code_size + metadata_size + align_data + data_size + align_stack + stack_size;
+
+            // if random is used, set it in flags 
+            if (cdata.AST.CheckIfFunctionIsUsedInTree(blast_operation.random))
+            {
+                flags = flags | BlastPackageFlags.NeedsRandom; 
+            }
 
             
             // [----CODE----|----METADATA----|----DATA----|----STACK----]
@@ -1087,6 +1234,11 @@ namespace NSS.Blast.Compiler
                 }
             }
 
+            // if random is used, set it in flags 
+            if (cdata.AST.CheckIfFunctionIsUsedInTree(blast_operation.random))
+            {
+                flags = flags | BlastPackageFlags.NeedsRandom;
+            }
 
             // init package data
             BlastPackageData data = default;
@@ -1206,9 +1358,9 @@ namespace NSS.Blast.Compiler
             return default;
         }
 
-        #endregion
+#endregion
 
-        #region Compile overloads
+#region Compile overloads
 
         /// <summary>
         /// Compile script from text
@@ -1448,7 +1600,7 @@ namespace NSS.Blast.Compiler
                 return default;
             }
         }
-        #endregion 
+#endregion
 
     }
 

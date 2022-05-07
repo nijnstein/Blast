@@ -494,12 +494,12 @@ namespace NSS.Blast.Interpretor
             "DEGREES", "math.degrees", "ex_op", "degrees", "", "",
             "RADIANS", "math.radians", "ex_op", "radians", "", "",
             "SATURATE", "math.saturate", "ex_op", "saturate", "", "",
-            "NORMALIZE", "math.normalize", "ex_op", "normalize", "", "234",    // not all vectorsizes > only > 1
+            "NORMALIZE", "math.normalize", "ex_op", "normalize", "", "234",     // not all vectorsizes > only > 1
             "CEIL", "math.ceil", "ex_op", "ceil", "", "",
             "FLOOR", "math.floor", "ex_op", "floor", "", "",
             "FRAC", "math.frac", "ex_op", "frac", "", "",
-            "CEILLOG2", "math.ceillog2", "ex_op", "ceillog2", "", "int",       // only int 
-            "CEILPOW2", "math.ceilpow2", "ex_op", "ceilpow2", "", "int",       // only int 
+            "CEILLOG2", "math.ceillog2", "ex_op", "ceillog2", "", "int",        // only int 
+            "CEILPOW2", "math.ceilpow2", "ex_op", "ceilpow2", "", "int",        // only int 
             "FLOORLOG2", "math.floorlog2", "ex_op", "floorlog2", "", "int",     // only int 
             // new v1.0.5
             "SIGN", "math.sign", "ex_op", "sign", "", "",
@@ -513,6 +513,11 @@ namespace NSS.Blast.Interpretor
 
             "CONJUGATE", "math.conjugate", "ex_op", "conjugate", "q4", "4",
             "INVERSE", "math.inverse", "ex_op", "inverse", "q4", "4",
+
+            "NOT", "mathex.not", "not", "none", "", "",
+            //
+            "MAGNITUDE", "mathex.magnitude", "Magnitude", "ex_op", "", "",
+            "SQRMAGNITUDE", "mathex.sqrMagnitude", "SqrMagnitude", "ex_op", "", "",
         };
 
         static string[] duals = new string[]

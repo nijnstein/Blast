@@ -1000,6 +1000,10 @@ namespace NSS.Blast
 
         /// <summary>
         /// PI
+	///
+	/// Direct use of value opcodes in the codestream assign that value to the next opcode, making for some very fast assignments 
+	///
+	///
         /// </summary>
         pi,       // = 77
 
@@ -1312,8 +1316,15 @@ namespace NSS.Blast
         /// angle(q4, q4) 
         /// </summary>
         Angle,
+
+        Magnitude,
+        SqrMagnitude,
+
  //// a lot to do in ssmd mode... 
 
+
+        // to add in both modes: 
+        CircleCenter, 
 
 
 
@@ -2204,9 +2215,9 @@ namespace NSS.Blast
         /// <summary>
         /// unable to decode cdata as request value
         /// </summary>
-        error_failed_to_decode_cdata = -104,
-        error_incrementor_transform = 2,
-        error_compiling_div_by_zero = 3
+        error_failed_to_decode_cdata = -105,
+        error_incrementor_transform = -106,
+        error_compiling_div_by_zero = -107
     }
 
 }

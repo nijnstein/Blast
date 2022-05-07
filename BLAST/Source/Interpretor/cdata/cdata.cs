@@ -282,11 +282,12 @@ namespace NSS.Blast.Interpretor
             int i = default;
             byte* p = (byte*)(void*)&i;
 
-            p[3] = code[offset_into_codebuffer + 0];
-            p[2] = code[offset_into_codebuffer + 1];
-            p[1] = code[offset_into_codebuffer + 2];
-            p[0] = code[offset_into_codebuffer + 3];
-
+            // encoding broken ..... 
+            p[0] = code[offset_into_codebuffer + 0];
+            p[1] = code[offset_into_codebuffer + 1];
+            p[2] = code[offset_into_codebuffer + 2];
+            p[3] = code[offset_into_codebuffer + 3];
+   
             return i;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -295,8 +296,8 @@ namespace NSS.Blast.Interpretor
             short i = default;
             byte* p = (byte*)(void*)&i;
 
-            p[1] = code[offset_into_codebuffer + 0];
-            p[0] = code[offset_into_codebuffer + 1];
+            p[0] = code[offset_into_codebuffer + 0];
+            p[1] = code[offset_into_codebuffer + 1];
 
             return i;
         }
@@ -1006,7 +1007,7 @@ namespace NSS.Blast.Interpretor
 
                 case CDATAEncodingType.i16_i32:
                     {
-                        bytes_per_element = 1;
+                        bytes_per_element = 2;
                         int i = offset + 3 + index * bytes_per_element;
                         if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) break;
                         return map_cdata_i16_float32(code, i);
@@ -1014,7 +1015,7 @@ namespace NSS.Blast.Interpretor
 
                 case CDATAEncodingType.i32_i32:
                     {
-                        bytes_per_element = 1;
+                        bytes_per_element = 4;
                         int i = offset + 3 + index * bytes_per_element;
                         if (i >= max_i - (bytes_per_element - 1) || i < offset + 3) break;
                         return map_cdata_i32_float32(code, i);

@@ -28,8 +28,55 @@ namespace NSS.Blast
     /// <summary>
     /// debugging / standalone interface to UnsafeUtility 
     /// </summary>
+#if ENABLE_IL2CPP
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.NullChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppSetOption(Unity.IL2CPP.CompilerServices.Option.ArrayBoundsChecks, false)]
+    [Unity.IL2CPP.CompilerServices.Il2CppEagerStaticClassConstructionAttribute()]
+#elif !STANDALONE_VSBUILD
+
+    [Unity.Burst.BurstCompile]
+#endif
     unsafe public struct UnsafeUtils
     {
+        /// <summary>
+        /// check if the data arrays are equally spaced
+        /// </summary>
+        /// <param name="data">a pointer array</param>
+        /// <param name="datacount">the number of pointers in that array</param>
+        /// <param name="rowsize">if equally spaced, the rowstride in bytes</param>
+        /// <returns>true if equally spaced (aligned in ssmd)</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static bool CheckIfEquallySpaced(void** data, int datacount, out int rowsize)
+        {
+            rowsize = (int)(((ulong*)data)[1] - ((ulong*)data)[0]);
+          
+            bool data_is_aligned = (rowsize % 4) == 0 && rowsize >= 0; // would be wierd if not or very far from eachother
+
+            int i = 0;
+            while (data_is_aligned && i < datacount - 4)
+            {
+                // on the very small runs this can slow down 
+                data_is_aligned =
+                    rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i])
+                    &&
+                    rowsize == (int)(((ulong*)data)[i + 2] - ((ulong*)data)[i + 1])
+                    &&
+                    rowsize == (int)(((ulong*)data)[i + 3] - ((ulong*)data)[i + 2])
+                    &&
+                    rowsize == (int)(((ulong*)data)[i + 4] - ((ulong*)data)[i + 3]);
+                i += 4;
+            }
+            while (data_is_aligned && i < datacount - 1)
+            {
+                data_is_aligned = rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i]);
+                i++;
+            }
+            return data_is_aligned;
+        }
+
+
+
+
 #if STANDALONE_VSBUILD
         /// <summary>
         /// allocate native memory 

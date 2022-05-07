@@ -16,6 +16,7 @@
 #pragma warning disable CS0162
 
 using System;
+using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine.Assertions;
 
@@ -280,6 +281,8 @@ namespace NSS.Blast.Compiler.Stage
                             case blast_operation.jump_back: next_is_hardcoded_value += 1; break;
                             case blast_operation.jz: next_is_hardcoded_value += 1; break;
                             case blast_operation.jz_long: next_is_hardcoded_value += 2; break;
+                            case blast_operation.cjz: next_is_hardcoded_value += 1; break;
+                            case blast_operation.cjz_long: next_is_hardcoded_value += 2; break;
                             case blast_operation.long_jump: next_is_hardcoded_value += 2; break;
                             case blast_operation.index_n: next_is_hardcoded_value += 2; break; 
                             case blast_operation.cdataref: next_is_hardcoded_value += 2; break;
@@ -337,6 +340,12 @@ namespace NSS.Blast.Compiler.Stage
             }
             return (int)(cdata.IsOK ? BlastError.success : BlastError.compile_packaging_error);
         }
+
+
+ 
+
+
+
 
         /// <summary>
         /// package bytecode into script package

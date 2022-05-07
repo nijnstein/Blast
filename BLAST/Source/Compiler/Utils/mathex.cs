@@ -340,6 +340,18 @@ namespace NSS.Blast.Interpretor
         }
 
         /// <summary>
+        /// get angle in radians for 2 3d vectors 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static float angle(float3 a, float3 b)
+        {
+             return math.acos(math.clamp(math.dot(a, b) / (math.length(a) * math.length(b)), -1f, 1f));
+        }
+
+
+        /// <summary>
         /// Computes the square (x * x) of the input argument x.
         /// </summary>
         /// <param name="x">Value to square.</param>
@@ -548,5 +560,267 @@ namespace NSS.Blast.Interpretor
         }
 
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float not(float x)
+        {
+            return math.select(0, 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float2 not(float2 x)
+        {
+            return math.select(math.float2(0), 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 not(float3 x)
+        {                  
+            return math.select(math.float3(0), 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4 not(float4 x)
+        {                 
+            return math.select(math.float4(0), 1, x == 0);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int not(int x)
+        {
+            return math.select(0, 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int2 not(int2 x)
+        {
+            return math.select(math.int2(0), 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int3 not(int3 x)
+        {
+            return math.select(math.int3(0), 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int4 not(int4 x)
+        {
+            return math.select(math.int4(0), 1, x == 0);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint not(uint x)
+        {
+            return math.select((uint)0, 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint2 not(uint2 x)
+        {
+            return math.select(math.uint2(0), 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint3 not(uint3 x)
+        {
+            return math.select(math.uint3(0), 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint4 not(uint4 x)
+        {
+            return math.select(math.uint4(0), 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double not(double x)
+        {
+            return math.select(0, 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double2 not(double2 x)
+        {
+            return math.select(math.double2(0), 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double3 not(double3 x)
+        {
+            return math.select(math.double3(0), 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double4 not(double4 x)
+        {
+            return math.select(math.double4(0), 1, x == 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static UInt64 not(UInt64 x)
+        {
+            return (UInt64)(x == 0 ? 1 : 0);
+        }
+
+
+
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float magnitude(float v)
+        {
+            return math.sqrt(math.dot(v, v));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float2 magnitude(float2 v)
+        {                  
+                return math.sqrt(math.dot(v, v));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 magnitude(float3 v)
+        {
+            return math.sqrt(math.dot(v, v));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4 magnitude(float4 v)
+        {
+            return math.sqrt(math.dot(v, v));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int magnitude(int v)
+        {
+            return (int)math.sqrt(math.dot(v, v));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int2 magnitude(int2 v)
+        {
+            return math.int2(math.sqrt(math.dot(v, v)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int3 magnitude(int3 v)
+        {
+            return math.int3(math.sqrt(math.dot(v, v)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int4 magnitude(int4 v)
+        {                               
+            return math.int4(math.sqrt(math.dot(v, v)));
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float sqrMagnitude(float v)
+        {
+            return math.dot(v, v);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float2 sqrMagnitude(float2 v)
+        {
+            return math.dot(v, v);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 sqrMagnitude(float3 v)
+        {
+            return math.dot(v, v);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4 sqrMagnitude(float4 v)
+        {
+            return math.dot(v, v);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int sqrMagnitude(int v)
+        {
+            return math.dot(v, v);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int2 sqrMagnitude(int2 v)
+        {
+            return math.dot(v, v);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int3 sqrMagnitude(int3 v)
+        {
+            return math.dot(v, v);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int4 sqrMagnitude(int4 v)
+        {
+            return math.dot(v, v);
+        }
+
+        /// <summary>
+        /// get the center of a circle that intersects with all 3 vertices that make up the plane
+        /// </summary>
+        /// <param name="aP0">plane point 1</param>
+        /// <param name="aP1">point in plane 2</param>
+        /// <param name="aP2">point in plane 3</param>
+        /// <param name="normal">the normal of the plane</param>
+        /// <returns>the center of the circle</returns>
+        public static float3 CircleCenter(float3 aP0, float3 aP1, float3 aP2, out float3 normal)
+        {
+            // two circle chords
+            float3 v1 = aP1 - aP0;
+            float3 v2 = aP2 - aP0;
+
+            normal = math.cross(v1, v2);
+
+            if (math.dot(normal, normal) < 0.00001f) return float.NaN;
+            normal = math.normalize(normal);
+
+            // get vectors perpendicular to both coordinates
+            float3 p1 = math.normalize(math.cross(v1, normal));
+            float3 p2 = math.normalize(math.cross(v2, normal));
+
+            // get distance between midpoints
+            float3 r = (v1 - v2) * 0.5f;
+            
+            // get center angle between the two perpendiculars
+            var c = mathex.angle(p1, p2);
+
+            // angle between first perpendicular and chord midpoint vector
+            var a = mathex.angle(r, p1);
+
+            // law of sine to calculate length of p2
+            var d = mathex.magnitude(r) * math.sin(a * mathex.Deg2Rad) / math.sin(c * mathex.Deg2Rad);
+            
+            if (math.dot(v1, aP2 - aP1) > 0) return aP0 + v2 * 0.5f - p2 * d;
+            return aP0 + v2 * 0.5f + p2 * d;
+        }
+
+
+        public const float Deg2Rad = (math.PI * 2) / 360;
+        public const float Rad2Deg = 360 / (math.PI * 2);
+
+
+
+
+
+
+
+
+       
+
+
+
+
     }
+
 }

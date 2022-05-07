@@ -135,7 +135,12 @@ namespace NSS.Blast
         /// <summary>
         /// align data offsets on a 4 byte boundary
         /// </summary>
-        Aligned8 = 4
+        Aligned8 = 4,
+
+        /// <summary>
+        /// true if the script calls random at some point in its execution 
+        /// </summary>
+        NeedsRandom = 8
     }
 
 

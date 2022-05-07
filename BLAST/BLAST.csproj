@@ -29,6 +29,8 @@
   
   <PropertyGroup>
     <RestoreFallbackFolders>clear</RestoreFallbackFolders>
+    <OutputType>Library</OutputType>
+    <StartupObject />
   </PropertyGroup>
 
   <ItemGroup>

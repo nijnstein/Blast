@@ -260,7 +260,7 @@ namespace NSS.Blast.Compiler.Stage
 
 
 
-#if STANDALONE_VSBUILD && TRACE
+#if TRACE
             Debug.Log("## FOR TRANSFORM - RESULTING WHILE OVERVIEW\n\n" +
                         "## " + (constant_initializer ? "constant " : "") + "while initializer ##\n" + n_initialize.ToNodeTreeString() + "\n" +
                         "## " + (constant_condition ? "constant " : "") + "while condition ##\n" + n_condition.ToNodeTreeString() + "\n" +
@@ -1463,14 +1463,117 @@ namespace NSS.Blast.Compiler.Stage
         /// same as the incrementors and mul/divide only this one replaces 6 patterns of comparisons into a hot path 
         /// </summary>
 
-      //  public static BlastError transform_comparison_assignments(IBlastCompilationData data, node n)
-       // {
-            // test   ==    >=     <=     !=    <    >    
-            
-            
-            
-       //     asdf
-      //  }
+        //  public static BlastError transform_comparison_assignments(IBlastCompilationData data, node n)
+        // {
+        // test   ==    >=     <=     !=    <    >    
+
+
+
+        //     asdf
+        //  }
+
+
+
+
+
+
+
+
+        //>  transform a++  into  a = a + 1; 
+        //>  transform a--  into  a = a - 1; 
+
+
+
+        //  transform !a into not(a),
+
+
+
+
+
+        /// <summary>
+        /// transform ! into not when the target is not a bool32, 
+        /// we dont want to branch on all arithmetics for this fluke use of !(float) 
+        /// - if ! is used on a bool32 compiler inlines substract op
+        /// </summary>
+        static public BlastError TransformNotOperationIntoFunctionCallIfNotBool32(CompilationData data, node not, node operand)
+        {
+            Assert.IsNotNull(not);
+            Assert.IsNotNull(operand); 
+
+            not.type = nodetype.function;
+            unsafe
+            {
+                not.function = data.Blast.Data->GetFunction(blast_operation.not);
+            }
+
+            if (!not.function.IsValid)
+            {
+                data.LogError($"Blast.Compiler.Transform: no function defined for not operation on numerics, current node: <{not.parent}>");
+                return BlastError.error_scriptapi_function_not_registered;
+            }
+
+            operand.parent.children.Remove(operand);
+            not.children.Add(operand);
+            not.token = BlastScriptToken.Nop;
+            not.identifier = "!";
+
+            return BlastError.success; 
+        }
+
+        static public BlastError TransformNotOperations(CompilationData data, node ast_root)
+        {
+            Assert.IsNotNull(data);
+
+            if (ast_root == null) ast_root = data.AST;
+            Assert.IsNotNull(ast_root);
+
+            BlastError res = BlastError.success;
+            List<node> work = NodeListCache.Acquire();
+
+            work.Push(ast_root);
+            while (work.TryPop(out node current))
+            {
+                if (current.ChildCount == 0 || current.skip_compilation) continue;
+
+                for (int i = 0; i < current.children.Count; i++)
+                {
+                    if (current.TryGetChild(BlastScriptToken.Not, out node n_not))
+                    {
+                        // if next == operation 
+                        if (n_not.TryGetNextSibling(out node n_operand))
+                        {
+                            // is the operand a bool then ok leave it, we negate a bool as a bitwise inverse 
+                            if (n_operand.HasVariable
+                                &&
+                                (n_operand.variable.DataTypeOverride == BlastVectorSizes.bool32
+                                ||
+                                 (n_operand.variable.DataTypeOverride == BlastVectorSizes.none && n_operand.variable.DataType == BlastVariableDataType.Bool32)))
+                            {
+                                //
+                                // ok on bool only, but lets replace it with - (v1.0.4e) to reduce branching in the interpretors
+                                // 
+                                data.LogTrace("Blast.Compile.transform: updating not on bool32 to a negation for interpretor branch reductions"); 
+                                n_not.token = BlastScriptToken.Substract; 
+                            }
+                            else
+                            {
+                                // replace it
+                                res = TransformNotOperationIntoFunctionCallIfNotBool32(data, n_not, n_operand);
+                                if (res != BlastError.success) return res;
+                            }
+                        }
+                    }
+                }
+                work.PushRange(current.children); 
+            }
+            NodeListCache.Release(work);
+            return BlastError.success;
+        }
+
+
+
+
+
 
 
         /// <summary>
@@ -1589,6 +1692,13 @@ namespace NSS.Blast.Compiler.Stage
 
             // check for possible replacements of vector defines into expandn functions 
             res = locate_and_transform_vector_expansions(data, data.AST);
+            if (res != BlastError.success)
+            {
+                return (int)res;
+            }
+
+            // transform not's on non booleans into function calls
+            res = TransformNotOperations(data as CompilationData, data.AST);
             if (res != BlastError.success)
             {
                 return (int)res;

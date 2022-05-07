@@ -25,6 +25,7 @@ using UnityEngine;
 #endif
 
 using UnityEngine.Assertions;
+using Unity.Mathematics;
 
 namespace NSS.Blast.Compiler.Stage
 {
@@ -425,7 +426,21 @@ namespace NSS.Blast.Compiler.Stage
             node push = node.CreatePushNode(data.Blast, child);
             
             push.children.AddRange(child.children);
-            foreach (node pch in push.children) pch.parent = push;
+
+            int max_vector_size = 0;
+
+            foreach (node pch in push.children)
+            {
+                max_vector_size = math.max((int)pch.vector_size, max_vector_size); 
+                pch.parent = push;
+            }
+
+            if (push.vector_size == 0  && max_vector_size > 0)
+            {
+                // this should always be correct for correct inputs.... 
+                push.vector_size = max_vector_size;
+                push.is_vector = max_vector_size > 1; 
+            }
 
             return push; 
         }

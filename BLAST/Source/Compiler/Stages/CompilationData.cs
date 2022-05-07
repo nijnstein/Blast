@@ -583,11 +583,14 @@ namespace NSS.Blast.Compiler
                     sb.Append($"@label_{Jumps.IndexOf(jump)} ");
                 }
 
+                // should update to skip  TODO
                 if (prev == blast_operation.jump ||
                     prev == blast_operation.jump_back ||
                     prev == blast_operation.jz ||
                     prev == blast_operation.jnz || 
-                    prev == blast_operation.long_jump)
+                    prev == blast_operation.long_jump ||
+                    prev == blast_operation.cjz
+                    )
                 {
                     sb.Append(((byte)op).ToString() + " ");
 

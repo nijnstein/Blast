@@ -323,13 +323,30 @@ namespace NSS.Blast.Compiler.Stage
                         case nodetype.operation:
                             if (last_was_op)
                             {
-                                // not allow negations 
-                                if (child.token != BlastScriptToken.Substract && child.token != BlastScriptToken.Not)
+                                // allow negations 
+                                if (child.token != BlastScriptToken.Substract
+                                    &&
+                                    child.token != BlastScriptToken.Not)
                                 {
-                                    // error
-                                    data.LogError("analyze.apply_multiplication_rules: found double operater, this is only allowed for negation with '-'");
-                                    return;
-                                }
+                                    if (child.token == BlastScriptToken.Add)
+                                    {
+                                        // allow a trailing + symbol, it means nothing in this context, it should not be compiled 
+                                        if (data.CompilerOptions.VerboseLogging)
+                                        {
+                                            data.LogTrace($"Blast.Compile.Analysis: Skipping|Removing node: <{child}> for compilation, a double + operator has no effect in the current context and will be skipped from compilation.");
+                                        }
+                                        // child.SkipCompilation();
+                                        // - we should remove it, makes other steps easier 
+                                        n.children.RemoveAt(i_child);
+                                        child.parent = null;
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        data.LogError("Blast.Compile.Analysis: found double operater, this is only allowed for negation with '-'");
+                                        return;
+                                    }
+                                }                                    
                             }
                             switch (child.token)
                             {

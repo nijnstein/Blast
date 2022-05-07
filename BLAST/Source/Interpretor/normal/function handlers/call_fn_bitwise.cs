@@ -18,6 +18,7 @@
 #if STANDALONE_VSBUILD
 using NSS.Blast.Standalone;
     using System.Reflection;
+using System.Runtime.CompilerServices;
 #else
     using UnityEngine;
     using Unity.Burst.CompilerServices;
@@ -36,6 +37,8 @@ namespace NSS.Blast.Interpretor
 {
     unsafe public partial struct BlastInterpretor
     {
+
+
 
 
         #region Bitwise operations 

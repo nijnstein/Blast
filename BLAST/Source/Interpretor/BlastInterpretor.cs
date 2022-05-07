@@ -166,6 +166,7 @@ namespace NSS.Blast.Interpretor
 
         /// <summary>
         /// a random number generetor set once and if needed updated by scripts with the seed instruction
+        /// TODO: script should have a flag set during compilation, informing the interpretor if random is needed 
         /// </summary>
         internal Unity.Mathematics.Random random;
 
@@ -1734,6 +1735,7 @@ namespace NSS.Blast.Interpretor
                 // and|all
                 case blast_operation.all: CALL_FN_ALL(ref code_pointer, ref vector_size, ref datatype, ref f4_result); break;
                 case blast_operation.any: CALL_FN_ANY(ref code_pointer, ref vector_size, ref datatype, ref f4_result); break;
+                case blast_operation.not: CALL_FN_NOT(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
 
                 // indexing operations 
                 case blast_operation.index_x: CALL_FN_INDEX(ref code_pointer, ref datatype, ref vector_size, ref f4_result, 0); break;
@@ -1841,6 +1843,8 @@ namespace NSS.Blast.Interpretor
 
                             case extended_blast_operation.Conjugate: CALL_FN_CONJUGATE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
                             case extended_blast_operation.Inverse: CALL_FN_INVERSE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                            case extended_blast_operation.Magnitude: CALL_FN_MAGNITUDE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
+                            case extended_blast_operation.SqrMagnitude: CALL_FN_SQRMAGNITUDE(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
 
                             case extended_blast_operation.RotateX: CALL_FN_ROTATEX(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
                             case extended_blast_operation.RotateY: CALL_FN_ROTATEY(ref code_pointer, ref f4_result, out vector_size, out datatype); break;
@@ -2027,7 +2031,11 @@ namespace NSS.Blast.Interpretor
                         }
                         continue;
 
-                    case blast_operation.not:
+
+                        // 
+                        // as if v1.0.4e we handle the not as a function 
+                        
+                /*    case blast_operation.not:
                         {
                             // if the first in a compound or previous was an operation
                             if (prev_op == 0 || IsMathematicalOrBooleanOperation((blast_operation)prev_op))
@@ -2046,7 +2054,7 @@ namespace NSS.Blast.Interpretor
                             }
                         }
                         code_pointer++;
-                        continue;
+                        continue;*/ 
 
                     case blast_operation.substract:
                         {
@@ -2228,6 +2236,7 @@ namespace NSS.Blast.Interpretor
                     // any all 
                     case blast_operation.all: CALL_FN_ALL(ref code_pointer, ref vector_size, ref datatype, ref f4); code_pointer--; break;
                     case blast_operation.any: CALL_FN_ANY(ref code_pointer, ref vector_size, ref datatype, ref f4); code_pointer--; break;
+                    case blast_operation.not: CALL_FN_NOT(ref code_pointer, ref f4, out vector_size, out datatype); code_pointer--; break;
 
                     // random 
                     case blast_operation.random: CALL_FN_RANDOM(ref code_pointer, ref vector_size, ref datatype, ref f4); code_pointer--; break;
@@ -2322,6 +2331,8 @@ namespace NSS.Blast.Interpretor
 
                                 case extended_blast_operation.Conjugate: CALL_FN_CONJUGATE(ref code_pointer, ref f4, out vector_size, out datatype); break;
                                 case extended_blast_operation.Inverse: CALL_FN_INVERSE(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.Magnitude: CALL_FN_MAGNITUDE(ref code_pointer, ref f4, out vector_size, out datatype); break;
+                                case extended_blast_operation.SqrMagnitude: CALL_FN_SQRMAGNITUDE(ref code_pointer, ref f4, out vector_size, out datatype); break;
 
                                 case extended_blast_operation.RotateX: CALL_FN_ROTATEX(ref code_pointer, ref f4, out vector_size, out datatype); break;
                                 case extended_blast_operation.RotateY: CALL_FN_ROTATEY(ref code_pointer, ref f4, out vector_size, out datatype); break;
@@ -2876,13 +2887,13 @@ namespace NSS.Blast.Interpretor
                 case BlastVectorType.float3: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] = value; break;
                 case BlastVectorType.float4: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] = value; break;
 
-                case BlastVectorType.float1_n: ((float*)data)[offset - 0b1000_0000] = -value; break;
-                case BlastVectorType.float2_n: CodeUtils.ReCast<float, float2>(&((float*)data)[offset - 0b1000_0000])[0] = -value; break;
-                case BlastVectorType.float3_n: CodeUtils.ReCast<float, float3>(&((float*)data)[offset - 0b1000_0000])[0] = -value; break;
-                case BlastVectorType.float4_n: CodeUtils.ReCast<float, float4>(&((float*)data)[offset - 0b1000_0000])[0] = -value; break;
+                case BlastVectorType.float1_n: ((float*)data)[offset] = -value; break;
+                case BlastVectorType.float2_n: CodeUtils.ReCast<float, float2>(&((float*)data)[offset])[0] = -value; break;
+                case BlastVectorType.float3_n: CodeUtils.ReCast<float, float3>(&((float*)data)[offset])[0] = -value; break;
+                case BlastVectorType.float4_n: CodeUtils.ReCast<float, float4>(&((float*)data)[offset])[0] = -value; break;
 
                 case BlastVectorType.bool32: ((uint*)data)[offset] = (uint)value; break;
-                case BlastVectorType.bool32_n: ((uint*)data)[offset - 0b1000_0000] = ~(uint)value; break;
+                case BlastVectorType.bool32_n: ((uint*)data)[offset] = ~(uint)value; break;
 
                 case BlastVectorType.int1: ((int*)data)[offset] = (int)value; break;
                 case BlastVectorType.int2: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] = (int)value; break;
@@ -2890,9 +2901,9 @@ namespace NSS.Blast.Interpretor
                 case BlastVectorType.int4: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] = (int)value; break;
 
                 case BlastVectorType.int1_n: ((int*)data)[offset] = -(int)value; break;
-                case BlastVectorType.int2_n: CodeUtils.ReCast<int, int2>(&((int*)data)[offset - 0b1000_0000])[0] = -(int)value; break;
-                case BlastVectorType.int3_n: CodeUtils.ReCast<int, int3>(&((int*)data)[offset - 0b1000_0000])[0] = -(int)value; break;
-                case BlastVectorType.int4_n: CodeUtils.ReCast<int, int4>(&((int*)data)[offset - 0b1000_0000])[0] = -(int)value; break;
+                case BlastVectorType.int2_n: CodeUtils.ReCast<int, int2>(&((int*)data)[offset])[0] = -(int)value; break;
+                case BlastVectorType.int3_n: CodeUtils.ReCast<int, int3>(&((int*)data)[offset])[0] = -(int)value; break;
+                case BlastVectorType.int4_n: CodeUtils.ReCast<int, int4>(&((int*)data)[offset])[0] = -(int)value; break;
             }
         }
 
@@ -3267,7 +3278,13 @@ namespace NSS.Blast.Interpretor
             caller_ptr = caller;
 
             // init random state if needed 
-            if (engine_ptr != null && random.state == 0)
+            if ((((package.Flags & BlastPackageFlags.NeedsRandom) == BlastPackageFlags.NeedsRandom)
+                &&
+                blast != null
+                &&
+                random.state == 0)
+                ||
+                package.PackageMode == BlastPackageMode.Compiler)
             {
                 random = Unity.Mathematics.Random.CreateFromIndex(blast->random.NextUInt());
             }

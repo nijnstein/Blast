@@ -1440,46 +1440,7 @@ namespace NSS.Blast.Interpretor
 
 
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CALL_FN_SQRMAGNITUDE(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype)
-        {
-            code_pointer += 1;
-            void* fdata = (void*)pop_p_info(ref code_pointer, out datatype, out vector_size, out bool is_negated);
-
-            switch (datatype.Combine(vector_size, is_negated))
-            {
-
-                case BlastVectorType.float1: v4.x     =  mathex.sqrMagnitude(((float*)fdata)[0]);  break;
-                case BlastVectorType.float2: v4.xy    =  mathex.sqrMagnitude(((float2*)fdata)[0]); break;
-                case BlastVectorType.float3: v4.xyz   =  mathex.sqrMagnitude(((float3*)fdata)[0]); break;
-                case BlastVectorType.float4: v4       =  mathex.sqrMagnitude(((float4*)fdata)[0]); break;
-
-                case BlastVectorType.int1: v4.x       =  mathex.sqrMagnitude(((int*)fdata)[0]);    break;
-                case BlastVectorType.int2: v4.xy      =  mathex.sqrMagnitude(((int2*)fdata)[0]);   break;
-                case BlastVectorType.int3: v4.xyz     =  mathex.sqrMagnitude(((int3*)fdata)[0]);   break;
-                case BlastVectorType.int4: v4         =  mathex.sqrMagnitude(((int4*)fdata)[0]);   break;
-
-                case BlastVectorType.float1_n: v4.x   = mathex.sqrMagnitude(-((float*)fdata)[0]);  break;
-                case BlastVectorType.float2_n: v4.xy  = mathex.sqrMagnitude(-((float2*)fdata)[0]); break;
-                case BlastVectorType.float3_n: v4.xyz = mathex.sqrMagnitude(-((float3*)fdata)[0]); break;
-                case BlastVectorType.float4_n: v4     = mathex.sqrMagnitude(-((float4*)fdata)[0]); break;
-
-                case BlastVectorType.int1_n: v4.x     = mathex.sqrMagnitude(-((int*)fdata)[0]);    break;
-                case BlastVectorType.int2_n: v4.xy    = mathex.sqrMagnitude(-((int2*)fdata)[0]);   break;
-                case BlastVectorType.int3_n: v4.xyz   = mathex.sqrMagnitude(-((int3*)fdata)[0]);   break;
-                case BlastVectorType.int4_n: v4       = mathex.sqrMagnitude(-((int4*)fdata)[0]);   break;
-
-#if DEVELOPMENT_BUILD || TRACE
-                default:
-                    {
-                        Debug.LogError($"Blast.Interpretor.SQRMAGNITUDE: vectorsize {vector_size}, datatype {datatype} not supported");
-                        break;
-                    }
-#endif
-            }
-                        
-        }
-
+     
 
     }
 }

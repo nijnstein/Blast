@@ -2183,7 +2183,7 @@ namespace NSS.Blast.SSMD
                         type = BlastInterpretor.GetMetaDataType(metadata, (byte)(c - BlastInterpretor.opt_id));
                         size = BlastInterpretor.GetMetaDataSize(metadata, (byte)(c - BlastInterpretor.opt_id));
                         size = math.select(size, 4, size == 0);
-                        if (math.select(size, 1, indexed >= 0) != vector_size || type != BlastVariableDataType.Numeric)
+                        if (math.select(size, 1, indexed >= 0) != vector_size)
                         {
                             Debug.LogError($"blast.ssmd.pop_fx_into_ref<T> -> data mismatch, expecting numeric of size {vector_size}, found type {type} of size {size} at data offset {c - BlastInterpretor.opt_id}");
                             return false;
@@ -7095,17 +7095,25 @@ namespace NSS.Blast.SSMD
             }
 
             // init random state if needed 
-            if (engine_ptr != null && random.state == 0)
-            {                   
+            if ((((package.Flags & BlastPackageFlags.NeedsRandom) == BlastPackageFlags.NeedsRandom)
+                &&
+                engine_ptr != null
+                &&
+                random.state == 0)
+                ||
+                package.PackageMode == BlastPackageMode.Compiler)
+            {
                 random = Unity.Mathematics.Random.CreateFromIndex(engine_ptr->random.NextUInt());
             }
 
             // run with internal stacks? 
-            if (package.HasStackPackaged)
+            if (package.HasStackPackaged || package.StackSize == 0)
             {
                 // the stack is located directly after the last data element 
+                // OR
+                // we dont care because stack is not used 
                 stack = data;
-                stack_offset = package.DataSegmentStackOffset / 4;
+                stack_offset = package.DataSegmentStackOffset >> 2;
             }
             else
             {
@@ -7123,14 +7131,16 @@ namespace NSS.Blast.SSMD
 
                 // allocate local stack 
 
-
+                //
+                // -> dont loop on 0 stacksize but also dont have a branch around this allocation...
+                //
 
                 byte* p = stackalloc byte[package.StackSize * ssmd_datacount];
 
                 // generate a list of stacksegment pointers on the stack:
                 byte** stack_indices = stackalloc byte*[ssmd_datacount];
 
-                for (int i = 0; i < ssmd_data_count; i++)
+                for (int i = 0; i < ssmd_datacount; i++)
                 {
                     //ulong u64 = (ulong)(p + (package.StackSize * i));   
 
@@ -7173,6 +7183,7 @@ namespace NSS.Blast.SSMD
             }
 
             // local temp buffer 
+            // -> this will move down into the functions using it saving its reservation when its not needed
             void* temp = stackalloc float4[ssmd_datacount];  //temp buffer of max vectorsize * 4 * ssmd_datacount 
 
             // temp index buffer 
@@ -7196,36 +7207,11 @@ namespace NSS.Blast.SSMD
             data_is_aligned = ssmd_datacount > 1;
             if (data_is_aligned)
             {
-                // TODO
+                // 
                 // - this check potentially hurts performance if its aligned and the script is very short 
                 //   although it does make up for it when using float2 and float3 vectors: upto 3x faster in .net core builds 
                 // 
-                data_rowsize = (int)(((ulong*)data)[1] - ((ulong*)data)[0]);
-                data_is_aligned = (data_rowsize % 4) == 0; // would be wierd if not 
-
-                int i = 0;
-                while (data_is_aligned && i < ssmd_datacount - 4)
-                {
-                    // on the very small runs this can slow down 
-                    data_is_aligned =
-                        data_rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i])
-                        &&
-                        data_rowsize == (int)(((ulong*)data)[i + 2] - ((ulong*)data)[i + 1])
-                        &&
-                        data_rowsize == (int)(((ulong*)data)[i + 3] - ((ulong*)data)[i + 2])
-                        &&
-                        data_rowsize == (int)(((ulong*)data)[i + 4] - ((ulong*)data)[i + 3]);
-                    i += 4;
-                }
-                while (data_is_aligned && i < ssmd_datacount - 1)
-                {
-                    data_is_aligned = data_rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i]);
-                    i++;
-                }
-                // for (int i = 1; data_is_aligned && i < ssmd_datacount - 1; i++)
-                // {
-                //     data_is_aligned = data_rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i]);
-                // }
+                data_is_aligned = UnsafeUtils.CheckIfEquallySpaced(data, ssmd_datacount, out data_rowsize); 
             }
             else
             {
@@ -7562,6 +7548,8 @@ namespace NSS.Blast.SSMD
         }
 
 
-#endregion
+   
+
+        #endregion
     }
 }

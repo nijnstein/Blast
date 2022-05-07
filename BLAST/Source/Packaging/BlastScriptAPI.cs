@@ -1611,7 +1611,8 @@ namespace NSS.Blast
             RegisterFunction("max", 2, 63, 0, 0, blast_operation.max);
             RegisterFunction("mina", 1, 63, 0, 1, blast_operation.mina);
             RegisterFunction("maxa", 1, 63, 0, 1, blast_operation.maxa);
-
+            
+            RegisterFunction("not", 1, 1, 0, 0, blast_operation.not); 
             RegisterFunction("any", 1, 15, 0, 0, blast_operation.any, BlastParameterEncoding.Encode44);
             RegisterFunction("all", 1, 15, 0, 0, blast_operation.all, BlastParameterEncoding.Encode44);
 
@@ -1736,8 +1737,13 @@ namespace NSS.Blast
             RegisterFunction("lookrotationsafe", 2, 2, 3, 4, extended_blast_operation.LookRotationSafe);
 
             RegisterFunction("rotate", 2, 2, 0, 3, extended_blast_operation.Rotate);
-            RegisterFunction("angle", 2, 2, 0, 4, extended_blast_operation.Angle);
+            RegisterFunction("angle", 2, 2, 0, 1, extended_blast_operation.Angle);
             RegisterFunction("mul", 2, 2, 0, 0, extended_blast_operation.Mul);
+
+            RegisterFunction("magnitude", 1, 1, 0, 0, extended_blast_operation.Magnitude);
+            RegisterFunction("sqrmagnitude", 1, 1, 0, 0, extended_blast_operation.SqrMagnitude);
+            RegisterFunction("circlecenter", 4, 4, 3, 3, extended_blast_operation.CircleCenter);
+
 
             // full parameterset default external profiles 
             CreateExternalProfile(BlastVectorSizes.none,   false, false);

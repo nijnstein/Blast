@@ -252,7 +252,7 @@ namespace NSS.Blast.Compiler
         /// <summary>
         /// if known: true if this a loop conditionally terminated, not constant
         /// </summary>
-        public bool IsTerminatedConditionally = false; 
+        public bool IsTerminatedConditionally = false;
 
         /// <summary>
         /// the vector size 
@@ -911,7 +911,7 @@ namespace NSS.Blast.Compiler
                     else
                         return "constant cdata";
 
-                case nodetype.increment: return $"increment {identifier}"; 
+                case nodetype.increment: return $"increment {identifier}";
                 case nodetype.decrement: return $"decrement {identifier}";
                 case nodetype.multiply: return $"multiply {identifier}";
                 case nodetype.divide: return $"divide {identifier}";
@@ -1161,6 +1161,41 @@ namespace NSS.Blast.Compiler
         }
 
 
+        public bool TryGetChild(BlastScriptToken token, out node n)
+        {
+            for (int i = 0; i < ChildCount; i++)
+            {
+                if (children[i].IsOperation && children[i].token == token)
+                {
+                    n = children[i];
+                    return true;
+                }
+            }
+            n = null;
+            return false;
+        }
+
+        public bool TryGetNextSibling(out node n)
+        {
+            if (parent != null)
+            {
+                int i = parent.children.IndexOf(this) + 1;
+                if (i >= parent.children.Count)
+                {
+                    n = null; 
+                    return false;
+                }
+                else
+                {
+                    n = parent.children[i]; 
+                    return true;                                     
+                }
+            }
+
+            n = null;
+            return false;
+        }
+
         /// <summary>
         /// check if the node is an operation sequence in the form: 3 + a + 4 + 4 + max(3093) + (4 + 0) 
         /// </summary>
@@ -1316,23 +1351,6 @@ namespace NSS.Blast.Compiler
             }
             return has_ops;
         }
-
-        /// <summary>
-        /// calculate number of bytes to reserve for stack from push pop pairs in the node
-        /// - we need to get those overlapping and then the max sum of vector elements == stacksize 
-        /// </summary>
-        /// <param name="yield">bytes to add for supporting yield (this routine does not check if yield is used)</param>
-        /// <returns>max bytes of stack memory used at any moment in the scripts execution</returns>
-        public int EstimateStackUse(int yield = 0)
-        {
-
-
-
-
-
-            return 256;
-        }
-
 
 
         /// <summary>

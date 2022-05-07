@@ -1428,14 +1428,14 @@ namespace NSS.Blast.Compiler.Stage
                 // - this is faster then assignV but less general, assign v should also compile this pattern if:
                 // => the vector assigned has the same constant value operation (only ops) for each component 
                 // => the element assigned is in the datasegment 
-                CompileDirectConstantAssignmentForNormalPackager(ast_node, code, assignee);
+                CompileDirectConstantAssignmentForNormalPackager(data, ast_node, code, assignee);
             }
             else
             if (IsDirectIDAssignmentForNormalPackager(data, ast_node, is_constant_cdata_assignment, is_indexed_assignment))
             {
                 // same story as with the constant, only now we encode assigning a non-indexed datapoint with another
                 // - constant initializing in normal happens from constant data in the datasegment (the data has to come from somewere on reset)
-                CompileDirectIDAssignmentForNormalPackager(ast_node, code, assignee);
+                CompileDirectIDAssignmentForNormalPackager(data, ast_node, code, assignee);
             }
             else
             //************************************************************************************************************ 
@@ -1626,12 +1626,29 @@ namespace NSS.Blast.Compiler.Stage
 
                     case BlastVariableDataType.Numeric:
                         {
-                            // encode: reinterpret_float( assignee_var );
-                            code.Add(blast_operation.ex_op);
-                            code.Add((byte)extended_blast_operation.reinterpret_float);
-                            code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
+                            // ok if assignee is id, otherwise reinterpret 
+                            if (assignee.DataType == BlastVariableDataType.Bool32)
+                            {
+                                // encode: reinterpret_float( assignee_var );
+                                code.Add(blast_operation.ex_op);
+                                code.Add((byte)extended_blast_operation.reinterpret_float);
+                                code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
+                            }
                         }
                         break;
+
+                    case BlastVariableDataType.ID:
+                        {
+                            // ok if assignee is numeric, otherwise reinterpret 
+                            if (assignee.DataType == BlastVariableDataType.Bool32)
+                            {
+                                // encode: reinterpret_float( assignee_var ); (yes on int too for now.. this wil change) todo
+                                code.Add(blast_operation.ex_op);
+                                code.Add((byte)extended_blast_operation.reinterpret_float);
+                                code.Add((byte)(data.Offsets[assignee.Id] + BlastCompiler.opt_ident));
+                            }
+                        }
+                        break; 
 
                     default:
                         {
@@ -1713,7 +1730,7 @@ namespace NSS.Blast.Compiler.Stage
         ///  a = a + 1; -> sets a a + 1 nop;   with this ->  1 a
         /// 
         /// </summary>
-        private static void CompileDirectConstantAssignmentForNormalPackager(node ast_node, IMByteCodeList code, BlastVariable assignee)
+        private static void CompileDirectConstantAssignmentForNormalPackager(CompilationData data, node ast_node, IMByteCodeList code, BlastVariable assignee)
         {
             if (ast_node.ChildCount == 1)
             {
@@ -1723,13 +1740,13 @@ namespace NSS.Blast.Compiler.Stage
                     code.Add(ast_node.FirstChild.LastChild.constant_op);
         
                     //the id uses 7 bits, use the 8th for the minus sign 
-                    code.Add((byte)((byte)assignee.Id + 0b1000_0000));
+                    code.Add((byte)(data.Offsets[assignee.Id] + 0b1000_0000));
                 }
                 else
                 {
                     // single constant 
                     code.Add(ast_node.FirstChild.constant_op);
-                    code.Add((byte)assignee.Id);
+                    code.Add(data.Offsets[assignee.Id]);
                 }
             }
             else
@@ -1737,7 +1754,7 @@ namespace NSS.Blast.Compiler.Stage
                 // - constant 
                 code.Add(ast_node.LastChild.constant_op);
                 //the id uses 7 bits, use the 8th for the minus sign 
-                code.Add((byte)((byte)assignee.Id + 0b1000_0000));
+                code.Add((byte)(data.Offsets[assignee.Id] + 0b1000_0000));
             }
         }
 
@@ -1748,31 +1765,32 @@ namespace NSS.Blast.Compiler.Stage
         ///               - any assignment from an id > (byte)blast_operation_jumptarget.max_id_for_direct_assign has to go trough the longer route
         /// 
         /// </summary>
-        private static void CompileDirectIDAssignmentForNormalPackager(node ast_node, IMByteCodeList code, BlastVariable assignee)
+        private static void CompileDirectIDAssignmentForNormalPackager(CompilationData data, node ast_node, IMByteCodeList code, BlastVariable assignee)
         {
             if (ast_node.ChildCount == 1)
             {
                 if (ast_node.FirstChild.IsCompound)
                 {
                     // (- constant)
-                    code.Add((byte)(ast_node.FirstChild.LastChild.variable.Id + (byte)blast_operation.id));
+                    code.Add((byte)(data.Offsets[ast_node.FirstChild.LastChild.variable.Id] + (byte)blast_operation.id));
 
                     //the id uses 7 bits, use the 8th for the minus sign 
-                    code.Add((byte)((byte)assignee.Id + 0b1000_0000));
+                    code.Add((byte)(data.Offsets[assignee.Id] + 0b1000_0000));
                 }
                 else
                 {
                     // single constant 
-                    code.Add((byte)(ast_node.FirstChild.variable.Id + (byte)blast_operation.id));
-                    code.Add((byte)assignee.Id);
+                    code.Add((byte)(data.Offsets[ast_node.FirstChild.variable.Id] + (byte)blast_operation.id));
+                    code.Add(data.Offsets[assignee.Id]);
                 }
             }
             else
             {
                 // - constant 
-                code.Add((byte)(ast_node.FirstChild.LastChild.variable.Id + (byte)blast_operation.id));
+                code.Add((byte)(data.Offsets[ast_node.LastChild.variable.Id] + (byte)blast_operation.id));
+
                 //the id uses 7 bits, use the 8th for the minus sign 
-                code.Add((byte)((byte)assignee.Id + 0b1000_0000));
+                code.Add((byte)((byte)data.Offsets[assignee.Id] + 0b1000_0000));
             }
         }
 
@@ -1908,13 +1926,13 @@ namespace NSS.Blast.Compiler.Stage
                 CompileParameter(data, ast_node.FirstChild, code, false);
 
                 // then target 
-                code.Add((byte)(ast_node.variable.Id + (byte)blast_operation.id));
+                code.Add((byte)(data.Offsets[ast_node.variable.Id] + (byte)blast_operation.id));
             }
             else
             {
                 // i++
                 code.Add(op);
-                code.Add((byte)(ast_node.variable.Id + (byte)blast_operation.id));
+                code.Add((byte)(data.Offsets[ast_node.variable.Id] + (byte)blast_operation.id));
             }
 
             return code;
@@ -2374,12 +2392,22 @@ namespace NSS.Blast.Compiler.Stage
 
                 // +=    ++
                 case nodetype.increment:
-                    if (CompileFastLaneOperation(data, false, ast_node, blast_operation.adda, code) == null) return null; 
+                    if (CompileFastLaneOperation(
+                        data, 
+                        false, 
+                        ast_node, 
+                        ast_node.HasChildren ? blast_operation.adda : blast_operation.add, 
+                        code) == null) return null; 
                     break;
 
                 // -=    --  
                 case nodetype.decrement:
-                    if (CompileFastLaneOperation(data, true, ast_node, blast_operation.suba, code) == null) return null;
+                    if (CompileFastLaneOperation(
+                        data, 
+                        true, 
+                        ast_node, 
+                        ast_node.HasChildren ? blast_operation.suba : blast_operation.substract,
+                        code) == null) return null;
                     break;
 
                 // *=
@@ -2622,11 +2650,11 @@ namespace NSS.Blast.Compiler.Stage
             }
 
             // reset any datatype overrides before starting compilation 
+            // compiler may write code overwriting current variable type in meta - reinterpret_xxxx
             foreach(BlastVariable v in data.Variables)
             {
                 v.DataTypeOverride = BlastVectorSizes.none; 
             }
-
 
             IMByteCodeList code = CompileNodes(data, data.AST);
             if(code != null)

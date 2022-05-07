@@ -137,13 +137,13 @@ namespace NSS.Blast.SSMD
             }
             else
             {
+#if TRACE
                 if (code[reference_index] != (byte)blast_operation.constant_f1_h)
                 {
-#if TRACE
                     Debug.LogError($"blast.ssmd.read_constant_float: constant reference error, short constant reference points at invalid operation {code[reference_index]} at {reference_index}");
-#endif
                     return float.NaN;
                 }
+#endif
                 // 16 bit encoding
                 byte* p = (byte*)(void*)&constant;
                 p[0] = 0;
@@ -158,7 +158,9 @@ namespace NSS.Blast.SSMD
 
 
         /// <summary>
-        /// follow a reference to a constant encoded in code 
+        /// follow a reference to a constant encoded in code
+        /// - while this might seem expensive its much cheaper then adressing some memory not in cache,
+        ///   remember, even the fastest ram need 7ns to get data where you need it, we intent to run scripts in less then 2ns so everything counts
         /// </summary>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -181,6 +183,7 @@ namespace NSS.Blast.SSMD
                 code_pointer += 3;
             }
 
+            // a smart compiler will generate a cmov|select from this... TODO Check this or combine with short branch
             switch ((blast_operation)code[reference_index])
             {
 

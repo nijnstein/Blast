@@ -28,7 +28,7 @@ namespace NSS.Blast.SSMD
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool all_equal(in float* f1, int datacount)
+        public static bool all_equal([NoAlias]in float* f1, in int datacount)
         {
             if (datacount > 1)
             {
@@ -42,7 +42,7 @@ namespace NSS.Blast.SSMD
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool all_equal_x(in float4* f4, int datacount)
+        public static bool all_equal_x([NoAlias] in float4* f4, in int datacount)
         {
             if (datacount > 1)
             {
@@ -54,7 +54,6 @@ namespace NSS.Blast.SSMD
             }
             return true;
         }
-
 
     }
 }
