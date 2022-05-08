@@ -15,10 +15,14 @@
 #pragma warning disable CS1591
 #pragma warning disable CS0162
 
+
+
 #if STANDALONE_VSBUILD
 
 #else
-using Unity.Jobs;
+    using Unity.Jobs;
+    using static Unity.Burst.Intrinsics.X86;
+        using Unity.Burst.Intrinsics; 
 #endif
 
 using System.Runtime.CompilerServices;
@@ -151,6 +155,36 @@ namespace NSS.Blast.SSMD
                 float* fb = (float*)(void*)b;
                 int i = 0;
 
+#if !STANDALONE_VSBUILD
+                if (Avx2.IsAvx2Supported)
+                {
+                    v256 index_1 = new v256(0, 1, 2, 3, 4, 5, 6, 7);
+                    v256 index_2 = new v256(8, 9, 10, 11, 12, 13, 14, 15);
+
+                    while (i < (ssmd_datacount & ~3))
+                    {
+                        v256 v2 = Avx2.mm256_i32gather_ps(fa, index_1, 4);
+                        v256 v1 = Avx2.mm256_i32gather_ps(fb, index_1, 4);
+                        v2 = Avx.mm256_mul_ps(v2, v1);
+
+                        CodeUtils.ReCast<float, float4>(fa)[0] = CodeUtils.ReInterpret<float4, float>(v2.Float0);
+                        CodeUtils.ReCast<float, float4>(fa + 4)[0] = CodeUtils.ReInterpret<float4, float>(v2.Float4);
+
+                        v2 = Avx2.mm256_i32gather_ps(fa, index_2, 4);
+                        v1 = Avx2.mm256_i32gather_ps(fb, index_2, 4);
+                        v2 = Avx.mm256_mul_ps(v2, v1);
+
+                        CodeUtils.ReCast<float, float4>(fa + 8)[0] = CodeUtils.ReInterpret<float4, float>(v2.Float0);
+                        CodeUtils.ReCast<float, float4>(fa + 12)[0] = CodeUtils.ReInterpret<float4, float>(v2.Float4);
+
+                        fa += 16;
+                        fb += 16;
+                        i += 4;
+                    }
+                    goto REST; // skip next while condition with a fixed jump, it will always be false
+                }
+#endif 
+
                 while (i < (ssmd_datacount & ~3))
                 {
                     fa[0] = fa[0] * fb[0];
@@ -177,7 +211,7 @@ namespace NSS.Blast.SSMD
                     fb += 16;
                     i += 4;
                 }
-
+                REST:
                 while (i < ssmd_datacount)
                 {
                     fa[0] = fa[0] * fb[0];
@@ -441,6 +475,34 @@ namespace NSS.Blast.SSMD
                 float* fb = (float*)(void*)b;
                 int i = 0;
 
+#if !STANDALONE_VSBUILD
+                if (Avx2.IsAvx2Supported)
+                {
+                    v256 d_ndex = new v256(0, 1, 4, 5, 8, 9, 12, 13);
+                    
+                    while (i < (ssmd_datacount & ~3))
+                    {
+                        v256 v2 = Avx2.mm256_i32gather_ps(fa, d_ndex, 4);
+                        v256 v1 = Avx2.mm256_i32gather_ps(fb, d_ndex, 4); 
+
+                        v2 = Avx.mm256_mul_ps(v2, v1);
+
+                        fa[0] = v2.Float0;
+                        fa[1] = v2.Float1;
+                        fa[4] = v2.Float2;
+                        fa[5] = v2.Float3;
+                        fa[8] = v2.Float4;
+                        fa[9] = v2.Float5;
+                        fa[12] = v2.Float6;
+                        fa[13] = v2.Float7;
+
+                        fa += 16;
+                        fb += 16;
+                        i += 4;
+                    }
+                    goto REST;
+                }
+#endif 
                 while (i < (ssmd_datacount & ~3))
                 {
                     fa[0] = fa[0] * fb[0];
@@ -459,6 +521,7 @@ namespace NSS.Blast.SSMD
                     fb += 16;
                     i += 4;
                 }
+                REST:
                 while (i < ssmd_datacount)
                 {
                     fa[0] = fa[0] * fb[0];
@@ -486,6 +549,35 @@ namespace NSS.Blast.SSMD
                 float* fb = (float*)(void*)b;
                 int i = 0;
 
+#if !STANDALONE_VSBUILD
+                if (Avx2.IsAvx2Supported)
+                {
+                    v256 index_a = new v256(0, 0, 4, 4, 8, 8, 12, 11);
+                    v256 index_b = new v256(0, 1, 4, 5, 8, 9, 12, 13);
+
+                    while (i < (ssmd_datacount & ~3))
+                    {
+                        v256 v2 = Avx2.mm256_i32gather_ps(fa, index_a, 4);
+                        v256 v1 = Avx2.mm256_i32gather_ps(fb, index_b, 4);
+
+                        v2 = Avx.mm256_mul_ps(v2, v1);
+
+                        fa[0] = v2.Float0;
+                        fa[1] = v2.Float1;
+                        fa[4] = v2.Float2;
+                        fa[5] = v2.Float3;
+                        fa[8] = v2.Float4;
+                        fa[9] = v2.Float5;
+                        fa[12] = v2.Float6;
+                        fa[13] = v2.Float7;
+
+                        fa += 16;
+                        fb += 16;
+                        i += 4;
+                    }
+                    goto REST; // skip next while condition with a fixed jump, it will always be false
+                }
+#endif 
                 while (i < (ssmd_datacount & ~3))
                 {
                     fa[0] = fa[0] * fb[0];
@@ -504,6 +596,7 @@ namespace NSS.Blast.SSMD
                     fb += 16;
                     i += 4;
                 }
+                REST:
                 while (i < ssmd_datacount)
                 {
                     fa[0] = fa[0] * fb[0];
@@ -581,6 +674,38 @@ namespace NSS.Blast.SSMD
                 float* fb = (float*)(void*)b;
                 int i = 0;
 
+
+#if !STANDALONE_VSBUILD
+                if (Avx2.IsAvx2Supported)
+                {
+                    v256 index_a1 = new v256(0, 0, 0, 0, 4, 4, 4, 4);
+                    v256 index_a2 = new v256(8, 8, 8, 8, 12, 12, 12, 12);
+                    v256 index_b1 = new v256(0, 1, 2, 3, 4, 5, 6, 7);
+                    v256 index_b2 = new v256(8, 9, 10, 11, 12, 13, 14, 15);
+
+                    while (i < (ssmd_datacount & ~3))
+                    {
+                        v256 v2 = Avx2.mm256_i32gather_ps(fa, index_a1, 4);
+                        v256 v1 = Avx2.mm256_i32gather_ps(fb, index_b1, 4);
+                        v2 = Avx.mm256_mul_ps(v2, v1);
+
+                        CodeUtils.ReCast<float, float4>(fa)[0] = CodeUtils.ReInterpret<float4, float>(v2.Float0);
+                        CodeUtils.ReCast<float, float4>(fa + 4)[0] = CodeUtils.ReInterpret<float4, float>(v2.Float4);
+
+                        v2 = Avx2.mm256_i32gather_ps(fa, index_a2, 4);
+                        v1 = Avx2.mm256_i32gather_ps(fb, index_b2, 4);
+                        v2 = Avx.mm256_mul_ps(v2, v1);
+
+                        CodeUtils.ReCast<float, float4>(fa + 8)[0] = CodeUtils.ReInterpret<float4, float>(v2.Float0);
+                        CodeUtils.ReCast<float, float4>(fa + 12)[0] = CodeUtils.ReInterpret<float4, float>(v2.Float4);
+
+                        fa += 16;
+                        fb += 16;
+                        i += 4;
+                    }
+                    goto REST; // skip next while condition with a fixed jump, it will always be false
+                }
+#endif 
                 while (i < (ssmd_datacount & ~3))
                 {
                     fa[0] = fa[0] * fb[0];
@@ -607,6 +732,7 @@ namespace NSS.Blast.SSMD
                     fb += 16;
                     i += 4;
                 }
+                REST:
                 while (i < ssmd_datacount)
                 {
                     fa[0] = fa[0] * fb[0];
@@ -640,56 +766,15 @@ namespace NSS.Blast.SSMD
                 {
                     // the burst compiler still is faster then the intrinsics below.. 
                     // i wonder in .net TODO 
-#if false && !STANDALONE_VSBUILD
-                if (IsAvx2Supported)
-                {
-                    // Code path for AVX2 instructions
-                    // note bug parameters are reversed !!
-                    v256 va = new v256(fa[0], fa[4], fa[8], fa[12], fa[16], fa[20], fa[24], fa[28]);
-                    v256 vb = new v256(fb[0], fb[4], fb[8], fb[12], fb[16], fb[20], fb[24], fb[28]);
-
-                    va = Avx2.mm256_mul_epi32(va, vb);
-                    fa[0] = va.Float0;
-                    fa[4] = va.Float1;
-                    fa[8] = va.Float2;
-                    fa[12] = va.Float3;
-                    fa[16] = va.Float4;
-                    fa[20] = va.Float5;
-                    fa[24] = va.Float6;
-                    fa[28] = va.Float7;
-                }
-                else
-                if (IsSse42Supported)
-                {
-                    v128 va = new v128(fa[0], fa[4], fa[8], fa[12]);
-                    v128 vb = new v128(fb[0], fb[4], fb[8], fb[12]);
-                    Sse4_1.mul_epi32(va, vb);
-                    fa[0] = va.Float0;
-                    fa[4] = va.Float1;
-                    fa[8] = va.Float2;
-                    fa[12] = va.Float3;
-
-                    va = new v128(fa[16], fa[20], fa[24], fa[28]);
-                    vb = new v128(fb[16], fb[20], fb[24], fb[28]);
-                    Sse4_1.mul_epi32(va, vb);
-                    fa[16] = va.Float0;
-                    fa[20] = va.Float1;
-                    fa[24] = va.Float2;
-                    fa[28] = va.Float3;
-                }
-                else
-#endif
-                    {
-                        // fallback, let compiler handle others 
-                        fa[0] = fa[0] * fb[0];
-                        fa[4] = fa[4] * fb[4];
-                        fa[8] = fa[8] * fb[8];
-                        fa[12] = fa[12] * fb[12];
-                        fa[16] = fa[16] * fb[16];
-                        fa[20] = fa[20] * fb[20];
-                        fa[24] = fa[24] * fb[24];
-                        fa[28] = fa[28] * fb[28];
-                    }
+                    // fallback, let compiler handle others 
+                    fa[0] = fa[0] * fb[0];
+                    fa[4] = fa[4] * fb[4];
+                    fa[8] = fa[8] * fb[8];
+                    fa[12] = fa[12] * fb[12];
+                    fa[16] = fa[16] * fb[16];
+                    fa[20] = fa[20] * fb[20];
+                    fa[24] = fa[24] * fb[24];
+                    fa[28] = fa[28] * fb[28];
                     fa += 32;
                     fb += 32;
                     i += 8;
@@ -2751,6 +2836,41 @@ namespace NSS.Blast.SSMD
                 int stride_d_4 = stride_d_3 + stride_d;
 
                 int i = 0;
+
+#if !STANDALONE_VSBUILD
+                if (Avx2.IsAvx2Supported)
+                {
+                    v256 d_ndex = new v256(0, stride_d, stride_d_2, stride_d_3, stride_d_4, stride_d_4 + stride_d, stride_d_4 + stride_d_2, stride_d_4 + stride_d_3);
+                    v256 v1 = new v256(constant);
+
+                    while (i < (ssmd_datacount & ~7))
+                    {
+                        v256 v2 = Avx2.mm256_i32gather_ps(p, d_ndex, 4);
+
+                        v2 = Avx.mm256_mul_ps(v2, v1);
+
+                        p[0] = v2.Float0;
+                        p += stride_d;
+                        p[0] = v2.Float1;
+                        p += stride_d;
+                        p[0] = v2.Float2;
+                        p += stride_d;
+                        p[0] = v2.Float3;
+                        p += stride_d;
+                        p[0] = v2.Float4;
+                        p += stride_d;
+                        p[0] = v2.Float5;
+                        p += stride_d;
+                        p[0] = v2.Float6;
+                        p += stride_d;
+                        p[0] = v2.Float7;
+                        p += stride_d;
+                        i += 8;
+                    }
+                    goto REST;
+                }
+
+#endif 
                 while (i < (ssmd_datacount & ~3))
                 {
                     p[0] *= constant;
@@ -2761,6 +2881,7 @@ namespace NSS.Blast.SSMD
                     p += stride_d_4;
                     i += 4;
                 }
+                REST:
                 while (i < ssmd_datacount)
                 {
                     p[0] *= constant;
@@ -2799,7 +2920,39 @@ namespace NSS.Blast.SSMD
                 int stride_d_3 = stride_d_2 + stride_d;
                 int stride_d_4 = stride_d_3 + stride_d;
 
+
                 int i = 0;
+
+#if !STANDALONE_VSBUILD
+                if (Avx2.IsAvx2Supported)
+                {
+                    v256 d_ndex = new v256(0, 1, stride_d, stride_d + 1, stride_d_2, stride_d_2 + 1, stride_d_3, stride_d_3 + 1);
+                    v256 v1 = new v256(constant);
+
+                    while (i < (ssmd_datacount & ~3))
+                    {
+                        v256 v2 = Avx2.mm256_i32gather_ps(p, d_ndex, 4);
+
+                        v2 = Avx.mm256_mul_ps(v2, v1);
+
+                        p[0] = v2.Float0;
+                        p[1] = v2.Float1;
+                        p += stride_d;
+                        p[0] = v2.Float2;
+                        p[1] = v2.Float3;
+                        p += stride_d;
+                        p[0] = v2.Float4;
+                        p[1] = v2.Float5;
+                        p += stride_d;
+                        p[0] = v2.Float6;
+                        p[1] = v2.Float7;
+
+                        p += stride_d;
+                        i += 4;
+                    }
+                    goto REST;
+                }
+#endif 
                 while (i < (ssmd_datacount & ~3))
                 {
                     p[0] *= constant;
@@ -2814,6 +2967,7 @@ namespace NSS.Blast.SSMD
                     p += stride_d_4;
                     i += 4;
                 }
+                REST:
                 while (i < ssmd_datacount)
                 {
                     p[0] *= constant;
@@ -2986,7 +3140,10 @@ namespace NSS.Blast.SSMD
         /// <summary>
         /// target[][].x *= source[][].x
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         static public void mul_indexed_f1f1([NoAlias] void** destination_indexbuffer, int destination_index_rowsize, bool destination_is_aligned, int destination_index, [NoAlias] void** source_indexbuffer, int source_index_rowsize, bool source_is_aligned, int source_index, int ssmd_datacount)
         {
             if (destination_is_aligned && source_is_aligned)
@@ -3007,6 +3164,43 @@ namespace NSS.Blast.SSMD
                 int stride_s_4 = stride_s_3 + stride_s;
 
                 int i = 0;
+
+#if !STANDALONE_VSBUILD
+                if (Avx2.IsAvx2Supported)
+                {
+                    v256 s_mask = new v256(0, stride_s, stride_s_2, stride_s_3, stride_s_4, stride_s_4 + stride_s, stride_s_4 + stride_s_2, stride_s_4 + stride_s_3);
+                    v256 d_ndex = new v256(0, stride_d, stride_d_2, stride_d_3, stride_d_4, stride_d_4 + stride_d, stride_d_4 + stride_d_2, stride_d_4 + stride_d_3);
+
+                    while (i < (ssmd_datacount & ~7))
+                    {
+                        v256 v1 = Avx2.mm256_i32gather_ps(p, s_mask, 4); 
+                        v256 v2 = Avx2.mm256_i32gather_ps(p, d_ndex, 4);
+
+                        v2 = Avx.mm256_mul_ps(v2, v1);
+
+                        p[0] = v2.Float0;
+                        p += stride_d;
+                        p[0] = v2.Float1;
+                        p += stride_d;
+                        p[0] = v2.Float2;
+                        p += stride_d;
+                        p[0] = v2.Float3;
+                        p += stride_d;
+                        p[0] = v2.Float4;
+                        p += stride_d;
+                        p[0] = v2.Float5;
+                        p += stride_d;
+                        p[0] = v2.Float6;
+                        p += stride_d;
+                        p[0] = v2.Float7;
+                        p += stride_d;
+                        s += stride_s_4 + stride_s_4;
+                        i += 8;
+                    }
+                }
+
+#endif 
+
                 while (i < (ssmd_datacount & ~3))
                 {
                     p[0] *= s[0];

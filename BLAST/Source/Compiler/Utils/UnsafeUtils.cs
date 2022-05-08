@@ -21,6 +21,11 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Collections.LowLevel.Unsafe;
+using System.Runtime.CompilerServices;
+
+#if !STANDALONE_VSBUILD
+using static Unity.Burst.Intrinsics.X86.Avx2;
+#endif
 
 
 namespace NSS.Blast
@@ -45,31 +50,65 @@ namespace NSS.Blast
         /// <param name="datacount">the number of pointers in that array</param>
         /// <param name="rowsize">if equally spaced, the rowstride in bytes</param>
         /// <returns>true if equally spaced (aligned in ssmd)</returns>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [Unity.Burst.BurstCompile]
         public static bool CheckIfEquallySpaced(void** data, int datacount, out int rowsize)
         {
+            // for performance reasons: only check the first as a long substraction
             rowsize = (int)(((ulong*)data)[1] - ((ulong*)data)[0]);
           
-            bool data_is_aligned = (rowsize % 4) == 0 && rowsize >= 0; // would be wierd if not or very far from eachother
+            bool data_is_aligned = (rowsize % 4) == 0 && rowsize >= 0 && rowsize < int.MaxValue; // would be wierd if not or very far from eachother
 
+            // meeting these conditions we can check only the lower int of each long -> way faster 
             int i = 0;
-            while (data_is_aligned && i < datacount - 4)
+            int* p = (int*)data;
+
+            // if building for unity we might be able to use intrinsics 
+#if !STANDALONE_VSBUILD
+            if (IsAvx2Supported)
             {
-                // on the very small runs this can slow down 
-                data_is_aligned =
-                    rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i])
-                    &&
-                    rowsize == (int)(((ulong*)data)[i + 2] - ((ulong*)data)[i + 1])
-                    &&
-                    rowsize == (int)(((ulong*)data)[i + 3] - ((ulong*)data)[i + 2])
-                    &&
-                    rowsize == (int)(((ulong*)data)[i + 4] - ((ulong*)data)[i + 3]);
-                i += 4;
+                Unity.Burst.Intrinsics.v256 cmp = new Unity.Burst.Intrinsics.v256(rowsize, rowsize, rowsize, rowsize, rowsize, rowsize, rowsize, rowsize);
+                Unity.Burst.Intrinsics.v256 index = new Unity.Burst.Intrinsics.v256(0, 2, 4, 6, 8, 10, 12, 14);
+        
+                unchecked
+                {
+                    while (data_is_aligned && i < (datacount - 8) * 2)
+                    {                                                      
+                        Unity.Burst.Intrinsics.v256 v1 = mm256_i32gather_ps(&p[i], index, 4);
+                        Unity.Burst.Intrinsics.v256 v2 = mm256_i32gather_ps(&p[i + 2], index, 4);
+        
+                        data_is_aligned = 0b11111111_11111111_11111111_11111111 == CodeUtils.ReInterpret<int, uint>(
+                             mm256_movemask_epi8(
+                                 mm256_cmpeq_epi32( 
+                                     mm256_sub_epi32(v2, v1), 
+                                     cmp)));
+        
+                        i += 16;
+                    }
+                }
             }
-            while (data_is_aligned && i < datacount - 1)
+#endif
+            // .net standard likes unrolled pointer walk loops a lot according to my benchmarks 
+            // - if built for unity with avx then this will just handle the rest 
+            unchecked
             {
-                data_is_aligned = rowsize == (int)(((ulong*)data)[i + 1] - ((ulong*)data)[i]);
-                i++;
+                while (data_is_aligned && i < (datacount - 4) * 2)
+                {
+                    data_is_aligned =
+                        rowsize == (int)(p[i + 2] - p[i + 0])
+                        &&
+                        rowsize == (int)(p[i + 4] - p[i + 2])
+                        &&
+                        rowsize == (int)(p[i + 6] - p[i + 4])
+                        &&
+                        rowsize == (int)(p[i + 8] - p[i + 6]);
+                    i += 8;
+                }
+                while (data_is_aligned && i < (datacount - 1) * 2)
+                {
+                    data_is_aligned = rowsize == (int)(p[i + 2] - p[i + 0]);
+                    i += 2;
+                }
             }
             return data_is_aligned;
         }
@@ -289,7 +328,7 @@ namespace NSS.Blast
                 }
                 io += stride1;
             }
-#endif 
+#endif
         }
 
 
