@@ -37,6 +37,7 @@ namespace NSS.Blast.Compiler.CodeGen
         {
             "System",
             "System.Runtime.CompilerServices",
+            "System.Runtime.InteropServices",
             "Unity.Burst",
             "Unity.Mathematics"
         };
@@ -636,6 +637,8 @@ namespace NSS.Blast.SSMD
             string delegate_name = "";
 
             GetDelegateParameterInfo(profile, ref parameters, ref postfix, ref delegate_name);
+
+            code.Append("[UnmanagedFunctionPointer(CallingConvention.Cdecl)] ");
 
             if (profile.IsShortDefinition)
             {

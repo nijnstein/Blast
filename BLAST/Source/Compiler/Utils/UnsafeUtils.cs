@@ -22,9 +22,11 @@ using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Collections.LowLevel.Unsafe;
 using System.Runtime.CompilerServices;
+using Unity.Burst.Intrinsics;
 
 #if !STANDALONE_VSBUILD
 using static Unity.Burst.Intrinsics.X86.Avx2;
+using static Unity.Burst.Intrinsics.X86.Avx;
 #endif
 
 
@@ -42,7 +44,8 @@ namespace NSS.Blast
     [Unity.Burst.BurstCompile]
 #endif
     unsafe public struct UnsafeUtils
-    {
+    {                                                                      
+
         /// <summary>
         /// check if the data arrays are equally spaced
         /// </summary>
@@ -51,13 +54,19 @@ namespace NSS.Blast
         /// <param name="rowsize">if equally spaced, the rowstride in bytes</param>
         /// <returns>true if equally spaced (aligned in ssmd)</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if !STANDALONE_VSBUILD
         [Unity.Burst.BurstCompile]
+#endif
         public static bool CheckIfEquallySpaced(void** data, int datacount, out int rowsize)
         {
             // for performance reasons: only check the first as a long substraction
             rowsize = (int)(((ulong*)data)[1] - ((ulong*)data)[0]);
-          
-            bool data_is_aligned = (rowsize % 4) == 0 && rowsize >= 0 && rowsize < int.MaxValue; // would be wierd if not or very far from eachother
+
+            // only say indices are aligned when below some max value of spacing
+            // by setting max to int32 (-1 bit) we can interpret the lsw of the 64bit 
+            // pointer as a signed integer, speeding up the mainloop greatly as we can work
+            // on 32bit integers instead of 64 bit uints 
+            bool data_is_aligned = (rowsize % 4) == 0 && rowsize >= 0 && rowsize < int.MaxValue;
 
             // meeting these conditions we can check only the lower int of each long -> way faster 
             int i = 0;
@@ -67,23 +76,31 @@ namespace NSS.Blast
 #if !STANDALONE_VSBUILD
             if (IsAvx2Supported)
             {
-                Unity.Burst.Intrinsics.v256 cmp = new Unity.Burst.Intrinsics.v256(rowsize, rowsize, rowsize, rowsize, rowsize, rowsize, rowsize, rowsize);
-                Unity.Burst.Intrinsics.v256 index = new Unity.Burst.Intrinsics.v256(0, 2, 4, 6, 8, 10, 12, 14);
-        
+                v256 cmp = mm256_set1_epi32(rowsize);
+                v256 perm = mm256_set_epi32(1, 2, 3, 4, 5, 6, 7, 0);
+
                 unchecked
                 {
-                    while (data_is_aligned && i < (datacount - 8) * 2)
-                    {                                                      
-                        Unity.Burst.Intrinsics.v256 v1 = mm256_i32gather_ps(&p[i], index, 4);
-                        Unity.Burst.Intrinsics.v256 v2 = mm256_i32gather_ps(&p[i + 2], index, 4);
-        
+                    while (data_is_aligned & (i < (datacount - 16)))
+                    {
+                        // load only 1 vector and shift it saving 1 memory gathering operation
+                        //v256 v1 = mm256_i32gather_epi32(p, index, 4);
+                        v256 v1 = mm256_Stride2LoadEven(p);
+
+                        // permute vector 1 index to left
+                        v256 v2 = mm256_permutevar8x32_epi32(v1, perm);
+
+                        i += 16;
+                        p += 16;
+
+                        // fill last with value from next row 
+                        v2 = mm256_insert_epi32(v2, p[0], 7);
+
                         data_is_aligned = 0b11111111_11111111_11111111_11111111 == CodeUtils.ReInterpret<int, uint>(
                              mm256_movemask_epi8(
-                                 mm256_cmpeq_epi32( 
-                                     mm256_sub_epi32(v2, v1), 
+                                 mm256_cmpeq_epi32(
+                                     mm256_sub_epi32(v2, v1),
                                      cmp)));
-        
-                        i += 16;
                     }
                 }
             }
@@ -92,28 +109,150 @@ namespace NSS.Blast
             // - if built for unity with avx then this will just handle the rest 
             unchecked
             {
-                while (data_is_aligned && i < (datacount - 4) * 2)
+                while (data_is_aligned & (i < (datacount - 8)))
                 {
                     data_is_aligned =
-                        rowsize == (int)(p[i + 2] - p[i + 0])
+                        rowsize == (int)(p[2] - p[0])
                         &&
-                        rowsize == (int)(p[i + 4] - p[i + 2])
+                        rowsize == (int)(p[4] - p[2])
                         &&
-                        rowsize == (int)(p[i + 6] - p[i + 4])
+                        rowsize == (int)(p[6] - p[4])
                         &&
-                        rowsize == (int)(p[i + 8] - p[i + 6]);
+                        rowsize == (int)(p[8] - p[6]);
+
                     i += 8;
+                    p += 8;
                 }
-                while (data_is_aligned && i < (datacount - 1) * 2)
+                while (data_is_aligned & (i < (datacount - 2)))
                 {
-                    data_is_aligned = rowsize == (int)(p[i + 2] - p[i + 0]);
+                    data_is_aligned = rowsize == (int)(p[2] - p[0]);
                     i += 2;
+                    p += 2;
                 }
             }
             return data_is_aligned;
         }
 
 
+#if !STANDALONE_VSBUILD 
+
+        /// <summary>
+        /// load even indices from p into v256
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static v256 mm256_Stride2LoadEven(float* p)
+        {
+            if (IsAvx2Supported)
+            {
+                v256 x_lo = mm256_loadu_ps(&p[0]);
+                v256 x_hi = mm256_loadu_ps(&p[7]);
+                return mm256_permutevar8x32_ps(mm256_blend_ps(x_lo, x_hi, 0b10101010), mm256_set_epi32(7, 5, 3, 1, 6, 4, 2, 0));
+            }
+            else
+            {
+                return new v256(p[0], p[2], p[4], p[6], p[8], p[10], p[12], p[14]); 
+            }
+        }
+
+        /// <summary>
+        /// load even indices from p into v256
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static v256 mm256_Stride2LoadEven(int* p)
+        {
+            if (IsAvx2Supported)
+            {
+                v256 x_lo = mm256_load_si256(&p[0]);
+                v256 x_hi = mm256_load_si256(&p[7]);
+                return mm256_permutevar8x32_epi32(mm256_blend_epi32(x_lo, x_hi, 0b10101010), mm256_set_epi32(7, 5, 3, 1, 6, 4, 2, 0));
+            }
+            else
+            {
+                return new v256(p[0], p[2], p[4], p[6], p[8], p[10], p[12], p[14]);
+            }
+        }
+
+
+        /// <summary>
+        /// load odd indices from p into v256
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static v256 mm256_Stride2LoadOdd(float* p)
+        {
+            if (IsAvx2Supported)
+            {
+                v256 x_lo = mm256_loadu_ps(&p[1]);
+                v256 x_hi = mm256_loadu_ps(&p[8]);
+                return mm256_permutevar8x32_ps(mm256_blend_ps(x_lo, x_hi, 0b10101010), mm256_set_epi32(7, 5, 3, 1, 6, 4, 2, 0));
+            }
+            else
+            {
+                return new v256(p[1], p[3], p[5], p[7], p[9], p[11], p[13], p[15]);
+            }
+        }
+
+        /// <summary>
+        /// load odd indices from p into v256
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static v256 mm256_Stride2LoadOdd(int* p)
+        {
+            if (IsAvx2Supported)
+            {
+                v256 x_lo = mm256_loadu_si256(&p[1]);
+                v256 x_hi = mm256_loadu_si256(&p[8]);
+                return mm256_permutevar8x32_epi32(mm256_blend_epi32(x_lo, x_hi, 0b10101010), mm256_set_epi32(7, 5, 3, 1, 6, 4, 2, 0));
+            }
+            else
+            {
+                return new v256(p[1], p[3], p[5], p[7], p[9], p[11], p[13], p[15]);
+            }
+        }
+
+
+        /// <summary>
+        /// conversion based on https://gist.github.com/powturbo/2b06a84b6008dfffef11e53edba297d3
+        /// </summary>
+        /// <returns></returns>
+        static long memcount_avx2(byte* s, byte c, long n)
+        {
+            v256 cv = mm256_set1_epi8(c);
+            v256 zv = mm256_setzero_si256();
+            v256 sum = zv, acr0, acr1, acr2, acr3;
+
+            byte* p; byte* pe;
+            for (p = s; p != (char*)s + (n - (n % (252 * 32)));)
+            {
+                for (acr0 = acr1 = acr2 = acr3 = zv, pe = p + 252 * 32; p != pe; p += 128)
+                {
+                    acr0 = mm256_add_epi8(acr0, mm256_cmpeq_epi8(cv, mm256_lddqu_si256((v256*)p)));
+                    acr1 = mm256_add_epi8(acr1, mm256_cmpeq_epi8(cv, mm256_lddqu_si256((v256*)(p + 32))));
+                    acr2 = mm256_add_epi8(acr2, mm256_cmpeq_epi8(cv, mm256_lddqu_si256((v256*)(p + 64))));
+                    acr3 = mm256_add_epi8(acr3, mm256_cmpeq_epi8(cv, mm256_lddqu_si256((v256*)(p + 96))));
+
+                    // __builtin_prefetch(p+1024);
+                }
+                sum = mm256_add_epi64(sum, mm256_sad_epu8(mm256_sub_epi8(zv, acr0), zv));
+                sum = mm256_add_epi64(sum, mm256_sad_epu8(mm256_sub_epi8(zv, acr1), zv));
+                sum = mm256_add_epi64(sum, mm256_sad_epu8(mm256_sub_epi8(zv, acr2), zv));
+                sum = mm256_add_epi64(sum, mm256_sad_epu8(mm256_sub_epi8(zv, acr3), zv));
+            }
+            
+            for (acr0 = zv; p + 32 < (char*)s + n; p += 32)
+            {
+                acr0 = mm256_add_epi8(acr0, mm256_cmpeq_epi8(cv, mm256_lddqu_si256((v256*)p)));
+            }
+            sum = mm256_add_epi64(sum, mm256_sad_epu8(mm256_sub_epi8(zv, acr0), zv));
+            long count = mm256_extract_epi64(sum, 0) + mm256_extract_epi64(sum, 1) + mm256_extract_epi64(sum, 2) + mm256_extract_epi64(sum, 3);
+            
+            while (p != (byte*)s + n)
+            {
+                count += math.select(0, 1, p[0] == c);
+                p++;
+            }
+            return count;
+        }
+#endif
 
 
 #if STANDALONE_VSBUILD

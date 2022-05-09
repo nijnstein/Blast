@@ -1280,7 +1280,6 @@ namespace NSS.Blast.Compiler.Stage
         
             // before running the test, make sure that scriptvariable in the statement equals assignee 
             bool b_found_assignee_in_children = n.children.Any(x => x.variable == n.variable);
-            bool b_possible = true;
 
             bool transform_mul()
             {
@@ -1375,7 +1374,6 @@ namespace NSS.Blast.Compiler.Stage
 
             // before running the test, make sure that scriptvariable in the statement equals assignee 
             bool b_found_assignee_in_children = n.children.Any(x => x.variable == n.variable);
-            bool b_possible = true;
 
             bool transform_div()
             {

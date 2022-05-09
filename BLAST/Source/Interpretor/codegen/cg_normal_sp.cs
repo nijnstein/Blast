@@ -793,7 +793,6 @@ namespace NSS.Blast.Interpretor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void CALL_FN_NORMALIZE(ref int code_pointer, ref V4 v4, out byte vector_size, out BlastVariableDataType datatype)
         {
-            bool negated;
             code_pointer += 1;
             void* fdata = (void*)pop_p_info(ref code_pointer, out datatype, out vector_size, out bool is_negated);
 
