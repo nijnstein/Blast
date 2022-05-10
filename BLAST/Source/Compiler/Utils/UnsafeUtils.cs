@@ -14,6 +14,7 @@
 //############################################################################################################################
 #pragma warning disable CS1591
 #pragma warning disable CS0162
+#pragma warning disable CS0164
 
 
 using System;
@@ -102,11 +103,11 @@ namespace NSS.Blast
                                      mm256_sub_epi32(v2, v1),
                                      cmp)));
                     }
+                    goto REST; 
                 }
             }
 #endif
             // .net standard likes unrolled pointer walk loops a lot according to my benchmarks 
-            // - if built for unity with avx then this will just handle the rest 
             unchecked
             {
                 while (data_is_aligned & (i < (datacount - 8)))
@@ -123,6 +124,11 @@ namespace NSS.Blast
                     i += 8;
                     p += 8;
                 }
+            }
+            // - if built for unity with avx then this will just handle the rest 
+            REST:
+            unchecked 
+            { 
                 while (data_is_aligned & (i < (datacount - 2)))
                 {
                     data_is_aligned = rowsize == (int)(p[2] - p[0]);
