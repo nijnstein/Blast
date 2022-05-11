@@ -1095,7 +1095,7 @@ namespace NSS.Blast.SSMD
             // if the index was not constant by type, it very probably is constant data 
             if (!constant_index)
             {
-                constant_index = simd.all_equal(f1, ssmd_datacount);
+                constant_index = simd.AllEqual(f1, ssmd_datacount);
             }
 
             // less work if index is constant AND we reference constant data 
@@ -2035,7 +2035,7 @@ namespace NSS.Blast.SSMD
                                     // indexer at location ? 
                                     if (!constant_index)
                                     {
-                                        constant_index = simd.all_equal(indices, ssmd_datacount);
+                                        constant_index = simd.AllEqual(indices, ssmd_datacount);
                                     }
 
                                     // index from variable 
@@ -3929,7 +3929,7 @@ namespace NSS.Blast.SSMD
                                     // indexer at location ? 
                                     if (!constant_index)
                                     {
-                                        constant_index = simd.all_equal(indices, ssmd_datacount);
+                                        constant_index = simd.AllEqual(indices, ssmd_datacount);
                                     }
 
                                     // if constant, set 1 otherwise need all 
