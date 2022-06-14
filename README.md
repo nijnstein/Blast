@@ -6,3 +6,5 @@ BLAST has become freely available for anyone, its license headers yet state othe
 
 
 You can always donate by buying a license at the Unity Asset Store for Blast.  
+
+** USE THE COMPILER DEFINE STANDALONE_VSBUILD TO COMPILE A STANDALONE WINDOWS LIBRARY FOR USE WITHOUT UNITY **
